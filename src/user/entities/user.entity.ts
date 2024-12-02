@@ -1,7 +1,8 @@
 import { AccessLevel, Status } from '../../lib/enums/enums';
-import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { UserProfile } from './user.profile.entity';
 import { UserEmployeementProfile } from './user.employeement.profile.entity';
+import { Attendance } from 'src/attendance/entities/attendance.entity';
 
 @Entity('user')
 export class User {
@@ -48,7 +49,6 @@ export class User {
     @Column({ nullable: false, default: Status.ACTIVE })
     status: Status;
 
-    //auth
     @Column({ nullable: false })
     username: string;
 
@@ -61,14 +61,15 @@ export class User {
     @Column({ nullable: false })
     userReferenceCode: string;
 
-    //relations
     @OneToOne(() => UserProfile)
     @JoinColumn()
     profile: UserProfile;
 
-
     @OneToOne(() => UserEmployeementProfile)
     @JoinColumn()
     employeementProfile: UserEmployeementProfile;
-    
+
+    @OneToMany(() => Attendance, (attendance) => attendance?.employee)
+    attendances: Attendance[];
+
 }

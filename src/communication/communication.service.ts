@@ -9,22 +9,22 @@ export class CommunicationService {
   @OnEvent('send.email')
   sendEmail(user: User): string {
     try {
-      const message = `Welcome to our platform, ${user.name}!`;
+      const message = `welcome to our platform, ${user.name}!`;
 
       return message;
     } catch (error) {
-      console.error('Failed to send email:', error);
+      console.error('failed to send email:', error);
     }
   }
 
   @OnEvent('send.sms')
   sendSms(user: User): string {
     try {
-      const message = `Welcome to our platform, ${user.name}!`;
+      const message = `welcome to our platform, ${user.name}!`;
 
       return message;
     } catch (error) {
-      console.error('Failed to send SMS:', error);
+      console.error('failed to send sms:', error);
     }
   }
 } 

@@ -1,56 +1,47 @@
 import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { JwtService } from '@nestjs/jwt';
 import { ACCESS_KEY } from '../decorators/role.decorator';
 import { AccessLevel } from '../lib/enums/enums';
-import { Token } from '../lib/types/token';
 
 @Injectable()
 export class RoleGuard implements CanActivate {
     constructor(
-        private jwtService: JwtService,
         private reflector: Reflector,
     ) { }
 
     canActivate(context: ExecutionContext): boolean {
-        const request = context.switchToHttp().getRequest();
-        const token = this.extractTokenFromHeader(request);
+        try {
+            const requiredRoles = this.reflector.getAllAndOverride<AccessLevel[]>(ACCESS_KEY, [
+                context.getHandler(),
+                context.getClass(),
+            ]);
 
-        const requiredRoles = this.reflector.getAllAndOverride<AccessLevel[]>(ACCESS_KEY, [
-            context.getHandler(),
-            context.getClass(),
-        ]);
+            if (!requiredRoles) {
+                return true;
+            }
 
-        if (!requiredRoles) {
+            const request = context.switchToHttp().getRequest();
+            const user = request.user;
+
+            if (!user?.role) {
+                throw new UnauthorizedException('access denied - no role information');
+            }
+
+            const hasRequiredRole = requiredRoles.some((role) => role === user.role);
+
+            if (!hasRequiredRole) {
+                throw new UnauthorizedException(
+                    `access denied - user ${user.username || 'unknown'} with role ${user.role} is not authorized. required roles: ${requiredRoles.join(', ')}`
+                );
+            }
+
             return true;
+
+        } catch (error) {
+            if (error instanceof UnauthorizedException) {
+                throw error;
+            }
+            throw new UnauthorizedException('role verification failed');
         }
-
-        if (!token) {
-            throw new UnauthorizedException('You are not authorized to access this resource');
-        }
-
-        const decodedToken: Token = this.jwtService.decode(token) as Token;
-
-        const { role: requestedOriginRole } = decodedToken;
-
-        const { user } = context.switchToHttp().getRequest();
-
-        if (!requestedOriginRole) {
-            throw new UnauthorizedException('You are not authorized to access this resource');
-        }
-
-        const hasRole = requiredRoles?.some((role) => role === requestedOriginRole);
-
-        if (!hasRole) {
-            throw new UnauthorizedException(
-                `User ${user?.username} with role ${requestedOriginRole} is not authorized to access this resource. Required roles: ${requiredRoles?.join(', ')}`,
-            );
-        }
-
-        return true;
-    }
-
-    private extractTokenFromHeader(request: Request): string | undefined {
-        return request.headers['token'] as string;
     }
 }

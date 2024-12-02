@@ -3,7 +3,7 @@ import { CanActivate } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 import { Reflector } from '@nestjs/core';
-import { IS_PUBLIC_KEY } from '../decorators/public.decorators';
+import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 import { Status } from '../lib/enums/enums';
 import { Token } from '../lib/types/token';
 
@@ -15,9 +15,6 @@ export class AuthGuard implements CanActivate {
     ) { }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        const request = context.switchToHttp().getRequest();
-        const token = this.extractTokenFromHeader(request);
-
         const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
             context.getHandler(),
             context.getClass(),
@@ -27,32 +24,34 @@ export class AuthGuard implements CanActivate {
             return true;
         }
 
+        const request = context.switchToHttp().getRequest();
+        const token = this.extractTokenFromHeader(request);
+
         if (!token) {
-            throw new UnauthorizedException('You are not authorized to access this resource');
-        }
-
-        const decodedToken: Token = this.jwtService.decode(token) as Token;
-
-        if (!decodedToken) {
-            throw new UnauthorizedException('Your session has expired test');
-        }
-
-        const { status, exp } = decodedToken;
-
-        if (status !== Status.ACTIVE) {
-            throw new UnauthorizedException('Your account is not active');
-        }
-
-        if (this.isTokenExpired(exp)) {
-            throw new UnauthorizedException('Your session has expired');
+            throw new UnauthorizedException('you are not authorized to access this resource');
         }
 
         try {
-            const payload = await this.jwtService.decode(token);
-            request['user'] = payload;
+            const decodedToken = this.jwtService.decode(token) as Token;
+
+            if (!decodedToken) {
+                throw new UnauthorizedException('invalid token format');
+            }
+
+            const { status, exp } = decodedToken;
+
+            if (status !== Status.ACTIVE || this.isTokenExpired(exp)) {
+                throw new UnauthorizedException(
+                    status !== Status.ACTIVE
+                        ? 'your account is not active'
+                        : 'your session has expired'
+                );
+            }
+
+            request['user'] = decodedToken;
             return true;
-        } catch {
-            throw new UnauthorizedException('You are not authorized to access this resource');
+        } catch (error) {
+            throw new UnauthorizedException('you are not authorized to access this resource');
         }
     }
 

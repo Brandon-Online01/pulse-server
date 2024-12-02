@@ -37,14 +37,18 @@ export class AuthService {
 				);
 			}
 
-			const { user } = authProfile;
+			const { user } = authProfile
+
+			const { uid, accessLevel, name, ...restOfUser } = user;
+
 			const profileData: ProfileData = {
-				uid: user.uid.toString(),
-				accessLevel: user.accessLevel,
-				name: user.name,
+				uid: uid.toString(),
+				accessLevel,
+				name,
+				...restOfUser
 			};
 
-			const payload = { uid: profileData.uid, accessLevel: profileData.accessLevel };
+			const payload = { uid: uid.toString(), accessLevel };
 
 			const accessToken = await this.jwtService.signAsync(payload, { expiresIn: `${process.env.JWT_ACCESS_EXPIRES_IN}` });
 			const refreshToken = await this.jwtService.signAsync(payload, { expiresIn: `${process.env.JWT_REFRESH_EXPIRES_IN}` });
@@ -70,7 +74,7 @@ export class AuthService {
 			const isEmailTaken = await this.userService.findOne(email);
 
 			if (isEmailTaken) {
-				throw new HttpException('Email already taken, please try another one.', HttpStatus.BAD_REQUEST);
+				throw new HttpException('email already taken, please try another one.', HttpStatus.BAD_REQUEST);
 			}
 
 			const verificationToken = await this.generateShortToken();
@@ -88,7 +92,7 @@ export class AuthService {
 			// await this.emailService.sendVerificationEmail(email, verificationUrl);
 
 			return {
-				message: 'Please check your email and verify your account within the next 24 hours.',
+				message: 'please check your email and verify your account within the next 24 hours.',
 			};
 		} catch (error) {
 			throw new HttpException(

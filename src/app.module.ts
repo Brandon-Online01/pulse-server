@@ -12,6 +12,8 @@ import { UserProfile } from './user/entities/user.profile.entity';
 import { UserEmployeementProfile } from './user/entities/user.employeement.profile.entity';
 import { CacheModule } from '@nestjs/cache-manager';
 import { redisConfig } from './config/redis.config';
+import { AttendanceModule } from './attendance/attendance.module';
+import { Attendance } from './attendance/entities/attendance.entity';
 
 @Module({
   imports: [
@@ -27,7 +29,7 @@ import { redisConfig } from './config/redis.config';
       username: process.env.DATABASE_USER,
       password: process.env.DATABASE_PASSWORD,
       database: process.env.DATABASE_NAME,
-      entities: [User, UserProfile, UserEmployeementProfile],
+      entities: [User, UserProfile, UserEmployeementProfile, Attendance],
       synchronize: true,
       retryAttempts: 50,
       retryDelay: 2000,
@@ -38,6 +40,7 @@ import { redisConfig } from './config/redis.config';
     AuthModule,
     UserModule,
     CommunicationModule,
+    AttendanceModule,
   ],
   controllers: [],
   providers: [AppService, AppController],

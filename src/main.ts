@@ -26,7 +26,7 @@ async function bootstrap() {
 	const reflector = new Reflector();
 	app.useGlobalGuards(
 		new AuthGuard(app.get(JwtService), reflector),
-		new RoleGuard(app.get(JwtService), reflector),
+		new RoleGuard(app.get(JwtService)),
 	);
 
 	await app.listen(process.env.PORT ?? 4400);

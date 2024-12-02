@@ -7,7 +7,7 @@ import { RoleGuard } from '../guards/role.guard';
 import { Roles } from '../decorators/role.decorator';
 import { AccessLevel } from '../lib/enums/enums';
 
-@ApiTags('User')
+@ApiTags('user')
 @Controller('user')
 @UseGuards(RoleGuard)
 export class UserController {
@@ -29,7 +29,7 @@ export class UserController {
 
   @Get(':searchParameter')
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
-  @ApiOperation({ summary: 'Get a user by reference' })
+  @ApiOperation({ summary: 'Get a user by a search parameter i.e email, phone number, reference code' })
   findOne(@Param('searchParameter') searchParameter: string) {
     return this.userService.findOne(searchParameter);
   }

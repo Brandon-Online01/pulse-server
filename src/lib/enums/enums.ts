@@ -25,12 +25,16 @@ export enum Status {
     PARTIAL = 'partial',
     OVERDUE = 'overdue',
 
-    LATE = 'late',
-    ON_TIME = 'on time',
-    EARLY = 'early',
-    OVERTIME = 'overtime',
-
     DRIVING = 'driving',
     PARKING = 'parking',
     STOPPED = 'stopped',
+}
+
+
+export enum AttendanceStatus {
+    PRESENT = 'present',
+    ABSENT = 'absent',
+    LATE = 'late',
+    EXCUSED = 'excused',
+    COMPLETED = 'completed',
 }
