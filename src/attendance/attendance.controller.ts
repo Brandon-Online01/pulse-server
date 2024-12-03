@@ -7,6 +7,7 @@ import {
   Patch,
   Query,
   Param,
+  Get,
 } from '@nestjs/common';
 import { CreateCheckInDto } from './dto/create-attendance-check-in.dto';
 import { CreateCheckOutDto } from './dto/create-attendance-check-out.dto';
@@ -63,5 +64,47 @@ export class AttendanceController {
     @Param('referenceCode') referenceCode: number,
     @Body() updateAttendanceDto: UpdateAttendanceDto) {
     return this.attendanceService.updateAttendance(referenceCode, updateAttendanceDto);
+  }
+
+  @Get()
+  @Roles(
+    AccessLevel.ADMIN,
+    AccessLevel.MANAGER,
+    AccessLevel.SUPERVISOR,
+    AccessLevel.SUPPORT,
+    AccessLevel.DEVELOPER,
+    AccessLevel.USER
+  )
+  @ApiOperation({ summary: 'get all check ins' })
+  allCheckIns() {
+    return this.attendanceService.allCheckIns();
+  }
+
+  @Get('date/:date')
+  @Roles(
+    AccessLevel.ADMIN,
+    AccessLevel.MANAGER,
+    AccessLevel.SUPERVISOR,
+    AccessLevel.SUPPORT,
+    AccessLevel.DEVELOPER,
+    AccessLevel.USER
+  )
+  @ApiOperation({ summary: 'get check ins by date' })
+  checkInsByDate(@Param('date') date: string) {
+    return this.attendanceService.checkInsByDate(date);
+  }
+
+  @Get('status/:status')
+  @Roles(
+    AccessLevel.ADMIN,
+    AccessLevel.MANAGER,
+    AccessLevel.SUPERVISOR,
+    AccessLevel.SUPPORT,
+    AccessLevel.DEVELOPER,
+    AccessLevel.USER
+  )
+  @ApiOperation({ summary: 'get check ins by status' })
+  checkInsByStatus(@Param('status') status: string) {
+    return this.attendanceService.checkInsByStatus(status);
   }
 }

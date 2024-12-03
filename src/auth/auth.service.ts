@@ -37,9 +37,8 @@ export class AuthService {
 				);
 			}
 
-			const { user } = authProfile
-
-			const { uid, accessLevel, name, ...restOfUser } = user;
+			const { user } = authProfile;
+			const { password: _, uid, accessLevel, name, ...restOfUser } = user;
 
 			const profileData: ProfileData = {
 				uid: uid.toString(),

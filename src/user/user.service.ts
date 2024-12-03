@@ -18,8 +18,19 @@ export class UserService {
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) { }
 
-  create(createUserDto: CreateUserDto) {
-    return 'this action adds a new user';
+  async create(createUserDto: CreateUserDto) {
+    try {
+      const user = await this.userRepository.save(createUserDto as unknown as User);
+
+      const response = {
+        message: process.env.SUCCESS_MESSAGE,
+        data: user
+      };
+
+      return response;
+    } catch (error) {
+      throw new Error(error);
+    }
   }
 
   async findAll(): Promise<MultipleSearchResponse> {
@@ -27,10 +38,12 @@ export class UserService {
       const cachedUsers = await this.cacheManager.get<User[]>('all_users');
 
       if (cachedUsers) {
-        return {
+        const response = {
           users: cachedUsers,
-          message: 'users found',
+          message: process.env.SUCCESS_MESSAGE,
         };
+
+        return response;
       }
 
       const users = await this.userRepository.find({ where: { isDeleted: false } });
@@ -39,10 +52,12 @@ export class UserService {
         await this.cacheManager.set('all_users', users, 3600000);
       }
 
-      return {
+      const response = {
         users: users || null,
-        message: users ? 'users found' : 'users not found',
+        message: users ? process.env.SUCCESS_MESSAGE : 'users not found',
       };
+
+      return response;
 
     } catch (error) {
       throw new HttpException(error?.message, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -61,10 +76,12 @@ export class UserService {
         ]
       });
 
-      return {
+      const response = {
         user: user || null,
-        message: user ? 'user found' : 'user not found',
+        message: user ? process.env.SUCCESS_MESSAGE : 'user not found',
       };
+
+      return response;
     } catch (error) {
       throw new HttpException(error?.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -80,9 +97,11 @@ export class UserService {
 
       await this.cacheManager.del('all_users');
 
-      return {
-        message: updatedUser ? 'user updated' : 'user not found',
+      const response = {
+        message: updatedUser ? process.env.SUCCESS_MESSAGE : 'user not found',
       };
+
+      return response;
 
     } catch (error) {
       throw new HttpException(error?.message, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -106,9 +125,11 @@ export class UserService {
 
       await this.cacheManager.del('all_users');
 
-      return {
-        message: 'user deactivated',
+      const response = {
+        message: process.env.SUCCESS_MESSAGE,
       };
+
+      return response;
     } catch (error) {
       throw new HttpException(error?.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -145,5 +166,28 @@ export class UserService {
       }
 
     }, timeUntilExpiry);
+  }
+
+  async restore(referenceCode: number) {
+    try {
+      const user = await this.userRepository.update(
+        { userReferenceCode: referenceCode.toString() },
+        {
+          isDeleted: false,
+          status: Status.ACTIVE
+        }
+      );
+
+      await this.cacheManager.del('all_users');
+
+      const response = {
+        message: process.env.SUCCESS_MESSAGE,
+        data: user
+      };
+
+      return response;
+    } catch (error) {
+      throw new HttpException(error?.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 }

@@ -48,4 +48,11 @@ export class UserController {
   remove(@Param('referenceCode') referenceCode: number) {
     return this.userService.remove(referenceCode);
   }
+
+  @Patch(':referenceCode')
+  @ApiOperation({ summary: 'Restore a deleted user by reference code' })
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
+  restore(@Param('referenceCode') referenceCode: number) {
+    return this.userService.restore(referenceCode);
+  }
 }

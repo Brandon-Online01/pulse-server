@@ -10,6 +10,16 @@ export class RoleGuard implements CanActivate {
     ) { }
 
     canActivate(context: ExecutionContext): boolean {
+        // First check if route is marked as public
+        const isPublic = this.reflector.getAllAndOverride<boolean>(
+            'isPublic',
+            [context.getHandler(), context.getClass()]
+        );
+
+        if (isPublic) {
+            return true;
+        }
+
         try {
             const requiredRoles = this.reflector.getAllAndOverride<AccessLevel[]>(ACCESS_KEY, [
                 context.getHandler(),

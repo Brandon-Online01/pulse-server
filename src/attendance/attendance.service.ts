@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { IsNull, Not, Repository } from 'typeorm';
+import { IsNull, MoreThanOrEqual, Not, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Attendance } from './entities/attendance.entity';
 import { AttendanceStatus } from 'src/lib/enums/enums';
@@ -43,7 +43,7 @@ export class AttendanceService {
       await this.attendanceRepository.update(referenceCode, updateAttendanceDto);
 
       const response = {
-        message: 'updated successfully',
+        message: process.env.SUCCESS_MESSAGE,
         attendance
       };
 
@@ -77,5 +77,58 @@ export class AttendanceService {
     }
 
     throw new Error('no active shift found to check out');
+  }
+
+  public async allCheckIns() {
+    try {
+      const checkIns = await this.attendanceRepository.find();
+
+      const response = {
+        message: process.env.SUCCESS_MESSAGE,
+        checkIns
+      };
+
+      return response;
+    } catch (error) {
+      throw new Error(`could not get all check ins - ${error.message}`);
+    }
+  }
+
+  public async checkInsByDate(date: string) {
+    try {
+      const checkIns = await this.attendanceRepository.find({
+        where: {
+          checkIn: MoreThanOrEqual(new Date(date))
+        }
+      });
+
+      const response = {
+        message: process.env.SUCCESS_MESSAGE,
+        checkIns
+      };
+
+      return response;
+    } catch (error) {
+      throw new Error(`could not get check ins by date - ${error.message}`);
+    }
+  }
+
+  public async checkInsByStatus(status: string) {
+    try {
+      const checkIns = await this.attendanceRepository.find({
+        where: {
+          status: status as AttendanceStatus
+        }
+      });
+
+      const response = {
+        message: process.env.SUCCESS_MESSAGE,
+        checkIns
+      };
+
+      return response;
+    } catch (error) {
+      throw new Error(`could not get check ins by status - ${error.message}`);
+    }
   }
 }

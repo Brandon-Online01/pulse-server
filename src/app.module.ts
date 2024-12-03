@@ -14,6 +14,10 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { redisConfig } from './config/redis.config';
 import { AttendanceModule } from './attendance/attendance.module';
 import { Attendance } from './attendance/entities/attendance.entity';
+import { APP_GUARD } from '@nestjs/core';
+import { RoleGuard } from './guards/role.guard';
+import { TrackingModule } from './tracking/tracking.module';
+import { DocsModule } from './docs/docs.module';
 
 @Module({
   imports: [
@@ -41,8 +45,17 @@ import { Attendance } from './attendance/entities/attendance.entity';
     UserModule,
     CommunicationModule,
     AttendanceModule,
+    TrackingModule,
+    DocsModule,
   ],
   controllers: [],
-  providers: [AppService, AppController],
+  providers: [
+    AppService,
+    AppController,
+    {
+      provide: APP_GUARD,
+      useClass: RoleGuard,
+    },
+  ],
 })
 export class AppModule { }

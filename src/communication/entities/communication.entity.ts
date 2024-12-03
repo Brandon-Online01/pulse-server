@@ -1,1 +1,1 @@
-export class Communication {}
+export class Communication { }
