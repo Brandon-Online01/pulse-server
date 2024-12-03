@@ -30,7 +30,6 @@ export interface NewSignUp {
   password?: string;
 }
 
-
 export enum Gender {
   MALE = 'male',
   FEMALE = 'female',

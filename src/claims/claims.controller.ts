@@ -40,6 +40,13 @@ export class ClaimsController {
     return this.claimsService.update(referenceCode, updateClaimDto);
   }
 
+  @Patch('restore/:referenceCode')
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
+  @ApiOperation({ summary: 'restore a claim' })
+  restore(@Param('referenceCode') referenceCode: number) {
+    return this.claimsService.restore(referenceCode);
+  }
+
   @Delete(':referenceCode')
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
   @ApiOperation({ summary: 'soft delete a claim' })

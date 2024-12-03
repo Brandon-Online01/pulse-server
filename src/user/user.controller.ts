@@ -42,17 +42,17 @@ export class UserController {
     return this.userService.update(referenceCode, updateUserDto);
   }
 
+  @Patch('restore/:referenceCode')
+  @ApiOperation({ summary: 'Restore a deleted user by reference code' })
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
+  restore(@Param('referenceCode') referenceCode: number) {
+    return this.userService.restore(referenceCode);
+  }
+
   @Delete(':referenceCode')
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
   @ApiOperation({ summary: 'Soft delete a user by reference code' })
   remove(@Param('referenceCode') referenceCode: number) {
     return this.userService.remove(referenceCode);
-  }
-
-  @Patch(':referenceCode')
-  @ApiOperation({ summary: 'Restore a deleted user by reference code' })
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
-  restore(@Param('referenceCode') referenceCode: number) {
-    return this.userService.restore(referenceCode);
   }
 }

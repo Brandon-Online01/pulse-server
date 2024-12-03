@@ -24,11 +24,15 @@ export class TrackingService {
 
       return response;
     } catch (error) {
-      throw new Error(error);
+      const response = {
+        message: error.message,
+      }
+
+      return response;
     }
   }
 
-  async findAll() {
+  async findAll(): Promise<{ tracking: Tracking[] | null, message: string }> {
     try {
       const tracking = await this.trackingRepository.find({
         where: {
@@ -37,17 +41,22 @@ export class TrackingService {
       });
 
       const response = {
-        message: process.env.SUCCESS_MESSAGE,
-        data: tracking
+        message: 'tracking found',
+        tracking: tracking
       }
 
       return response;
     } catch (error) {
-      throw new Error(error);
+      const response = {
+        message: error.message,
+        tracking: null
+      }
+
+      return response;
     }
   }
 
-  async findOne(referenceCode: number) {
+  async findOne(referenceCode: number): Promise<{ tracking: Tracking | null, message: string }> {
     try {
       const tracking = await this.trackingRepository.findOne({
         where: {
@@ -57,33 +66,42 @@ export class TrackingService {
       });
 
       const response = {
-        message: process.env.SUCCESS_MESSAGE,
-        data: tracking
+        message: 'tracking found',
+        tracking: tracking
       }
 
       return response;
     } catch (error) {
-      throw new Error(error);
+      const response = {
+        message: error.message,
+        tracking: null
+      }
+
+      return response;
     }
   }
 
   async update(referenceCode: number, updateTrackingDto: UpdateTrackingDto) {
     try {
-      const tracking = await this.trackingRepository.update(referenceCode, updateTrackingDto as unknown as DeepPartial<Tracking>);
+      await this.trackingRepository.update(referenceCode, updateTrackingDto as unknown as DeepPartial<Tracking>);
 
       const response = {
-        message: process.env.SUCCESS_MESSAGE,
-        data: tracking
+        message: 'tracking updated',
       }
+
       return response;
     } catch (error) {
-      throw new Error(error);
+      const response = {
+        message: error.message,
+      }
+
+      return response;
     }
   }
 
-  async remove(referenceCode: number) {
+  async remove(referenceCode: number): Promise<{ message: string }> {
     try {
-      const tracking = await this.trackingRepository.update(
+      await this.trackingRepository.update(
         referenceCode,
         {
           deletedAt: new Date(),
@@ -92,19 +110,22 @@ export class TrackingService {
       );
 
       const response = {
-        message: process.env.SUCCESS_MESSAGE,
-        data: tracking
+        message: 'tracking deleted',
       }
 
       return response;
     } catch (error) {
-      throw new Error(error);
+      const response = {
+        message: error.message,
+      }
+
+      return response;
     }
   }
 
-  async restore(referenceCode: number) {
+  async restore(referenceCode: number): Promise<{ message: string }> {
     try {
-      const tracking = await this.trackingRepository.update(
+      await this.trackingRepository.update(
         referenceCode,
         {
           deletedAt: null,
@@ -112,12 +133,17 @@ export class TrackingService {
         }
       );
 
-      return {
-        message: process.env.SUCCESS_MESSAGE,
-        data: tracking
-      };
+      const response = {
+        message: 'tracking restored',
+      }
+
+      return response;
     } catch (error) {
-      throw new Error(error);
+      const response = {
+        message: error.message,
+      }
+
+      return response;
     }
   }
 }

@@ -31,17 +31,17 @@ export class TrackingController {
     return this.trackingService.findOne(referenceCode);
   }
 
-  @Delete(':referenceCode')
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
-  @ApiOperation({ summary: 'soft delete a tracking record by reference code' })
-  remove(@Param('referenceCode') referenceCode: number) {
-    return this.trackingService.remove(referenceCode);
-  }
-
   @Patch('/restore/:referenceCode')
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
   @ApiOperation({ summary: 'restore a deleted tracking record by reference code' })
   restore(@Param('referenceCode') referenceCode: number) {
     return this.trackingService.restore(referenceCode);
+  }
+
+  @Delete(':referenceCode')
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
+  @ApiOperation({ summary: 'soft delete a tracking record by reference code' })
+  remove(@Param('referenceCode') referenceCode: number) {
+    return this.trackingService.remove(referenceCode);
   }
 }

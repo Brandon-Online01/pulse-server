@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { BadRequestException, HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { SignInInput, SignUpInput } from './dto/auth.dto';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -19,26 +19,19 @@ export class AuthService {
 
 			const authProfile = await this.userService.findOne(username);
 
-			if (!authProfile) {
-				throw new HttpException(
-					'Invalid credentials',
-					HttpStatus.UNAUTHORIZED
-				);
+			if (!authProfile?.user) {
+				throw new BadRequestException('Invalid credentials provided');
 			}
 
-			const { user: { password: userPassword } } = authProfile;
+			const { password: userPassword } = authProfile?.user;
 
 			const isPasswordValid = bcrypt.compare(password, userPassword);
 
 			if (!isPasswordValid) {
-				throw new HttpException(
-					'Invalid credentials',
-					HttpStatus.UNAUTHORIZED
-				);
+				throw new BadRequestException('Invalid credentials provided');
 			}
 
-			const { user } = authProfile;
-			const { password: _, uid, accessLevel, name, ...restOfUser } = user;
+			const { uid, accessLevel, name, ...restOfUser } = authProfile.user;
 
 			const profileData: ProfileData = {
 				uid: uid.toString(),

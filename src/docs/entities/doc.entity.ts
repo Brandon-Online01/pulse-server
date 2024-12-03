@@ -1,9 +1,9 @@
 import { User } from 'src/user/entities/user.entity';
-import { Column, CreateDateColumn, Entity, ManyToOne, ObjectIdColumn, UpdateDateColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, ManyToOne, ObjectIdColumn, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 
 @Entity('docs')
 export class Doc {
-    @ObjectIdColumn()
+    @PrimaryGeneratedColumn()
     uid: string;
 
     @Column()

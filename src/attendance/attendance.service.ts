@@ -25,7 +25,13 @@ export class AttendanceService {
       employeeReferenceCode: checkInDto?.employeeReferenceCode
     });
 
-    return await this.attendanceRepository.save(attendance);
+    await this.attendanceRepository.save(attendance);
+
+    const response = {
+      message: 'checked in',
+    }
+
+    return response;
   }
 
   public async updateAttendance(referenceCode: number, updateAttendanceDto: UpdateAttendanceDto) {
@@ -43,13 +49,16 @@ export class AttendanceService {
       await this.attendanceRepository.update(referenceCode, updateAttendanceDto);
 
       const response = {
-        message: process.env.SUCCESS_MESSAGE,
-        attendance
+        message: 'attendance updated',
       };
 
       return response;
     } catch (error) {
-      throw new Error(`could not update attendance - ${error.message}`);
+      const response = {
+        message: error?.message,
+      }
+
+      return response;
     }
   }
 
@@ -73,28 +82,39 @@ export class AttendanceService {
       activeShift.checkOutLongitude = checkOutDto?.checkOutLongitude;
       activeShift.checkOutNotes = checkOutDto?.checkOutNotes;
       activeShift.status = AttendanceStatus.COMPLETED;
-      return await this.attendanceRepository.save(activeShift);
+      await this.attendanceRepository.save(activeShift);
+
+      const response = {
+        message: 'checked out',
+      }
+
+      return response;
     }
 
     throw new Error('no active shift found to check out');
   }
 
-  public async allCheckIns() {
+  public async allCheckIns(): Promise<{ message: string, checkIns: Attendance[] }> {
     try {
       const checkIns = await this.attendanceRepository.find();
 
       const response = {
-        message: process.env.SUCCESS_MESSAGE,
+        message: 'checkins retrieved',
         checkIns
       };
 
       return response;
     } catch (error) {
-      throw new Error(`could not get all check ins - ${error.message}`);
+      const response = {
+        message: `could not get all check ins - ${error.message}`,
+        checkIns: null
+      }
+
+      return response;
     }
   }
 
-  public async checkInsByDate(date: string) {
+  public async checkInsByDate(date: string): Promise<{ message: string, checkIns: Attendance[] }> {
     try {
       const checkIns = await this.attendanceRepository.find({
         where: {
@@ -103,17 +123,22 @@ export class AttendanceService {
       });
 
       const response = {
-        message: process.env.SUCCESS_MESSAGE,
+        message: 'checkins retrieved',
         checkIns
       };
 
       return response;
     } catch (error) {
-      throw new Error(`could not get check ins by date - ${error.message}`);
+      const response = {
+        message: `could not get check ins by date - ${error.message}`,
+        checkIns: null
+      }
+
+      return response;
     }
   }
 
-  public async checkInsByStatus(status: string) {
+  public async checkInsByStatus(status: string): Promise<{ message: string, checkIns: Attendance[] }> {
     try {
       const checkIns = await this.attendanceRepository.find({
         where: {
@@ -128,7 +153,12 @@ export class AttendanceService {
 
       return response;
     } catch (error) {
-      throw new Error(`could not get check ins by status - ${error.message}`);
+      const response = {
+        message: `could not get check ins by status - ${error.message}`,
+        checkIns: null
+      }
+
+      return response;
     }
   }
 }

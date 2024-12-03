@@ -1,21 +1,18 @@
 import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
-import { Cache } from 'cache-manager';
 import { Status } from 'src/lib/enums/enums';
 import { User } from './entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { HttpException, HttpStatus, Injectable, Inject } from '@nestjs/common';
-import { MultipleSearchResponse, NewSignUp, SingularSearchResponse } from 'src/lib/types/user';
+import { Injectable } from '@nestjs/common';
+import { NewSignUp } from 'src/lib/types/user';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
-    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) { }
 
   async create(createUserDto: CreateUserDto) {
@@ -29,46 +26,43 @@ export class UserService {
 
       return response;
     } catch (error) {
-      throw new Error(error?.message);
+      const response = {
+        message: error?.message,
+      }
+
+      return response;
     }
   }
 
-  async findAll(): Promise<MultipleSearchResponse> {
+  async findAll(): Promise<{ users: User[] | null, message: string }> {
     try {
-      const cachedUsers = await this.cacheManager.get<User[]>('all_users');
-
-      if (cachedUsers) {
-        const response = {
-          users: cachedUsers,
-          message: process.env.SUCCESS_MESSAGE,
-        };
-
-        return response;
-      }
-
       const users = await this.userRepository.find({ where: { isDeleted: false } });
 
-      if (users?.length > 0) {
-        await this.cacheManager.set('all_users', users, 3600000);
-      }
-
       if (!users) {
-        throw new Error(process.env.NOT_FOUND_MESSAGE);
+        return {
+          users: null,
+          message: 'users not found',
+        };
       }
 
       const response = {
         users: users,
-        message: process.env.SUCCESS_MESSAGE,
+        message: 'users found',
       };
 
       return response;
 
     } catch (error) {
-      throw new HttpException(error?.message, HttpStatus.INTERNAL_SERVER_ERROR);
+      const response = {
+        message: error?.message,
+        users: null
+      }
+
+      return response;
     }
   }
 
-  async findOne(searchParameter: string): Promise<SingularSearchResponse> {
+  async findOne(searchParameter: string): Promise<{ user: User | null, message: string }> {
     try {
       const user = await this.userRepository.findOne({
         where: [
@@ -81,21 +75,29 @@ export class UserService {
       });
 
       if (!user) {
-        throw new Error(process.env.NOT_FOUND_MESSAGE);
+        return {
+          user: null,
+          message: 'user not found',
+        };
       }
 
       const response = {
         user: user,
-        message: process.env.SUCCESS_MESSAGE,
+        message: 'user found',
       };
 
       return response;
     } catch (error) {
-      throw new HttpException(error?.message, HttpStatus.INTERNAL_SERVER_ERROR);
+      const response = {
+        message: error?.message,
+        user: null
+      }
+
+      return response;
     }
   }
 
-  async update(referenceCode: number, updateUserDto: UpdateUserDto) {
+  async update(referenceCode: number, updateUserDto: UpdateUserDto): Promise<{ message: string }> {
     try {
       await this.userRepository.update(referenceCode, updateUserDto);
 
@@ -103,20 +105,24 @@ export class UserService {
         where: { userReferenceCode: referenceCode.toString(), isDeleted: false }
       });
 
-      await this.cacheManager.del('all_users');
-
       if (!updatedUser) {
-        throw new Error(process.env.NOT_FOUND_MESSAGE);
+        return {
+          message: 'user not found',
+        };
       }
 
       const response = {
-        message: process.env.SUCCESS_MESSAGE,
+        message: 'user updated',
       };
 
       return response;
 
     } catch (error) {
-      throw new HttpException(error?.message, HttpStatus.INTERNAL_SERVER_ERROR);
+      const response = {
+        message: error?.message,
+      }
+
+      return response;
     }
   }
 
@@ -135,15 +141,17 @@ export class UserService {
         { isDeleted: true }
       );
 
-      await this.cacheManager.del('all_users');
-
       const response = {
         message: process.env.SUCCESS_MESSAGE,
       };
 
       return response;
     } catch (error) {
-      throw new Error(error?.message);
+      const response = {
+        message: error?.message,
+      }
+
+      return response;
     }
   }
 
@@ -177,9 +185,9 @@ export class UserService {
     }, timeUntilExpiry);
   }
 
-  async restore(referenceCode: number) {
+  async restore(referenceCode: number): Promise<{ message: string }> {
     try {
-      const user = await this.userRepository.update(
+      await this.userRepository.update(
         { userReferenceCode: referenceCode.toString() },
         {
           isDeleted: false,
@@ -187,16 +195,17 @@ export class UserService {
         }
       );
 
-      await this.cacheManager.del('all_users');
-
       const response = {
-        message: process.env.SUCCESS_MESSAGE,
-        data: user
+        message: 'user restored',
       };
 
       return response;
     } catch (error) {
-      throw new Error(error?.message);
+      const response = {
+        message: error?.message,
+      }
+
+      return response;
     }
   }
 }

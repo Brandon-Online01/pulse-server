@@ -20,7 +20,11 @@ import { TrackingModule } from './tracking/tracking.module';
 import { DocsModule } from './docs/docs.module';
 import { ClaimsModule } from './claims/claims.module';
 import { Claim } from './claims/entities/claim.entity';
-
+import { Doc } from './docs/entities/doc.entity';
+import { LeadsModule } from './leads/leads.module';
+import { Lead } from './leads/entities/lead.entity';
+import { JournalModule } from './journal/journal.module';
+import { Journal } from './journal/entities/journal.entity';
 @Module({
   imports: [
     EventEmitterModule.forRoot(),
@@ -35,7 +39,16 @@ import { Claim } from './claims/entities/claim.entity';
       username: process.env.DATABASE_USER,
       password: process.env.DATABASE_PASSWORD,
       database: process.env.DATABASE_NAME,
-      entities: [User, UserProfile, UserEmployeementProfile, Attendance, Claim],
+      entities: [
+        User,
+        UserProfile,
+        UserEmployeementProfile,
+        Attendance,
+        Claim,
+        Doc,
+        Lead,
+        Journal,
+      ],
       synchronize: true,
       retryAttempts: 50,
       retryDelay: 2000,
@@ -50,6 +63,8 @@ import { Claim } from './claims/entities/claim.entity';
     TrackingModule,
     DocsModule,
     ClaimsModule,
+    LeadsModule,
+    JournalModule,
   ],
   controllers: [],
   providers: [

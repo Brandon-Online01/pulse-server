@@ -6,9 +6,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { MulterModule } from '@nestjs/platform-express';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Doc]), MulterModule.register({
-    dest: './uploads',
-  })],
+  imports: [
+    TypeOrmModule.forFeature([Doc])
+  ],
   controllers: [DocsController],
   providers: [DocsService],
   exports: [DocsService]
