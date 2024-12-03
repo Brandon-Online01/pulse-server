@@ -1,4 +1,5 @@
-import { Column, CreateDateColumn, Entity, ObjectIdColumn, UpdateDateColumn } from 'typeorm';
+import { User } from 'src/user/entities/user.entity';
+import { Column, CreateDateColumn, Entity, ManyToOne, ObjectIdColumn, UpdateDateColumn } from 'typeorm';
 
 @Entity('docs')
 export class Doc {
@@ -38,9 +39,6 @@ export class Doc {
     @Column({ nullable: true })
     extension?: string;
 
-    @Column({ nullable: true })
-    owner?: string;
-
     @Column({ type: 'simple-array', nullable: true })
     sharedWith?: string[];
 
@@ -64,4 +62,8 @@ export class Doc {
 
     @Column({ nullable: true })
     updatedBy?: string;
+
+    // relations
+    @ManyToOne(() => User, (user) => user?.userDocs)
+    owner: User;
 }

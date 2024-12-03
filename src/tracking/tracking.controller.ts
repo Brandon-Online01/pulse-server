@@ -12,35 +12,35 @@ export class TrackingController {
 
   @Post()
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
-  @ApiOperation({ summary: 'Create a new tracking record' })
+  @ApiOperation({ summary: 'create a new tracking record' })
   create(@Body() createTrackingDto: CreateTrackingDto) {
     return this.trackingService.create(createTrackingDto);
   }
 
   @Get()
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
-  @ApiOperation({ summary: 'Get all tracking records' })
+  @ApiOperation({ summary: 'get all tracking records' })
   findAll() {
     return this.trackingService.findAll();
   }
 
   @Get(':referenceCode')
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
-  @ApiOperation({ summary: 'Get a tracking record by reference code' })
+  @ApiOperation({ summary: 'get a tracking record by reference code' })
   findOne(@Param('referenceCode') referenceCode: number) {
     return this.trackingService.findOne(referenceCode);
   }
 
   @Delete(':referenceCode')
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
-  @ApiOperation({ summary: 'Delete a tracking record by reference code' })
+  @ApiOperation({ summary: 'soft delete a tracking record by reference code' })
   remove(@Param('referenceCode') referenceCode: number) {
     return this.trackingService.remove(referenceCode);
   }
 
   @Patch('/restore/:referenceCode')
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
-  @ApiOperation({ summary: 'Restore a deleted tracking record by reference code' })
+  @ApiOperation({ summary: 'restore a deleted tracking record by reference code' })
   restore(@Param('referenceCode') referenceCode: number) {
     return this.trackingService.restore(referenceCode);
   }

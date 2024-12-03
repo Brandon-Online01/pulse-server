@@ -74,6 +74,7 @@ export class Attendance {
     @Column({ nullable: true })
     employeeReferenceCode: string;
 
-    @ManyToOne(() => User, (user) => user?.attendances)
-    employee: User;
+    // relations
+    @ManyToOne(() => User, (user) => user?.userAttendances)
+    owner: User;
 }

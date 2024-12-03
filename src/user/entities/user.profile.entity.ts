@@ -1,13 +1,11 @@
 import { Gender } from "src/lib/types/user";
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { User } from "./user.entity";
 
 @Entity('user_profile')
 export class UserProfile {
     @PrimaryGeneratedColumn()
     uid: number;
-
-    @Column({ nullable: false })
-    userReferenceCode: string;
 
     @Column({ nullable: true })
     height: string;
@@ -80,4 +78,8 @@ export class UserProfile {
 
     @Column({ nullable: true })
     coatSize: string;
+
+    //relationships
+    @OneToOne(() => User, (user) => user?.userProfile)
+    owner: User;
 }   

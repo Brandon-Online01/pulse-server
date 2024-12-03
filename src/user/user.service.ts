@@ -29,7 +29,7 @@ export class UserService {
 
       return response;
     } catch (error) {
-      throw new Error(error);
+      throw new Error(error?.message);
     }
   }
 
@@ -52,9 +52,13 @@ export class UserService {
         await this.cacheManager.set('all_users', users, 3600000);
       }
 
+      if (!users) {
+        throw new Error(process.env.NOT_FOUND_MESSAGE);
+      }
+
       const response = {
-        users: users || null,
-        message: users ? process.env.SUCCESS_MESSAGE : 'users not found',
+        users: users,
+        message: process.env.SUCCESS_MESSAGE,
       };
 
       return response;
@@ -76,9 +80,13 @@ export class UserService {
         ]
       });
 
+      if (!user) {
+        throw new Error(process.env.NOT_FOUND_MESSAGE);
+      }
+
       const response = {
-        user: user || null,
-        message: user ? process.env.SUCCESS_MESSAGE : 'user not found',
+        user: user,
+        message: process.env.SUCCESS_MESSAGE,
       };
 
       return response;
@@ -97,8 +105,12 @@ export class UserService {
 
       await this.cacheManager.del('all_users');
 
+      if (!updatedUser) {
+        throw new Error(process.env.NOT_FOUND_MESSAGE);
+      }
+
       const response = {
-        message: updatedUser ? process.env.SUCCESS_MESSAGE : 'user not found',
+        message: process.env.SUCCESS_MESSAGE,
       };
 
       return response;
@@ -115,7 +127,7 @@ export class UserService {
       });
 
       if (!user) {
-        throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+        throw new Error(process.env.NOT_FOUND_MESSAGE);
       };
 
       await this.userRepository.update(
@@ -131,7 +143,7 @@ export class UserService {
 
       return response;
     } catch (error) {
-      throw new HttpException(error?.message, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new Error(error?.message);
     }
   }
 
@@ -148,10 +160,7 @@ export class UserService {
 
       this.schedulePendingUserCleanup(userData?.email, userData?.tokenExpires);
     } catch (error) {
-      throw new HttpException(
-        'Failed to create pending user',
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
+      throw new Error(error?.message);
     }
   }
 
@@ -187,7 +196,7 @@ export class UserService {
 
       return response;
     } catch (error) {
-      throw new HttpException(error?.message, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new Error(error?.message);
     }
   }
 }

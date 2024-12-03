@@ -1,18 +1,10 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from "typeorm";
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToOne } from "typeorm";
+import { User } from "./user.entity";
 
 @Entity('user_employeement_profile')
 export class UserEmployeementProfile {
-    @PrimaryGeneratedColumn('uuid')
+    @PrimaryGeneratedColumn()
     uid: string;
-
-    @Column({ nullable: true })
-    branchReferenceCode: string;
-
-    @Column({ nullable: true })
-    position: string;
-
-    @Column({ nullable: true })
-    department: string;
 
     @Column({ nullable: true })
     startDate: Date;
@@ -20,8 +12,20 @@ export class UserEmployeementProfile {
     @Column({ nullable: true })
     endDate: Date;
 
-    @Column({ default: true })
-    isCurrentlyEmployed: boolean;
+    @CreateDateColumn()
+    createdAt: Date;
+
+    @UpdateDateColumn()
+    updatedAt: Date;
+
+    @Column({ nullable: true })
+    branchReferenceCode: string;
+
+    @Column({ nullable: true })
+    department: string; F
+
+    @Column({ nullable: true })
+    position: string;
 
     @Column({ nullable: true })
     email: string;
@@ -29,9 +33,10 @@ export class UserEmployeementProfile {
     @Column({ nullable: true })
     contactNumber: string;
 
-    @CreateDateColumn()
-    createdAt: Date;
+    @Column({ default: true })
+    isCurrentlyEmployed: boolean;
 
-    @UpdateDateColumn()
-    updatedAt: Date;
+    //relationships
+    @OneToOne(() => User, (user) => user?.userEmployeementProfile)
+    owner: User;
 }

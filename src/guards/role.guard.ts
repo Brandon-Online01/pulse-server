@@ -10,7 +10,6 @@ export class RoleGuard implements CanActivate {
     ) { }
 
     canActivate(context: ExecutionContext): boolean {
-        // First check if route is marked as public
         const isPublic = this.reflector.getAllAndOverride<boolean>(
             'isPublic',
             [context.getHandler(), context.getClass()]
@@ -34,15 +33,13 @@ export class RoleGuard implements CanActivate {
             const user = request.user;
 
             if (!user?.role) {
-                throw new UnauthorizedException('access denied - no role information');
+                throw new UnauthorizedException('access denied');
             }
 
             const hasRequiredRole = requiredRoles.some((role) => role === user.role);
 
             if (!hasRequiredRole) {
-                throw new UnauthorizedException(
-                    `access denied - user ${user.username || 'unknown'} with role ${user.role} is not authorized. required roles: ${requiredRoles.join(', ')}`
-                );
+                throw new UnauthorizedException(`access denied`);
             }
 
             return true;

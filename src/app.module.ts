@@ -18,6 +18,8 @@ import { APP_GUARD } from '@nestjs/core';
 import { RoleGuard } from './guards/role.guard';
 import { TrackingModule } from './tracking/tracking.module';
 import { DocsModule } from './docs/docs.module';
+import { ClaimsModule } from './claims/claims.module';
+import { Claim } from './claims/entities/claim.entity';
 
 @Module({
   imports: [
@@ -33,7 +35,7 @@ import { DocsModule } from './docs/docs.module';
       username: process.env.DATABASE_USER,
       password: process.env.DATABASE_PASSWORD,
       database: process.env.DATABASE_NAME,
-      entities: [User, UserProfile, UserEmployeementProfile, Attendance],
+      entities: [User, UserProfile, UserEmployeementProfile, Attendance, Claim],
       synchronize: true,
       retryAttempts: 50,
       retryDelay: 2000,
@@ -47,6 +49,7 @@ import { DocsModule } from './docs/docs.module';
     AttendanceModule,
     TrackingModule,
     DocsModule,
+    ClaimsModule,
   ],
   controllers: [],
   providers: [

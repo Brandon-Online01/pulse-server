@@ -6,6 +6,8 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, Upl
 import { FileInterceptor } from '@nestjs/platform-express';
 import { isPublic } from 'src/decorators/public.decorator';
 import { extname } from 'path';
+import { Roles } from 'src/decorators/role.decorator';
+import { AccessLevel } from 'src/lib/enums/enums';
 
 @ApiTags('docs')
 @Controller('docs')
@@ -13,31 +15,36 @@ export class DocsController {
   constructor(private readonly docsService: DocsService) { }
 
   @Post()
-  @ApiOperation({ summary: 'Create a new document' })
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
+  @ApiOperation({ summary: 'create a new document' })
   create(@Body() createDocDto: CreateDocDto) {
     return this.docsService.create(createDocDto);
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all documents' })
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
+  @ApiOperation({ summary: 'get all documents' })
   findAll() {
     return this.docsService.findAll();
   }
 
   @Get(':referenceCode')
-  @ApiOperation({ summary: 'Get a document by reference code' })
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
+  @ApiOperation({ summary: 'get a document by reference code' })
   findOne(@Param('referenceCode') referenceCode: number) {
     return this.docsService.findOne(referenceCode);
   }
 
   @Patch(':referenceCode')
-  @ApiOperation({ summary: 'Update a document by reference code' })
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
+  @ApiOperation({ summary: 'update a document by reference code' })
   update(@Param('referenceCode') referenceCode: number, @Body() updateDocDto: UpdateDocDto) {
     return this.docsService.update(referenceCode, updateDocDto);
   }
 
   @Delete(':referenceCode')
-  @ApiOperation({ summary: 'Delete a document by reference code' })
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
+  @ApiOperation({ summary: 'soft delete a document by reference code' })
   remove(@Param('referenceCode') referenceCode: number) {
     return this.docsService.remove(referenceCode);
   }
@@ -46,7 +53,7 @@ export class DocsController {
   //file upload
   @Post('/upload-file')
   @isPublic()
-  @ApiOperation({ summary: 'Upload an file to a storage bucket in google cloud storage' })
+  @ApiOperation({ summary: 'upload an file to a storage bucket in google cloud storage' })
   @UseInterceptors(
     FileInterceptor('file', {
       fileFilter: (req, file, cb) => {
@@ -76,7 +83,7 @@ export class DocsController {
 
   @Post('/remove-file/:referenceCode')
   @isPublic()
-  @ApiOperation({ summary: 'Delete an file from a storage bucket in google cloud storage' })
+  @ApiOperation({ summary: 'soft delete an file from a storage bucket in google cloud storage' })
   async deleteFromBucket(@Param('referenceCode') referenceCode: string) {
     return this.docsService.deleteFromBucket(referenceCode);
   }

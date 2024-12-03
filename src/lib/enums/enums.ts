@@ -38,3 +38,12 @@ export enum AttendanceStatus {
     EXCUSED = 'excused',
     COMPLETED = 'completed',
 }
+
+export enum ClaimStatus {
+    PENDING = 'pending',
+    APPROVED = 'approved',
+    REJECTED = 'rejected',
+    PAID = 'paid',
+    DELETED = 'deleted',
+    DECLINED = 'declined',
+}

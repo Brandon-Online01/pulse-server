@@ -12,8 +12,8 @@ async function bootstrap() {
 	});
 
 	const config = new DocumentBuilder()
-		.setTitle('Loro HR API Playground')
-		.setDescription('API Playground for Loro HR')
+		.setTitle('API Playground')
+		.setDescription('API Playground')
 		.setVersion('1.0')
 		.build();
 

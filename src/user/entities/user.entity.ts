@@ -3,6 +3,8 @@ import { Column, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn
 import { UserProfile } from './user.profile.entity';
 import { UserEmployeementProfile } from './user.employeement.profile.entity';
 import { Attendance } from 'src/attendance/entities/attendance.entity';
+import { Claim } from 'src/claims/entities/claim.entity';
+import { Doc } from 'src/docs/entities/doc.entity';
 
 @Entity('user')
 export class User {
@@ -61,15 +63,22 @@ export class User {
     @Column({ nullable: false })
     userReferenceCode: string;
 
-    @OneToOne(() => UserProfile)
+
+    //relationships
+    @OneToOne(() => UserProfile, (userProfile) => userProfile?.owner)
     @JoinColumn()
-    profile: UserProfile;
+    userProfile: UserProfile;
 
-    @OneToOne(() => UserEmployeementProfile)
+    @OneToOne(() => UserEmployeementProfile, (userEmployeementProfile) => userEmployeementProfile?.owner)
     @JoinColumn()
-    employeementProfile: UserEmployeementProfile;
+    userEmployeementProfile: UserEmployeementProfile;
 
-    @OneToMany(() => Attendance, (attendance) => attendance?.employee)
-    attendances: Attendance[];
+    @OneToMany(() => Attendance, (attendance) => attendance?.owner)
+    userAttendances: Attendance[];
 
+    @OneToMany(() => Claim, (claim) => claim?.owner)
+    userClaims: Claim[];
+
+    @OneToMany(() => Doc, (doc) => doc?.owner)
+    userDocs: Doc[];
 }
