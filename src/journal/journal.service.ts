@@ -17,7 +17,7 @@ export class JournalService {
       const journal = this.journalRepository.create({
         ...createJournalDto,
         timestamp: createJournalDto.timestamp || new Date(),
-        owner: { uid: parseInt(createJournalDto.ownerId) }
+        owner: createJournalDto.owner
       });
 
       await this.journalRepository.save(journal);

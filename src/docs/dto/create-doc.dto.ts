@@ -91,12 +91,12 @@ export class CreateDocDto {
     extension?: string;
 
     @IsOptional()
-    @IsString()
+    @IsObject()
     @ApiProperty({
         description: 'Owner of the document',
-        example: 'user_uid'
+        example: { uid: 1 }
     })
-    owner?: string;
+    owner?: { uid: number };
 
     @IsOptional()
     @IsArray()
@@ -147,20 +147,20 @@ export class CreateDocDto {
     lastAccessedAt?: Date;
 
     @IsOptional()
-    @IsString()
+    @IsObject()
     @ApiProperty({
         description: 'Created by of the document',
-        example: 'user_uid'
+        example: { uid: 1 }
     })
-    createdBy?: string;
+    createdBy?: { uid: number };
 
     @IsOptional()
-    @IsString()
+    @IsObject()
     @ApiProperty({
         description: 'Updated by of the document',
-        example: 'user_uid'
+        example: { uid: 1 }
     })
-    updatedBy?: string;
+    updatedBy?: { uid: number };
 
     @IsOptional()
     @IsString()
@@ -169,4 +169,12 @@ export class CreateDocDto {
         example: 'https://example.com/document.pdf'
     })
     fileUrl?: string;
+
+    @IsNotEmpty()
+    @IsObject()
+    @ApiProperty({
+        example: { uid: 1 },
+        description: 'The branch reference code of the document'
+    })
+    branch: { uid: number };
 }

@@ -6,7 +6,7 @@ import { User } from './entities/user.entity';
 import { UserProfile } from './entities/user.profile.entity';
 import { UserEmployeementProfile } from './entities/user.employeement.profile.entity';
 import { CacheModule } from '@nestjs/cache-manager';
-import { redisConfig } from 'src/config/redis.config';
+import { redisConfig } from '../config/redis.config';
 
 @Module({
   imports: [

@@ -2,48 +2,51 @@ import { DocsService } from './docs.service';
 import { CreateDocDto } from './dto/create-doc.dto';
 import { UpdateDocDto } from './dto/update-doc.dto';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFile, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFile, NotFoundException, BadRequestException, UseGuards } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { isPublic } from 'src/decorators/public.decorator';
+import { isPublic } from '../decorators/public.decorator';
 import { extname } from 'path';
-import { Roles } from 'src/decorators/role.decorator';
-import { AccessLevel } from 'src/lib/enums/enums';
+import { Roles } from '../decorators/role.decorator';
+import { AccessLevel } from '../lib/enums/enums';
+import { RoleGuard } from '../guards/role.guard';
+import { AuthGuard } from '../guards/auth.guard';
 
 @ApiTags('docs')
 @Controller('docs')
+@UseGuards(RoleGuard, AuthGuard)
 export class DocsController {
   constructor(private readonly docsService: DocsService) { }
 
   @Post()
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'create a new document' })
   create(@Body() createDocDto: CreateDocDto) {
     return this.docsService.create(createDocDto);
   }
 
   @Get()
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get all documents' })
   findAll() {
     return this.docsService.findAll();
   }
 
   @Get(':referenceCode')
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get a document by reference code' })
   findOne(@Param('referenceCode') referenceCode: number) {
     return this.docsService.findOne(referenceCode);
   }
 
   @Patch(':referenceCode')
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'update a document by reference code' })
   update(@Param('referenceCode') referenceCode: number, @Body() updateDocDto: UpdateDocDto) {
     return this.docsService.update(referenceCode, updateDocDto);
   }
 
   @Delete(':referenceCode')
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'soft delete a document by reference code' })
   remove(@Param('referenceCode') referenceCode: number) {
     return this.docsService.remove(referenceCode);

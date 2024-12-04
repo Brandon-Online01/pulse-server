@@ -40,7 +40,9 @@ export class AuthService {
 				...restOfUser
 			};
 
-			const payload = { uid: uid.toString(), accessLevel };
+			const tokenRole = accessLevel?.toLowerCase();
+
+			const payload = { uid: uid?.toString(), role: tokenRole };
 
 			const accessToken = await this.jwtService.signAsync(payload, { expiresIn: `${process.env.JWT_ACCESS_EXPIRES_IN}` });
 			const refreshToken = await this.jwtService.signAsync(payload, { expiresIn: `${process.env.JWT_REFRESH_EXPIRES_IN}` });

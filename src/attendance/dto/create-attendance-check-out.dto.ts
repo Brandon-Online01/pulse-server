@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString, IsNumber, IsDate, IsDecimal } from 'class-validator';
+import { IsOptional, IsString, IsNumber, IsDate, IsDecimal, IsObject, IsNotEmpty } from 'class-validator';
 
 export class CreateCheckOutDto {
     @IsDate()
@@ -64,11 +64,11 @@ export class CreateCheckOutDto {
     })
     checkOutDeviceMacAddress?: string;
 
-    @IsString()
+    @IsNotEmpty()
+    @IsObject()
     @ApiProperty({
-        type: String,
-        required: true,
-        example: 'EMP123'
+        example: { uid: 1 },
+        description: 'The owner reference code of the attendance check out'
     })
-    employeeReferenceCode: string;
+    owner: { uid: number };
 } 

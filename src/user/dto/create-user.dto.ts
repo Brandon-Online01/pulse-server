@@ -2,7 +2,7 @@ import { ApiProperty } from "@nestjs/swagger";
 import { AccessLevel, Status } from "src/lib/enums/enums";
 import { CreateUserProfileDto } from './create-user-profile.dto';
 import { CreateUserEmploymentProfileDto } from './create-user-employment-profile.dto';
-import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, IsBoolean } from "class-validator";
+import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, IsBoolean, IsObject } from "class-validator";
 
 export class CreateUserDto {
     @IsNotEmpty()
@@ -111,4 +111,12 @@ export class CreateUserDto {
         type: () => CreateUserEmploymentProfileDto
     })
     employmentProfile?: CreateUserEmploymentProfileDto;
+
+    @IsNotEmpty()
+    @IsObject()
+    @ApiProperty({
+        example: { uid: 1 },
+        description: 'The branch reference code of the user'
+    })
+    branch: { uid: number };
 }

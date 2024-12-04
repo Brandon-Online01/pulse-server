@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsEmail, IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
-import { Status } from "src/lib/enums/enums";
+import { IsEmail, IsNotEmpty, IsNumber, IsObject, IsOptional, IsString } from "class-validator";
+import { Status } from "../../lib/enums/enums";
 
 export class CreateLeadDto {
     @IsNotEmpty()
@@ -52,10 +52,18 @@ export class CreateLeadDto {
     isDeleted: boolean;
 
     @IsNotEmpty()
-    @IsNumber()
+    @IsObject()
     @ApiProperty({
-        description: 'User reference code of the lead owner',
-        example: 1,
+        description: 'The owner reference code of the lead',
+        example: { uid: 1 },
     })
-    owner: number;
+    owner: { uid: number };
+
+    @IsNotEmpty()
+    @IsObject()
+    @ApiProperty({
+        example: { uid: 1 },
+        description: 'The branch reference code of the lead'
+    })
+    branch: { uid: number };
 }

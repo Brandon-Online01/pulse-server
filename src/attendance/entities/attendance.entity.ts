@@ -1,5 +1,6 @@
-import { AttendanceStatus } from 'src/lib/enums/enums';
-import { User } from 'src/user/entities/user.entity';
+import { Branch } from '../../branch/entities/branch.entity';
+import { AttendanceStatus } from '../../lib/enums/enums';
+import { User } from '../../user/entities/user.entity';
 import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne } from 'typeorm';
 
 @Entity('attendance')
@@ -71,10 +72,10 @@ export class Attendance {
     @Column({ nullable: true })
     checkOutDeviceMacAddress: string;
 
-    @Column({ nullable: true })
-    employeeReferenceCode: string;
-
     // relations
     @ManyToOne(() => User, (user) => user?.userAttendances)
     owner: User;
+
+    @ManyToOne(() => Branch, (branch) => branch?.attendances)
+    branch: Branch;
 }

@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsNotEmpty, IsString, IsDate, IsOptional } from "class-validator";
+import { IsNotEmpty, IsString, IsDate, IsOptional, IsObject } from "class-validator";
 
 export class CreateJournalDto {
     @IsNotEmpty()
@@ -27,10 +27,18 @@ export class CreateJournalDto {
     timestamp?: Date;
 
     @IsNotEmpty()
-    @IsString()
+    @IsObject()
     @ApiProperty({
-        description: 'ID of the owner (user)',
-        example: '1',
+        description: 'The owner reference code of the journal',
+        example: { uid: 1 },
     })
-    ownerId: string;
+    owner: { uid: number };
+
+    @IsNotEmpty()
+    @IsObject()
+    @ApiProperty({
+        example: { uid: 1 },
+        description: 'The branch reference code of the journal'
+    })
+    branch: { uid: number };
 }

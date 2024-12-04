@@ -6,10 +6,11 @@ import { RoleGuard } from '../guards/role.guard';
 import { Roles } from '../decorators/role.decorator';
 import { AccessLevel } from '../lib/enums/enums';
 import { UpdateJournalDto } from './dto/update-journal.dto';
+import { AuthGuard } from '../guards/auth.guard';
 
 @ApiTags('journal')
 @Controller('journal')
-@UseGuards(RoleGuard)
+@UseGuards(RoleGuard, AuthGuard)
 export class JournalController {
   constructor(private readonly journalService: JournalService) { }
 

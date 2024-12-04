@@ -1,4 +1,6 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn, Point, DeleteDateColumn } from 'typeorm';
+import { User } from 'src/user/entities/user.entity';
+import { Branch } from '../../branch/entities/branch.entity';
+import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn, Point, DeleteDateColumn, ManyToOne } from 'typeorm';
 
 @Entity('tracking')
 export class Tracking {
@@ -59,4 +61,10 @@ export class Tracking {
 
     @Column({ nullable: true })
     deletedBy?: string;
+
+    @ManyToOne(() => Branch, (branch) => branch?.trackings)
+    branch: Branch;
+
+    @ManyToOne(() => User, (user) => user?.trackings)
+    owner: User;
 }

@@ -7,6 +7,10 @@ import { Claim } from 'src/claims/entities/claim.entity';
 import { Doc } from 'src/docs/entities/doc.entity';
 import { Lead } from 'src/leads/entities/lead.entity';
 import { Journal } from 'src/journal/entities/journal.entity';
+import { Task } from 'src/tasks/entities/task.entity';
+import { News } from 'src/news/entities/news.entity';
+import { Asset } from 'src/assets/entities/asset.entity';
+import { Tracking } from 'src/tracking/entities/tracking.entity';
 
 @Entity('user')
 export class User {
@@ -89,4 +93,16 @@ export class User {
 
     @OneToMany(() => Journal, (journal) => journal?.owner)
     journals: Journal[];
+
+    @OneToMany(() => Task, (task) => task?.owner)
+    tasks: Task[];
+
+    @OneToMany(() => News, (news) => news?.author)
+    articles: News[];
+
+    @OneToMany(() => Asset, (asset) => asset?.owner)
+    assets: Asset[];
+
+    @OneToMany(() => Tracking, (tracking) => tracking?.owner)
+    trackings: Tracking[];
 }

@@ -15,9 +15,6 @@ export enum Status {
     BANNED = 'banned',
     DEACTIVATED = 'deactivated',
 
-    COMPLETED = 'completed',
-    PENDING = 'pending',
-    CANCELLED = 'cancelled',
     EXPIRED = 'expired',
 
     PAID = 'paid',
@@ -28,6 +25,13 @@ export enum Status {
     DRIVING = 'driving',
     PARKING = 'parking',
     STOPPED = 'stopped',
+
+    POSTPONED = 'postponed',
+    MISSED = 'missed',
+    COMPLETED = 'completed',
+    CANCELLED = 'cancelled',
+    PENDING = 'pending',
+    INPROGRESS = 'inprogress',
 }
 
 
@@ -46,4 +50,15 @@ export enum ClaimStatus {
     PAID = 'paid',
     DELETED = 'deleted',
     DECLINED = 'declined',
+}
+
+export enum TaskType {
+    CALL = 'call',
+    MEETING = 'meeting',
+    INPERSON = 'inperson',
+    ONLINE = 'online',
+    SUPPORT = 'support',
+    INSPECTION = 'inspection',
+    REVIEW = 'review',
+    OTHER = 'other',
 }

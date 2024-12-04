@@ -19,7 +19,7 @@ export class DocsService {
 
   async create(createDocDto: CreateDocDto) {
     try {
-      const doc = this.docsRepository.create(createDocDto as DeepPartial<Doc>);
+      const doc = this.docsRepository.create(createDocDto as unknown as DeepPartial<Doc>);
       await this.docsRepository.save(doc);
 
       const response = {
@@ -59,7 +59,7 @@ export class DocsService {
   async findOne(referenceCode: number): Promise<{ doc: Doc | null, message: string }> {
     try {
       const doc = await this.docsRepository.findOneBy({
-        uid: referenceCode.toString()
+        uid: referenceCode
       });
 
       const response = {
@@ -80,7 +80,7 @@ export class DocsService {
 
   async update(referenceCode: number, updateDocDto: UpdateDocDto): Promise<{ message: string }> {
     try {
-      await this.docsRepository.update(referenceCode, updateDocDto as DeepPartial<Doc>);
+      await this.docsRepository.update(referenceCode, updateDocDto as unknown as DeepPartial<Doc>);
 
       const response = {
         message: 'doc updated',

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
-import { User } from 'src/user/entities/user.entity';
+import { User } from '../user/entities/user.entity';
 import * as nodemailer from 'nodemailer';
 import { ConfigService } from '@nestjs/config';
 

@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsString, IsOptional, IsNumber, IsBoolean, IsObject } from "class-validator";
+import { IsString, IsOptional, IsNumber, IsBoolean, IsObject, IsNotEmpty } from "class-validator";
 import { Point } from "typeorm";
 
 export class CreateTrackingDto {
@@ -125,4 +125,21 @@ export class CreateTrackingDto {
         required: false,
     })
     metadata?: Record<string, any>;
+
+    @IsNotEmpty()
+    @IsObject()
+    @ApiProperty({
+        example: { uid: 1 },
+        description: 'The branch reference code of the tracking'
+    })
+    branch: { uid: number };
+
+    @IsNotEmpty()
+    @IsString()
+    @ApiProperty({
+        description: 'The owner reference code of the journal',
+        example: { uid: 1 },
+    })
+    owner: { uid: number };
+
 }

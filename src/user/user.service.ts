@@ -1,12 +1,12 @@
 import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
-import { Status } from 'src/lib/enums/enums';
+import { Status } from '../lib/enums/enums';
 import { User } from './entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Injectable } from '@nestjs/common';
-import { NewSignUp } from 'src/lib/types/user';
+import { NewSignUp } from '../lib/types/user';
 
 @Injectable()
 export class UserService {

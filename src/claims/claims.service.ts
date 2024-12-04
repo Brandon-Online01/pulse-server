@@ -3,7 +3,7 @@ import { CreateClaimDto } from './dto/create-claim.dto';
 import { UpdateClaimDto } from './dto/update-claim.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Claim } from './entities/claim.entity';
-import { IsNull, Repository, Not } from 'typeorm';
+import { IsNull, Repository, Not, DeepPartial } from 'typeorm';
 
 @Injectable()
 export class ClaimsService {
@@ -14,7 +14,7 @@ export class ClaimsService {
 
   async create(createClaimDto: CreateClaimDto) {
     try {
-      const claim = this.claimsRepository.create(createClaimDto);
+      const claim = this.claimsRepository.create(createClaimDto as unknown as DeepPartial<Claim>);
 
       await this.claimsRepository.save(claim);
 
@@ -77,7 +77,7 @@ export class ClaimsService {
 
   async update(referenceCode: number, updateClaimDto: UpdateClaimDto) {
     try {
-      await this.claimsRepository.update(referenceCode, updateClaimDto);
+      await this.claimsRepository.update(referenceCode, updateClaimDto as unknown as DeepPartial<Claim>);
 
       const response = {
         message: process.env.SUCCESS_MESSAGE,

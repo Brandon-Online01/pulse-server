@@ -1,10 +1,11 @@
-import { User } from 'src/user/entities/user.entity';
+import { Branch } from '../../branch/entities/branch.entity';
+import { User } from '../../user/entities/user.entity';
 import { Column, CreateDateColumn, Entity, ManyToOne, ObjectIdColumn, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 
 @Entity('docs')
 export class Doc {
     @PrimaryGeneratedColumn()
-    uid: string;
+    uid: number;
 
     @Column()
     title: string;
@@ -66,4 +67,7 @@ export class Doc {
     // relations
     @ManyToOne(() => User, (user) => user?.userDocs)
     owner: User;
+
+    @ManyToOne(() => Branch, (branch) => branch?.docs)
+    branch: Branch;
 }

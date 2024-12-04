@@ -10,8 +10,6 @@ import { CommunicationModule } from './communication/communication.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { UserProfile } from './user/entities/user.profile.entity';
 import { UserEmployeementProfile } from './user/entities/user.employeement.profile.entity';
-import { CacheModule } from '@nestjs/cache-manager';
-import { redisConfig } from './config/redis.config';
 import { AttendanceModule } from './attendance/attendance.module';
 import { Attendance } from './attendance/entities/attendance.entity';
 import { APP_GUARD } from '@nestjs/core';
@@ -25,13 +23,25 @@ import { LeadsModule } from './leads/leads.module';
 import { Lead } from './leads/entities/lead.entity';
 import { JournalModule } from './journal/journal.module';
 import { Journal } from './journal/entities/journal.entity';
+import { ReportsModule } from './reports/reports.module';
+import { TasksModule } from './tasks/tasks.module';
+import { Task } from './tasks/entities/task.entity';
+import { OrganisationModule } from './organisation/organisation.module';
+import { BranchModule } from './branch/branch.module';
+import { Branch } from './branch/entities/branch.entity';
+import { Organisation } from './organisation/entities/organisation.entity';
+import { NewsModule } from './news/news.module';
+import { News } from './news/entities/news.entity';
+import { AssetsModule } from './assets/assets.module';
+import { Asset } from './assets/entities/asset.entity';
+import { Tracking } from './tracking/entities/tracking.entity';
+
 @Module({
   imports: [
     EventEmitterModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    CacheModule.register(redisConfig),
     TypeOrmModule.forRoot({
       type: 'mysql',
       host: process.env.DATABASE_HOST,
@@ -48,6 +58,12 @@ import { Journal } from './journal/entities/journal.entity';
         Doc,
         Lead,
         Journal,
+        Task,
+        Organisation,
+        Branch,
+        News,
+        Asset,
+        Tracking,
       ],
       synchronize: true,
       retryAttempts: 50,
@@ -65,6 +81,12 @@ import { Journal } from './journal/entities/journal.entity';
     ClaimsModule,
     LeadsModule,
     JournalModule,
+    ReportsModule,
+    TasksModule,
+    OrganisationModule,
+    BranchModule,
+    NewsModule,
+    AssetsModule,
   ],
   controllers: [],
   providers: [

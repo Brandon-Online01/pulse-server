@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { AttendanceStatus } from 'src/lib/enums/enums';
-import { IsEnum, IsOptional, IsString, IsNumber, IsDate } from 'class-validator';
+import { AttendanceStatus } from '../../lib/enums/enums';
+import { IsEnum, IsOptional, IsString, IsNumber, IsDate, IsObject, IsNotEmpty } from 'class-validator';
 
 export class CreateCheckInDto {
     @IsEnum(AttendanceStatus)
@@ -66,11 +66,19 @@ export class CreateCheckInDto {
     })
     checkInDeviceMacAddress?: string;
 
-    @IsString()
+    @IsNotEmpty()
+    @IsObject()
     @ApiProperty({
-        type: String,
-        required: true,
-        example: 'Employee reference code'
+        example: { uid: 1 },
+        description: 'The branch reference code of the attendance check in'
     })
-    employeeReferenceCode: string;
+    branch: { uid: number };
+
+    @IsNotEmpty()
+    @IsObject()
+    @ApiProperty({
+        example: { uid: 1 },
+        description: 'The owner reference code of the attendance check in'
+    })
+    owner: { uid: number };
 } 

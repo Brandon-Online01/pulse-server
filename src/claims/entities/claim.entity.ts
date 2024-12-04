@@ -1,3 +1,4 @@
+import { Branch } from "src/branch/entities/branch.entity";
 import { ClaimStatus } from "src/lib/enums/enums";
 import { User } from "src/user/entities/user.entity";
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
@@ -28,6 +29,9 @@ export class Claim {
     @Column({ type: 'timestamp', nullable: true })
     deletedAt: Date;
 
+    @Column({ type: 'varchar', nullable: true })
+    comments: string;
+
     @Column({ type: 'boolean', default: false })
     isDeleted: boolean;
 
@@ -37,4 +41,7 @@ export class Claim {
     //relationships
     @ManyToOne(() => User, (user) => user?.userClaims)
     owner: User;
+
+    @ManyToOne(() => Branch, (branch) => branch?.claims)
+    branch: Branch;
 }

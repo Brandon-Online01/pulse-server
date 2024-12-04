@@ -22,7 +22,8 @@ export class AttendanceService {
       checkInLongitude: checkInDto.checkInLongitude,
       checkInNotes: checkInDto.checkInNotes,
       status: checkInDto.status || AttendanceStatus.PRESENT,
-      employeeReferenceCode: checkInDto?.employeeReferenceCode
+      branch: checkInDto.branch,
+      owner: checkInDto.owner
     });
 
     await this.attendanceRepository.save(attendance);
@@ -66,7 +67,7 @@ export class AttendanceService {
     const activeShift = await this.attendanceRepository.findOne({
       where: {
         status: AttendanceStatus.PRESENT,
-        employeeReferenceCode: checkOutDto?.employeeReferenceCode,
+        owner: checkOutDto?.owner,
         checkIn: Not(IsNull()),
         checkOut: IsNull(),
       },

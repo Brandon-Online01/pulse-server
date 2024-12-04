@@ -7,27 +7,24 @@ import {
   Patch,
   Param,
   Get,
+  UseGuards,
 } from '@nestjs/common';
 import { CreateCheckInDto } from './dto/create-attendance-check-in.dto';
 import { CreateCheckOutDto } from './dto/create-attendance-check-out.dto';
-import { Roles } from 'src/decorators/role.decorator';
-import { AccessLevel } from 'src/lib/enums/enums';
+import { Roles } from '../decorators/role.decorator';
+import { AccessLevel } from '../lib/enums/enums';
 import { UpdateAttendanceDto } from './dto/update-attendance.dto';
+import { AuthGuard } from '../guards/auth.guard';
+import { RoleGuard } from '../guards/role.guard';
 
 @ApiTags('attendance')
-@Controller('att')
+@Controller('attendance')
+@UseGuards(RoleGuard, AuthGuard)
 export class AttendanceController {
   constructor(private readonly attendanceService: AttendanceService) { }
 
   @Post('in')
-  @Roles(
-    AccessLevel.ADMIN,
-    AccessLevel.MANAGER,
-    AccessLevel.SUPERVISOR,
-    AccessLevel.SUPPORT,
-    AccessLevel.DEVELOPER,
-    AccessLevel.USER
-  )
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'manage attendance, check in' })
   checkIn(
     @Body() createAttendanceDto: CreateCheckInDto) {
@@ -35,14 +32,7 @@ export class AttendanceController {
   }
 
   @Post('out')
-  @Roles(
-    AccessLevel.ADMIN,
-    AccessLevel.MANAGER,
-    AccessLevel.SUPERVISOR,
-    AccessLevel.SUPPORT,
-    AccessLevel.DEVELOPER,
-    AccessLevel.USER
-  )
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'manage attendance, check out' })
   checkOut(
     @Body() createAttendanceDto: CreateCheckOutDto) {
@@ -50,14 +40,7 @@ export class AttendanceController {
   }
 
   @Patch('/:referenceCode')
-  @Roles(
-    AccessLevel.ADMIN,
-    AccessLevel.MANAGER,
-    AccessLevel.SUPERVISOR,
-    AccessLevel.SUPPORT,
-    AccessLevel.DEVELOPER,
-    AccessLevel.USER
-  )
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'manage attendance, update attendance' })
   updateAttendance(
     @Param('referenceCode') referenceCode: number,
@@ -66,42 +49,21 @@ export class AttendanceController {
   }
 
   @Get()
-  @Roles(
-    AccessLevel.ADMIN,
-    AccessLevel.MANAGER,
-    AccessLevel.SUPERVISOR,
-    AccessLevel.SUPPORT,
-    AccessLevel.DEVELOPER,
-    AccessLevel.USER
-  )
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get all check ins' })
   allCheckIns() {
     return this.attendanceService.allCheckIns();
   }
 
   @Get('date/:date')
-  @Roles(
-    AccessLevel.ADMIN,
-    AccessLevel.MANAGER,
-    AccessLevel.SUPERVISOR,
-    AccessLevel.SUPPORT,
-    AccessLevel.DEVELOPER,
-    AccessLevel.USER
-  )
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get check ins by date' })
   checkInsByDate(@Param('date') date: string) {
     return this.attendanceService.checkInsByDate(date);
   }
 
   @Get('status/:status')
-  @Roles(
-    AccessLevel.ADMIN,
-    AccessLevel.MANAGER,
-    AccessLevel.SUPERVISOR,
-    AccessLevel.SUPPORT,
-    AccessLevel.DEVELOPER,
-    AccessLevel.USER
-  )
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get check ins by status' })
   checkInsByStatus(@Param('status') status: string) {
     return this.attendanceService.checkInsByStatus(status);
