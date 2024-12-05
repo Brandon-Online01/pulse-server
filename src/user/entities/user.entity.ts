@@ -2,15 +2,16 @@ import { AccessLevel, Status } from '../../lib/enums/enums';
 import { Column, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { UserProfile } from './user.profile.entity';
 import { UserEmployeementProfile } from './user.employeement.profile.entity';
-import { Attendance } from 'src/attendance/entities/attendance.entity';
-import { Claim } from 'src/claims/entities/claim.entity';
-import { Doc } from 'src/docs/entities/doc.entity';
-import { Lead } from 'src/leads/entities/lead.entity';
-import { Journal } from 'src/journal/entities/journal.entity';
-import { Task } from 'src/tasks/entities/task.entity';
-import { News } from 'src/news/entities/news.entity';
-import { Asset } from 'src/assets/entities/asset.entity';
-import { Tracking } from 'src/tracking/entities/tracking.entity';
+import { Attendance } from '../../attendance/entities/attendance.entity';
+import { Claim } from '../../claims/entities/claim.entity';
+import { Doc } from '../../docs/entities/doc.entity';
+import { Lead } from '../../leads/entities/lead.entity';
+import { Journal } from '../../journal/entities/journal.entity';
+import { Task } from '../../tasks/entities/task.entity';
+import { News } from '../../news/entities/news.entity';
+import { Asset } from '../../assets/entities/asset.entity';
+import { Tracking } from '../../tracking/entities/tracking.entity';
+import { Order } from '../../shop/entities/order.entity';
 
 @Entity('user')
 export class User {
@@ -69,7 +70,6 @@ export class User {
     @Column({ nullable: false })
     userReferenceCode: string;
 
-
     //relationships
     @OneToOne(() => UserProfile, (userProfile) => userProfile?.owner)
     @JoinColumn()
@@ -105,4 +105,7 @@ export class User {
 
     @OneToMany(() => Tracking, (tracking) => tracking?.owner)
     trackings: Tracking[];
+
+    @OneToMany(() => Order, (order) => order?.createdBy)
+    orders: Order[];
 }

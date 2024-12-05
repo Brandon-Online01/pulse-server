@@ -4,6 +4,7 @@ import { UpdateNewsDto } from './dto/update-news.dto';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { News } from './entities/news.entity';
+import { Status } from 'src/lib/enums/enums';
 
 @Injectable()
 export class NewsService {
@@ -12,23 +13,132 @@ export class NewsService {
     private newsRepository: Repository<News>
   ) { }
 
-  create(createNewsDto: CreateNewsDto) {
-    return 'This action adds a new news';
+  async create(createNewsDto: CreateNewsDto): Promise<{ message: string }> {
+    try {
+      const news = await this.newsRepository.save(createNewsDto);
+
+      if (!news) throw new Error(process.env.NOT_FOUND_MESSAGE);
+
+      const response = {
+        message: process.env.SUCCESS_MESSAGE,
+        data: news
+      }
+
+      return response;
+    } catch (error) {
+      const response = {
+        message: error?.message
+      }
+
+      return response;
+    }
   }
 
-  findAll() {
-    return `This action returns all news`;
+  async findAll(): Promise<{ message: string, data: News[] }> {
+    try {
+      const news = await this.newsRepository.find({ where: { isDeleted: false } });
+
+      if (!news) throw new Error(process.env.NOT_FOUND_MESSAGE);
+
+      const response = {
+        message: process.env.SUCCESS_MESSAGE,
+        data: news
+      }
+
+      return response;
+    } catch (error) {
+      const response = {
+        message: error?.message,
+        data: null
+      }
+
+      return response;
+    }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} news`;
+  async findOne(referenceCode: number): Promise<{ message: string, data: News }> {
+    try {
+      const news = await this.newsRepository.findOne({ where: { uid: referenceCode, isDeleted: false } });
+
+      if (!news) throw new Error(process.env.NOT_FOUND_MESSAGE);
+
+      const response = {
+        message: process.env.SUCCESS_MESSAGE,
+        data: news
+      }
+
+      return response;
+    } catch (error) {
+      const response = {
+        message: error?.message,
+        data: null
+      }
+
+      return response;
+    }
   }
 
-  update(id: number, updateNewsDto: UpdateNewsDto) {
-    return `This action updates a #${id} news`;
+  async update(referenceCode: number, updateNewsDto: UpdateNewsDto): Promise<{ message: string }> {
+    try {
+      const news = await this.newsRepository.update(referenceCode, updateNewsDto);
+
+      if (!news) throw new Error(process.env.NOT_FOUND_MESSAGE);
+
+      const response = {
+        message: process.env.SUCCESS_MESSAGE
+      }
+
+      return response;
+    } catch (error) {
+      const response = {
+        message: error?.message
+      }
+
+      return response;
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} news`;
+  async remove(referenceCode: number): Promise<{ message: string }> {
+    try {
+      const news = await this.newsRepository.update(referenceCode, { isDeleted: true });
+
+      if (!news) throw new Error(process.env.NOT_FOUND_MESSAGE);
+
+      const response = {
+        message: process.env.SUCCESS_MESSAGE
+      }
+
+      return response;
+    } catch (error) {
+      const response = {
+        message: error?.message
+      }
+
+      return response;
+    }
+  }
+
+  async restore(referenceCode: number): Promise<{ message: string }> {
+    try {
+      await this.newsRepository.update(
+        { uid: referenceCode },
+        {
+          isDeleted: false,
+          status: Status.ACTIVE
+        }
+      );
+
+      const response = {
+        message: process.env.SUCCESS_MESSAGE,
+      };
+
+      return response;
+    } catch (error) {
+      const response = {
+        message: error?.message,
+      }
+
+      return response;
+    }
   }
 }

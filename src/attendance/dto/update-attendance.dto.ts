@@ -46,26 +46,6 @@ export class UpdateAttendanceDto {
     })
     duration?: number;
 
-    @IsString()
-    @IsOptional()
-    @ApiProperty({
-        type: String,
-        required: false,
-        example: 'LR2*2*',
-        description: 'Unique identifier or tag associated with check-in event'
-    })
-    checkInEventTag?: string;
-
-    @IsString()
-    @IsOptional()
-    @ApiProperty({
-        type: String,
-        required: false,
-        example: 'LR2*2*',
-        description: 'Unique identifier or tag associated with check-out event'
-    })
-    checkOutEventTag?: string;
-
     @IsNumber()
     @IsOptional()
     @ApiProperty({
@@ -121,8 +101,8 @@ export class UpdateAttendanceDto {
     @ApiProperty({
         type: String,
         required: false,
-        example: 'Notes',
+        example: { uid: 1 },
         description: 'Reference code to identify the employee'
     })
-    employeeReferenceCode?: string;
+    owner?: { uid: number };
 }

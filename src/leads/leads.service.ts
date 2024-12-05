@@ -39,13 +39,13 @@ export class LeadsService {
       if (!leads) {
         return {
           leads: null,
-          message: 'leads not found',
+          message: process.env.NOT_FOUND_MESSAGE,
         };
       }
 
       const response = {
         leads: leads,
-        message: 'leads found',
+        message: process.env.SUCCESS_MESSAGE,
       };
 
       return response;
@@ -69,13 +69,13 @@ export class LeadsService {
       if (!lead) {
         return {
           lead: null,
-          message: 'lead not found',
+          message: process.env.NOT_FOUND_MESSAGE,
         };
       }
 
       const response = {
         lead: lead,
-        message: 'lead found',
+        message: process.env.SUCCESS_MESSAGE,
       };
 
       return response;
@@ -99,12 +99,12 @@ export class LeadsService {
 
       if (!updatedLead) {
         return {
-          message: 'lead not found',
+          message: process.env.NOT_FOUND_MESSAGE,
         };
       }
 
       const response = {
-        message: 'lead updated',
+        message: process.env.SUCCESS_MESSAGE,
       };
 
       return response;
@@ -155,7 +155,7 @@ export class LeadsService {
       );
 
       const response = {
-        message: 'lead restored',
+        message: process.env.SUCCESS_MESSAGE,
       };
 
       return response;

@@ -186,7 +186,7 @@ export class UserService {
   async restore(referenceCode: number): Promise<{ message: string }> {
     try {
       await this.userRepository.update(
-        { userReferenceCode: referenceCode.toString() },
+        { uid: referenceCode },
         {
           isDeleted: false,
           status: Status.ACTIVE
@@ -194,7 +194,7 @@ export class UserService {
       );
 
       const response = {
-        message: 'user restored',
+        message: process.env.SUCCESS_MESSAGE,
       };
 
       return response;

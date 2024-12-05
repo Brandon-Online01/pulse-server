@@ -17,13 +17,13 @@ export class Claim {
     @Column({ type: 'int', nullable: true })
     verifiedBy: number;
 
-    @Column({ type: 'timestamp', nullable: true })
+    @Column({ type: 'timestamp', nullable: false, default: () => 'CURRENT_TIMESTAMP' })
     verifiedAt: Date;
 
-    @Column({ type: 'timestamp' })
+    @Column({ type: 'timestamp', nullable: false, default: () => 'CURRENT_TIMESTAMP' })
     createdAt: Date;
 
-    @Column({ type: 'timestamp', nullable: true })
+    @Column({ type: 'timestamp', nullable: false, onUpdate: 'CURRENT_TIMESTAMP' })
     updatedAt: Date;
 
     @Column({ type: 'timestamp', nullable: true })

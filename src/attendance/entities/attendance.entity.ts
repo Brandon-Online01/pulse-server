@@ -24,12 +24,6 @@ export class Attendance {
     @Column({ type: 'int', nullable: true })
     duration: number;
 
-    @Column({ nullable: true })
-    checkInEventTag: string;
-
-    @Column({ nullable: true })
-    checkOutEventTag: string;
-
     @Column({ type: 'decimal', nullable: true })
     checkInLatitude: number;
 
@@ -48,22 +42,16 @@ export class Attendance {
     @Column({ type: 'text', nullable: true })
     checkOutNotes: string;
 
-    @CreateDateColumn()
+    @Column({ type: 'timestamp', nullable: false, default: () => 'CURRENT_TIMESTAMP' })
     createdAt: Date;
 
-    @UpdateDateColumn()
+    @Column({ type: 'timestamp', nullable: false, onUpdate: 'CURRENT_TIMESTAMP' })
     updatedAt: Date;
-
-    @Column({ nullable: true })
-    createdBy: string;
-
-    @Column({ nullable: true })
-    updatedBy: string;
 
     @Column({ nullable: true })
     verifiedBy: string;
 
-    @Column({ type: 'timestamp', nullable: true })
+    @Column({ type: 'timestamp', nullable: true, default: () => 'CURRENT_TIMESTAMP' })
     verifiedAt: Date;
 
     @Column({ nullable: true })

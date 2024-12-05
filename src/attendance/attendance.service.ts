@@ -14,28 +14,27 @@ export class AttendanceService {
     private attendanceRepository: Repository<Attendance>
   ) { }
 
-  public async checkIn(checkInDto: CreateCheckInDto) {
-    const attendance = this.attendanceRepository.create({
-      checkIn: checkInDto.checkIn,
-      checkInEventTag: checkInDto.checkInEventTag,
-      checkInLatitude: checkInDto.checkInLatitude,
-      checkInLongitude: checkInDto.checkInLongitude,
-      checkInNotes: checkInDto.checkInNotes,
-      status: checkInDto.status || AttendanceStatus.PRESENT,
-      branch: checkInDto.branch,
-      owner: checkInDto.owner
-    });
+  public async checkIn(checkInDto: CreateCheckInDto): Promise<{ message: string }> {
+    try {
+      const attendance = this.attendanceRepository.create(checkInDto);
 
-    await this.attendanceRepository.save(attendance);
+      await this.attendanceRepository.save(attendance);
 
-    const response = {
-      message: 'checked in',
+      const response = {
+        message: process.env.SUCCESS_MESSAGE,
+      }
+
+      return response;
+    } catch (error) {
+      const response = {
+        message: error?.message,
+      }
+
+      return response;
     }
-
-    return response;
   }
 
-  public async updateAttendance(referenceCode: number, updateAttendanceDto: UpdateAttendanceDto) {
+  public async updateAttendance(referenceCode: number, updateAttendanceDto: UpdateAttendanceDto): Promise<{ message: string }> {
     try {
       const attendance = await this.attendanceRepository.findOne({
         where: {
@@ -44,13 +43,13 @@ export class AttendanceService {
       });
 
       if (!attendance) {
-        throw new Error('check in first!');
+        throw new Error('No active check in found');
       }
 
       await this.attendanceRepository.update(referenceCode, updateAttendanceDto);
 
       const response = {
-        message: 'attendance updated',
+        message: process.env.SUCCESS_MESSAGE,
       };
 
       return response;
@@ -63,36 +62,42 @@ export class AttendanceService {
     }
   }
 
-  public async checkOut(checkOutDto: CreateCheckOutDto) {
-    const activeShift = await this.attendanceRepository.findOne({
-      where: {
-        status: AttendanceStatus.PRESENT,
-        owner: checkOutDto?.owner,
-        checkIn: Not(IsNull()),
-        checkOut: IsNull(),
-      },
-      order: {
-        checkIn: 'DESC'
+  public async checkOut(checkOutDto: CreateCheckOutDto): Promise<{ message: string }> {
+    try {
+      const activeShift = await this.attendanceRepository.findOne({
+        where: {
+          status: AttendanceStatus.PRESENT,
+          owner: checkOutDto?.owner,
+          checkIn: Not(IsNull()),
+          checkOut: IsNull(),
+        },
+        order: {
+          checkIn: 'DESC'
+        }
+      });
+
+      if (activeShift) {
+        const updatedShift = {
+          ...activeShift,
+          ...checkOutDto,
+          status: AttendanceStatus.COMPLETED
+        }
+
+        await this.attendanceRepository.save(updatedShift);
+
+        const response = {
+          message: process.env.SUCCESS_MESSAGE,
+        }
+
+        return response;
       }
-    });
-
-    if (activeShift) {
-      activeShift.checkOut = checkOutDto?.checkOut;
-      activeShift.checkOutEventTag = checkOutDto?.checkOutEventTag;
-      activeShift.checkOutLatitude = checkOutDto?.checkOutLatitude;
-      activeShift.checkOutLongitude = checkOutDto?.checkOutLongitude;
-      activeShift.checkOutNotes = checkOutDto?.checkOutNotes;
-      activeShift.status = AttendanceStatus.COMPLETED;
-      await this.attendanceRepository.save(activeShift);
-
+    } catch (error) {
       const response = {
-        message: 'checked out',
+        message: error?.message,
       }
 
       return response;
     }
-
-    throw new Error('no active shift found to check out');
   }
 
   public async allCheckIns(): Promise<{ message: string, checkIns: Attendance[] }> {
@@ -100,7 +105,7 @@ export class AttendanceService {
       const checkIns = await this.attendanceRepository.find();
 
       const response = {
-        message: 'checkins retrieved',
+        message: process.env.SUCCESS_MESSAGE,
         checkIns
       };
 
@@ -124,7 +129,7 @@ export class AttendanceService {
       });
 
       const response = {
-        message: 'checkins retrieved',
+        message: process.env.SUCCESS_MESSAGE,
         checkIns
       };
 
@@ -146,6 +151,10 @@ export class AttendanceService {
           status: status as AttendanceStatus
         }
       });
+
+      if (!checkIns) {
+        throw new Error(process.env.NOT_FOUND_MESSAGE);
+      }
 
       const response = {
         message: process.env.SUCCESS_MESSAGE,

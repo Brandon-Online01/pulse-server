@@ -13,16 +13,21 @@ export class Journal {
     @Column({ nullable: false })
     fileURL: string;
 
-    @Column({ type: 'timestamp', nullable: false })
+    @Column({ nullable: false })
+    comments: string;
+
+    @Column({ type: 'timestamp', nullable: false, default: () => 'CURRENT_TIMESTAMP' })
     timestamp: Date;
 
     @Column({
+        type: 'timestamp',
         nullable: false,
         default: () => 'CURRENT_TIMESTAMP'
     })
     createdAt: Date;
 
     @Column({
+        type: 'timestamp',
         nullable: false,
         default: () => 'CURRENT_TIMESTAMP',
         onUpdate: 'CURRENT_TIMESTAMP'

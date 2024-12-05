@@ -19,6 +19,9 @@ export class Asset {
     @Column({ nullable: false })
     purchaseDate: Date;
 
+    @Column({ nullable: false, default: () => 'CURRENT_TIMESTAMP' })
+    createdAt: Date;
+
     @Column({ nullable: false })
     hasInsurance: boolean;
 

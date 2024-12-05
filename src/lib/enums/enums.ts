@@ -34,7 +34,6 @@ export enum Status {
     INPROGRESS = 'inprogress',
 }
 
-
 export enum AttendanceStatus {
     PRESENT = 'present',
     ABSENT = 'absent',
@@ -75,4 +74,33 @@ export enum Department {
     LEGAL = 'legal',
     OPERATIONS = 'operations',
     SECURITY = 'security',
+}
+
+
+export enum ProductStatus {
+    ACTIVE = 'active',
+    INACTIVE = 'inactive',
+    HIDDEN = 'hidden',
+    SPECIAL = 'special',
+    PROMOTIONAL = 'promotional',
+    BEST_SELLER = 'best_seller',
+    DISCONTINUED = 'discontinued',
+    DISCOUNTED = 'discounted',
+    NORMAL = 'normal',
+}
+
+export enum InvoiceStatus {
+    PENDING = 'pending',
+    PAID = 'paid',
+    CANCELLED = 'cancelled',
+}
+
+export enum InvoiceRecipient {
+    RESELLER = 'reseller',
+    BUYER = 'buyer',
+}
+
+export enum ResellerStatus {
+    ACTIVE = 'active',
+    INACTIVE = 'inactive',
 }

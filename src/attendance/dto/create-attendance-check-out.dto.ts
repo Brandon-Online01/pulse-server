@@ -28,15 +28,6 @@ export class CreateCheckOutDto {
     })
     checkOutNotes?: string;
 
-    @IsString()
-    @IsOptional()
-    @ApiProperty({
-        type: String,
-        required: false,
-        example: 'Check-out event tag'
-    })
-    checkOutEventTag?: string;
-
     @IsDecimal()
     @IsOptional()
     @ApiProperty({

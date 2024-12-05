@@ -28,10 +28,10 @@ export class CreateBranchDto {
     website: string;
 
     @ApiProperty({
-        example: 'Brandon N Nkawu',
+        example: { uid: 1 },
         description: 'The contact person of the branch'
     })
-    contactPerson: string;
+    contactPerson: { uid: number };
 
     @ApiProperty({
         example: '1234567890',
@@ -52,8 +52,8 @@ export class CreateBranchDto {
     status: Status;
 
     @ApiProperty({
-        example: 'ORG-1S002',
+        example: { uid: 1 },
         description: 'The reference code of the organisation'
     })
-    organisation: string;
+    organisation: { uid: number };
 }

@@ -14,7 +14,7 @@ export class News {
     @Column({ nullable: false })
     subtitle: string;
 
-    @Column({ nullable: false })
+    @Column({ nullable: false, type: 'text' })
     content: string;
 
     @Column({ nullable: false })
@@ -29,7 +29,7 @@ export class News {
     @Column({ nullable: false })
     publishingDate: Date;
 
-    @Column({ nullable: false })
+    @Column({ nullable: false, default: Status.ACTIVE })
     status: Status;
 
     @ManyToOne(() => User, (user) => user?.articles)
@@ -37,4 +37,20 @@ export class News {
 
     @ManyToOne(() => Branch, (branch) => branch?.news)
     branch: Branch;
+
+    @Column({
+        nullable: false,
+        default: () => 'CURRENT_TIMESTAMP'
+    })
+    createdAt: Date;
+
+    @Column({
+        nullable: false,
+        default: () => 'CURRENT_TIMESTAMP',
+        onUpdate: 'CURRENT_TIMESTAMP'
+    })
+    updatedAt: Date;
+
+    @Column({ type: 'boolean', nullable: true, default: false })
+    isDeleted: boolean;
 }

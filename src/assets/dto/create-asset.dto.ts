@@ -29,7 +29,7 @@ export class CreateAssetDto {
     @IsNotEmpty()
     @IsDate()
     @ApiProperty({
-        example: '2021-01-01',
+        example: `${new Date()}`,
         description: 'The purchase date of the asset'
     })
     purchaseDate: Date;
@@ -53,7 +53,7 @@ export class CreateAssetDto {
     @IsNotEmpty()
     @IsDate()
     @ApiProperty({
-        example: '2021-01-01',
+        example: `${new Date()}`,
         description: 'The insurance expiry date of the asset'
     })
     insuranceExpiryDate: Date;

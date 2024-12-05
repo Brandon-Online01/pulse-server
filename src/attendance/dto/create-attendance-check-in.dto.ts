@@ -21,21 +21,12 @@ export class CreateCheckInDto {
     })
     checkIn: Date;
 
-    @IsString()
-    @IsOptional()
-    @ApiProperty({
-        type: String,
-        required: false,
-        example: 'LR2*2*'
-    })
-    checkInEventTag?: string;
-
     @IsNumber()
     @IsOptional()
     @ApiProperty({
         type: Number,
         required: false,
-        example: 10
+        example: 40.7128
     })
     checkInLatitude?: number;
 
@@ -44,7 +35,7 @@ export class CreateCheckInDto {
     @ApiProperty({
         type: Number,
         required: false,
-        example: 10
+        example: -74.0060
     })
     checkInLongitude?: number;
 
@@ -62,7 +53,7 @@ export class CreateCheckInDto {
     @ApiProperty({
         type: String,
         required: false,
-        example: 'Device mac address'
+        example: "XX:XX:XX:XX:XX:XX"
     })
     checkInDeviceMacAddress?: string;
 

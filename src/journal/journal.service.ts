@@ -14,16 +14,14 @@ export class JournalService {
 
   async create(createJournalDto: CreateJournalDto): Promise<{ message: string }> {
     try {
-      const journal = this.journalRepository.create({
-        ...createJournalDto,
-        timestamp: createJournalDto.timestamp || new Date(),
-        owner: createJournalDto.owner
-      });
+      const journal = await this.journalRepository.save(createJournalDto);
 
-      await this.journalRepository.save(journal);
+      if (!journal) {
+        throw new Error(process.env.NOT_FOUND_MESSAGE);
+      }
 
       const response = {
-        message: 'Journal created successfully',
+        message: process.env.SUCCESS_MESSAGE,
       }
 
       return response
@@ -48,7 +46,7 @@ export class JournalService {
 
       if (journals?.length === 0) {
         const response = {
-          message: 'No journals found',
+          message: process.env.NOT_FOUND_MESSAGE,
           journals: null
         }
 
@@ -57,7 +55,7 @@ export class JournalService {
 
       const response = {
         journals,
-        message: 'Journals retrieved successfully',
+        message: process.env.SUCCESS_MESSAGE,
       }
 
       return response
@@ -80,7 +78,7 @@ export class JournalService {
 
       if (!journal) {
         const response = {
-          message: 'Journal not found',
+          message: process.env.NOT_FOUND_MESSAGE,
           journal: null
         }
 
@@ -89,7 +87,7 @@ export class JournalService {
 
       const response = {
         journal,
-        message: 'Journal found'
+        message: process.env.SUCCESS_MESSAGE
       }
 
       return response
@@ -109,7 +107,7 @@ export class JournalService {
 
       if (!journal) {
         const response = {
-          message: 'Journal not found',
+          message: process.env.NOT_FOUND_MESSAGE,
           journal: null
         }
 
@@ -119,7 +117,7 @@ export class JournalService {
       const updatedJournal = await this.journalRepository.update(referenceCode, updateJournalDto);
 
       const response = {
-        message: 'Journal updated successfully',
+        message: process.env.SUCCESS_MESSAGE,
         journal: updatedJournal
       }
 
@@ -140,7 +138,7 @@ export class JournalService {
 
       if (!journal) {
         const response = {
-          message: 'Journal not found',
+          message: process.env.NOT_FOUND_MESSAGE,
           journal: null
         }
 
@@ -150,7 +148,7 @@ export class JournalService {
       await this.journalRepository.update(referenceCode, { isDeleted: true });
 
       const response = {
-        message: 'Journal deleted successfully',
+        message: process.env.SUCCESS_MESSAGE,
         journal: null
       }
 
@@ -171,7 +169,7 @@ export class JournalService {
 
       if (!journal) {
         const response = {
-          message: 'Journal not found',
+          message: process.env.NOT_FOUND_MESSAGE,
           journal: null
         }
 
@@ -181,7 +179,7 @@ export class JournalService {
       await this.journalRepository.update(referenceCode, { isDeleted: false });
 
       const response = {
-        message: 'Journal restored successfully',
+        message: process.env.SUCCESS_MESSAGE,
         journal: null
       }
 

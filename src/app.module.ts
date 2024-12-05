@@ -35,6 +35,11 @@ import { News } from './news/entities/news.entity';
 import { AssetsModule } from './assets/assets.module';
 import { Asset } from './assets/entities/asset.entity';
 import { Tracking } from './tracking/entities/tracking.entity';
+import { ShopModule } from './shop/shop.module';
+import { ResellersModule } from './resellers/resellers.module';
+import { Order } from './shop/entities/order.entity';
+import { Product } from './shop/entities/product.entity';
+import { Reseller } from './resellers/entities/reseller.entity';
 
 @Module({
   imports: [
@@ -64,6 +69,9 @@ import { Tracking } from './tracking/entities/tracking.entity';
         News,
         Asset,
         Tracking,
+        Order,
+        Product,
+        Reseller,
       ],
       synchronize: true,
       retryAttempts: 50,
@@ -87,6 +95,8 @@ import { Tracking } from './tracking/entities/tracking.entity';
     BranchModule,
     NewsModule,
     AssetsModule,
+    ShopModule,
+    ResellersModule,
   ],
   controllers: [],
   providers: [

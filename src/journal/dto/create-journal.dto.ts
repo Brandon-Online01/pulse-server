@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsNotEmpty, IsString, IsDate, IsOptional, IsObject } from "class-validator";
+import { IsNotEmpty, IsString, IsObject } from "class-validator";
 
 export class CreateJournalDto {
     @IsNotEmpty()
@@ -18,14 +18,6 @@ export class CreateJournalDto {
     })
     fileURL: string;
 
-    @IsOptional()
-    @IsDate()
-    @ApiProperty({
-        description: 'Timestamp of the journal entry',
-        example: '2023-01-01T12:00:00Z',
-    })
-    timestamp?: Date;
-
     @IsNotEmpty()
     @IsObject()
     @ApiProperty({
@@ -41,4 +33,12 @@ export class CreateJournalDto {
         description: 'The branch reference code of the journal'
     })
     branch: { uid: number };
+
+    @IsNotEmpty()
+    @IsString()
+    @ApiProperty({
+        description: 'The comments of the journal',
+        example: 'This is a comment',
+    })
+    comments: string;
 }

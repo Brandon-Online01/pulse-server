@@ -33,21 +33,35 @@ export class AssetsController {
   @Get(':referenceCode')
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get an asset by reference code' })
-  findOne(@Param('referenceCode') referenceCode: string) {
+  findOne(@Param('referenceCode') referenceCode: number) {
     return this.assetsService.findOne(referenceCode);
+  }
+
+  @Get('/search/:queryTerm')
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+  @ApiOperation({ summary: 'get an asset by search term i.e brand, model number, serial number' })
+  findByBrand(@Param('queryTerm') queryTerm: string) {
+    return this.assetsService.findByBrand(queryTerm);
   }
 
   @Patch(':referenceCode')
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'update an asset' })
-  update(@Param('referenceCode') referenceCode: string, @Body() updateAssetDto: UpdateAssetDto) {
+  update(@Param('referenceCode') referenceCode: number, @Body() updateAssetDto: UpdateAssetDto) {
     return this.assetsService.update(referenceCode, updateAssetDto);
+  }
+
+  @Patch('restore/:referenceCode')
+  @ApiOperation({ summary: 'Restore a deleted user by reference code' })
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+  restore(@Param('referenceCode') referenceCode: number) {
+    return this.assetsService.restore(referenceCode);
   }
 
   @Delete(':referenceCode')
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'soft delete asset' })
-  remove(@Param('referenceCode') referenceCode: string) {
+  remove(@Param('referenceCode') referenceCode: number) {
     return this.assetsService.remove(referenceCode);
   }
 }

@@ -12,23 +12,115 @@ export class AssetsService {
     private assetRepository: Repository<Asset>
   ) { }
 
-  create(createAssetDto: CreateAssetDto) {
-    return 'This action adds a new asset';
+  async create(createAssetDto: CreateAssetDto): Promise<{ message: string }> {
+    try {
+      const asset = await this.assetRepository.save(createAssetDto);
+
+      if (!asset) {
+        throw new Error(process.env.NOT_FOUND_MESSAGE);
+      }
+
+      return { message: process.env.SUCCESS_MESSAGE };
+    } catch (error) {
+      throw new Error(process.env.ERROR_MESSAGE);
+    }
   }
 
-  findAll() {
-    return `This action returns all assets`;
+  async findAll(): Promise<{ message: string }> {
+    try {
+      const assets = await this.assetRepository.find({ where: { isDeleted: false } });
+
+      if (!assets) {
+        throw new Error(process.env.NOT_FOUND_MESSAGE);
+      }
+
+      return { message: process.env.SUCCESS_MESSAGE };
+    } catch (error) {
+      throw new Error(process.env.ERROR_MESSAGE);
+    }
   }
 
-  findOne(referenceCode: string) {
-    return `This action returns a #${referenceCode} asset`;
+  async findOne(referenceCode: number): Promise<{ message: string }> {
+    try {
+      const asset = await this.assetRepository.findOne({ where: { uid: referenceCode, isDeleted: false } });
+
+      if (!asset) {
+        throw new Error(process.env.NOT_FOUND_MESSAGE);
+      }
+
+      return { message: process.env.SUCCESS_MESSAGE };
+    } catch (error) {
+      throw new Error(process.env.ERROR_MESSAGE);
+    }
   }
 
-  update(referenceCode: string, updateAssetDto: UpdateAssetDto) {
-    return `This action updates a #${referenceCode} asset`;
+  async findByBrand(queryTerm: string): Promise<{ message: string }> {
+    try {
+      const assets = await this.assetRepository.find({
+        where: {
+          brand: queryTerm,
+          isDeleted: false
+        }
+      });
+
+      if (!assets) {
+        throw new Error(process.env.NOT_FOUND_MESSAGE);
+      }
+
+      return { message: process.env.SUCCESS_MESSAGE };
+    } catch (error) {
+      throw new Error(process.env.ERROR_MESSAGE);
+    }
   }
 
-  remove(referenceCode: string) {
-    return `This action removes a #${referenceCode} asset`;
+  async update(referenceCode: number, updateAssetDto: UpdateAssetDto): Promise<{ message: string }> {
+    try {
+      const asset = await this.assetRepository.update(referenceCode, updateAssetDto);
+
+      if (!asset) {
+        throw new Error(process.env.NOT_FOUND_MESSAGE);
+      }
+
+      return { message: process.env.SUCCESS_MESSAGE };
+    } catch (error) {
+      throw new Error(process.env.ERROR_MESSAGE);
+    }
+  }
+
+  async remove(referenceCode: number): Promise<{ message: string }> {
+    try {
+      const asset = await this.assetRepository.update(referenceCode, { isDeleted: true });
+
+      if (!asset) {
+        throw new Error(process.env.NOT_FOUND_MESSAGE);
+      }
+
+      return { message: process.env.SUCCESS_MESSAGE };
+    } catch (error) {
+      throw new Error(process.env.ERROR_MESSAGE);
+    }
+  }
+
+  async restore(referenceCode: number): Promise<{ message: string }> {
+    try {
+      await this.assetRepository.update(
+        { uid: referenceCode },
+        {
+          isDeleted: false,
+        }
+      );
+
+      const response = {
+        message: process.env.SUCCESS_MESSAGE,
+      };
+
+      return response;
+    } catch (error) {
+      const response = {
+        message: error?.message,
+      }
+
+      return response;
+    }
   }
 }

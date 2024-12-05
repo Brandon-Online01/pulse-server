@@ -41,14 +41,14 @@ export class DocsService {
       const docs = await this.docsRepository.find();
 
       const response = {
-        message: 'docs found',
+        message: process.env.SUCCESS_MESSAGE,
         docs: docs
       }
 
       return response;
     } catch (error) {
       const response = {
-        message: 'docs not found',
+        message: process.env.NOT_FOUND_MESSAGE,
         docs: null
       }
 
@@ -63,14 +63,14 @@ export class DocsService {
       });
 
       const response = {
-        message: 'doc found',
+        message: process.env.SUCCESS_MESSAGE,
         doc: doc
       }
 
       return response;
     } catch (error) {
       const response = {
-        message: 'doc not found',
+        message: process.env.NOT_FOUND_MESSAGE,
         doc: null
       }
 
@@ -83,13 +83,13 @@ export class DocsService {
       await this.docsRepository.update(referenceCode, updateDocDto as unknown as DeepPartial<Doc>);
 
       const response = {
-        message: 'doc updated',
+        message: process.env.SUCCESS_MESSAGE,
       }
 
       return response;
     } catch (error) {
       const response = {
-        message: 'doc not updated',
+        message: error?.message,
       }
 
       return response;
@@ -101,13 +101,13 @@ export class DocsService {
       await this.docsRepository.delete(referenceCode);
 
       const response = {
-        message: 'doc deleted',
+        message: process.env.SUCCESS_MESSAGE,
       }
 
       return response;
     } catch (error) {
       const response = {
-        message: 'doc not deleted',
+        message: error?.message,
       }
 
       return response;
@@ -156,7 +156,7 @@ export class DocsService {
 
       const response = {
         newFileName: payLoadWithFileName?.filename,
-        message: 'media uploaded',
+        message: process.env.SUCCESS_MESSAGE,
       };
 
       return response;
@@ -187,13 +187,13 @@ export class DocsService {
         await file.delete();
 
         const response = {
-          message: `File deleted`,
+          message: process.env.SUCCESS_MESSAGE,
         };
 
         return response;
       } else {
         const response = {
-          message: `File does not exist`,
+          message: process.env.NOT_FOUND_MESSAGE,
         };
 
         return response;

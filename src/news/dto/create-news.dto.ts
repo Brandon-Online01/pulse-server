@@ -1,4 +1,4 @@
-import { IsDate, IsEnum, IsNotEmpty, IsObject, IsString } from "class-validator";
+import { IsBoolean, IsDate, IsEnum, IsNotEmpty, IsObject, IsString } from "class-validator";
 import { ApiProperty } from "@nestjs/swagger";
 import { Status } from "../../lib/enums/enums";
 
@@ -82,4 +82,12 @@ export class CreateNewsDto {
         description: 'The branch reference code of the news'
     })
     branch: { uid: number };
+
+    @IsBoolean()
+    @IsNotEmpty()
+    @ApiProperty({
+        example: false,
+        description: 'Deletetion status of the news'
+    })
+    isDeleted: boolean;
 }
