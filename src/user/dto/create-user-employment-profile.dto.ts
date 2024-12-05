@@ -1,15 +1,25 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsString, IsBoolean, IsOptional, IsEmail, IsDate } from "class-validator";
+import { IsString, IsBoolean, IsOptional, IsEmail, IsDate, IsEnum, IsObject } from "class-validator";
+import { Department } from "src/lib/enums/enums";
 
 export class CreateUserEmploymentProfileDto {
     @IsOptional()
-    @IsString()
+    @IsObject()
     @ApiProperty({
         description: 'Branch reference code',
-        example: 'BRN001',
+        example: { uid: 1 },
         required: false
     })
-    branchReferenceCode?: string;
+    branchReferenceCode?: { uid: number };
+
+    @IsOptional()
+    @IsObject()
+    @ApiProperty({
+        description: 'User reference code',
+        example: { uid: 1 },
+        required: false
+    })
+    owner?: { uid: number };
 
     @IsOptional()
     @IsString()
@@ -21,13 +31,13 @@ export class CreateUserEmploymentProfileDto {
     position?: string;
 
     @IsOptional()
-    @IsString()
+    @IsEnum(Department)
     @ApiProperty({
         description: 'Department',
-        example: 'Engineering & Business Development',
+        example: Department.ENGINEERING,
         required: false
     })
-    department?: string;
+    department?: Department;
 
     @IsOptional()
     @IsDate()

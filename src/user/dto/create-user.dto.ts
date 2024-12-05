@@ -111,12 +111,4 @@ export class CreateUserDto {
         type: () => CreateUserEmploymentProfileDto
     })
     employmentProfile?: CreateUserEmploymentProfileDto;
-
-    @IsNotEmpty()
-    @IsObject()
-    @ApiProperty({
-        example: { uid: 1 },
-        description: 'The branch reference code of the user'
-    })
-    branch: { uid: number };
 }

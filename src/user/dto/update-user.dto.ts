@@ -1,17 +1,128 @@
 import { PartialType } from '@nestjs/swagger';
 import { CreateUserDto } from './create-user.dto';
-import { AccessLevel, Status } from 'src/lib/enums/enums';
+import { AccessLevel, Department, Status } from 'src/lib/enums/enums';
+import { CreateUserProfileDto } from './create-user-profile.dto';
+import { CreateUserEmploymentProfileDto } from './create-user-employment-profile.dto';
+import { Gender } from 'src/lib/types/user';
+import { IsBoolean, IsDate, IsEmail, IsEnum, IsObject, IsOptional, IsString } from 'class-validator';
+
+export class UpdateUserProfileDto extends CreateUserProfileDto {
+    @IsOptional()
+    @IsString()
+    height?: string;
+
+    @IsOptional()
+    @IsString()
+    weight?: string;
+
+    @IsOptional()
+    @IsString()
+    hairColor?: string;
+
+    @IsOptional()
+    @IsString()
+    eyeColor?: string;
+
+    @IsOptional()
+    @IsEnum(Gender)
+    gender?: Gender;
+
+    @IsOptional()
+    @IsDate()
+    dateOfBirth?: Date;
+
+    @IsOptional()
+    @IsString()
+    address?: string;
+
+    @IsOptional()
+    @IsString()
+    city?: string;
+
+    @IsOptional()
+    @IsString()
+    country?: string;
+}
+
+export class UpdateUserEmploymentProfileDto extends CreateUserEmploymentProfileDto {
+    @IsOptional()
+    @IsObject()
+    branchReferenceCode?: { uid: number };
+
+    @IsOptional()
+    @IsObject()
+    position?: string;
+
+    @IsOptional()
+    @IsEnum(Department)
+    department?: Department;
+
+    @IsOptional()
+    @IsDate()
+    startDate?: Date;
+
+    @IsOptional()
+    @IsDate()
+    endDate?: Date;
+
+    @IsOptional()
+    @IsBoolean()
+    isCurrentlyEmployed?: boolean;
+
+    @IsOptional()
+    @IsEmail()
+    email?: string;
+
+    @IsOptional()
+    @IsString()
+    contactNumber?: string;
+}
 
 export class UpdateUserDto extends PartialType(CreateUserDto) {
+    @IsOptional()
+    @IsString()
     name?: string;
+
+    @IsOptional()
+    @IsString()
     surname?: string;
+
+    @IsOptional()
+    @IsString()
     email?: string;
+
+    @IsOptional()
+    @IsString()
     phone?: string;
+
+    @IsOptional()
+    @IsString()
     photoURL?: string;
+
+    @IsOptional()
+    @IsEnum(AccessLevel)
     accessLevel?: AccessLevel;
+
+    @IsOptional()
+    @IsDate()
     updatedAt?: Date;
+
+    @IsOptional()
+    @IsDate()
     deletedAt?: Date;
+
+    @IsOptional()
+    @IsEnum(Status)
     status?: Status;
+
+    @IsOptional()
+    @IsString()
     username?: string;
+
+    @IsOptional()
+    @IsString()
     password?: string;
+
+    profile?: UpdateUserProfileDto;
+    employmentProfile?: UpdateUserEmploymentProfileDto;
 }

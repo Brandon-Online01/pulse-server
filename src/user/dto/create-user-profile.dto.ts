@@ -6,9 +6,9 @@ export class CreateUserProfileDto {
     @IsString()
     @ApiProperty({
         description: 'User reference code',
-        example: 'USR123456'
+        example: { uid: 1 },
     })
-    userReferenceCode: string;
+    owner: { uid: number };
 
     @IsOptional()
     @IsString()

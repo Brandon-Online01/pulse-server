@@ -15,13 +15,16 @@ export class UserService {
     private userRepository: Repository<User>,
   ) { }
 
-  async create(createUserDto: CreateUserDto) {
+  async create(createUserDto: CreateUserDto): Promise<{ message: string }> {
     try {
-      const user = await this.userRepository.save(createUserDto as unknown as User);
+      const user = await this.userRepository.save(createUserDto);
+
+      if (!user) {
+        throw new Error(process.env.NOT_FOUND_MESSAGE);
+      }
 
       const response = {
         message: process.env.SUCCESS_MESSAGE,
-        data: user
       };
 
       return response;
@@ -39,15 +42,12 @@ export class UserService {
       const users = await this.userRepository.find({ where: { isDeleted: false } });
 
       if (!users) {
-        return {
-          users: null,
-          message: 'users not found',
-        };
+        throw new Error(process.env.NOT_FOUND_MESSAGE);
       }
 
       const response = {
         users: users,
-        message: 'users found',
+        message: process.env.SUCCESS_MESSAGE,
       };
 
       return response;
@@ -106,13 +106,11 @@ export class UserService {
       });
 
       if (!updatedUser) {
-        return {
-          message: 'user not found',
-        };
+        throw new Error(process.env.NOT_FOUND_MESSAGE);
       }
 
       const response = {
-        message: 'user updated',
+        message: process.env.SUCCESS_MESSAGE,
       };
 
       return response;
@@ -126,7 +124,7 @@ export class UserService {
     }
   }
 
-  async remove(referenceCode: number) {
+  async remove(referenceCode: number): Promise<{ message: string }> {
     try {
       const user = await this.userRepository.findOne({
         where: { userReferenceCode: referenceCode.toString(), isDeleted: false }

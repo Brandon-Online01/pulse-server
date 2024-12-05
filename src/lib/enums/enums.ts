@@ -62,3 +62,17 @@ export enum TaskType {
     REVIEW = 'review',
     OTHER = 'other',
 }
+
+export enum Department {
+    SUPPORT = 'support',
+    ENGINEERING = 'engineering',
+    BUSINESS_DEVELOPMENT = 'business_development',
+    SALES = 'sales',
+    MARKETING = 'marketing',
+    ADMINISTRATION = 'administration',
+    FINANCE = 'finance',
+    HR = 'hr',
+    LEGAL = 'legal',
+    OPERATIONS = 'operations',
+    SECURITY = 'security',
+}
