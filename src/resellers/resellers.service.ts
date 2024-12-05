@@ -61,7 +61,7 @@ export class ResellersService {
 
   async findOne(referenceCode: number): Promise<{ reseller: Reseller | null, message: string }> {
     try {
-      const reseller = await this.resellerRepository.findOne({ where: { uid: referenceCode } });
+      const reseller = await this.resellerRepository.findOne({ where: { uid: referenceCode }, relations: ['products'] });
 
       if (!reseller) {
         throw new Error(process.env.NOT_FOUND_MESSAGE);

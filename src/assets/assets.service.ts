@@ -42,7 +42,7 @@ export class AssetsService {
 
   async findOne(referenceCode: number): Promise<{ message: string }> {
     try {
-      const asset = await this.assetRepository.findOne({ where: { uid: referenceCode, isDeleted: false } });
+      const asset = await this.assetRepository.findOne({ where: { uid: referenceCode, isDeleted: false }, relations: ['owner'] });
 
       if (!asset) {
         throw new Error(process.env.NOT_FOUND_MESSAGE);

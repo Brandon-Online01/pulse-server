@@ -63,7 +63,8 @@ export class LeadsService {
   async findOne(referenceCode: number): Promise<{ lead: Lead | null, message: string }> {
     try {
       const lead = await this.leadRepository.findOne({
-        where: { uid: referenceCode, isDeleted: false }
+        where: { uid: referenceCode, isDeleted: false },
+        relations: ['user', 'branch']
       });
 
       if (!lead) {

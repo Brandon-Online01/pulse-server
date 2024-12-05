@@ -58,8 +58,9 @@ export class DocsService {
 
   async findOne(referenceCode: number): Promise<{ doc: Doc | null, message: string }> {
     try {
-      const doc = await this.docsRepository.findOneBy({
-        uid: referenceCode
+      const doc = await this.docsRepository.findOne({
+        where: { uid: referenceCode },
+        relations: ['owner', 'branch']
       });
 
       const response = {

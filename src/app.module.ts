@@ -40,6 +40,8 @@ import { ResellersModule } from './resellers/resellers.module';
 import { Order } from './shop/entities/order.entity';
 import { Product } from './shop/entities/product.entity';
 import { Reseller } from './resellers/entities/reseller.entity';
+import { NotificationsModule } from './notifications/notifications.module';
+import { Notification } from './notifications/entities/notification.entity';
 
 @Module({
   imports: [
@@ -72,6 +74,7 @@ import { Reseller } from './resellers/entities/reseller.entity';
         Order,
         Product,
         Reseller,
+        Notification
       ],
       synchronize: true,
       retryAttempts: 50,
@@ -97,6 +100,7 @@ import { Reseller } from './resellers/entities/reseller.entity';
     AssetsModule,
     ShopModule,
     ResellersModule,
+    NotificationsModule,
   ],
   controllers: [],
   providers: [

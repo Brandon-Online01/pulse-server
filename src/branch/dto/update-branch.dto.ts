@@ -18,7 +18,7 @@ export class UpdateBranchDto extends PartialType(CreateBranchDto) {
 
     @IsOptional()
     @IsString()
-    contactPerson?: { uid: number };
+    contactPerson?: string;
 
     @IsOptional()
     @IsString()

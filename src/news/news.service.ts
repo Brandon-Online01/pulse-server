@@ -58,7 +58,7 @@ export class NewsService {
 
   async findOne(referenceCode: number): Promise<{ message: string, data: News }> {
     try {
-      const news = await this.newsRepository.findOne({ where: { uid: referenceCode, isDeleted: false } });
+      const news = await this.newsRepository.findOne({ where: { uid: referenceCode, isDeleted: false }, relations: ['author', 'branch'] });
 
       if (!news) throw new Error(process.env.NOT_FOUND_MESSAGE);
 

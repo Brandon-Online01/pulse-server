@@ -31,21 +31,21 @@ export class TasksController {
   @Get(':referenceCode')
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'Get a task by reference' })
-  findOne(@Param('referenceCode') referenceCode: string) {
+  findOne(@Param('referenceCode') referenceCode: number) {
     return this.tasksService.findOne(referenceCode);
   }
 
   @Patch(':referenceCode')
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'Update a task by reference' })
-  update(@Param('referenceCode') referenceCode: string, @Body() updateTaskDto: UpdateTaskDto) {
+  update(@Param('referenceCode') referenceCode: number, @Body() updateTaskDto: UpdateTaskDto) {
     return this.tasksService.update(referenceCode, updateTaskDto);
   }
 
   @Delete(':referenceCode')
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'soft delete a task by reference' })
-  remove(@Param('referenceCode') referenceCode: string) {
+  remove(@Param('referenceCode') referenceCode: number) {
     return this.tasksService.remove(referenceCode);
   }
 }

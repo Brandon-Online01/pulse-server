@@ -41,7 +41,7 @@ export class TrackingService {
       });
 
       const response = {
-        message: 'tracking found',
+        message: process.env.SUCCESS_MESSAGE,
         tracking: tracking
       }
 
@@ -62,11 +62,12 @@ export class TrackingService {
         where: {
           uid: referenceCode,
           deletedAt: IsNull()
-        }
+        },
+        relations: ['branch', 'owner']
       });
 
       const response = {
-        message: 'tracking found',
+        message: process.env.SUCCESS_MESSAGE,
         tracking: tracking
       }
 
@@ -86,7 +87,7 @@ export class TrackingService {
       await this.trackingRepository.update(referenceCode, updateTrackingDto as unknown as DeepPartial<Tracking>);
 
       const response = {
-        message: 'tracking updated',
+        message: process.env.SUCCESS_MESSAGE,
       }
 
       return response;
@@ -110,7 +111,7 @@ export class TrackingService {
       );
 
       const response = {
-        message: 'tracking deleted',
+        message: process.env.SUCCESS_MESSAGE,
       }
 
       return response;
@@ -134,7 +135,7 @@ export class TrackingService {
       );
 
       const response = {
-        message: 'tracking restored',
+        message: process.env.SUCCESS_MESSAGE,
       }
 
       return response;

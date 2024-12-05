@@ -104,3 +104,12 @@ export enum ResellerStatus {
     ACTIVE = 'active',
     INACTIVE = 'inactive',
 }
+
+
+export enum NotificationType {
+    ORDER = 'order',
+    CLAIM = 'claim',
+    TASK = 'task',
+    GENERAL = 'general',
+    REMINDER = 'reminder',
+}

@@ -42,6 +42,14 @@ export class OrganisationController {
     return this.organisationService.update(referenceCode, updateOrganisationDto);
   }
 
+  @Patch('restore/:referenceCode')
+  @ApiOperation({ summary: 'Restore a deleted user by reference code' })
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+  restore(@Param('referenceCode') referenceCode: string) {
+    return this.organisationService.restore(referenceCode);
+  }
+
+
   @Delete(':referenceCode')
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
   @ApiOperation({ summary: 'soft delete an organisation by reference code' })

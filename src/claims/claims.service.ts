@@ -57,7 +57,8 @@ export class ClaimsService {
         where: {
           uid: referenceCode,
           deletedAt: IsNull()
-        }
+        },
+        relations: ['user']
       });
 
       if (!claim) {

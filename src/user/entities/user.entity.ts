@@ -12,6 +12,7 @@ import { News } from '../../news/entities/news.entity';
 import { Asset } from '../../assets/entities/asset.entity';
 import { Tracking } from '../../tracking/entities/tracking.entity';
 import { Order } from '../../shop/entities/order.entity';
+import { Notification } from '../../notifications/entities/notification.entity';
 
 @Entity('user')
 export class User {
@@ -108,4 +109,7 @@ export class User {
 
     @OneToMany(() => Order, (order) => order?.createdBy)
     orders: Order[];
+
+    @OneToMany(() => Notification, (notification) => notification?.owner)
+    notifications: Notification[];
 }

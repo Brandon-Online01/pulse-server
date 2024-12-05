@@ -10,200 +10,215 @@ import { NewSignUp } from '../lib/types/user';
 
 @Injectable()
 export class UserService {
-  constructor(
-    @InjectRepository(User)
-    private userRepository: Repository<User>,
-  ) { }
+	constructor(
+		@InjectRepository(User)
+		private userRepository: Repository<User>,
+	) { }
 
-  async create(createUserDto: CreateUserDto): Promise<{ message: string }> {
-    try {
-      const user = await this.userRepository.save(createUserDto);
+	async create(createUserDto: CreateUserDto): Promise<{ message: string }> {
+		try {
+			const user = await this.userRepository.save(createUserDto);
 
-      if (!user) {
-        throw new Error(process.env.NOT_FOUND_MESSAGE);
-      }
+			if (!user) {
+				throw new Error(process.env.NOT_FOUND_MESSAGE);
+			}
 
-      const response = {
-        message: process.env.SUCCESS_MESSAGE,
-      };
+			const response = {
+				message: process.env.SUCCESS_MESSAGE,
+			};
 
-      return response;
-    } catch (error) {
-      const response = {
-        message: error?.message,
-      }
+			return response;
+		} catch (error) {
+			const response = {
+				message: error?.message,
+			}
 
-      return response;
-    }
-  }
+			return response;
+		}
+	}
 
-  async findAll(): Promise<{ users: User[] | null, message: string }> {
-    try {
-      const users = await this.userRepository.find({ where: { isDeleted: false } });
+	async findAll(): Promise<{ users: User[] | null, message: string }> {
+		try {
+			const users = await this.userRepository.find({ where: { isDeleted: false } });
 
-      if (!users) {
-        throw new Error(process.env.NOT_FOUND_MESSAGE);
-      }
+			if (!users) {
+				throw new Error(process.env.NOT_FOUND_MESSAGE);
+			}
 
-      const response = {
-        users: users,
-        message: process.env.SUCCESS_MESSAGE,
-      };
+			const response = {
+				users: users,
+				message: process.env.SUCCESS_MESSAGE,
+			};
 
-      return response;
+			return response;
 
-    } catch (error) {
-      const response = {
-        message: error?.message,
-        users: null
-      }
+		} catch (error) {
+			const response = {
+				message: error?.message,
+				users: null
+			}
 
-      return response;
-    }
-  }
+			return response;
+		}
+	}
 
-  async findOne(searchParameter: string): Promise<{ user: User | null, message: string }> {
-    try {
-      const user = await this.userRepository.findOne({
-        where: [
-          { username: searchParameter, isDeleted: false },
-          { email: searchParameter, isDeleted: false },
-          { phone: searchParameter, isDeleted: false },
-          { surname: searchParameter, isDeleted: false },
-          { name: searchParameter, isDeleted: false }
-        ]
-      });
+	async findOne(searchParameter: string): Promise<{ user: User | null, message: string }> {
+		try {
+			const user = await this.userRepository.findOne({
+				where: [
+					{ username: searchParameter, isDeleted: false },
+					{ email: searchParameter, isDeleted: false },
+					{ phone: searchParameter, isDeleted: false },
+					{ surname: searchParameter, isDeleted: false },
+					{ name: searchParameter, isDeleted: false }
+				],
+				relations: [
+					'userProfile',
+					'userEmployeementProfile',
+					'userAttendances',
+					'userClaims',
+					'userDocs',
+					'leads',
+					'journals',
+					'tasks',
+					'articles',
+					'assets',
+					'trackings',
+					'orders',
+					'notifications'
+				]
+			});
 
-      if (!user) {
-        return {
-          user: null,
-          message: 'user not found',
-        };
-      }
+			if (!user) {
+				return {
+					user: null,
+					message: process.env.NOT_FOUND_MESSAGE,
+				};
+			}
 
-      const response = {
-        user: user,
-        message: 'user found',
-      };
+			const response = {
+				user: user,
+				message: process.env.SUCCESS_MESSAGE,
+			};
 
-      return response;
-    } catch (error) {
-      const response = {
-        message: error?.message,
-        user: null
-      }
+			return response;
+		} catch (error) {
+			const response = {
+				message: error?.message,
+				user: null
+			}
 
-      return response;
-    }
-  }
+			return response;
+		}
+	}
 
-  async update(referenceCode: number, updateUserDto: UpdateUserDto): Promise<{ message: string }> {
-    try {
-      await this.userRepository.update(referenceCode, updateUserDto);
+	async update(referenceCode: number, updateUserDto: UpdateUserDto): Promise<{ message: string }> {
+		try {
+			await this.userRepository.update(referenceCode, updateUserDto);
 
-      const updatedUser = await this.userRepository.findOne({
-        where: { userReferenceCode: referenceCode.toString(), isDeleted: false }
-      });
+			const updatedUser = await this.userRepository.findOne({
+				where: { userReferenceCode: referenceCode.toString(), isDeleted: false }
+			});
 
-      if (!updatedUser) {
-        throw new Error(process.env.NOT_FOUND_MESSAGE);
-      }
+			if (!updatedUser) {
+				throw new Error(process.env.NOT_FOUND_MESSAGE);
+			}
 
-      const response = {
-        message: process.env.SUCCESS_MESSAGE,
-      };
+			const response = {
+				message: process.env.SUCCESS_MESSAGE,
+			};
 
-      return response;
+			return response;
 
-    } catch (error) {
-      const response = {
-        message: error?.message,
-      }
+		} catch (error) {
+			const response = {
+				message: error?.message,
+			}
 
-      return response;
-    }
-  }
+			return response;
+		}
+	}
 
-  async remove(referenceCode: number): Promise<{ message: string }> {
-    try {
-      const user = await this.userRepository.findOne({
-        where: { userReferenceCode: referenceCode.toString(), isDeleted: false }
-      });
+	async remove(referenceCode: number): Promise<{ message: string }> {
+		try {
+			const user = await this.userRepository.findOne({
+				where: { userReferenceCode: referenceCode.toString(), isDeleted: false }
+			});
 
-      if (!user) {
-        throw new Error(process.env.NOT_FOUND_MESSAGE);
-      };
+			if (!user) {
+				throw new Error(process.env.NOT_FOUND_MESSAGE);
+			};
 
-      await this.userRepository.update(
-        { userReferenceCode: referenceCode.toString() },
-        { isDeleted: true }
-      );
+			await this.userRepository.update(
+				{ userReferenceCode: referenceCode.toString() },
+				{ isDeleted: true }
+			);
 
-      const response = {
-        message: process.env.SUCCESS_MESSAGE,
-      };
+			const response = {
+				message: process.env.SUCCESS_MESSAGE,
+			};
 
-      return response;
-    } catch (error) {
-      const response = {
-        message: error?.message,
-      }
+			return response;
+		} catch (error) {
+			const response = {
+				message: error?.message,
+			}
 
-      return response;
-    }
-  }
+			return response;
+		}
+	}
 
-  async createPendingUser(userData: NewSignUp): Promise<void> {
-    try {
-      if (userData?.password) {
-        userData.password = await bcrypt.hash(userData.password, 10);
-      }
+	async createPendingUser(userData: NewSignUp): Promise<void> {
+		try {
+			if (userData?.password) {
+				userData.password = await bcrypt.hash(userData.password, 10);
+			}
 
-      await this.userRepository.save({
-        ...userData,
-        status: userData?.status as Status
-      });
+			await this.userRepository.save({
+				...userData,
+				status: userData?.status as Status
+			});
 
-      this.schedulePendingUserCleanup(userData?.email, userData?.tokenExpires);
-    } catch (error) {
-      throw new Error(error?.message);
-    }
-  }
+			this.schedulePendingUserCleanup(userData?.email, userData?.tokenExpires);
+		} catch (error) {
+			throw new Error(error?.message);
+		}
+	}
 
-  private schedulePendingUserCleanup(email: string, expiryDate: Date): void {
-    const timeUntilExpiry = expiryDate.getTime() - Date.now();
+	private schedulePendingUserCleanup(email: string, expiryDate: Date): void {
+		const timeUntilExpiry = expiryDate.getTime() - Date.now();
 
-    setTimeout(async () => {
-      const user = await this.userRepository.findOne({ where: { email } });
+		setTimeout(async () => {
+			const user = await this.userRepository.findOne({ where: { email } });
 
-      if (user && user?.status === 'pending') {
-        await this.userRepository.update({ email }, { isDeleted: true });
-      }
+			if (user && user?.status === 'pending') {
+				await this.userRepository.update({ email }, { isDeleted: true });
+			}
 
-    }, timeUntilExpiry);
-  }
+		}, timeUntilExpiry);
+	}
 
-  async restore(referenceCode: number): Promise<{ message: string }> {
-    try {
-      await this.userRepository.update(
-        { uid: referenceCode },
-        {
-          isDeleted: false,
-          status: Status.ACTIVE
-        }
-      );
+	async restore(referenceCode: number): Promise<{ message: string }> {
+		try {
+			await this.userRepository.update(
+				{ uid: referenceCode },
+				{
+					isDeleted: false,
+					status: Status.ACTIVE
+				}
+			);
 
-      const response = {
-        message: process.env.SUCCESS_MESSAGE,
-      };
+			const response = {
+				message: process.env.SUCCESS_MESSAGE,
+			};
 
-      return response;
-    } catch (error) {
-      const response = {
-        message: error?.message,
-      }
+			return response;
+		} catch (error) {
+			const response = {
+				message: error?.message,
+			}
 
-      return response;
-    }
-  }
+			return response;
+		}
+	}
 }

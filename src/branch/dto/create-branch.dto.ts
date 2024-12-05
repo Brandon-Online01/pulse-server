@@ -28,10 +28,10 @@ export class CreateBranchDto {
     website: string;
 
     @ApiProperty({
-        example: { uid: 1 },
+        example: 'Brandon N Nkawu',
         description: 'The contact person of the branch'
     })
-    contactPerson: { uid: number };
+    contactPerson: string;
 
     @ApiProperty({
         example: '1234567890',

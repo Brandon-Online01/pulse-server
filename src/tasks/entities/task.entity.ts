@@ -14,9 +14,6 @@ export class Task {
     @Column({ nullable: true })
     notes: string;
 
-    @Column({ nullable: false })
-    client: string;
-
     @Column({ nullable: false, default: () => 'CURRENT_TIMESTAMP' })
     createdAt: Date;
 
