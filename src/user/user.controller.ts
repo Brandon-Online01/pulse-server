@@ -1,12 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { UserService } from './user.service';
+import { RoleGuard } from '../guards/role.guard';
+import { AccessLevel } from '../lib/enums/enums';
+import { AuthGuard } from '../guards/auth.guard';
+import { Roles } from '../decorators/role.decorator';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { RoleGuard } from '../guards/role.guard';
-import { Roles } from '../decorators/role.decorator';
-import { AccessLevel } from '../lib/enums/enums';
-import { AuthGuard } from '../guards/auth.guard';
+import { isPublic } from '../decorators/public.decorator';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 
 @ApiTags('user')
 @Controller('user')
@@ -15,6 +16,7 @@ export class UserController {
   constructor(private readonly userService: UserService) { }
 
   @Post()
+  @isPublic()
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'Create a new user' })
   create(@Body() createUserDto: CreateUserDto) {

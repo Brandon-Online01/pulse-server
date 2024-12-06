@@ -1,12 +1,14 @@
 import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { ACCESS_KEY } from '../decorators/role.decorator';
-import { AccessLevel } from '../lib/enums/enums';
+import { JwtService } from '@nestjs/jwt';
+import { AccessLevel } from 'src/lib/enums/enums';
+import { Token } from 'src/lib/types/token';
 
 @Injectable()
 export class RoleGuard implements CanActivate {
     constructor(
         private reflector: Reflector,
+        private jwtService: JwtService,
     ) { }
 
     canActivate(context: ExecutionContext): boolean {
@@ -19,40 +21,44 @@ export class RoleGuard implements CanActivate {
             return true;
         }
 
+        const request = context.switchToHttp().getRequest();
+        const token = this.extractTokenFromHeader(request);
+
+        if (!token) {
+            throw new UnauthorizedException('you are not authorized to access this resource');
+        }
+
         try {
-            const requiredRoles = this.reflector.getAllAndOverride<AccessLevel[]>(ACCESS_KEY, [
+            const decodedToken = this.jwtService.decode(token) as Token;
+
+            if (!decodedToken) {
+                throw new UnauthorizedException('invalid token format');
+            }
+
+            const { role } = decodedToken;
+
+            if (!role) {
+                throw new UnauthorizedException('access denied');
+            }
+
+            const requiredRoles = this.reflector.getAllAndOverride<AccessLevel[]>('roles', [
                 context.getHandler(),
                 context.getClass(),
             ]);
 
-            console.log(requiredRoles);
+            const hasRequiredRole = requiredRoles.includes(role);
 
-            if (!requiredRoles) {
-                return true;
-            }
-
-            const request = context.switchToHttp().getRequest();
-            const user = request.user;
-
-            console.log(user);
-
-            if (!user?.role) {
+            if (!hasRequiredRole) {
                 throw new UnauthorizedException('access denied');
             }
 
-            const hasRequiredRole = requiredRoles.some((role) => role === user?.role);
-
-            if (!hasRequiredRole) {
-                throw new UnauthorizedException(`access denied`);
-            }
-
             return true;
-
         } catch (error) {
-            if (error instanceof UnauthorizedException) {
-                throw error;
-            }
-            throw new UnauthorizedException('role verification failed');
+            throw new UnauthorizedException('you are not authorized to access this resource');
         }
+    }
+
+    private extractTokenFromHeader(request: Request): string | undefined {
+        return request.headers['token'] as string;
     }
 }

@@ -48,7 +48,7 @@ export class AuthGuard implements CanActivate {
                 );
             }
 
-            request['user'] = decodedToken;
+            request.user = decodedToken;
             return true;
         } catch (error) {
             throw new UnauthorizedException('you are not authorized to access this resource');

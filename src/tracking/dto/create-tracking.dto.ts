@@ -1,18 +1,23 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { IsString, IsOptional, IsNumber, IsBoolean, IsObject, IsNotEmpty } from "class-validator";
-import { Point } from "typeorm";
 
 export class CreateTrackingDto {
     @IsOptional()
     @ApiProperty({
-        description: 'The geographical location point',
-        example: {
-            type: 'Point',
-            coordinates: ['121.4737', '14.5995']
-        },
+        description: 'Latitude',
+        example: 121.4737,
         required: false,
     })
-    location?: Point;
+    latitude?: number;
+
+    @IsOptional()
+    @IsNumber()
+    @ApiProperty({
+        description: 'Longitude',
+        example: 121.4737,
+        required: false,
+    })
+    longitude?: number;
 
     @IsOptional()
     @IsNumber()

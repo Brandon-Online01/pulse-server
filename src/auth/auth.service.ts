@@ -25,13 +25,18 @@ export class AuthService {
 
 			const { password: userPassword } = authProfile?.user;
 
-			const isPasswordValid = bcrypt.compare(password, userPassword);
+			const isPasswordValid = await bcrypt.compare(password, userPassword);
 
 			if (!isPasswordValid) {
-				throw new BadRequestException('Invalid credentials provided');
+				return {
+					message: 'Invalid credentials provided',
+					accessToken: null,
+					refreshToken: null,
+					profileData: null,
+				};
 			}
 
-			const { uid, accessLevel, name, ...restOfUser } = authProfile.user;
+			const { uid, accessLevel, name, ...restOfUser } = authProfile?.user;
 
 			const profileData: ProfileData = {
 				uid: uid.toString(),

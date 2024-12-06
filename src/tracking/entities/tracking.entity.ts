@@ -7,12 +7,11 @@ export class Tracking {
     @PrimaryGeneratedColumn()
     uid: number;
 
-    @Column('geometry', {
-        spatialFeatureType: 'Point',
-        srid: 4326,
-        nullable: true
-    })
-    location: Point;
+    @Column('decimal', { precision: 10, scale: 2, nullable: true })
+    latitude?: number;
+
+    @Column('decimal', { precision: 10, scale: 2, nullable: true })
+    longitude?: number;
 
     @Column('decimal', { precision: 5, scale: 2, nullable: true })
     speed?: number;
