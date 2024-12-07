@@ -107,9 +107,17 @@ export enum ResellerStatus {
 
 
 export enum NotificationType {
-    ORDER = 'order',
-    CLAIM = 'claim',
-    TASK = 'task',
-    GENERAL = 'general',
-    REMINDER = 'reminder',
+    FINANCE = 'finance',
+    HR = 'hr',
+    PAYROLL = 'payroll',
+    USER = 'user',
+    SUCCESS = 'success',
+    ERROR = 'error',
+    WARNING = 'warning',
+}
+
+
+export enum NotificationStatus {
+    READ = 'read',
+    UNREAD = 'unread',
 }

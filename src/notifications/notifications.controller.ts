@@ -38,6 +38,14 @@ export class NotificationsController {
     return this.notificationsService.findOne(referenceCode);
   }
 
+  @Get('/personal/:referenceCode')
+  @UseGuards(AuthGuard, RoleGuard)
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+  @ApiOperation({ summary: 'get a notification by reference code for a user' })
+  findForUser(@Param('referenceCode') referenceCode: number) {
+    return this.notificationsService.findForUser(referenceCode);
+  }
+
   @Patch(':referenceCode')
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
