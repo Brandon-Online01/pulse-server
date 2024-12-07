@@ -10,7 +10,7 @@ import { AuthGuard } from '../guards/auth.guard';
 
 @ApiTags('journal')
 @Controller('journal')
-@UseGuards(RoleGuard, AuthGuard)
+@UseGuards(AuthGuard, RoleGuard)
 export class JournalController {
   constructor(private readonly journalService: JournalService) { }
 

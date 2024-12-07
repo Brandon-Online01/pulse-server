@@ -11,12 +11,13 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@n
 
 @ApiTags('user')
 @Controller('user')
-@UseGuards(RoleGuard, AuthGuard)
+@UseGuards(AuthGuard, RoleGuard)
 export class UserController {
   constructor(private readonly userService: UserService) { }
 
   @Post()
   @isPublic()
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'Create a new user' })
   create(@Body() createUserDto: CreateUserDto) {
@@ -24,6 +25,7 @@ export class UserController {
   }
 
   @Get()
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'Get all users' })
   findAll() {
@@ -31,6 +33,7 @@ export class UserController {
   }
 
   @Get(':searchParameter')
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'Get a user by a search parameter i.e email, phone number, reference code' })
   findOne(@Param('searchParameter') searchParameter: string) {
@@ -39,6 +42,7 @@ export class UserController {
 
   @Patch(':referenceCode')
   @ApiOperation({ summary: 'Update a user by reference code' })
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   update(
     @Param('referenceCode') referenceCode: number, @Body() updateUserDto: UpdateUserDto) {
@@ -47,12 +51,14 @@ export class UserController {
 
   @Patch('restore/:referenceCode')
   @ApiOperation({ summary: 'Restore a deleted user by reference code' })
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   restore(@Param('referenceCode') referenceCode: number) {
     return this.userService.restore(referenceCode);
   }
 
   @Delete(':referenceCode')
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'Soft delete a user by reference code' })
   remove(@Param('referenceCode') referenceCode: number) {

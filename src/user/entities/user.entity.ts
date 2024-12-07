@@ -1,5 +1,5 @@
 import { AccessLevel, Status } from '../../lib/enums/enums';
-import { Column, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { UserProfile } from './user.profile.entity';
 import { UserEmployeementProfile } from './user.employeement.profile.entity';
 import { Attendance } from '../../attendance/entities/attendance.entity';
@@ -13,6 +13,7 @@ import { Asset } from '../../assets/entities/asset.entity';
 import { Tracking } from '../../tracking/entities/tracking.entity';
 import { Order } from '../../shop/entities/order.entity';
 import { Notification } from '../../notifications/entities/notification.entity';
+import { Branch } from 'src/branch/entities/branch.entity';
 
 @Entity('user')
 export class User {
@@ -112,4 +113,7 @@ export class User {
 
     @OneToMany(() => Notification, (notification) => notification?.owner)
     notifications: Notification[];
+
+    @ManyToOne(() => Branch, (branch) => branch?.users)
+    branch: Branch;
 }

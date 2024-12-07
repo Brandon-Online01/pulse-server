@@ -6,6 +6,7 @@ import { AttendanceStatus } from 'src/lib/enums/enums';
 import { CreateCheckInDto } from './dto/create-attendance-check-in.dto';
 import { CreateCheckOutDto } from './dto/create-attendance-check-out.dto';
 import { UpdateAttendanceDto } from './dto/update-attendance.dto';
+import { isToday } from 'date-fns';
 
 @Injectable()
 export class AttendanceService {
@@ -26,6 +27,7 @@ export class AttendanceService {
 
       return response;
     } catch (error) {
+
       const response = {
         message: error?.message,
       }
@@ -144,28 +146,70 @@ export class AttendanceService {
     }
   }
 
-  public async checkInsByStatus(status: string): Promise<{ message: string, checkIns: Attendance[] }> {
+  public async checkInsByStatus(referenceCode: number): Promise<{ message: string, startTime: string, endTime: string, nextAction: string, isLatestCheckIn: boolean, checkedIn: boolean }> {
     try {
-      const checkIns = await this.attendanceRepository.find({
+      const [checkIn] = await this.attendanceRepository.find({
         where: {
-          status: status as AttendanceStatus
+          owner: {
+            uid: referenceCode
+          }
+        },
+        order: {
+          checkIn: 'DESC'
         }
       });
 
-      if (!checkIns) {
-        throw new Error(process.env.NOT_FOUND_MESSAGE);
+      if (!checkIn) {
+        const response = {
+          message: process.env.SUCCESS_MESSAGE,
+          startTime: null,
+          endTime: null,
+          nextAction: 'Start Shift',
+          isLatestCheckIn: false,
+          checkedIn: false
+        };
+
+
+        return response;
       }
+
+      const isLatestCheckIn = isToday(new Date(checkIn?.checkIn));
+
+      const {
+        status,
+        checkOut,
+        createdAt,
+        updatedAt,
+        verifiedAt,
+        checkIn: CheckInTime,
+        ...restOfCheckIn
+      } = checkIn;
+
+      const nextAction = status === AttendanceStatus.PRESENT ? 'End Shift' : 'Start Shift';
+      const checkedIn = status === AttendanceStatus.PRESENT ? true : false;
 
       const response = {
         message: process.env.SUCCESS_MESSAGE,
-        checkIns
+        startTime: `${CheckInTime}`,
+        endTime: `${checkOut}`,
+        createdAt: `${createdAt}`,
+        updatedAt: `${updatedAt}`,
+        verifiedAt: `${verifiedAt}`,
+        nextAction,
+        isLatestCheckIn,
+        checkedIn,
+        ...restOfCheckIn
       };
 
       return response;
     } catch (error) {
       const response = {
-        message: `could not get check ins by status - ${error.message}`,
-        checkIns: null
+        message: `could not get check in - ${error?.message}`,
+        startTime: null,
+        endTime: null,
+        nextAction: null,
+        isLatestCheckIn: false,
+        checkedIn: false
       }
 
       return response;

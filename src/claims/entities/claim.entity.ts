@@ -23,7 +23,7 @@ export class Claim {
     @Column({ type: 'timestamp', nullable: false, default: () => 'CURRENT_TIMESTAMP' })
     createdAt: Date;
 
-    @Column({ type: 'timestamp', nullable: false, onUpdate: 'CURRENT_TIMESTAMP' })
+    @Column({ type: 'timestamp', nullable: false, onUpdate: 'CURRENT_TIMESTAMP', default: () => 'CURRENT_TIMESTAMP' })
     updatedAt: Date;
 
     @Column({ type: 'timestamp', nullable: true })

@@ -11,11 +11,12 @@ import { ApiOperation } from '@nestjs/swagger';
 
 @ApiTags('resellers')
 @Controller('resellers')
-@UseGuards(RoleGuard, AuthGuard)
+@UseGuards(AuthGuard, RoleGuard)
 export class ResellersController {
   constructor(private readonly resellersService: ResellersService) { }
 
   @Post()
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'create a new reseller' })
   create(@Body() createResellerDto: CreateResellerDto) {
@@ -23,6 +24,7 @@ export class ResellersController {
   }
 
   @Get()
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get all resellers' })
   findAll() {
@@ -30,6 +32,7 @@ export class ResellersController {
   }
 
   @Get(':referenceCode')
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get a reseller by reference code' })
   findOne(@Param('referenceCode') referenceCode: number) {
@@ -37,6 +40,7 @@ export class ResellersController {
   }
 
   @Patch(':referenceCode')
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'update a reseller' })
   update(@Param('referenceCode') referenceCode: number, @Body() updateResellerDto: UpdateResellerDto) {
@@ -44,6 +48,7 @@ export class ResellersController {
   }
 
   @Delete(':referenceCode')
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'soft delete a reseller' })
   remove(@Param('referenceCode') referenceCode: number) {

@@ -10,11 +10,12 @@ import { AuthGuard } from '../guards/auth.guard';
 
 @ApiTags('tasks')
 @Controller('tasks')
-@UseGuards(RoleGuard, AuthGuard)
+@UseGuards(AuthGuard, RoleGuard)
 export class TasksController {
   constructor(private readonly tasksService: TasksService) { }
 
   @Post()
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'Create a new task' })
   create(@Body() createTaskDto: CreateTaskDto) {
@@ -22,6 +23,7 @@ export class TasksController {
   }
 
   @Get()
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'Get all tasks' })
   findAll() {
@@ -29,6 +31,7 @@ export class TasksController {
   }
 
   @Get(':referenceCode')
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'Get a task by reference' })
   findOne(@Param('referenceCode') referenceCode: number) {
@@ -36,6 +39,7 @@ export class TasksController {
   }
 
   @Patch(':referenceCode')
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'Update a task by reference' })
   update(@Param('referenceCode') referenceCode: number, @Body() updateTaskDto: UpdateTaskDto) {
@@ -43,6 +47,7 @@ export class TasksController {
   }
 
   @Delete(':referenceCode')
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'soft delete a task by reference' })
   remove(@Param('referenceCode') referenceCode: number) {

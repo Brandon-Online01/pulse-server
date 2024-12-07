@@ -10,13 +10,14 @@ import { Roles } from '../decorators/role.decorator';
 
 @ApiTags('assets')
 @Controller('assets')
-@UseGuards(RoleGuard, AuthGuard)
+@UseGuards(AuthGuard, RoleGuard)
 export class AssetsController {
   constructor(
     private readonly assetsService: AssetsService
   ) { }
 
   @Post()
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'create a new asset' })
   create(@Body() createAssetDto: CreateAssetDto) {
@@ -24,6 +25,7 @@ export class AssetsController {
   }
 
   @Get()
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get all assets' })
   findAll() {
@@ -31,6 +33,7 @@ export class AssetsController {
   }
 
   @Get(':referenceCode')
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get an asset by reference code' })
   findOne(@Param('referenceCode') referenceCode: number) {
@@ -38,6 +41,7 @@ export class AssetsController {
   }
 
   @Get('/search/:queryTerm')
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get an asset by search term i.e brand, model number, serial number' })
   findByBrand(@Param('queryTerm') queryTerm: string) {
@@ -45,6 +49,7 @@ export class AssetsController {
   }
 
   @Patch(':referenceCode')
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'update an asset' })
   update(@Param('referenceCode') referenceCode: number, @Body() updateAssetDto: UpdateAssetDto) {
@@ -53,12 +58,14 @@ export class AssetsController {
 
   @Patch('restore/:referenceCode')
   @ApiOperation({ summary: 'Restore a deleted user by reference code' })
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   restore(@Param('referenceCode') referenceCode: number) {
     return this.assetsService.restore(referenceCode);
   }
 
   @Delete(':referenceCode')
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'soft delete asset' })
   remove(@Param('referenceCode') referenceCode: number) {

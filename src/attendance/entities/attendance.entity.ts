@@ -24,16 +24,16 @@ export class Attendance {
     @Column({ type: 'int', nullable: true })
     duration: number;
 
-    @Column({ type: 'decimal', nullable: true })
+    @Column({ type: 'decimal', precision: 10, scale: 6, nullable: true })
     checkInLatitude: number;
 
-    @Column({ type: 'decimal', nullable: true })
+    @Column({ type: 'decimal', precision: 10, scale: 6, nullable: true })
     checkInLongitude: number;
 
-    @Column({ type: 'decimal', nullable: true })
+    @Column({ type: 'decimal', precision: 10, scale: 6, nullable: true })
     checkOutLatitude: number;
 
-    @Column({ type: 'decimal', nullable: true })
+    @Column({ type: 'decimal', precision: 10, scale: 6, nullable: true })
     checkOutLongitude: number;
 
     @Column({ type: 'text', nullable: true })
@@ -45,7 +45,7 @@ export class Attendance {
     @Column({ type: 'timestamp', nullable: false, default: () => 'CURRENT_TIMESTAMP' })
     createdAt: Date;
 
-    @Column({ type: 'timestamp', nullable: false, onUpdate: 'CURRENT_TIMESTAMP' })
+    @Column({ type: 'timestamp', nullable: false, onUpdate: 'CURRENT_TIMESTAMP', default: () => 'CURRENT_TIMESTAMP' })
     updatedAt: Date;
 
     @Column({ nullable: true })

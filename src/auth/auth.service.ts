@@ -36,6 +36,8 @@ export class AuthService {
 				};
 			}
 
+			console.log(authProfile, '- auth profile')
+
 			const { uid, accessLevel, name, ...restOfUser } = authProfile?.user;
 
 			const profileData: ProfileData = {

@@ -10,11 +10,12 @@ import { AuthGuard } from '../guards/auth.guard';
 
 @ApiTags('claims')
 @Controller('claims')
-@UseGuards(RoleGuard, AuthGuard)
+@UseGuards(AuthGuard, RoleGuard)
 export class ClaimsController {
   constructor(private readonly claimsService: ClaimsService) { }
 
   @Post()
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'create a new claim' })
   create(@Body() createClaimDto: CreateClaimDto) {
@@ -22,6 +23,7 @@ export class ClaimsController {
   }
 
   @Get()
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get all claims' })
   findAll() {
@@ -29,6 +31,7 @@ export class ClaimsController {
   }
 
   @Get(':referenceCode')
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get a claim by reference code' })
   findOne(@Param('referenceCode') referenceCode: number) {
@@ -36,6 +39,7 @@ export class ClaimsController {
   }
 
   @Patch(':referenceCode')
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'update a claim' })
   update(@Param('referenceCode') referenceCode: number, @Body() updateClaimDto: UpdateClaimDto) {
@@ -43,6 +47,7 @@ export class ClaimsController {
   }
 
   @Patch('restore/:referenceCode')
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'restore a claim' })
   restore(@Param('referenceCode') referenceCode: number) {
@@ -50,6 +55,7 @@ export class ClaimsController {
   }
 
   @Delete(':referenceCode')
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'soft delete a claim' })
   remove(@Param('referenceCode') referenceCode: number) {

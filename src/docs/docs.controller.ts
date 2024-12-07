@@ -13,11 +13,12 @@ import { AuthGuard } from '../guards/auth.guard';
 
 @ApiTags('docs')
 @Controller('docs')
-@UseGuards(RoleGuard, AuthGuard)
+@UseGuards(AuthGuard, RoleGuard)
 export class DocsController {
   constructor(private readonly docsService: DocsService) { }
 
   @Post()
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'create a new document' })
   create(@Body() createDocDto: CreateDocDto) {
@@ -25,6 +26,7 @@ export class DocsController {
   }
 
   @Get()
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get all documents' })
   findAll() {
@@ -32,6 +34,7 @@ export class DocsController {
   }
 
   @Get(':referenceCode')
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get a document by reference code' })
   findOne(@Param('referenceCode') referenceCode: number) {
@@ -39,6 +42,7 @@ export class DocsController {
   }
 
   @Patch(':referenceCode')
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'update a document by reference code' })
   update(@Param('referenceCode') referenceCode: number, @Body() updateDocDto: UpdateDocDto) {
@@ -46,6 +50,7 @@ export class DocsController {
   }
 
   @Delete(':referenceCode')
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'soft delete a document by reference code' })
   remove(@Param('referenceCode') referenceCode: number) {

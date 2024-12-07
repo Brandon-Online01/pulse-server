@@ -10,6 +10,7 @@ import { Doc } from "../../docs/entities/doc.entity";
 import { Claim } from "../../claims/entities/claim.entity";
 import { Attendance } from "../../attendance/entities/attendance.entity";
 import { Asset } from "../../assets/entities/asset.entity";
+import { User } from "src/user/entities/user.entity";
 
 @Entity('branch')
 export class Branch {
@@ -78,4 +79,7 @@ export class Branch {
 
     @OneToMany(() => Asset, (asset) => asset?.branch)
     assets: Asset[];
+
+    @OneToMany(() => User, (user) => user?.branch)
+    users: User[];
 }

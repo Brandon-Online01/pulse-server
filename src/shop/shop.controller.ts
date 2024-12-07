@@ -10,11 +10,12 @@ import { UpdateProductDto } from './dto/update-shop.dto';
 
 @ApiTags('shop')
 @Controller('shop')
-@UseGuards(RoleGuard, AuthGuard)
+@UseGuards(AuthGuard, RoleGuard)
 export class ShopController {
   constructor(private readonly shopService: ShopService) { }
 
   @Get('clients')
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get a list of shops one can buy for' })
   availableBuyers() {
@@ -22,6 +23,7 @@ export class ShopController {
   }
 
   @Get('highlights')
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get a list of banner highlights' })
   bannerHighlights() {
@@ -30,6 +32,7 @@ export class ShopController {
 
   //orders
   @Get('orders')
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get a list of orders' })
   orders() {
@@ -38,6 +41,7 @@ export class ShopController {
 
   //products
   @Post('products')
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'create a product' })
   createProduct(@Body() createProductDto: CreateProductDto) {
@@ -45,6 +49,7 @@ export class ShopController {
   }
 
   @Patch('products/:referenceCode')
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'update a product' })
   updateProduct(
@@ -54,6 +59,7 @@ export class ShopController {
   }
 
   @Delete('products/:referenceCode')
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'soft delete a product' })
   deleteProduct(@Param('referenceCode') referenceCode: number) {
@@ -62,12 +68,14 @@ export class ShopController {
 
   @Patch('restore/products/:referenceCode')
   @ApiOperation({ summary: 'Restore a deleted product by reference code' })
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   restoreProduct(@Param('referenceCode') referenceCode: number) {
     return this.shopService.restoreProduct(referenceCode);
   }
 
   @Get('products')
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get a list of products' })
   products() {
@@ -75,6 +83,7 @@ export class ShopController {
   }
 
   @Get('categories')
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get a list of categories' })
   categories() {
@@ -82,6 +91,7 @@ export class ShopController {
   }
 
   @Get('specials')
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get a list of specials' })
   specials() {
@@ -89,6 +99,7 @@ export class ShopController {
   }
 
   @Get('products/:referenceCode')
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get a product by reference code' })
   getProductByReferenceCode(@Param('referenceCode') referenceCode: number) {

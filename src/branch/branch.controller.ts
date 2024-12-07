@@ -10,7 +10,7 @@ import { Roles } from '../decorators/role.decorator';
 
 @ApiTags('branch')
 @Controller('branch')
-@UseGuards(RoleGuard, AuthGuard)
+@UseGuards(AuthGuard, RoleGuard)
 export class BranchController {
   constructor(private readonly branchService: BranchService) { }
 

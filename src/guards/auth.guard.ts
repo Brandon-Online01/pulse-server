@@ -4,7 +4,6 @@ import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 import { Reflector } from '@nestjs/core';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
-import { Status } from '../lib/enums/enums';
 import { Token } from '../lib/types/token';
 
 @Injectable()
@@ -38,17 +37,16 @@ export class AuthGuard implements CanActivate {
                 throw new UnauthorizedException('invalid token format');
             }
 
-            const { status, exp } = decodedToken;
+            const { exp } = decodedToken;
 
-            if (status !== Status.ACTIVE || this.isTokenExpired(exp)) {
+            if (this.isTokenExpired(exp)) {
                 throw new UnauthorizedException(
-                    status !== Status.ACTIVE
-                        ? 'your account is not active'
-                        : 'your session has expired'
+                    'your session has expired, login again.'
                 );
             }
 
             request.user = decodedToken;
+
             return true;
         } catch (error) {
             throw new UnauthorizedException('you are not authorized to access this resource');

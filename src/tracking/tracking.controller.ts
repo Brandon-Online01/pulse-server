@@ -9,11 +9,12 @@ import { RoleGuard } from '../guards/role.guard';
 
 @ApiTags('tracking')
 @Controller('tracking')
-@UseGuards(RoleGuard, AuthGuard)
+@UseGuards(AuthGuard, RoleGuard)
 export class TrackingController {
   constructor(private readonly trackingService: TrackingService) { }
 
   @Post()
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'create a new tracking record' })
   create(@Body() createTrackingDto: CreateTrackingDto) {
@@ -21,6 +22,7 @@ export class TrackingController {
   }
 
   @Get()
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get all tracking records' })
   findAll() {
@@ -28,6 +30,7 @@ export class TrackingController {
   }
 
   @Get(':referenceCode')
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get a tracking record by reference code' })
   findOne(@Param('referenceCode') referenceCode: number) {
@@ -35,6 +38,7 @@ export class TrackingController {
   }
 
   @Patch('/restore/:referenceCode')
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'restore a deleted tracking record by reference code' })
   restore(@Param('referenceCode') referenceCode: number) {
@@ -42,6 +46,7 @@ export class TrackingController {
   }
 
   @Delete(':referenceCode')
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'soft delete a tracking record by reference code' })
   remove(@Param('referenceCode') referenceCode: number) {

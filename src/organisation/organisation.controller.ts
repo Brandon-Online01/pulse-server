@@ -10,7 +10,7 @@ import { RoleGuard } from '../guards/role.guard';
 
 @ApiTags('organisation')
 @Controller('organisation')
-@UseGuards(RoleGuard, AuthGuard)
+@UseGuards(AuthGuard, RoleGuard)
 export class OrganisationController {
   constructor(private readonly organisationService: OrganisationService) { }
 
@@ -44,6 +44,7 @@ export class OrganisationController {
 
   @Patch('restore/:referenceCode')
   @ApiOperation({ summary: 'Restore a deleted user by reference code' })
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   restore(@Param('referenceCode') referenceCode: string) {
     return this.organisationService.restore(referenceCode);

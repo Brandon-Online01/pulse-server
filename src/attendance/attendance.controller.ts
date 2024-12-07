@@ -19,11 +19,36 @@ import { RoleGuard } from '../guards/role.guard';
 
 @ApiTags('attendance')
 @Controller('attendance')
-@UseGuards(RoleGuard, AuthGuard)
+@UseGuards(AuthGuard, RoleGuard)
 export class AttendanceController {
   constructor(private readonly attendanceService: AttendanceService) { }
 
+  @Get()
+  @UseGuards(AuthGuard, RoleGuard)
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+  @ApiOperation({ summary: 'get all check ins' })
+  allCheckIns() {
+    return this.attendanceService.allCheckIns();
+  }
+
+  @Get('date/:date')
+  @UseGuards(AuthGuard, RoleGuard)
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+  @ApiOperation({ summary: 'get check ins by date' })
+  checkInsByDate(@Param('date') date: string) {
+    return this.attendanceService.checkInsByDate(date);
+  }
+
+  @Get('status/:referenceCode')
+  @UseGuards(AuthGuard, RoleGuard)
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+  @ApiOperation({ summary: 'get check ins by status' })
+  checkInsByStatus(@Param('referenceCode') referenceCode: number) {
+    return this.attendanceService.checkInsByStatus(referenceCode);
+  }
+
   @Post('in')
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'manage attendance, check in' })
   checkIn(
@@ -32,6 +57,7 @@ export class AttendanceController {
   }
 
   @Post('out')
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'manage attendance, check out' })
   checkOut(
@@ -40,32 +66,12 @@ export class AttendanceController {
   }
 
   @Patch('/:referenceCode')
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'manage attendance, update attendance' })
   updateAttendance(
     @Param('referenceCode') referenceCode: number,
     @Body() updateAttendanceDto: UpdateAttendanceDto) {
     return this.attendanceService.updateAttendance(referenceCode, updateAttendanceDto);
-  }
-
-  @Get()
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
-  @ApiOperation({ summary: 'get all check ins' })
-  allCheckIns() {
-    return this.attendanceService.allCheckIns();
-  }
-
-  @Get('date/:date')
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
-  @ApiOperation({ summary: 'get check ins by date' })
-  checkInsByDate(@Param('date') date: string) {
-    return this.attendanceService.checkInsByDate(date);
-  }
-
-  @Get('status/:status')
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
-  @ApiOperation({ summary: 'get check ins by status' })
-  checkInsByStatus(@Param('status') status: string) {
-    return this.attendanceService.checkInsByStatus(status);
   }
 }

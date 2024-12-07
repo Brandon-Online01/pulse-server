@@ -10,11 +10,12 @@ import { Roles } from 'src/decorators/role.decorator';
 
 @ApiTags('notifications')
 @Controller('notifications')
-@UseGuards(RoleGuard, AuthGuard)
+@UseGuards(AuthGuard, RoleGuard)
 export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) { }
 
   @Post()
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'create a new notification' })
   create(@Body() createNotificationDto: CreateNotificationDto) {
@@ -22,6 +23,7 @@ export class NotificationsController {
   }
 
   @Get()
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get all notifications' })
   findAll() {
@@ -29,6 +31,7 @@ export class NotificationsController {
   }
 
   @Get(':referenceCode')
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get a notification by reference code' })
   findOne(@Param('referenceCode') referenceCode: number) {
@@ -36,6 +39,7 @@ export class NotificationsController {
   }
 
   @Patch(':referenceCode')
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'update a notification by reference code' })
   update(@Param('referenceCode') referenceCode: number, @Body() updateNotificationDto: UpdateNotificationDto) {

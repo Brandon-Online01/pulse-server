@@ -8,11 +8,12 @@ import { RoleGuard } from '../guards/role.guard';
 
 @ApiTags('reports')
 @Controller('reports')
-@UseGuards(RoleGuard, AuthGuard)
+@UseGuards(AuthGuard, RoleGuard)
 export class ReportsController {
   constructor(private readonly reportsService: ReportsService) { }
 
   @Get('/highlights')
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'Get home page highlight card content' })
   homeHighlights() {
@@ -20,6 +21,7 @@ export class ReportsController {
   }
 
   @Get('/user-highlights')
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'Get user page highlight cards content' })
   userHighlights() {

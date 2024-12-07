@@ -10,11 +10,12 @@ import { Roles } from '../decorators/role.decorator';
 
 @ApiTags('news')
 @Controller('news')
-@UseGuards(RoleGuard, AuthGuard)
+@UseGuards(AuthGuard, RoleGuard)
 export class NewsController {
   constructor(private readonly newsService: NewsService) { }
 
   @Post()
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'create a new article' })
   create(@Body() createNewsDto: CreateNewsDto) {
@@ -22,6 +23,7 @@ export class NewsController {
   }
 
   @Get()
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get all articles' })
   findAll() {
@@ -29,6 +31,7 @@ export class NewsController {
   }
 
   @Get(':referenceCode')
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get an article by reference code' })
   findOne(@Param('referenceCode') referenceCode: number) {
@@ -36,6 +39,7 @@ export class NewsController {
   }
 
   @Patch(':referenceCode')
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'update an article by reference code' })
   update(@Param('referenceCode') referenceCode: number, @Body() updateNewsDto: UpdateNewsDto) {
