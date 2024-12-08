@@ -81,5 +81,5 @@ export class CreateOrganisationDto {
         example: 'ACME123',
         description: 'The reference code of the organisation'
     })
-    referenceCode: string;
+    ref: string;
 }

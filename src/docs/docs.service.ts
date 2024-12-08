@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateDocDto } from './dto/create-doc.dto';
 import { UpdateDocDto } from './dto/update-doc.dto';
@@ -56,10 +56,10 @@ export class DocsService {
     }
   }
 
-  async findOne(referenceCode: number): Promise<{ doc: Doc | null, message: string }> {
+  async findOne(ref: number): Promise<{ doc: Doc | null, message: string }> {
     try {
       const doc = await this.docsRepository.findOne({
-        where: { uid: referenceCode },
+        where: { uid: ref },
         relations: ['owner', 'branch']
       });
 
@@ -79,9 +79,36 @@ export class DocsService {
     }
   }
 
-  async update(referenceCode: number, updateDocDto: UpdateDocDto): Promise<{ message: string }> {
+
+  public async docsByUser(ref: number): Promise<{ message: string, docs: Doc[] }> {
     try {
-      await this.docsRepository.update(referenceCode, updateDocDto as unknown as DeepPartial<Doc>);
+      const docs = await this.docsRepository.find({
+        where: { owner: { uid: ref } }
+      });
+
+      if (!docs) {
+        throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
+      }
+
+      const response = {
+        message: process.env.SUCCESS_MESSAGE,
+        docs
+      };
+
+      return response;
+    } catch (error) {
+      const response = {
+        message: `could not get documents by user - ${error?.message}`,
+        docs: null
+      }
+
+      return response;
+    }
+  }
+
+  async update(ref: number, updateDocDto: UpdateDocDto): Promise<{ message: string }> {
+    try {
+      await this.docsRepository.update(ref, updateDocDto as unknown as DeepPartial<Doc>);
 
       const response = {
         message: process.env.SUCCESS_MESSAGE,
@@ -97,9 +124,9 @@ export class DocsService {
     }
   }
 
-  async remove(referenceCode: number): Promise<{ message: string }> {
+  async remove(ref: number): Promise<{ message: string }> {
     try {
-      await this.docsRepository.delete(referenceCode);
+      await this.docsRepository.delete(ref);
 
       const response = {
         message: process.env.SUCCESS_MESSAGE,

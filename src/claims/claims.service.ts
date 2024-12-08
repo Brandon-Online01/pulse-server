@@ -1,143 +1,192 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateClaimDto } from './dto/create-claim.dto';
 import { UpdateClaimDto } from './dto/update-claim.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Claim } from './entities/claim.entity';
-import { IsNull, Repository, Not, DeepPartial } from 'typeorm';
+import { IsNull, Repository, DeepPartial } from 'typeorm';
+import { ClaimStatus } from 'src/lib/enums/enums';
 
 @Injectable()
 export class ClaimsService {
-  constructor(
-    @InjectRepository(Claim)
-    private claimsRepository: Repository<Claim>
-  ) { }
+	constructor(
+		@InjectRepository(Claim)
+		private claimsRepository: Repository<Claim>
+	) { }
 
-  async create(createClaimDto: CreateClaimDto) {
-    try {
-      const claim = this.claimsRepository.create(createClaimDto as unknown as DeepPartial<Claim>);
+	async create(createClaimDto: CreateClaimDto): Promise<{ message: string }> {
+		try {
+			const claim = await this.claimsRepository.save(createClaimDto as unknown as DeepPartial<Claim>);
 
-      await this.claimsRepository.save(claim);
+			if (!claim) {
+				throw new NotFoundException(process.env.CREATE_ERROR_MESSAGE);
+			}
 
-      const response = {
-        message: process.env.SUCCESS_MESSAGE,
-      }
+			const response = {
+				message: process.env.SUCCESS_MESSAGE,
+			}
 
-      return response;
-    } catch (error) {
-      throw new Error(error);
-    }
-  }
+			return response;
+		} catch (error) {
+			const response = {
+				message: error?.message,
+			}
 
-  async findAll() {
-    try {
-      const claims = await this.claimsRepository.find({
-        where: {
-          deletedAt: IsNull()
-        }
-      });
+			return response;
+		}
+	}
 
-      if (!claims) {
-        throw new Error(process.env.NOT_FOUND_MESSAGE);
-      }
+	async findAll(): Promise<{ message: string, claims: Claim[] | null }> {
+		try {
+			const claims = await this.claimsRepository.find({
+				where: {
+					deletedAt: IsNull()
+				}
+			});
 
-      const response = {
-        message: process.env.SUCCESS_MESSAGE,
-        data: claims
-      }
+			if (!claims) {
+				throw new NotFoundException(process.env.SEARCH_ERROR_MESSAGE);
+			}
 
-      return response;
-    } catch (error) {
-      throw new Error(error);
-    }
-  }
+			const response = {
+				message: process.env.SUCCESS_MESSAGE,
+				claims: claims
+			}
 
-  async findOne(referenceCode: number) {
-    try {
-      const claim = await this.claimsRepository.findOne({
-        where: {
-          uid: referenceCode,
-          deletedAt: IsNull()
-        },
-        relations: ['user']
-      });
+			return response;
+		} catch (error) {
+			const response = {
+				message: error?.message,
+				claims: null
+			}
 
-      if (!claim) {
-        throw new Error(process.env.NOT_FOUND_MESSAGE);
-      }
+			return response;
+		}
+	}
 
-      const response = {
-        message: process.env.SUCCESS_MESSAGE,
-        data: claim
-      }
+	async findOne(ref: number): Promise<{ message: string, claim: Claim | null }> {
+		try {
+			const claim = await this.claimsRepository.findOne({
+				where: {
+					uid: ref,
+					deletedAt: IsNull()
+				},
+				relations: ['user']
+			});
 
-      return response;
-    } catch (error) {
-      throw new Error(error);
-    }
-  }
+			if (!claim) {
+				throw new NotFoundException(process.env.SEARCH_ERROR_MESSAGE);
+			}
 
-  async update(referenceCode: number, updateClaimDto: UpdateClaimDto) {
-    try {
-      await this.claimsRepository.update(referenceCode, updateClaimDto as unknown as DeepPartial<Claim>);
+			const response = {
+				message: process.env.SUCCESS_MESSAGE,
+				claim: claim
+			}
 
-      const response = {
-        message: process.env.SUCCESS_MESSAGE,
-      }
+			return response;
+		} catch (error) {
+			const response = {
+				message: error?.message,
+				claim: null
+			}
 
-      return response;
-    } catch (error) {
-      throw new Error(error);
-    }
-  }
+			return response;
+		}
+	}
 
-  async remove(referenceCode: number) {
-    try {
-      const claim = await this.claimsRepository.findOne({
-        where: {
-          uid: referenceCode,
-          deletedAt: IsNull()
-        }
-      });
+	public async claimsByUser(ref: number): Promise<{ message: string, claims: Claim[] }> {
+		try {
+			const claims = await this.claimsRepository.find({
+				where: { owner: { uid: ref } }
+			});
 
-      if (!claim) {
-        throw new Error(process.env.NOT_FOUND_MESSAGE);
-      }
+			if (!claims) {
+				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
+			}
 
-      await this.claimsRepository.softDelete(referenceCode);
+			const response = {
+				message: process.env.SUCCESS_MESSAGE,
+				claims
+			};
 
-      const response = {
-        message: process.env.SUCCESS_MESSAGE,
-      }
+			return response;
+		} catch (error) {
+			const response = {
+				message: `could not get claims by user - ${error?.message}`,
+				claims: null
+			}
 
-      return response;
-    } catch (error) {
-      throw new Error(error);
-    }
-  }
+			return response;
+		}
+	}
 
-  async restore(referenceCode: number) {
-    try {
-      const claim = await this.claimsRepository.findOne({
-        where: {
-          uid: referenceCode,
-          deletedAt: Not(IsNull())
-        },
-        withDeleted: true
-      });
+	async update(ref: number, updateClaimDto: UpdateClaimDto): Promise<{ message: string }> {
+		try {
+			await this.claimsRepository.update(ref, updateClaimDto as unknown as DeepPartial<Claim>);
 
-      if (!claim) {
-        throw new Error(process.env.NOT_FOUND_MESSAGE);
-      }
+			const response = {
+				message: process.env.SUCCESS_MESSAGE,
+			}
 
-      await this.claimsRepository.restore(referenceCode);
+			return response;
+		} catch (error) {
+			const response = {
+				message: error?.message,
+			}
 
-      const response = {
-        message: process.env.SUCCESS_MESSAGE,
-      }
+			return response;
+		}
+	}
 
-      return response;
-    } catch (error) {
-      throw new Error(error);
-    }
-  }
+	async remove(ref: number): Promise<{ message: string }> {
+		try {
+			const claim = await this.claimsRepository.findOne({
+				where: { uid: ref, isDeleted: false }
+			});
+
+			if (!claim) {
+				throw new NotFoundException(process.env.DELETE_ERROR_MESSAGE);
+			};
+
+			await this.claimsRepository.update(
+				{ uid: ref },
+				{ isDeleted: true }
+			);
+
+			const response = {
+				message: process.env.SUCCESS_MESSAGE,
+			};
+
+			return response;
+		} catch (error) {
+			const response = {
+				message: error?.message,
+			}
+
+			return response;
+		}
+	}
+
+	async restore(ref: number): Promise<{ message: string }> {
+		try {
+			await this.claimsRepository.update(
+				{ uid: ref },
+				{
+					isDeleted: false,
+					status: ClaimStatus.DELETED
+				}
+			);
+
+			const response = {
+				message: process.env.SUCCESS_MESSAGE,
+			};
+
+			return response;
+		} catch (error) {
+			const response = {
+				message: error?.message,
+			}
+
+			return response;
+		}
+	}
 }

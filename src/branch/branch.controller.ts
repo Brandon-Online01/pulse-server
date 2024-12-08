@@ -28,24 +28,24 @@ export class BranchController {
     return this.branchService.findAll();
   }
 
-  @Get(':referenceCode')
+  @Get(':ref')
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
   @ApiOperation({ summary: 'get a branch by reference code' })
-  findOne(@Param('referenceCode') referenceCode: string) {
-    return this.branchService.findOne(referenceCode);
+  findOne(@Param('ref') ref: string) {
+    return this.branchService.findOne(ref);
   }
 
-  @Patch(':referenceCode')
+  @Patch(':ref')
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
   @ApiOperation({ summary: 'update a branch by reference code' })
-  update(@Param('referenceCode') referenceCode: string, @Body() updateBranchDto: UpdateBranchDto) {
-    return this.branchService.update(referenceCode, updateBranchDto);
+  update(@Param('ref') ref: string, @Body() updateBranchDto: UpdateBranchDto) {
+    return this.branchService.update(ref, updateBranchDto);
   }
 
-  @Delete(':referenceCode')
+  @Delete(':ref')
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
   @ApiOperation({ summary: 'soft delete a branch by reference code' })
-  remove(@Param('referenceCode') referenceCode: string) {
-    return this.branchService.remove(referenceCode);
+  remove(@Param('ref') ref: string) {
+    return this.branchService.remove(ref);
   }
 }

@@ -31,27 +31,27 @@ export class ResellersController {
     return this.resellersService.findAll();
   }
 
-  @Get(':referenceCode')
+  @Get(':ref')
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get a reseller by reference code' })
-  findOne(@Param('referenceCode') referenceCode: number) {
-    return this.resellersService.findOne(referenceCode);
+  findOne(@Param('ref') ref: number) {
+    return this.resellersService.findOne(ref);
   }
 
-  @Patch(':referenceCode')
+  @Patch(':ref')
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'update a reseller' })
-  update(@Param('referenceCode') referenceCode: number, @Body() updateResellerDto: UpdateResellerDto) {
-    return this.resellersService.update(referenceCode, updateResellerDto);
+  update(@Param('ref') ref: number, @Body() updateResellerDto: UpdateResellerDto) {
+    return this.resellersService.update(ref, updateResellerDto);
   }
 
-  @Delete(':referenceCode')
+  @Delete(':ref')
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'soft delete a reseller' })
-  remove(@Param('referenceCode') referenceCode: number) {
-    return this.resellersService.remove(referenceCode);
+  remove(@Param('ref') ref: number) {
+    return this.resellersService.remove(ref);
   }
 }

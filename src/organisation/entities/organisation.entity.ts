@@ -38,8 +38,8 @@ export class Organisation {
     isDeleted: boolean;
 
     @Column({ nullable: false, unique: true })
-    referenceCode: string;
+    ref: string;
 
-    @OneToMany(() => Branch, (branch) => branch.referenceCode)
+    @OneToMany(() => Branch, (branch) => branch.ref)
     branches: Branch[];
 }

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateTrackingDto } from './dto/create-tracking.dto';
 import { UpdateTrackingDto } from './dto/update-tracking.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -56,11 +56,11 @@ export class TrackingService {
     }
   }
 
-  async findOne(referenceCode: number): Promise<{ tracking: Tracking | null, message: string }> {
+  async findOne(ref: number): Promise<{ tracking: Tracking | null, message: string }> {
     try {
       const tracking = await this.trackingRepository.findOne({
         where: {
-          uid: referenceCode,
+          uid: ref,
           deletedAt: IsNull()
         },
         relations: ['branch', 'owner']
@@ -82,9 +82,35 @@ export class TrackingService {
     }
   }
 
-  async update(referenceCode: number, updateTrackingDto: UpdateTrackingDto) {
+  public async trackingByUser(ref: number): Promise<{ message: string, tracking: Tracking[] }> {
     try {
-      await this.trackingRepository.update(referenceCode, updateTrackingDto as unknown as DeepPartial<Tracking>);
+      const tracking = await this.trackingRepository.find({
+        where: { owner: { uid: ref } }
+      });
+
+      if (!tracking) {
+        throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
+      }
+
+      const response = {
+        message: process.env.SUCCESS_MESSAGE,
+        tracking
+      };
+
+      return response;
+    } catch (error) {
+      const response = {
+        message: `could not get tracking by user - ${error?.message}`,
+        tracking: null
+      }
+
+      return response;
+    }
+  }
+
+  async update(ref: number, updateTrackingDto: UpdateTrackingDto) {
+    try {
+      await this.trackingRepository.update(ref, updateTrackingDto as unknown as DeepPartial<Tracking>);
 
       const response = {
         message: process.env.SUCCESS_MESSAGE,
@@ -100,10 +126,10 @@ export class TrackingService {
     }
   }
 
-  async remove(referenceCode: number): Promise<{ message: string }> {
+  async remove(ref: number): Promise<{ message: string }> {
     try {
       await this.trackingRepository.update(
-        referenceCode,
+        ref,
         {
           deletedAt: new Date(),
           deletedBy: 'system'
@@ -124,10 +150,10 @@ export class TrackingService {
     }
   }
 
-  async restore(referenceCode: number): Promise<{ message: string }> {
+  async restore(ref: number): Promise<{ message: string }> {
     try {
       await this.trackingRepository.update(
-        referenceCode,
+        ref,
         {
           deletedAt: null,
           deletedBy: null

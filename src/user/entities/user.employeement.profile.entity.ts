@@ -19,7 +19,7 @@ export class UserEmployeementProfile {
     updatedAt: Date;
 
     @Column({ nullable: true })
-    branchReferenceCode: string;
+    branchref: string;
 
     @Column({ nullable: true })
     department: string; F

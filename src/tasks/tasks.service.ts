@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { Task } from './entities/task.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Claim } from 'src/claims/entities/claim.entity';
 
 @Injectable()
 export class TasksService {
@@ -52,10 +53,10 @@ export class TasksService {
 		}
 	}
 
-	async findOne(referenceCode: number): Promise<{ task: Task | null, message: string }> {
+	async findOne(ref: number): Promise<{ task: Task | null, message: string }> {
 		try {
 			const task = await this.taskRepository.findOne({
-				where: { uid: referenceCode, isDeleted: false },
+				where: { uid: ref, isDeleted: false },
 				relations: [
 					'owner',
 					'branch'
@@ -81,12 +82,39 @@ export class TasksService {
 		}
 	}
 
-	async update(referenceCode: number, updateTaskDto: UpdateTaskDto): Promise<{ message: string }> {
+
+	public async tasksByUser(ref: number): Promise<{ message: string, tasks: Task[] }> {
 		try {
-			await this.taskRepository.update(referenceCode, updateTaskDto);
+			const tasks = await this.taskRepository.find({
+				where: { owner: { uid: ref } }
+			});
+
+			if (!tasks) {
+				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
+			}
+
+			const response = {
+				message: process.env.SUCCESS_MESSAGE,
+				tasks
+			};
+
+			return response;
+		} catch (error) {
+			const response = {
+				message: `could not get tasks by user - ${error?.message}`,
+				tasks: null
+			}
+
+			return response;
+		}
+	}
+
+	async update(ref: number, updateTaskDto: UpdateTaskDto): Promise<{ message: string }> {
+		try {
+			await this.taskRepository.update(ref, updateTaskDto);
 
 			const updatedTask = await this.taskRepository.findOne({
-				where: { uid: referenceCode, isDeleted: false }
+				where: { uid: ref, isDeleted: false }
 			});
 
 			if (!updatedTask) {
@@ -103,10 +131,10 @@ export class TasksService {
 		}
 	}
 
-	async remove(referenceCode: number): Promise<{ message: string }> {
+	async remove(ref: number): Promise<{ message: string }> {
 		try {
 			const task = await this.taskRepository.findOne({
-				where: { uid: referenceCode, isDeleted: false }
+				where: { uid: ref, isDeleted: false }
 			});
 
 			if (!task) {
@@ -114,7 +142,7 @@ export class TasksService {
 			}
 
 			await this.taskRepository.update(
-				{ uid: referenceCode },
+				{ uid: ref },
 				{ isDeleted: true }
 			);
 

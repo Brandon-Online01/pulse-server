@@ -1,6 +1,6 @@
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Lead } from './entities/lead.entity';
 import { CreateLeadDto } from './dto/create-lead.dto';
 import { UpdateLeadDto } from './dto/update-lead.dto';
@@ -60,10 +60,10 @@ export class LeadsService {
     }
   }
 
-  async findOne(referenceCode: number): Promise<{ lead: Lead | null, message: string }> {
+  async findOne(ref: number): Promise<{ lead: Lead | null, message: string }> {
     try {
       const lead = await this.leadRepository.findOne({
-        where: { uid: referenceCode, isDeleted: false },
+        where: { uid: ref, isDeleted: false },
         relations: ['user', 'branch']
       });
 
@@ -90,12 +90,38 @@ export class LeadsService {
     }
   }
 
-  async update(referenceCode: number, updateLeadDto: UpdateLeadDto): Promise<{ message: string }> {
+  public async leadsByUser(ref: number): Promise<{ message: string, leads: Lead[] }> {
     try {
-      await this.leadRepository.update(referenceCode, updateLeadDto as unknown as Lead);
+      const leads = await this.leadRepository.find({
+        where: { owner: { uid: ref } }
+      });
+
+      if (!leads) {
+        throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
+      }
+
+      const response = {
+        message: process.env.SUCCESS_MESSAGE,
+        leads
+      };
+
+      return response;
+    } catch (error) {
+      const response = {
+        message: `could not get leads by user - ${error?.message}`,
+        leads: null
+      }
+
+      return response;
+    }
+  }
+
+  async update(ref: number, updateLeadDto: UpdateLeadDto): Promise<{ message: string }> {
+    try {
+      await this.leadRepository.update(ref, updateLeadDto as unknown as Lead);
 
       const updatedLead = await this.leadRepository.findOne({
-        where: { uid: referenceCode, isDeleted: false }
+        where: { uid: ref, isDeleted: false }
       });
 
       if (!updatedLead) {
@@ -119,10 +145,10 @@ export class LeadsService {
     }
   }
 
-  async remove(referenceCode: number): Promise<{ message: string }> {
+  async remove(ref: number): Promise<{ message: string }> {
     try {
       const lead = await this.leadRepository.findOne({
-        where: { uid: referenceCode, isDeleted: false }
+        where: { uid: ref, isDeleted: false }
       });
 
       if (!lead) {
@@ -130,7 +156,7 @@ export class LeadsService {
       };
 
       await this.leadRepository.update(
-        { uid: referenceCode },
+        { uid: ref },
         { isDeleted: true }
       );
 
@@ -148,10 +174,10 @@ export class LeadsService {
     }
   }
 
-  async restore(referenceCode: number): Promise<{ message: string }> {
+  async restore(ref: number): Promise<{ message: string }> {
     try {
       await this.leadRepository.update(
-        { uid: referenceCode },
+        { uid: ref },
         { isDeleted: false }
       );
 

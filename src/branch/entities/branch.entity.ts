@@ -30,7 +30,7 @@ export class Branch {
     contactPerson: string;
 
     @Column({ nullable: false, unique: true })
-    referenceCode: string;
+    ref: string;
 
     @Column({ nullable: false })
     address: string;

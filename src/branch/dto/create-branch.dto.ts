@@ -37,7 +37,7 @@ export class CreateBranchDto {
         example: '1234567890',
         description: 'The reference code of the branch'
     })
-    referenceCode: string;
+    ref: string;
 
     @ApiProperty({
         example: '123 Main Street, Anytown, USA',

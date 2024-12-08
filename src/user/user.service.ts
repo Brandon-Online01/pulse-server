@@ -112,12 +112,12 @@ export class UserService {
 		}
 	}
 
-	async update(referenceCode: number, updateUserDto: UpdateUserDto): Promise<{ message: string }> {
+	async update(ref: number, updateUserDto: UpdateUserDto): Promise<{ message: string }> {
 		try {
-			await this.userRepository.update(referenceCode, updateUserDto);
+			await this.userRepository.update(ref, updateUserDto);
 
 			const updatedUser = await this.userRepository.findOne({
-				where: { userReferenceCode: referenceCode.toString(), isDeleted: false }
+				where: { userref: ref.toString(), isDeleted: false }
 			});
 
 			if (!updatedUser) {
@@ -139,10 +139,10 @@ export class UserService {
 		}
 	}
 
-	async remove(referenceCode: number): Promise<{ message: string }> {
+	async remove(ref: number): Promise<{ message: string }> {
 		try {
 			const user = await this.userRepository.findOne({
-				where: { userReferenceCode: referenceCode.toString(), isDeleted: false }
+				where: { userref: ref.toString(), isDeleted: false }
 			});
 
 			if (!user) {
@@ -150,7 +150,7 @@ export class UserService {
 			};
 
 			await this.userRepository.update(
-				{ userReferenceCode: referenceCode.toString() },
+				{ userref: ref.toString() },
 				{ isDeleted: true }
 			);
 
@@ -198,10 +198,10 @@ export class UserService {
 		}, timeUntilExpiry);
 	}
 
-	async restore(referenceCode: number): Promise<{ message: string }> {
+	async restore(ref: number): Promise<{ message: string }> {
 		try {
 			await this.userRepository.update(
-				{ uid: referenceCode },
+				{ uid: ref },
 				{
 					isDeleted: false,
 					status: Status.ACTIVE

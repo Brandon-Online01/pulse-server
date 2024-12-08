@@ -56,9 +56,9 @@ export class NewsService {
     }
   }
 
-  async findOne(referenceCode: number): Promise<{ message: string, data: News }> {
+  async findOne(ref: number): Promise<{ message: string, data: News }> {
     try {
-      const news = await this.newsRepository.findOne({ where: { uid: referenceCode, isDeleted: false }, relations: ['author', 'branch'] });
+      const news = await this.newsRepository.findOne({ where: { uid: ref, isDeleted: false }, relations: ['author', 'branch'] });
 
       if (!news) throw new Error(process.env.NOT_FOUND_MESSAGE);
 
@@ -78,9 +78,9 @@ export class NewsService {
     }
   }
 
-  async update(referenceCode: number, updateNewsDto: UpdateNewsDto): Promise<{ message: string }> {
+  async update(ref: number, updateNewsDto: UpdateNewsDto): Promise<{ message: string }> {
     try {
-      const news = await this.newsRepository.update(referenceCode, updateNewsDto);
+      const news = await this.newsRepository.update(ref, updateNewsDto);
 
       if (!news) throw new Error(process.env.NOT_FOUND_MESSAGE);
 
@@ -98,9 +98,9 @@ export class NewsService {
     }
   }
 
-  async remove(referenceCode: number): Promise<{ message: string }> {
+  async remove(ref: number): Promise<{ message: string }> {
     try {
-      const news = await this.newsRepository.update(referenceCode, { isDeleted: true });
+      const news = await this.newsRepository.update(ref, { isDeleted: true });
 
       if (!news) throw new Error(process.env.NOT_FOUND_MESSAGE);
 
@@ -118,10 +118,10 @@ export class NewsService {
     }
   }
 
-  async restore(referenceCode: number): Promise<{ message: string }> {
+  async restore(ref: number): Promise<{ message: string }> {
     try {
       await this.newsRepository.update(
-        { uid: referenceCode },
+        { uid: ref },
         {
           isDeleted: false,
           status: Status.ACTIVE

@@ -6,7 +6,15 @@ export class ReportsService {
     return 'This action returns home highlights';
   }
 
-  userHighlights() {
-    return 'This action returns user highlights';
+  userHighlights(ref: number) {
+    return `This action returns user highlights for user with reference code ${ref}`;
+  }
+
+  dailyReportForUser(ref: number) {
+    return `This action returns daily report for user with reference code ${ref}`;
+  }
+
+  salesReportForUser(ref: number) {
+    return `This action returns sales report for user with reference code ${ref}`;
   }
 }

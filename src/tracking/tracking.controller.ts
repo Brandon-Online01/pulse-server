@@ -7,8 +7,8 @@ import { AccessLevel } from '../lib/enums/enums';
 import { AuthGuard } from '../guards/auth.guard';
 import { RoleGuard } from '../guards/role.guard';
 
-@ApiTags('tracking')
-@Controller('tracking')
+@ApiTags('gps')
+@Controller('gps')
 @UseGuards(AuthGuard, RoleGuard)
 export class TrackingController {
   constructor(private readonly trackingService: TrackingService) { }
@@ -29,27 +29,35 @@ export class TrackingController {
     return this.trackingService.findAll();
   }
 
-  @Get(':referenceCode')
+  @Get(':ref')
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get a tracking record by reference code' })
-  findOne(@Param('referenceCode') referenceCode: number) {
-    return this.trackingService.findOne(referenceCode);
+  findOne(@Param('ref') ref: number) {
+    return this.trackingService.findOne(ref);
   }
 
-  @Patch('/restore/:referenceCode')
+  @Get('for/:ref')
+  @UseGuards(AuthGuard, RoleGuard)
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+  @ApiOperation({ summary: 'get tracking by user reference code' })
+  trackingByUser(@Param('ref') ref: number) {
+    return this.trackingService.trackingByUser(ref);
+  }
+
+  @Patch('/restore/:ref')
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'restore a deleted tracking record by reference code' })
-  restore(@Param('referenceCode') referenceCode: number) {
-    return this.trackingService.restore(referenceCode);
+  restore(@Param('ref') ref: number) {
+    return this.trackingService.restore(ref);
   }
 
-  @Delete(':referenceCode')
+  @Delete(':ref')
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'soft delete a tracking record by reference code' })
-  remove(@Param('referenceCode') referenceCode: number) {
-    return this.trackingService.remove(referenceCode);
+  remove(@Param('ref') ref: number) {
+    return this.trackingService.remove(ref);
   }
 }

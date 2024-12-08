@@ -1,25 +1,27 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { IsNull, MoreThanOrEqual, Not, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Attendance } from './entities/attendance.entity';
 import { AttendanceStatus } from 'src/lib/enums/enums';
 import { CreateCheckInDto } from './dto/create-attendance-check-in.dto';
 import { CreateCheckOutDto } from './dto/create-attendance-check-out.dto';
-import { UpdateAttendanceDto } from './dto/update-attendance.dto';
 import { isToday } from 'date-fns';
+import { BranchService } from 'src/branch/branch.service';
 
 @Injectable()
 export class AttendanceService {
   constructor(
     @InjectRepository(Attendance)
-    private attendanceRepository: Repository<Attendance>
+    private attendanceRepository: Repository<Attendance>,
   ) { }
 
   public async checkIn(checkInDto: CreateCheckInDto): Promise<{ message: string }> {
     try {
-      const attendance = this.attendanceRepository.create(checkInDto);
+      const checkIn = await this.attendanceRepository.save(checkInDto);
 
-      await this.attendanceRepository.save(attendance);
+      if (!checkIn) {
+        throw new NotFoundException(process.env.CREATE_ERROR_MESSAGE);
+      }
 
       const response = {
         message: process.env.SUCCESS_MESSAGE,
@@ -28,34 +30,6 @@ export class AttendanceService {
       return response;
     } catch (error) {
 
-      const response = {
-        message: error?.message,
-      }
-
-      return response;
-    }
-  }
-
-  public async updateAttendance(referenceCode: number, updateAttendanceDto: UpdateAttendanceDto): Promise<{ message: string }> {
-    try {
-      const attendance = await this.attendanceRepository.findOne({
-        where: {
-          uid: referenceCode,
-        },
-      });
-
-      if (!attendance) {
-        throw new Error('No active check in found');
-      }
-
-      await this.attendanceRepository.update(referenceCode, updateAttendanceDto);
-
-      const response = {
-        message: process.env.SUCCESS_MESSAGE,
-      };
-
-      return response;
-    } catch (error) {
       const response = {
         message: error?.message,
       }
@@ -106,6 +80,10 @@ export class AttendanceService {
     try {
       const checkIns = await this.attendanceRepository.find();
 
+      if (!checkIns) {
+        throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
+      }
+
       const response = {
         message: process.env.SUCCESS_MESSAGE,
         checkIns
@@ -130,6 +108,10 @@ export class AttendanceService {
         }
       });
 
+      if (!checkIns) {
+        throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
+      }
+
       const response = {
         message: process.env.SUCCESS_MESSAGE,
         checkIns
@@ -146,12 +128,12 @@ export class AttendanceService {
     }
   }
 
-  public async checkInsByStatus(referenceCode: number): Promise<{ message: string, startTime: string, endTime: string, nextAction: string, isLatestCheckIn: boolean, checkedIn: boolean }> {
+  public async checkInsByStatus(ref: number): Promise<{ message: string, startTime: string, endTime: string, nextAction: string, isLatestCheckIn: boolean, checkedIn: boolean }> {
     try {
       const [checkIn] = await this.attendanceRepository.find({
         where: {
           owner: {
-            uid: referenceCode
+            uid: ref
           }
         },
         order: {
@@ -160,17 +142,7 @@ export class AttendanceService {
       });
 
       if (!checkIn) {
-        const response = {
-          message: process.env.SUCCESS_MESSAGE,
-          startTime: null,
-          endTime: null,
-          nextAction: 'Start Shift',
-          isLatestCheckIn: false,
-          checkedIn: false
-        };
-
-
-        return response;
+        throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
       }
 
       const isLatestCheckIn = isToday(new Date(checkIn?.checkIn));
@@ -210,6 +182,60 @@ export class AttendanceService {
         nextAction: null,
         isLatestCheckIn: false,
         checkedIn: false
+      }
+
+      return response;
+    }
+  }
+
+  public async checkInsByUser(ref: number): Promise<{ message: string, checkIns: Attendance[] }> {
+    try {
+      const checkIns = await this.attendanceRepository.find({
+        where: { owner: { uid: ref } }
+      });
+
+      if (!checkIns) {
+        throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
+      }
+
+      const response = {
+        message: process.env.SUCCESS_MESSAGE,
+        checkIns
+      };
+
+      return response;
+    } catch (error) {
+      const response = {
+        message: `could not get check ins by user - ${error?.message}`,
+        checkIns: null
+      }
+
+      return response;
+    }
+  }
+
+  public async checkInsByBranch(ref: string): Promise<{ message: string, checkIns: Attendance[] }> {
+    try {
+      const checkIns = await this.attendanceRepository.find({
+        where: {
+          branch: { ref }
+        }
+      });
+
+      if (!checkIns) {
+        throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
+      }
+
+      const response = {
+        message: process.env.SUCCESS_MESSAGE,
+        checkIns
+      };
+
+      return response;
+    } catch (error) {
+      const response = {
+        message: `could not get check ins by branch - ${error?.message}`,
+        checkIns: null
       }
 
       return response;

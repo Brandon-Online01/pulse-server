@@ -14,6 +14,7 @@ import { Tracking } from '../../tracking/entities/tracking.entity';
 import { Order } from '../../shop/entities/order.entity';
 import { Notification } from '../../notifications/entities/notification.entity';
 import { Branch } from 'src/branch/entities/branch.entity';
+import { Client } from 'src/clients/entities/client.entity';
 
 @Entity('user')
 export class User {
@@ -70,7 +71,7 @@ export class User {
     isDeleted: boolean;
 
     @Column({ nullable: false })
-    userReferenceCode: string;
+    userref: string;
 
     //relationships
     @OneToOne(() => UserProfile, (userProfile) => userProfile?.owner)
@@ -116,4 +117,7 @@ export class User {
 
     @ManyToOne(() => Branch, (branch) => branch?.users)
     branch: Branch;
+
+    @OneToMany(() => Client, (client) => client?.assignedSalesRep)
+    clients: Client[];
 }

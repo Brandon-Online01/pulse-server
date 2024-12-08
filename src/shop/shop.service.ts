@@ -80,9 +80,9 @@ export class ShopService {
 		}
 	}
 
-	async updateProduct(referenceCode: number, updateProductDto: UpdateProductDto): Promise<{ message: string }> {
+	async updateProduct(ref: number, updateProductDto: UpdateProductDto): Promise<{ message: string }> {
 		try {
-			const product = await this.productRepository.update(referenceCode, updateProductDto);
+			const product = await this.productRepository.update(ref, updateProductDto);
 
 			if (!product) {
 				throw new Error(process.env.NOT_FOUND_MESSAGE);
@@ -102,9 +102,9 @@ export class ShopService {
 		}
 	}
 
-	async deleteProduct(referenceCode: number): Promise<{ message: string }> {
+	async deleteProduct(ref: number): Promise<{ message: string }> {
 		try {
-			const product = await this.productRepository.update(referenceCode, { isDeleted: true });
+			const product = await this.productRepository.update(ref, { isDeleted: true });
 
 			if (!product) {
 				throw new Error(process.env.NOT_FOUND_MESSAGE);
@@ -124,9 +124,9 @@ export class ShopService {
 		}
 	}
 
-	async restoreProduct(referenceCode: number): Promise<{ message: string }> {
+	async restoreProduct(ref: number): Promise<{ message: string }> {
 		try {
-			const product = await this.productRepository.update(referenceCode, { isDeleted: false });
+			const product = await this.productRepository.update(ref, { isDeleted: false });
 
 			if (!product) {
 				throw new Error(process.env.NOT_FOUND_MESSAGE);
@@ -228,11 +228,11 @@ export class ShopService {
 		}
 	}
 
-	async getProductByReferenceCode(referenceCode: number): Promise<{ product: Product | null, message: string }> {
+	async getProductByref(ref: number): Promise<{ product: Product | null, message: string }> {
 		try {
 			const product = await this.productRepository.findOne({
 				where: {
-					uid: referenceCode
+					uid: ref
 				}
 			});
 

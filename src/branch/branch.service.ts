@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateBranchDto } from './dto/create-branch.dto';
 import { UpdateBranchDto } from './dto/update-branch.dto';
 import { Repository } from 'typeorm';
@@ -17,7 +17,7 @@ export class BranchService {
 			const branch = await this.branchRepository.save(createBranchDto);
 
 			if (!branch) {
-				throw new Error(process.env.NOT_FOUND_MESSAGE);
+				throw new Error(process.env.CREATE_ERROR_MESSAGE);
 			}
 
 			return {
@@ -37,7 +37,7 @@ export class BranchService {
 			});
 
 			if (!branches) {
-				throw new Error(process.env.NOT_FOUND_MESSAGE);
+				throw new NotFoundException(process.env.SEARCH_ERROR_MESSAGE);
 			}
 
 			return {
@@ -52,10 +52,10 @@ export class BranchService {
 		}
 	}
 
-	async findOne(referenceCode: string): Promise<{ branch: Branch | null, message: string }> {
+	async findOne(ref: string): Promise<{ branch: Branch | null, message: string }> {
 		try {
 			const branch = await this.branchRepository.findOne({
-				where: { referenceCode, isDeleted: false },
+				where: { ref, isDeleted: false },
 				relations: [
 					'organisation',
 					'trackings',
@@ -71,10 +71,7 @@ export class BranchService {
 			});
 
 			if (!branch) {
-				return {
-					branch: null,
-					message: process.env.NOT_FOUND_MESSAGE,
-				};
+				throw new NotFoundException(process.env.SEARCH_ERROR_MESSAGE);
 			}
 
 			return {
@@ -89,19 +86,19 @@ export class BranchService {
 		}
 	}
 
-	async update(referenceCode: string, updateBranchDto: UpdateBranchDto): Promise<{ message: string }> {
+	async update(ref: string, updateBranchDto: UpdateBranchDto): Promise<{ message: string }> {
 		try {
 			await this.branchRepository.update(
-				{ referenceCode },
+				{ ref },
 				updateBranchDto
 			);
 
 			const updatedBranch = await this.branchRepository.findOne({
-				where: { referenceCode, isDeleted: false }
+				where: { ref, isDeleted: false }
 			});
 
 			if (!updatedBranch) {
-				throw new Error(process.env.NOT_FOUND_MESSAGE);
+				throw new NotFoundException(process.env.UPDATE_ERROR_MESSAGE);
 			}
 
 			return {
@@ -114,18 +111,18 @@ export class BranchService {
 		}
 	}
 
-	async remove(referenceCode: string): Promise<{ message: string }> {
+	async remove(ref: string): Promise<{ message: string }> {
 		try {
 			const branch = await this.branchRepository.findOne({
-				where: { referenceCode, isDeleted: false }
+				where: { ref, isDeleted: false }
 			});
 
 			if (!branch) {
-				throw new Error(process.env.NOT_FOUND_MESSAGE);
+				throw new NotFoundException(process.env.DELETE_ERROR_MESSAGE);
 			}
 
 			await this.branchRepository.update(
-				{ referenceCode },
+				{ ref },
 				{ isDeleted: true }
 			);
 

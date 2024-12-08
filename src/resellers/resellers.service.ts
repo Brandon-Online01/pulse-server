@@ -59,9 +59,9 @@ export class ResellersService {
     }
   }
 
-  async findOne(referenceCode: number): Promise<{ reseller: Reseller | null, message: string }> {
+  async findOne(ref: number): Promise<{ reseller: Reseller | null, message: string }> {
     try {
-      const reseller = await this.resellerRepository.findOne({ where: { uid: referenceCode }, relations: ['products'] });
+      const reseller = await this.resellerRepository.findOne({ where: { uid: ref }, relations: ['products'] });
 
       if (!reseller) {
         throw new Error(process.env.NOT_FOUND_MESSAGE);
@@ -83,9 +83,9 @@ export class ResellersService {
     }
   }
 
-  async update(referenceCode: number, updateResellerDto: UpdateResellerDto): Promise<{ message: string }> {
+  async update(ref: number, updateResellerDto: UpdateResellerDto): Promise<{ message: string }> {
     try {
-      const reseller = await this.resellerRepository.update(referenceCode, updateResellerDto);
+      const reseller = await this.resellerRepository.update(ref, updateResellerDto);
 
       if (!reseller) {
         throw new Error(process.env.NOT_FOUND_MESSAGE);
@@ -105,9 +105,9 @@ export class ResellersService {
     }
   }
 
-  async remove(referenceCode: number): Promise<{ message: string }> {
+  async remove(ref: number): Promise<{ message: string }> {
     try {
-      const reseller = await this.resellerRepository.update(referenceCode, { isDeleted: true });
+      const reseller = await this.resellerRepository.update(ref, { isDeleted: true });
 
       if (!reseller) {
         throw new Error(process.env.NOT_FOUND_MESSAGE);
@@ -127,10 +127,10 @@ export class ResellersService {
     }
   }
 
-  async restore(referenceCode: number): Promise<{ message: string }> {
+  async restore(ref: number): Promise<{ message: string }> {
     try {
       await this.resellerRepository.update(
-        { uid: referenceCode },
+        { uid: ref },
         {
           isDeleted: false,
           status: ResellerStatus.ACTIVE

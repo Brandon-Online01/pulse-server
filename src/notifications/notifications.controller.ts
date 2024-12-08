@@ -30,34 +30,34 @@ export class NotificationsController {
     return this.notificationsService.findAll();
   }
 
-  @Get(':referenceCode')
+  @Get(':ref')
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get a notification by reference code' })
-  findOne(@Param('referenceCode') referenceCode: number) {
-    return this.notificationsService.findOne(referenceCode);
+  findOne(@Param('ref') ref: number) {
+    return this.notificationsService.findOne(ref);
   }
 
-  @Get('/personal/:referenceCode')
+  @Get('/personal/:ref')
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get a notification by reference code for a user' })
-  findForUser(@Param('referenceCode') referenceCode: number) {
-    return this.notificationsService.findForUser(referenceCode);
+  findForUser(@Param('ref') ref: number) {
+    return this.notificationsService.findForUser(ref);
   }
 
-  @Patch(':referenceCode')
+  @Patch(':ref')
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'update a notification by reference code' })
-  update(@Param('referenceCode') referenceCode: number, @Body() updateNotificationDto: UpdateNotificationDto) {
-    return this.notificationsService.update(referenceCode, updateNotificationDto);
+  update(@Param('ref') ref: number, @Body() updateNotificationDto: UpdateNotificationDto) {
+    return this.notificationsService.update(ref, updateNotificationDto);
   }
 
-  @Delete(':referenceCode')
+  @Delete(':ref')
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
   @ApiOperation({ summary: 'soft delete a notification by reference code' })
-  remove(@Param('referenceCode') referenceCode: number) {
-    return this.notificationsService.remove(referenceCode);
+  remove(@Param('ref') ref: number) {
+    return this.notificationsService.remove(ref);
   }
 }

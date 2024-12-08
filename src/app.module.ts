@@ -25,7 +25,7 @@ import { JournalModule } from './journal/journal.module';
 import { Journal } from './journal/entities/journal.entity';
 import { ReportsModule } from './reports/reports.module';
 import { TasksModule } from './tasks/tasks.module';
-import { Task } from './tasks/entities/task.entity';
+import { SubTask, Task } from './tasks/entities/task.entity';
 import { OrganisationModule } from './organisation/organisation.module';
 import { BranchModule } from './branch/branch.module';
 import { Branch } from './branch/entities/branch.entity';
@@ -42,6 +42,9 @@ import { Product } from './shop/entities/product.entity';
 import { Reseller } from './resellers/entities/reseller.entity';
 import { NotificationsModule } from './notifications/notifications.module';
 import { Notification } from './notifications/entities/notification.entity';
+import { TaskAttachment } from './tasks/entities/task.entity';
+import { ClientsModule } from './clients/clients.module';
+import { Client } from './clients/entities/client.entity';
 
 @Module({
   imports: [
@@ -74,7 +77,11 @@ import { Notification } from './notifications/entities/notification.entity';
         Order,
         Product,
         Reseller,
-        Notification
+        Notification,
+        SubTask,
+        Task,
+        TaskAttachment,
+        Client
       ],
       synchronize: true,
       retryAttempts: 50,
@@ -101,6 +108,7 @@ import { Notification } from './notifications/entities/notification.entity';
     ShopModule,
     ResellersModule,
     NotificationsModule,
+    ClientsModule,
   ],
   controllers: [],
   providers: [

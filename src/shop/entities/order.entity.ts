@@ -1,7 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from "typeorm";
 import { Product } from "./product.entity";
 import { User } from "../../user/entities/user.entity";
 import { InvoiceRecipient } from "src/lib/enums/enums";
+import { Client } from "src/clients/entities/client.entity";
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity('order')
 export class Order {
@@ -36,4 +37,7 @@ export class Order {
 
     @ManyToOne(() => User, user => user.orders)
     createdBy: User;
+
+    @ManyToOne(() => Client, (client) => client?.orders)
+    client: Client;
 }

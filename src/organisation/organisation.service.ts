@@ -54,10 +54,10 @@ export class OrganisationService {
     }
   }
 
-  async findOne(referenceCode: string): Promise<{ organisation: Organisation | null, message: string }> {
+  async findOne(ref: string): Promise<{ organisation: Organisation | null, message: string }> {
     try {
       const organisation = await this.organisationRepository.findOne({
-        where: { referenceCode, isDeleted: false },
+        where: { ref, isDeleted: false },
         relations: ['branches']
       });
 
@@ -80,12 +80,12 @@ export class OrganisationService {
     }
   }
 
-  async update(referenceCode: string, updateOrganisationDto: UpdateOrganisationDto): Promise<{ message: string }> {
+  async update(ref: string, updateOrganisationDto: UpdateOrganisationDto): Promise<{ message: string }> {
     try {
-      await this.organisationRepository.update({ referenceCode }, updateOrganisationDto);
+      await this.organisationRepository.update({ ref }, updateOrganisationDto);
 
       const updatedOrganisation = await this.organisationRepository.findOne({
-        where: { referenceCode, isDeleted: false }
+        where: { ref, isDeleted: false }
       });
 
       if (!updatedOrganisation) {
@@ -102,10 +102,10 @@ export class OrganisationService {
     }
   }
 
-  async remove(referenceCode: string): Promise<{ message: string }> {
+  async remove(ref: string): Promise<{ message: string }> {
     try {
       const organisation = await this.organisationRepository.findOne({
-        where: { referenceCode, isDeleted: false }
+        where: { ref, isDeleted: false }
       });
 
       if (!organisation) {
@@ -113,7 +113,7 @@ export class OrganisationService {
       }
 
       await this.organisationRepository.update(
-        { referenceCode },
+        { ref },
         { isDeleted: true }
       );
 
@@ -127,10 +127,10 @@ export class OrganisationService {
     }
   }
 
-  async restore(referenceCode: string): Promise<{ message: string }> {
+  async restore(ref: string): Promise<{ message: string }> {
     try {
       await this.organisationRepository.update(
-        { referenceCode },
+        { ref },
         {
           isDeleted: false,
           status: Status.ACTIVE

@@ -30,27 +30,35 @@ export class TasksController {
     return this.tasksService.findAll();
   }
 
-  @Get(':referenceCode')
+  @Get(':ref')
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'Get a task by reference' })
-  findOne(@Param('referenceCode') referenceCode: number) {
-    return this.tasksService.findOne(referenceCode);
+  findOne(@Param('ref') ref: number) {
+    return this.tasksService.findOne(ref);
   }
 
-  @Patch(':referenceCode')
+  @Get('for/:ref')
+  @UseGuards(AuthGuard, RoleGuard)
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+  @ApiOperation({ summary: 'get tasks by user reference code' })
+  tasksByUser(@Param('ref') ref: number) {
+    return this.tasksService.tasksByUser(ref);
+  }
+
+  @Patch(':ref')
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'Update a task by reference' })
-  update(@Param('referenceCode') referenceCode: number, @Body() updateTaskDto: UpdateTaskDto) {
-    return this.tasksService.update(referenceCode, updateTaskDto);
+  update(@Param('ref') ref: number, @Body() updateTaskDto: UpdateTaskDto) {
+    return this.tasksService.update(ref, updateTaskDto);
   }
 
-  @Delete(':referenceCode')
+  @Delete(':ref')
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'soft delete a task by reference' })
-  remove(@Param('referenceCode') referenceCode: number) {
-    return this.tasksService.remove(referenceCode);
+  remove(@Param('ref') ref: number) {
+    return this.tasksService.remove(ref);
   }
 }

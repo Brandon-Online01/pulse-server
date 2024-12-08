@@ -47,7 +47,7 @@ export class UpdateUserProfileDto extends CreateUserProfileDto {
 export class UpdateUserEmploymentProfileDto extends CreateUserEmploymentProfileDto {
     @IsOptional()
     @IsObject()
-    branchReferenceCode?: { uid: number };
+    branchref?: { uid: number };
 
     @IsOptional()
     @IsObject()

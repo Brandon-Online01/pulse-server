@@ -87,7 +87,7 @@ export class CreateUserDto {
         description: 'The unique reference code for the user',
         example: 'USR123456',
     })
-    userReferenceCode: string;
+    userref: string;
 
     @IsOptional()
     @IsBoolean()

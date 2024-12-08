@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Journal } from './entities/journal.entity';
@@ -69,10 +69,10 @@ export class JournalService {
     }
   }
 
-  async findOne(referenceCode: number): Promise<{ message: string, journal: Journal | null }> {
+  async findOne(ref: number): Promise<{ message: string, journal: Journal | null }> {
     try {
       const journal = await this.journalRepository.findOne({
-        where: { uid: referenceCode },
+        where: { uid: ref },
         relations: ['owner']
       });
 
@@ -101,9 +101,35 @@ export class JournalService {
     }
   }
 
-  async update(referenceCode: number, updateJournalDto: UpdateJournalDto) {
+  public async journalsByUser(ref: number): Promise<{ message: string, journals: Journal[] }> {
     try {
-      const journal = await this.journalRepository.findOne({ where: { uid: referenceCode } });
+      const journals = await this.journalRepository.find({
+        where: { owner: { uid: ref } }
+      });
+
+      if (!journals) {
+        throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
+      }
+
+      const response = {
+        message: process.env.SUCCESS_MESSAGE,
+        journals
+      };
+
+      return response;
+    } catch (error) {
+      const response = {
+        message: `could not get journals by user - ${error?.message}`,
+        journals: null
+      }
+
+      return response;
+    }
+  }
+
+  async update(ref: number, updateJournalDto: UpdateJournalDto) {
+    try {
+      const journal = await this.journalRepository.findOne({ where: { uid: ref } });
 
       if (!journal) {
         const response = {
@@ -114,7 +140,7 @@ export class JournalService {
         return response
       }
 
-      const updatedJournal = await this.journalRepository.update(referenceCode, updateJournalDto);
+      const updatedJournal = await this.journalRepository.update(ref, updateJournalDto);
 
       const response = {
         message: process.env.SUCCESS_MESSAGE,
@@ -132,9 +158,9 @@ export class JournalService {
     }
   }
 
-  async remove(referenceCode: number): Promise<{ message: string, journal: Journal | null }> {
+  async remove(ref: number): Promise<{ message: string, journal: Journal | null }> {
     try {
-      const journal = await this.journalRepository.findOne({ where: { uid: referenceCode } });
+      const journal = await this.journalRepository.findOne({ where: { uid: ref } });
 
       if (!journal) {
         const response = {
@@ -145,7 +171,7 @@ export class JournalService {
         return response
       }
 
-      await this.journalRepository.update(referenceCode, { isDeleted: true });
+      await this.journalRepository.update(ref, { isDeleted: true });
 
       const response = {
         message: process.env.SUCCESS_MESSAGE,
@@ -163,9 +189,9 @@ export class JournalService {
     }
   }
 
-  async restore(referenceCode: number): Promise<{ message: string, journal: Journal | null }> {
+  async restore(ref: number): Promise<{ message: string, journal: Journal | null }> {
     try {
-      const journal = await this.journalRepository.findOne({ where: { uid: referenceCode } });
+      const journal = await this.journalRepository.findOne({ where: { uid: ref } });
 
       if (!journal) {
         const response = {
@@ -176,7 +202,7 @@ export class JournalService {
         return response
       }
 
-      await this.journalRepository.update(referenceCode, { isDeleted: false });
+      await this.journalRepository.update(ref, { isDeleted: false });
 
       const response = {
         message: process.env.SUCCESS_MESSAGE,

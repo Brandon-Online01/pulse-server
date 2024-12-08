@@ -28,31 +28,39 @@ export class JournalController {
     return this.journalService.findAll();
   }
 
-  @Get(':referenceCode')
+  @Get(':ref')
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT)
   @ApiOperation({ summary: 'get a journal entry by reference code' })
-  findOne(@Param('referenceCode') referenceCode: number) {
-    return this.journalService.findOne(referenceCode);
+  findOne(@Param('ref') ref: number) {
+    return this.journalService.findOne(ref);
   }
 
-  @Patch(':referenceCode')
+  @Get('for/:ref')
+  @UseGuards(AuthGuard, RoleGuard)
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+  @ApiOperation({ summary: 'get journals by user reference code' })
+  journalsByUser(@Param('ref') ref: number) {
+    return this.journalService.journalsByUser(ref);
+  }
+
+  @Patch(':ref')
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT)
   @ApiOperation({ summary: 'update a journal entry by reference code' })
-  update(@Param('referenceCode') referenceCode: number, @Body() updateJournalDto: UpdateJournalDto) {
-    return this.journalService.update(referenceCode, updateJournalDto);
+  update(@Param('ref') ref: number, @Body() updateJournalDto: UpdateJournalDto) {
+    return this.journalService.update(ref, updateJournalDto);
   }
 
-  @Patch('restore/:referenceCode')
+  @Patch('restore/:ref')
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT)
   @ApiOperation({ summary: 'restore a journal entry by reference code' })
-  restore(@Param('referenceCode') referenceCode: number) {
-    return this.journalService.restore(referenceCode);
+  restore(@Param('ref') ref: number) {
+    return this.journalService.restore(ref);
   }
 
-  @Delete(':referenceCode')
+  @Delete(':ref')
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT)
   @ApiOperation({ summary: 'delete a journal entry by reference code' })
-  remove(@Param('referenceCode') referenceCode: number) {
-    return this.journalService.remove(referenceCode);
+  remove(@Param('ref') ref: number) {
+    return this.journalService.remove(ref);
   }
 }

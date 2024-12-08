@@ -10,7 +10,7 @@ export class CreateUserEmploymentProfileDto {
         example: { uid: 1 },
         required: false
     })
-    branchReferenceCode?: { uid: number };
+    branchref?: { uid: number };
 
     @IsOptional()
     @IsObject()

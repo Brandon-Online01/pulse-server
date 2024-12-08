@@ -60,9 +60,9 @@ export class NotificationsService {
 		}
 	}
 
-	async findOne(referenceCode: number): Promise<{ message: string, notification: Notification | null }> {
+	async findOne(ref: number): Promise<{ message: string, notification: Notification | null }> {
 		try {
-			const notification = await this.notificationRepository.findOne({ where: { uid: referenceCode }, relations: ['user'] });
+			const notification = await this.notificationRepository.findOne({ where: { uid: ref }, relations: ['user'] });
 
 			if (!notification) {
 				throw new Error(process.env.NOT_FOUND_MESSAGE);
@@ -84,12 +84,12 @@ export class NotificationsService {
 		}
 	}
 
-	async findForUser(referenceCode: number): Promise<{ message: string, notification: NotificationResponse[] | null }> {
+	async findForUser(ref: number): Promise<{ message: string, notification: NotificationResponse[] | null }> {
 		try {
 			const notifications = await this.notificationRepository.find({
 				where: {
 					owner: {
-						uid: referenceCode
+						uid: ref
 					}
 				}
 			});
@@ -120,9 +120,9 @@ export class NotificationsService {
 		}
 	}
 
-	async update(referenceCode: number, updateNotificationDto: UpdateNotificationDto): Promise<{ message: string }> {
+	async update(ref: number, updateNotificationDto: UpdateNotificationDto): Promise<{ message: string }> {
 		try {
-			const notification = await this.notificationRepository.update(referenceCode, updateNotificationDto);
+			const notification = await this.notificationRepository.update(ref, updateNotificationDto);
 
 			if (!notification) {
 				throw new Error(process.env.NOT_FOUND_MESSAGE);
@@ -142,9 +142,9 @@ export class NotificationsService {
 		}
 	}
 
-	async remove(referenceCode: number): Promise<{ message: string }> {
+	async remove(ref: number): Promise<{ message: string }> {
 		try {
-			const notification = await this.notificationRepository.delete(referenceCode);
+			const notification = await this.notificationRepository.delete(ref);
 
 			if (!notification) {
 				throw new Error(process.env.NOT_FOUND_MESSAGE);

@@ -33,33 +33,41 @@ export class DocsController {
     return this.docsService.findAll();
   }
 
-  @Get(':referenceCode')
+  @Get(':ref')
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get a document by reference code' })
-  findOne(@Param('referenceCode') referenceCode: number) {
-    return this.docsService.findOne(referenceCode);
+  findOne(@Param('ref') ref: number) {
+    return this.docsService.findOne(ref);
   }
 
-  @Patch(':referenceCode')
+  @Patch(':ref')
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'update a document by reference code' })
-  update(@Param('referenceCode') referenceCode: number, @Body() updateDocDto: UpdateDocDto) {
-    return this.docsService.update(referenceCode, updateDocDto);
+  update(@Param('ref') ref: number, @Body() updateDocDto: UpdateDocDto) {
+    return this.docsService.update(ref, updateDocDto);
   }
 
-  @Delete(':referenceCode')
+  @Delete(':ref')
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'soft delete a document by reference code' })
-  remove(@Param('referenceCode') referenceCode: number) {
-    return this.docsService.remove(referenceCode);
+  remove(@Param('ref') ref: number) {
+    return this.docsService.remove(ref);
+  }
+
+  @Get('for/:ref')
+  @UseGuards(AuthGuard, RoleGuard)
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+  @ApiOperation({ summary: 'get documents by user reference code' })
+  docsByUser(@Param('ref') ref: number) {
+    return this.docsService.docsByUser(ref);
   }
 
 
   //file upload
-  @Post('/upload-file')
+  @Post('/upload')
   @isPublic()
   @ApiOperation({ summary: 'upload an file to a storage bucket in google cloud storage' })
   @UseInterceptors(
@@ -89,11 +97,11 @@ export class DocsController {
     return this.docsService.uploadToBucket(file);
   }
 
-  @Post('/remove-file/:referenceCode')
+  @Post('/remove/:ref')
   @isPublic()
   @ApiOperation({ summary: 'soft delete an file from a storage bucket in google cloud storage' })
-  async deleteFromBucket(@Param('referenceCode') referenceCode: string) {
-    return this.docsService.deleteFromBucket(referenceCode);
+  async deleteFromBucket(@Param('ref') ref: string) {
+    return this.docsService.deleteFromBucket(ref);
   }
 
   async getExtension(filename: string) {

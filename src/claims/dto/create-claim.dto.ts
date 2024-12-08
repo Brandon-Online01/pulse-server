@@ -25,7 +25,7 @@ export class CreateClaimDto {
         description: 'The user reference code of the person who verified the claim',
         example: { uid: 1 },
     })
-    verifiedBy: { uid: number } | null;
+    verifiedBy: { uid: number };
 
     @IsNotEmpty()
     @ApiProperty({

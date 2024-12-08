@@ -2,6 +2,7 @@ import { Status } from '../../lib/enums/enums';
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
 import { Branch } from 'src/branch/entities/branch.entity';
+import { Client } from 'src/clients/entities/client.entity';
 
 @Entity('lead')
 export class Lead {
@@ -44,4 +45,7 @@ export class Lead {
 
     @ManyToOne(() => Branch, (branch) => branch?.leads)
     branch: Branch;
+
+    @ManyToOne(() => Client, (client) => client?.leads)
+    client: Client;
 }

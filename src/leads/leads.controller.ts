@@ -30,35 +30,43 @@ export class LeadsController {
     return this.leadsService.findAll();
   }
 
-  @Get(':referenceCode')
+  @Get(':ref')
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get a lead by reference code' })
-  findOne(@Param('referenceCode') referenceCode: number) {
-    return this.leadsService.findOne(referenceCode);
+  findOne(@Param('ref') ref: number) {
+    return this.leadsService.findOne(ref);
   }
 
-  @Patch(':referenceCode')
+  @Get('for/:ref')
+  @UseGuards(AuthGuard, RoleGuard)
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+  @ApiOperation({ summary: 'get leads by user reference code' })
+  leadsByUser(@Param('ref') ref: number) {
+    return this.leadsService.leadsByUser(ref);
+  }
+
+  @Patch(':ref')
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'update a lead by reference code' })
-  update(@Param('referenceCode') referenceCode: number, @Body() updateLeadDto: UpdateLeadDto) {
-    return this.leadsService.update(referenceCode, updateLeadDto);
+  update(@Param('ref') ref: number, @Body() updateLeadDto: UpdateLeadDto) {
+    return this.leadsService.update(ref, updateLeadDto);
   }
 
-  @Patch('restore/:referenceCode')
+  @Patch('restore/:ref')
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'restore a lead by reference code' })
-  restore(@Param('referenceCode') referenceCode: number) {
-    return this.leadsService.restore(referenceCode);
+  restore(@Param('ref') ref: number) {
+    return this.leadsService.restore(ref);
   }
 
 
-  @Delete(':referenceCode')
+  @Delete(':ref')
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
   @ApiOperation({ summary: 'soft delete a lead by reference code' })
-  remove(@Param('referenceCode') referenceCode: number) {
-    return this.leadsService.remove(referenceCode);
+  remove(@Param('ref') ref: number) {
+    return this.leadsService.remove(ref);
   }
 }

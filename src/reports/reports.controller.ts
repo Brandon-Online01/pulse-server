@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import { ReportsService } from './reports.service';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Roles } from '../decorators/role.decorator';
@@ -12,19 +12,35 @@ import { RoleGuard } from '../guards/role.guard';
 export class ReportsController {
   constructor(private readonly reportsService: ReportsService) { }
 
+  @Get('/flash/:ref')
+  @UseGuards(AuthGuard, RoleGuard)
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+  @ApiOperation({ summary: 'get user page highlight cards content' })
+  userHighlights(@Param('ref') ref: number) {
+    return this.reportsService.userHighlights(ref);
+  }
+
   @Get('/highlights')
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
-  @ApiOperation({ summary: 'Get home page highlight card content' })
+  @ApiOperation({ summary: 'get home page highlight card content' })
   homeHighlights() {
     return this.reportsService.homeHighlights();
   }
 
-  @Get('/user-highlights')
+  @Get('daily/:ref')
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
-  @ApiOperation({ summary: 'Get user page highlight cards content' })
-  userHighlights() {
-    return this.reportsService.userHighlights();
+  @ApiOperation({ summary: 'get daily report by user reference code' })
+  dailyReportForUser(@Param('ref') ref: number) {
+    return this.reportsService.dailyReportForUser(ref);
+  }
+
+  @Get('sales/:ref')
+  @UseGuards(AuthGuard, RoleGuard)
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+  @ApiOperation({ summary: 'get sales report by user reference code' })
+  salesReportForUser(@Param('ref') ref: number) {
+    return this.reportsService.salesReportForUser(ref);
   }
 }

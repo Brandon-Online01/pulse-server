@@ -40,28 +40,28 @@ export class UserController {
     return this.userService.findOne(searchParameter);
   }
 
-  @Patch(':referenceCode')
+  @Patch(':ref')
   @ApiOperation({ summary: 'Update a user by reference code' })
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   update(
-    @Param('referenceCode') referenceCode: number, @Body() updateUserDto: UpdateUserDto) {
-    return this.userService.update(referenceCode, updateUserDto);
+    @Param('ref') ref: number, @Body() updateUserDto: UpdateUserDto) {
+    return this.userService.update(ref, updateUserDto);
   }
 
-  @Patch('restore/:referenceCode')
+  @Patch('restore/:ref')
   @ApiOperation({ summary: 'Restore a deleted user by reference code' })
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
-  restore(@Param('referenceCode') referenceCode: number) {
-    return this.userService.restore(referenceCode);
+  restore(@Param('ref') ref: number) {
+    return this.userService.restore(ref);
   }
 
-  @Delete(':referenceCode')
+  @Delete(':ref')
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'Soft delete a user by reference code' })
-  remove(@Param('referenceCode') referenceCode: number) {
-    return this.userService.remove(referenceCode);
+  remove(@Param('ref') ref: number) {
+    return this.userService.remove(ref);
   }
 }

@@ -48,30 +48,30 @@ export class ShopController {
     return this.shopService.createProduct(createProductDto);
   }
 
-  @Patch('products/:referenceCode')
+  @Patch('products/:ref')
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'update a product' })
   updateProduct(
-    @Param('referenceCode') referenceCode: number,
+    @Param('ref') ref: number,
     @Body() updateProductDto: UpdateProductDto) {
-    return this.shopService.updateProduct(referenceCode, updateProductDto);
+    return this.shopService.updateProduct(ref, updateProductDto);
   }
 
-  @Delete('products/:referenceCode')
+  @Delete('products/:ref')
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'soft delete a product' })
-  deleteProduct(@Param('referenceCode') referenceCode: number) {
-    return this.shopService.deleteProduct(referenceCode);
+  deleteProduct(@Param('ref') ref: number) {
+    return this.shopService.deleteProduct(ref);
   }
 
-  @Patch('restore/products/:referenceCode')
+  @Patch('restore/products/:ref')
   @ApiOperation({ summary: 'Restore a deleted product by reference code' })
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
-  restoreProduct(@Param('referenceCode') referenceCode: number) {
-    return this.shopService.restoreProduct(referenceCode);
+  restoreProduct(@Param('ref') ref: number) {
+    return this.shopService.restoreProduct(ref);
   }
 
   @Get('products')
@@ -98,11 +98,11 @@ export class ShopController {
     return this.shopService.specials();
   }
 
-  @Get('products/:referenceCode')
+  @Get('products/:ref')
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get a product by reference code' })
-  getProductByReferenceCode(@Param('referenceCode') referenceCode: number) {
-    return this.shopService.getProductByReferenceCode(referenceCode);
+  getProductByref(@Param('ref') ref: number) {
+    return this.shopService.getProductByref(ref);
   }
 }

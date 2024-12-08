@@ -30,26 +30,26 @@ export class NewsController {
     return this.newsService.findAll();
   }
 
-  @Get(':referenceCode')
+  @Get(':ref')
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get an article by reference code' })
-  findOne(@Param('referenceCode') referenceCode: number) {
-    return this.newsService.findOne(referenceCode);
+  findOne(@Param('ref') ref: number) {
+    return this.newsService.findOne(ref);
   }
 
-  @Patch(':referenceCode')
+  @Patch(':ref')
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'update an article by reference code' })
-  update(@Param('referenceCode') referenceCode: number, @Body() updateNewsDto: UpdateNewsDto) {
-    return this.newsService.update(referenceCode, updateNewsDto);
+  update(@Param('ref') ref: number, @Body() updateNewsDto: UpdateNewsDto) {
+    return this.newsService.update(ref, updateNewsDto);
   }
 
-  @Delete(':referenceCode')
+  @Delete(':ref')
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
   @ApiOperation({ summary: 'soft delete an article by reference code' })
-  remove(@Param('referenceCode') referenceCode: number) {
-    return this.newsService.remove(referenceCode);
+  remove(@Param('ref') ref: number) {
+    return this.newsService.remove(ref);
   }
 }

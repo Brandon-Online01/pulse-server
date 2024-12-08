@@ -32,43 +32,51 @@ export class AssetsController {
     return this.assetsService.findAll();
   }
 
-  @Get(':referenceCode')
+  @Get(':ref')
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get an asset by reference code' })
-  findOne(@Param('referenceCode') referenceCode: number) {
-    return this.assetsService.findOne(referenceCode);
+  findOne(@Param('ref') ref: number) {
+    return this.assetsService.findOne(ref);
   }
 
-  @Get('/search/:queryTerm')
+  @Get('/search/:query')
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get an asset by search term i.e brand, model number, serial number' })
-  findByBrand(@Param('queryTerm') queryTerm: string) {
-    return this.assetsService.findByBrand(queryTerm);
+  findBySearchTerm(@Param('query') query: string) {
+    return this.assetsService.findBySearchTerm(query);
   }
 
-  @Patch(':referenceCode')
+  @Get('for/:ref')
+  @UseGuards(AuthGuard, RoleGuard)
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+  @ApiOperation({ summary: 'get assets by user reference code' })
+  assetsByUser(@Param('ref') ref: number) {
+    return this.assetsService.assetsByUser(ref);
+  }
+
+  @Patch(':ref')
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'update an asset' })
-  update(@Param('referenceCode') referenceCode: number, @Body() updateAssetDto: UpdateAssetDto) {
-    return this.assetsService.update(referenceCode, updateAssetDto);
+  update(@Param('ref') ref: number, @Body() updateAssetDto: UpdateAssetDto) {
+    return this.assetsService.update(ref, updateAssetDto);
   }
 
-  @Patch('restore/:referenceCode')
+  @Patch('restore/:ref')
   @ApiOperation({ summary: 'Restore a deleted user by reference code' })
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
-  restore(@Param('referenceCode') referenceCode: number) {
-    return this.assetsService.restore(referenceCode);
+  restore(@Param('ref') ref: number) {
+    return this.assetsService.restore(ref);
   }
 
-  @Delete(':referenceCode')
+  @Delete(':ref')
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'soft delete asset' })
-  remove(@Param('referenceCode') referenceCode: number) {
-    return this.assetsService.remove(referenceCode);
+  remove(@Param('ref') ref: number) {
+    return this.assetsService.remove(ref);
   }
 }
