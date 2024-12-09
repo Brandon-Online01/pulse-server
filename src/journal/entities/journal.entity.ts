@@ -34,7 +34,7 @@ export class Journal {
     })
     updatedAt: Date;
 
-    @Column({ nullable: false })
+    @Column({ nullable: false, default: false })
     isDeleted: boolean;
 
     @ManyToOne(() => User, user => user.journals)

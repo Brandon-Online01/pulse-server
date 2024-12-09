@@ -66,11 +66,7 @@ export class UserService {
 		try {
 			const user = await this.userRepository.findOne({
 				where: [
-					{ username: searchParameter, isDeleted: false },
-					{ email: searchParameter, isDeleted: false },
-					{ phone: searchParameter, isDeleted: false },
-					{ surname: searchParameter, isDeleted: false },
-					{ name: searchParameter, isDeleted: false }
+					{ uid: Number(searchParameter), isDeleted: false },
 				],
 				relations: [
 					'userProfile',
@@ -85,7 +81,8 @@ export class UserService {
 					'assets',
 					'trackings',
 					'orders',
-					'notifications'
+					'notifications',
+					'branch'
 				]
 			});
 
@@ -111,6 +108,41 @@ export class UserService {
 			return response;
 		}
 	}
+
+	async findOneForAuth(searchParameter: string): Promise<{ user: User | null, message: string }> {
+		try {
+			const user = await this.userRepository.findOne({
+				where: [
+					{ username: searchParameter, isDeleted: false },
+				],
+				relations: [
+					'branch'
+				]
+			});
+
+			if (!user) {
+				return {
+					user: null,
+					message: process.env.NOT_FOUND_MESSAGE,
+				};
+			}
+
+			const response = {
+				user: user,
+				message: process.env.SUCCESS_MESSAGE,
+			};
+
+			return response;
+		} catch (error) {
+			const response = {
+				message: error?.message,
+				user: null
+			}
+
+			return response;
+		}
+	}
+
 
 	async update(ref: number, updateUserDto: UpdateUserDto): Promise<{ message: string }> {
 		try {

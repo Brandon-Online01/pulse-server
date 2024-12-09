@@ -38,13 +38,14 @@ import { Tracking } from './tracking/entities/tracking.entity';
 import { ShopModule } from './shop/shop.module';
 import { ResellersModule } from './resellers/resellers.module';
 import { Order } from './shop/entities/order.entity';
-import { Product } from './shop/entities/product.entity';
-import { Reseller } from './resellers/entities/reseller.entity';
 import { NotificationsModule } from './notifications/notifications.module';
 import { Notification } from './notifications/entities/notification.entity';
 import { TaskAttachment } from './tasks/entities/task.entity';
 import { ClientsModule } from './clients/clients.module';
 import { Client } from './clients/entities/client.entity';
+import { ProductsModule } from './products/products.module';
+import { Product } from './products/entities/product.entity';
+import { Reseller } from './resellers/entities/reseller.entity';
 
 @Module({
   imports: [
@@ -75,13 +76,13 @@ import { Client } from './clients/entities/client.entity';
         Asset,
         Tracking,
         Order,
-        Product,
-        Reseller,
         Notification,
         SubTask,
         Task,
         TaskAttachment,
-        Client
+        Client,
+        Product,
+        Reseller
       ],
       synchronize: true,
       retryAttempts: 50,
@@ -109,6 +110,7 @@ import { Client } from './clients/entities/client.entity';
     ResellersModule,
     NotificationsModule,
     ClientsModule,
+    ProductsModule,
   ],
   controllers: [],
   providers: [

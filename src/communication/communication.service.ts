@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
-import { User } from '../user/entities/user.entity';
 import * as nodemailer from 'nodemailer';
 import { ConfigService } from '@nestjs/config';
 
@@ -21,24 +20,12 @@ export class CommunicationService {
   }
 
   @OnEvent('send.email')
-  sendEmail(user: User): string {
-    try {
-      const message = `welcome to our platform, ${user?.name}!`;
-
-      return message;
-    } catch (error) {
-      console.error('failed to send email:', error);
-    }
+  sendEmail() {
+    console.log('email sent');
   }
 
   @OnEvent('send.sms')
-  sendSms(user: User): string {
-    try {
-      const message = `welcome to our platform, ${user?.name}!`;
-
-      return message;
-    } catch (error) {
-      console.error('failed to send sms:', error);
-    }
+  sendSms() {
+    console.log('sms sent');
   }
 } 

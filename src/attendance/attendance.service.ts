@@ -6,7 +6,7 @@ import { AttendanceStatus } from 'src/lib/enums/enums';
 import { CreateCheckInDto } from './dto/create-attendance-check-in.dto';
 import { CreateCheckOutDto } from './dto/create-attendance-check-out.dto';
 import { isToday } from 'date-fns';
-import { BranchService } from 'src/branch/branch.service';
+import { differenceInMinutes, differenceInHours } from 'date-fns';
 
 @Injectable()
 export class AttendanceService {
@@ -38,7 +38,7 @@ export class AttendanceService {
     }
   }
 
-  public async checkOut(checkOutDto: CreateCheckOutDto): Promise<{ message: string }> {
+  public async checkOut(checkOutDto: CreateCheckOutDto): Promise<{ message: string, duration?: string }> {
     try {
       const activeShift = await this.attendanceRepository.findOne({
         where: {
@@ -53,9 +53,20 @@ export class AttendanceService {
       });
 
       if (activeShift) {
+        const checkOutTime = new Date();
+        const checkInTime = new Date(activeShift.checkIn);
+
+        const minutesWorked = differenceInMinutes(checkOutTime, checkInTime);
+        const hoursWorked = differenceInHours(checkOutTime, checkInTime);
+        const remainingMinutes = minutesWorked % 60;
+
+        const duration = `${hoursWorked}h ${remainingMinutes}m`;
+
         const updatedShift = {
           ...activeShift,
           ...checkOutDto,
+          checkOut: checkOutTime,
+          duration,
           status: AttendanceStatus.COMPLETED
         }
 
@@ -63,6 +74,7 @@ export class AttendanceService {
 
         const response = {
           message: process.env.SUCCESS_MESSAGE,
+          duration
         }
 
         return response;
@@ -70,6 +82,7 @@ export class AttendanceService {
     } catch (error) {
       const response = {
         message: error?.message,
+        duration: null
       }
 
       return response;

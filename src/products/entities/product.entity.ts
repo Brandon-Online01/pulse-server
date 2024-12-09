@@ -22,6 +22,12 @@ export class Product {
     @Column({ nullable: true, type: 'float' })
     salePrice: number;
 
+    @Column({ nullable: true, type: 'datetime' })
+    saleStart: Date;
+
+    @Column({ nullable: true, type: 'datetime' })
+    saleEnd: Date;
+
     @Column({ nullable: true, type: 'float' })
     discount: number;
 
@@ -33,6 +39,12 @@ export class Product {
 
     @Column({ nullable: false, type: 'varchar', length: 100 })
     category: string;
+
+    @Column({ nullable: false, type: 'varchar', length: 100 })
+    subCategory: string;
+
+    @Column({ nullable: false, type: 'varchar', length: 100 })
+    brand: string;
 
     @Column({ nullable: true, type: 'int' })
     weight: number;

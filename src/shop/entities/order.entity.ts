@@ -1,8 +1,8 @@
-import { Product } from "./product.entity";
 import { User } from "../../user/entities/user.entity";
 import { InvoiceRecipient } from "src/lib/enums/enums";
 import { Client } from "src/clients/entities/client.entity";
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Product } from "src/products/entities/product.entity";
 
 @Entity('order')
 export class Order {

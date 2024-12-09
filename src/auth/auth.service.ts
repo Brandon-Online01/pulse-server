@@ -17,7 +17,7 @@ export class AuthService {
 		try {
 			const { username, password } = signInInput;
 
-			const authProfile = await this.userService.findOne(username);
+			const authProfile = await this.userService.findOneForAuth(username);
 
 			if (!authProfile?.user) {
 				throw new BadRequestException('Invalid credentials provided');

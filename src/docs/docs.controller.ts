@@ -25,47 +25,6 @@ export class DocsController {
     return this.docsService.create(createDocDto);
   }
 
-  @Get()
-  @UseGuards(AuthGuard, RoleGuard)
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
-  @ApiOperation({ summary: 'get all documents' })
-  findAll() {
-    return this.docsService.findAll();
-  }
-
-  @Get(':ref')
-  @UseGuards(AuthGuard, RoleGuard)
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
-  @ApiOperation({ summary: 'get a document by reference code' })
-  findOne(@Param('ref') ref: number) {
-    return this.docsService.findOne(ref);
-  }
-
-  @Patch(':ref')
-  @UseGuards(AuthGuard, RoleGuard)
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
-  @ApiOperation({ summary: 'update a document by reference code' })
-  update(@Param('ref') ref: number, @Body() updateDocDto: UpdateDocDto) {
-    return this.docsService.update(ref, updateDocDto);
-  }
-
-  @Delete(':ref')
-  @UseGuards(AuthGuard, RoleGuard)
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
-  @ApiOperation({ summary: 'soft delete a document by reference code' })
-  remove(@Param('ref') ref: number) {
-    return this.docsService.remove(ref);
-  }
-
-  @Get('for/:ref')
-  @UseGuards(AuthGuard, RoleGuard)
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
-  @ApiOperation({ summary: 'get documents by user reference code' })
-  docsByUser(@Param('ref') ref: number) {
-    return this.docsService.docsByUser(ref);
-  }
-
-
   //file upload
   @Post('/upload')
   @isPublic()
@@ -107,5 +66,45 @@ export class DocsController {
   async getExtension(filename: string) {
     const parts = filename?.split('.');
     return parts?.length === 1 ? '' : parts[parts?.length - 1];
+  }
+
+  @Get()
+  @UseGuards(AuthGuard, RoleGuard)
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+  @ApiOperation({ summary: 'get all documents' })
+  findAll() {
+    return this.docsService.findAll();
+  }
+
+  @Get(':ref')
+  @UseGuards(AuthGuard, RoleGuard)
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+  @ApiOperation({ summary: 'get a document by reference code' })
+  findOne(@Param('ref') ref: number) {
+    return this.docsService.findOne(ref);
+  }
+
+  @Get('for/:ref')
+  @UseGuards(AuthGuard, RoleGuard)
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+  @ApiOperation({ summary: 'get documents by user reference code' })
+  docsByUser(@Param('ref') ref: number) {
+    return this.docsService.docsByUser(ref);
+  }
+
+  @Patch(':ref')
+  @UseGuards(AuthGuard, RoleGuard)
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+  @ApiOperation({ summary: 'update a document by reference code' })
+  update(@Param('ref') ref: number, @Body() updateDocDto: UpdateDocDto) {
+    return this.docsService.update(ref, updateDocDto);
+  }
+
+  @Delete(':ref')
+  @UseGuards(AuthGuard, RoleGuard)
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+  @ApiOperation({ summary: 'soft delete a document by reference code' })
+  remove(@Param('ref') ref: number) {
+    return this.docsService.remove(ref);
   }
 }

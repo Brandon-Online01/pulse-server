@@ -21,8 +21,8 @@ export class Attendance {
     @Column({ type: 'timestamp', nullable: true })
     checkOut: Date;
 
-    @Column({ type: 'int', nullable: true })
-    duration: number;
+    @Column({ type: 'varchar', nullable: true })
+    duration: string;
 
     @Column({ type: 'decimal', precision: 10, scale: 6, nullable: true })
     checkInLatitude: number;
@@ -53,12 +53,6 @@ export class Attendance {
 
     @Column({ type: 'timestamp', nullable: true, default: () => 'CURRENT_TIMESTAMP' })
     verifiedAt: Date;
-
-    @Column({ nullable: true })
-    checkInDeviceMacAddress: string;
-
-    @Column({ nullable: true })
-    checkOutDeviceMacAddress: string;
 
     // relations
     @ManyToOne(() => User, (user) => user?.userAttendances)

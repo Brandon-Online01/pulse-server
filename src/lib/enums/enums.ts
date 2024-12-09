@@ -77,6 +77,7 @@ export enum TaskType {
 export enum ClaimStatus {
     PENDING = 'pending',
     APPROVED = 'approved',
+    IN_REVIEW = 'in review',
     REJECTED = 'rejected',
     PAID = 'paid',
     DELETED = 'deleted',

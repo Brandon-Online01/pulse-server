@@ -48,15 +48,6 @@ export class CreateCheckInDto {
     })
     checkInNotes?: string;
 
-    @IsString()
-    @IsOptional()
-    @ApiProperty({
-        type: String,
-        required: false,
-        example: "XX:XX:XX:XX:XX:XX"
-    })
-    checkInDeviceMacAddress?: string;
-
     @IsNotEmpty()
     @IsObject()
     @ApiProperty({

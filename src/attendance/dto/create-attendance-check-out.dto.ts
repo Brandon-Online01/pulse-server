@@ -46,15 +46,6 @@ export class CreateCheckOutDto {
     })
     checkOutLongitude?: number;
 
-    @IsString()
-    @IsOptional()
-    @ApiProperty({
-        type: String,
-        required: false,
-        example: 'XX:XX:XX:XX:XX:XX'
-    })
-    checkOutDeviceMacAddress?: string;
-
     @IsNotEmpty()
     @IsObject()
     @ApiProperty({

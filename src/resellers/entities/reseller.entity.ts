@@ -1,6 +1,6 @@
 import { Column, Entity, PrimaryGeneratedColumn, OneToMany } from "typeorm";
-import { Product } from "src/shop/entities/product.entity";
-import { ResellerStatus } from "src/lib/enums/enums";
+import { Product } from "../../products/entities/product.entity";
+import { ResellerStatus } from "../../lib/enums/enums";
 
 @Entity('reseller')
 export class Reseller {
