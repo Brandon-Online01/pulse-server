@@ -1,5 +1,5 @@
 import { Branch } from "src/branch/entities/branch.entity";
-import { ClaimStatus } from "src/lib/enums/enums";
+import { ClaimCategory, ClaimStatus } from "src/lib/enums/enums";
 import { User } from "src/user/entities/user.entity";
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
@@ -8,8 +8,8 @@ export class Claim {
     @PrimaryGeneratedColumn()
     uid: number;
 
-    @Column({ type: 'decimal', precision: 10, scale: 2, nullable: false })
-    amount: number;
+    @Column({ type: 'varchar', nullable: false })
+    amount: string;
 
     @Column({ type: 'varchar', nullable: true })
     fileUrl: string;
@@ -29,7 +29,7 @@ export class Claim {
     @Column({ type: 'timestamp', nullable: true })
     deletedAt: Date;
 
-    @Column({ type: 'varchar', nullable: true })
+    @Column({ type: 'varchar', nullable: true, length: 5000 })
     comments: string;
 
     @Column({ type: 'boolean', default: false })
@@ -37,6 +37,9 @@ export class Claim {
 
     @Column({ type: 'enum', enum: ClaimStatus, default: ClaimStatus.PENDING })
     status: ClaimStatus;
+
+    @Column({ type: 'enum', enum: ClaimCategory, nullable: true, default: ClaimCategory.GENERAL })
+    category: ClaimCategory;
 
     //relationships
     @ManyToOne(() => User, (user) => user?.userClaims)

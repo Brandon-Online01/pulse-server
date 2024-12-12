@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateDocDto } from './dto/create-doc.dto';
 import { UpdateDocDto } from './dto/update-doc.dto';
@@ -19,8 +19,11 @@ export class DocsService {
 
   async create(createDocDto: CreateDocDto) {
     try {
-      const doc = this.docsRepository.create(createDocDto as unknown as DeepPartial<Doc>);
-      await this.docsRepository.save(doc);
+      const doc = await this.docsRepository.save(createDocDto as unknown as DeepPartial<Doc>);
+
+      if (!doc) {
+        throw new Error(process.env.NOT_FOUND_MESSAGE);
+      }
 
       const response = {
         message: process.env.SUCCESS_MESSAGE,
@@ -39,6 +42,10 @@ export class DocsService {
   async findAll(): Promise<{ docs: Doc[] | null, message: string }> {
     try {
       const docs = await this.docsRepository.find();
+
+      if (!docs) {
+        throw new Error(process.env.NOT_FOUND_MESSAGE);
+      }
 
       const response = {
         message: process.env.SUCCESS_MESSAGE,
@@ -62,6 +69,10 @@ export class DocsService {
         where: { uid: ref },
         relations: ['owner', 'branch']
       });
+
+      if (!doc) {
+        throw new Error(process.env.NOT_FOUND_MESSAGE);
+      }
 
       const response = {
         message: process.env.SUCCESS_MESSAGE,
@@ -87,7 +98,7 @@ export class DocsService {
       });
 
       if (!docs) {
-        throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
+        throw new Error(process.env.NOT_FOUND_MESSAGE);
       }
 
       const response = {
@@ -108,7 +119,11 @@ export class DocsService {
 
   async update(ref: number, updateDocDto: UpdateDocDto): Promise<{ message: string }> {
     try {
-      await this.docsRepository.update(ref, updateDocDto as unknown as DeepPartial<Doc>);
+      const doc = await this.docsRepository.update(ref, updateDocDto as unknown as DeepPartial<Doc>);
+
+      if (!doc) {
+        throw new Error(process.env.NOT_FOUND_MESSAGE);
+      }
 
       const response = {
         message: process.env.SUCCESS_MESSAGE,
@@ -189,6 +204,8 @@ export class DocsService {
 
       return response;
     } catch (error: any) {
+      console.log('error', error);
+
       const response = {
         newFileName: null,
         message: error.message,

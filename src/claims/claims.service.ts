@@ -3,8 +3,8 @@ import { CreateClaimDto } from './dto/create-claim.dto';
 import { UpdateClaimDto } from './dto/update-claim.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Claim } from './entities/claim.entity';
-import { IsNull, Repository, DeepPartial } from 'typeorm';
-import { ClaimStatus } from 'src/lib/enums/enums';
+import { IsNull, Repository, DeepPartial, Not } from 'typeorm';
+import { ClaimStatus, ClaimCategory } from 'src/lib/enums/enums';
 
 @Injectable()
 export class ClaimsService {
@@ -12,6 +12,22 @@ export class ClaimsService {
 		@InjectRepository(Claim)
 		private claimsRepository: Repository<Claim>
 	) { }
+
+	private calculateStats(claims: Claim[]): {
+		total: number;
+		pending: number;
+		approved: number;
+		declined: number;
+		paid: number;
+	} {
+		return {
+			total: claims?.length || 0,
+			pending: claims?.filter(claim => claim?.status === ClaimStatus.PENDING)?.length || 0,
+			approved: claims?.filter(claim => claim?.status === ClaimStatus.APPROVED)?.length || 0,
+			declined: claims?.filter(claim => claim?.status === ClaimStatus.DECLINED)?.length || 0,
+			paid: claims?.filter(claim => claim?.status === ClaimStatus.PAID)?.length || 0,
+		};
+	}
 
 	async create(createClaimDto: CreateClaimDto): Promise<{ message: string }> {
 		try {
@@ -35,87 +51,97 @@ export class ClaimsService {
 		}
 	}
 
-	async findAll(): Promise<{ message: string, claims: Claim[] | null }> {
+	async findAll(): Promise<{ message: string, claims: Claim[] | null, stats: any }> {
 		try {
 			const claims = await this.claimsRepository.find({
-				where: {
-					deletedAt: IsNull()
-				}
+				where: { isDeleted: false },
+				relations: ['owner']
 			});
 
 			if (!claims) {
 				throw new NotFoundException(process.env.SEARCH_ERROR_MESSAGE);
 			}
 
-			const response = {
+			const stats = this.calculateStats(claims);
+
+			return {
 				message: process.env.SUCCESS_MESSAGE,
-				claims: claims
-			}
-
-			return response;
+				claims,
+				stats
+			};
 		} catch (error) {
-			const response = {
+			return {
 				message: error?.message,
-				claims: null
-			}
-
-			return response;
+				claims: null,
+				stats: null
+			};
 		}
 	}
 
-	async findOne(ref: number): Promise<{ message: string, claim: Claim | null }> {
+	async findOne(ref: number): Promise<{ message: string, claim: Claim | null, stats: any }> {
 		try {
 			const claim = await this.claimsRepository.findOne({
 				where: {
 					uid: ref,
-					deletedAt: IsNull()
+					isDeleted: false
 				},
-				relations: ['user']
+				relations: ['owner']
 			});
 
 			if (!claim) {
 				throw new NotFoundException(process.env.SEARCH_ERROR_MESSAGE);
 			}
 
-			const response = {
+			const allClaims = await this.claimsRepository.find();
+			const stats = this.calculateStats(allClaims);
+
+			return {
 				message: process.env.SUCCESS_MESSAGE,
-				claim: claim
-			}
-
-			return response;
+				claim,
+				stats
+			};
 		} catch (error) {
-			const response = {
+			return {
 				message: error?.message,
-				claim: null
-			}
-
-			return response;
+				claim: null,
+				stats: null
+			};
 		}
 	}
 
-	public async claimsByUser(ref: number): Promise<{ message: string, claims: Claim[] }> {
+	public async claimsByUser(ref: number): Promise<{
+		message: string,
+		claims: Claim[],
+		stats: {
+			total: number;
+			pending: number;
+			approved: number;
+			declined: number;
+			paid: number;
+		}
+	}> {
 		try {
 			const claims = await this.claimsRepository.find({
-				where: { owner: { uid: ref } }
+				where: { owner: { uid: ref, isDeleted: false } }
 			});
 
 			if (!claims) {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
-			const response = {
+			const stats = this.calculateStats(claims);
+
+			return {
 				message: process.env.SUCCESS_MESSAGE,
-				claims
+				claims,
+				stats
 			};
-
-			return response;
 		} catch (error) {
-			const response = {
+			return {
 				message: `could not get claims by user - ${error?.message}`,
-				claims: null
-			}
-
-			return response;
+				claims: null,
+				stats: null
+			};
 		}
 	}
 
@@ -187,6 +213,68 @@ export class ClaimsService {
 			}
 
 			return response;
+		}
+	}
+
+	async getTotalClaimsStats(): Promise<{
+		totalClaims: number;
+		totalValue: number;
+		byCategory: Record<ClaimCategory, number>;
+	}> {
+		try {
+			const claims = await this.claimsRepository.find({
+				where: {
+					deletedAt: IsNull(),
+					status: Not(ClaimStatus.DELETED)
+				}
+			});
+
+			const byCategory: Record<ClaimCategory, number> = {
+				[ClaimCategory.GENERAL]: 0,
+				[ClaimCategory.PROMOTION]: 0,
+				[ClaimCategory.EVENT]: 0,
+				[ClaimCategory.ANNOUNCEMENT]: 0,
+				[ClaimCategory.OTHER]: 0,
+				[ClaimCategory.HOTEL]: 0,
+				[ClaimCategory.TRAVEL]: 0,
+				[ClaimCategory.TRANSPORT]: 0,
+				[ClaimCategory.OTHER_EXPENSES]: 0,
+				[ClaimCategory.ACCOMMODATION]: 0,
+				[ClaimCategory.MEALS]: 0,
+				[ClaimCategory.TRANSPORTATION]: 0,
+				[ClaimCategory.ENTERTAINMENT]: 0
+			};
+
+			claims.forEach(claim => {
+				if (claim?.category) byCategory[claim?.category]++;
+			});
+
+			return {
+				totalClaims: claims.length,
+				totalValue: Math.round(claims.reduce((sum, claim) => sum + (Number(claim.amount) || 0), 0) * 100) / 100,
+				byCategory
+			};
+
+		} catch (error) {
+			return {
+				totalClaims: 0,
+				totalValue: 0,
+				byCategory: {
+					[ClaimCategory.GENERAL]: 0,
+					[ClaimCategory.PROMOTION]: 0,
+					[ClaimCategory.EVENT]: 0,
+					[ClaimCategory.ANNOUNCEMENT]: 0,
+					[ClaimCategory.OTHER]: 0,
+					[ClaimCategory.HOTEL]: 0,
+					[ClaimCategory.TRAVEL]: 0,
+					[ClaimCategory.TRANSPORT]: 0,
+					[ClaimCategory.OTHER_EXPENSES]: 0,
+					[ClaimCategory.ACCOMMODATION]: 0,
+					[ClaimCategory.MEALS]: 0,
+					[ClaimCategory.TRANSPORTATION]: 0,
+					[ClaimCategory.ENTERTAINMENT]: 0
+				}
+			};
 		}
 	}
 }

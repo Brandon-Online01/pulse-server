@@ -32,7 +32,7 @@ export class UserController {
     return this.userService.findAll();
   }
 
-  @Get(':searchParameter')
+  @Get(':ref')
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'Get a user by a search parameter i.e email, phone number, reference code' })

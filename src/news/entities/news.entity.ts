@@ -1,5 +1,5 @@
 import { Branch } from "src/branch/entities/branch.entity";
-import { Status } from "src/lib/enums/enums";
+import { NewsCategory, Status } from "src/lib/enums/enums";
 import { User } from "src/user/entities/user.entity";
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
@@ -53,4 +53,10 @@ export class News {
 
     @Column({ type: 'boolean', nullable: true, default: false })
     isDeleted: boolean;
+
+    @Column({ nullable: false, type: 'enum', enum: NewsCategory })
+    category: NewsCategory;
+
+    @Column({ nullable: false })
+    shareLink: string;
 }

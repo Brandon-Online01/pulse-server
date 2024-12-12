@@ -6,6 +6,7 @@ import { Roles } from '../decorators/role.decorator';
 import { AccessLevel } from '../lib/enums/enums';
 import { AuthGuard } from '../guards/auth.guard';
 import { RoleGuard } from '../guards/role.guard';
+import { isPublic } from '../decorators/public.decorator';
 
 @ApiTags('gps')
 @Controller('gps')
@@ -14,8 +15,7 @@ export class TrackingController {
   constructor(private readonly trackingService: TrackingService) { }
 
   @Post()
-  @UseGuards(AuthGuard, RoleGuard)
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+  @isPublic()
   @ApiOperation({ summary: 'create a new tracking record' })
   create(@Body() createTrackingDto: CreateTrackingDto) {
     return this.trackingService.create(createTrackingDto);

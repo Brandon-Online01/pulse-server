@@ -12,7 +12,7 @@ export class Task {
     @Column({ nullable: false })
     comment: string;
 
-    @Column({ nullable: true })
+    @Column({ nullable: true, type: 'varchar', length: 5000 })
     notes: string;
 
     @Column({ nullable: false, default: () => 'CURRENT_TIMESTAMP' })
@@ -79,7 +79,7 @@ export class SubTask {
     @Column({ nullable: false })
     title: string;
 
-    @Column({ nullable: true })
+    @Column({ nullable: true, type: 'varchar', length: 5000 })
     description: string;
 
     @Column({ nullable: false, default: () => 'CURRENT_TIMESTAMP' })

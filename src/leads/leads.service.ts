@@ -4,7 +4,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { Lead } from './entities/lead.entity';
 import { CreateLeadDto } from './dto/create-lead.dto';
 import { UpdateLeadDto } from './dto/update-lead.dto';
-
+import { Status } from '../lib/enums/enums';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 @Injectable()
 export class LeadsService {
   constructor(
@@ -32,7 +33,7 @@ export class LeadsService {
     }
   }
 
-  async findAll(): Promise<{ leads: Lead[] | null, message: string }> {
+  async findAll(): Promise<{ leads: Lead[] | null, message: string, stats: any }> {
     try {
       const leads = await this.leadRepository.find({ where: { isDeleted: false } });
 
@@ -40,12 +41,16 @@ export class LeadsService {
         return {
           leads: null,
           message: process.env.NOT_FOUND_MESSAGE,
+          stats: null
         };
       }
+
+      const stats = this.calculateStats(leads);
 
       const response = {
         leads: leads,
         message: process.env.SUCCESS_MESSAGE,
+        stats
       };
 
       return response;
@@ -53,44 +58,51 @@ export class LeadsService {
     } catch (error) {
       const response = {
         message: error?.message,
-        leads: null
+        leads: null,
+        stats: null
       }
 
       return response;
     }
   }
 
-  async findOne(ref: number): Promise<{ lead: Lead | null, message: string }> {
+  async findOne(ref: number): Promise<{ lead: Lead | null, message: string, stats: any }> {
     try {
       const lead = await this.leadRepository.findOne({
         where: { uid: ref, isDeleted: false },
-        relations: ['user', 'branch']
+        relations: ['owner']
       });
 
       if (!lead) {
         return {
           lead: null,
           message: process.env.NOT_FOUND_MESSAGE,
+          stats: null
         };
       }
+
+      const allLeads = await this.leadRepository.find();
+      const stats = this.calculateStats(allLeads);
 
       const response = {
         lead: lead,
         message: process.env.SUCCESS_MESSAGE,
+        stats
       };
 
       return response;
     } catch (error) {
       const response = {
         message: error?.message,
-        lead: null
+        lead: null,
+        stats: null
       }
 
       return response;
     }
   }
 
-  public async leadsByUser(ref: number): Promise<{ message: string, leads: Lead[] }> {
+  public async leadsByUser(ref: number): Promise<{ message: string, leads: Lead[], stats: any }> {
     try {
       const leads = await this.leadRepository.find({
         where: { owner: { uid: ref } }
@@ -100,16 +112,20 @@ export class LeadsService {
         throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
       }
 
+      const stats = this.calculateStats(leads);
+
       const response = {
         message: process.env.SUCCESS_MESSAGE,
-        leads
+        leads,
+        stats
       };
 
       return response;
     } catch (error) {
       const response = {
         message: `could not get leads by user - ${error?.message}`,
-        leads: null
+        leads: null,
+        stats: null
       }
 
       return response;
@@ -193,5 +209,21 @@ export class LeadsService {
 
       return response;
     }
+  }
+
+  private calculateStats(leads: Lead[]): {
+    total: number;
+    pending: number;
+    approved: number;
+    inReview: number;
+    declined: number;
+  } {
+    return {
+      total: leads?.length || 0,
+      pending: leads?.filter(lead => lead?.status === Status.PENDING)?.length || 0,
+      approved: leads?.filter(lead => lead?.status === Status.APPROVED)?.length || 0,
+      inReview: leads?.filter(lead => lead?.status === Status.REVIEW)?.length || 0,
+      declined: leads?.filter(lead => lead?.status === Status.DECLINED)?.length || 0,
+    };
   }
 }

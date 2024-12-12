@@ -5,13 +5,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { UserProfile } from './entities/user.profile.entity';
 import { UserEmployeementProfile } from './entities/user.employeement.profile.entity';
-import { CacheModule } from '@nestjs/cache-manager';
-import { redisConfig } from '../config/redis.config';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([User, UserProfile, UserEmployeementProfile]),
-    CacheModule.register(redisConfig)
   ],
   controllers: [UserController],
   providers: [UserService],

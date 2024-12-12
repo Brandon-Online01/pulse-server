@@ -1,6 +1,6 @@
 import { IsEnum, IsNumber, IsString, IsNotEmpty, IsObject, IsOptional } from "class-validator";
 import { ApiProperty } from "@nestjs/swagger";
-import { ClaimStatus } from "../../lib/enums/enums";
+import { ClaimCategory, ClaimStatus } from "../../lib/enums/enums";
 
 export class CreateClaimDto {
     @IsNumber()
@@ -64,4 +64,12 @@ export class CreateClaimDto {
         example: 'This is a comment',
     })
     comments: string;
+
+    @IsEnum(ClaimCategory)
+    @IsOptional()
+    @ApiProperty({
+        description: 'The category of the claim',
+        example: ClaimCategory.GENERAL,
+    })
+    category: string;
 }

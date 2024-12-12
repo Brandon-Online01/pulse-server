@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { IsNull, MoreThanOrEqual, Not, Repository } from 'typeorm';
+import { IsNull, MoreThanOrEqual, Not, Repository, LessThanOrEqual } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Attendance } from './entities/attendance.entity';
 import { AttendanceStatus } from 'src/lib/enums/enums';
@@ -7,6 +7,7 @@ import { CreateCheckInDto } from './dto/create-attendance-check-in.dto';
 import { CreateCheckOutDto } from './dto/create-attendance-check-out.dto';
 import { isToday } from 'date-fns';
 import { differenceInMinutes, differenceInHours } from 'date-fns';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class AttendanceService {
@@ -252,6 +253,82 @@ export class AttendanceService {
       }
 
       return response;
+    }
+  }
+
+  public async getAttendancePercentage(): Promise<{ percentage: number, totalHours: number }> {
+    try {
+      const today = new Date();
+      const startOfDay = new Date(today.setHours(0, 0, 0, 0));
+
+      const attendanceRecords = await this.attendanceRepository.find({
+        where: {
+          checkIn: MoreThanOrEqual(startOfDay),
+          status: AttendanceStatus.COMPLETED
+        }
+      });
+
+      let totalMinutesWorked = 0;
+
+      // Calculate total minutes worked
+      attendanceRecords.forEach(record => {
+        if (record.checkIn && record.checkOut) {
+          const minutes = differenceInMinutes(
+            new Date(record.checkOut),
+            new Date(record.checkIn)
+          );
+          totalMinutesWorked += minutes;
+        }
+      });
+
+      // Assuming 8-hour workday
+      const expectedWorkMinutes = 8 * 60;
+      const percentage = Math.min((totalMinutesWorked / expectedWorkMinutes) * 100, 100);
+      const totalHours = totalMinutesWorked / 60;
+
+      return {
+        percentage: Math.round(percentage),
+        totalHours: Math.round(totalHours * 10) / 10 // Round to 1 decimal place
+      };
+
+    } catch (error) {
+      return {
+        percentage: 0,
+        totalHours: 0
+      };
+    }
+  }
+
+  public async getAttendanceForDate(date: Date): Promise<{ totalHours: number }> {
+    try {
+      const startOfDay = new Date(date.setHours(0, 0, 0, 0));
+      const endOfDay = new Date(date.setHours(23, 59, 59, 999));
+
+      const attendanceRecords = await this.attendanceRepository.find({
+        where: {
+          checkIn: MoreThanOrEqual(startOfDay),
+          checkOut: LessThanOrEqual(endOfDay),
+          status: AttendanceStatus.COMPLETED
+        }
+      });
+
+      let totalMinutesWorked = 0;
+
+      attendanceRecords.forEach(record => {
+        if (record.checkIn && record.checkOut) {
+          const minutes = differenceInMinutes(
+            new Date(record.checkOut),
+            new Date(record.checkIn)
+          );
+          totalMinutesWorked += minutes;
+        }
+      });
+
+      return {
+        totalHours: Math.round((totalMinutesWorked / 60) * 10) / 10 // Round to 1 decimal place
+      };
+    } catch (error) {
+      return { totalHours: 0 };
     }
   }
 }

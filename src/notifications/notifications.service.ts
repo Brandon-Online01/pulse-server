@@ -2,16 +2,18 @@ import { Injectable } from '@nestjs/common';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Any } from 'typeorm';
+import { Repository, Any, Not } from 'typeorm';
 import { Notification } from './entities/notification.entity';
 import { NotificationResponse } from 'src/lib/types/notification';
 import { formatDistanceToNow } from 'date-fns';
+import { NotificationStatus } from 'src/lib/enums/enums';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class NotificationsService {
 	constructor(
 		@InjectRepository(Notification)
-		private readonly notificationRepository: Repository<Notification>
+		private readonly notificationRepository: Repository<Notification>,
 	) { }
 
 	async create(createNotificationDto: CreateNotificationDto): Promise<{ message: string }> {
@@ -62,7 +64,7 @@ export class NotificationsService {
 
 	async findOne(ref: number): Promise<{ message: string, notification: Notification | null }> {
 		try {
-			const notification = await this.notificationRepository.findOne({ where: { uid: ref }, relations: ['user'] });
+			const notification = await this.notificationRepository.findOne({ where: { uid: ref }, relations: ['owner'] });
 
 			if (!notification) {
 				throw new Error(process.env.NOT_FOUND_MESSAGE);
@@ -90,7 +92,8 @@ export class NotificationsService {
 				where: {
 					owner: {
 						uid: ref
-					}
+					},
+					status: Not(NotificationStatus.ARCHIVED)
 				}
 			});
 

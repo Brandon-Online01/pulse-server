@@ -46,6 +46,14 @@ export class TasksController {
     return this.tasksService.tasksByUser(ref);
   }
 
+  @Get('sub-tasks/:ref')
+  @UseGuards(AuthGuard, RoleGuard)
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+  @ApiOperation({ summary: 'get subtasks by task reference code' })
+  subtasksByTask(@Param('ref') ref: number) {
+    return this.tasksService.subtasksByTask(ref);
+  }
+
   @Patch(':ref')
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)

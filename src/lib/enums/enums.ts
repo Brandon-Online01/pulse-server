@@ -51,6 +51,9 @@ export enum Status {
     CANCELLED = 'cancelled',
     PENDING = 'pending',
     INPROGRESS = 'inprogress',
+    APPROVED = 'approved',
+    REVIEW = 'review',
+    DECLINED = 'declined',
 }
 
 // Attendance & Tasks
@@ -127,6 +130,7 @@ export enum NotificationType {
 export enum NotificationStatus {
     READ = 'read',
     UNREAD = 'unread',
+    ARCHIVED = 'archived',
 }
 
 // Task Management
@@ -150,4 +154,32 @@ export enum AttachmentType {
     VIDEO = 'video',
     AUDIO = 'audio',
     OTHER = 'other'
+}
+
+export enum NewsCategory {
+    HR = "Human Resources",
+    FINANCE = "Finance",
+    OPERATIONS = "Operations",
+    IT = "Information Technology",
+    MARKETING = "Marketing",
+    SALES = "Sales",
+    LEGAL = "Legal",
+    EXECUTIVE = "Executive",
+    GENERAL = "General"
+}
+
+export enum ClaimCategory {
+    GENERAL = 'general',
+    PROMOTION = 'promotion',
+    EVENT = 'event',
+    ANNOUNCEMENT = 'announcement',
+    OTHER = 'other',
+    HOTEL = 'hotel',
+    TRAVEL = 'travel',
+    TRANSPORT = 'transport',
+    OTHER_EXPENSES = 'other_expenses',
+    ACCOMMODATION = 'accommodation',
+    MEALS = 'meals',
+    TRANSPORTATION = 'transportation',
+    ENTERTAINMENT = 'entertainment',
 }

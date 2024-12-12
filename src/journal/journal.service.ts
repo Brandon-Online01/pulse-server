@@ -12,6 +12,14 @@ export class JournalService {
     private journalRepository: Repository<Journal>,
   ) { }
 
+  private calculateStats(journals: Journal[]): {
+    total: number;
+  } {
+    return {
+      total: journals?.length || 0,
+    };
+  }
+
   async create(createJournalDto: CreateJournalDto): Promise<{ message: string }> {
     try {
       const journal = await this.journalRepository.save(createJournalDto);
@@ -34,102 +42,101 @@ export class JournalService {
     }
   }
 
-  async findAll(): Promise<{ message: string, journals: Journal[] | null }> {
+  async findAll(): Promise<{ message: string, journals: Journal[] | null, stats: any }> {
     try {
       const journals = await this.journalRepository.find({
+        where: { isDeleted: false },
         relations: ['owner'],
         order: {
           timestamp: 'DESC'
         }
       });
 
-
       if (journals?.length === 0) {
-        const response = {
+        return {
           message: process.env.NOT_FOUND_MESSAGE,
-          journals: null
+          journals: null,
+          stats: null
         }
-
-        return response
       }
 
-      const response = {
+      const stats = this.calculateStats(journals);
+
+      return {
         journals,
         message: process.env.SUCCESS_MESSAGE,
+        stats
       }
-
-      return response
     } catch (error) {
-      const response = {
+      return {
         message: error?.message,
-        journals: null
+        journals: null,
+        stats: null
       }
-
-      return response
     }
   }
 
-  async findOne(ref: number): Promise<{ message: string, journal: Journal | null }> {
+  async findOne(ref: number): Promise<{ message: string, journal: Journal | null, stats: any }> {
     try {
       const journal = await this.journalRepository.findOne({
-        where: { uid: ref },
+        where: { uid: ref, isDeleted: false },
         relations: ['owner']
       });
 
       if (!journal) {
-        const response = {
+        return {
           message: process.env.NOT_FOUND_MESSAGE,
-          journal: null
+          journal: null,
+          stats: null
         }
-
-        return response
       }
 
-      const response = {
+      const allJournals = await this.journalRepository.find();
+      const stats = this.calculateStats(allJournals);
+
+      return {
         journal,
-        message: process.env.SUCCESS_MESSAGE
+        message: process.env.SUCCESS_MESSAGE,
+        stats
       }
-
-      return response
     } catch (error) {
-      const response = {
+      return {
         message: error?.message,
-        journal: null
+        journal: null,
+        stats: null
       }
-
-      return response
     }
   }
 
-  public async journalsByUser(ref: number): Promise<{ message: string, journals: Journal[] }> {
+  public async journalsByUser(ref: number): Promise<{ message: string, journals: Journal[], stats: { total: number } }> {
     try {
       const journals = await this.journalRepository.find({
-        where: { owner: { uid: ref } }
+        where: { owner: { uid: ref }, isDeleted: false }
       });
 
       if (!journals) {
         throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
       }
 
-      const response = {
+      const stats = this.calculateStats(journals);
+
+      return {
         message: process.env.SUCCESS_MESSAGE,
-        journals
+        journals,
+        stats
       };
-
-      return response;
     } catch (error) {
-      const response = {
+      return {
         message: `could not get journals by user - ${error?.message}`,
-        journals: null
+        journals: null,
+        stats: null
       }
-
-      return response;
     }
   }
 
   async update(ref: number, updateJournalDto: UpdateJournalDto) {
     try {
-      const journal = await this.journalRepository.findOne({ where: { uid: ref } });
+      const journal = await this.journalRepository.findOne({ where: { uid: ref, isDeleted: false } });
 
       if (!journal) {
         const response = {
@@ -217,6 +224,20 @@ export class JournalService {
       }
 
       return response
+    }
+  }
+
+  async count(): Promise<{ total: number }> {
+    try {
+      const total = await this.journalRepository.count();
+
+      return {
+        total
+      };
+    } catch (error) {
+      return {
+        total: 0
+      };
     }
   }
 }

@@ -1,16 +1,20 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
-import { Task } from './entities/task.entity';
+import { SubTask, Task } from './entities/task.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Claim } from 'src/claims/entities/claim.entity';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { Status } from '../lib/enums/enums';
+import { Between } from 'typeorm';
 
 @Injectable()
 export class TasksService {
 	constructor(
 		@InjectRepository(Task)
-		private taskRepository: Repository<Task>
+		private taskRepository: Repository<Task>,
+		@InjectRepository(SubTask)
+		private subTaskRepository: Repository<SubTask>,
 	) { }
 
 	async create(createTaskDto: CreateTaskDto): Promise<{ message: string }> {
@@ -34,7 +38,12 @@ export class TasksService {
 	async findAll(): Promise<{ tasks: Task[] | null, message: string }> {
 		try {
 			const tasks = await this.taskRepository.find({
-				where: { isDeleted: false }
+				where: { isDeleted: false },
+				relations: [
+					'owner',
+					'branch',
+					'subtasks',
+				]
 			});
 
 			if (!tasks) {
@@ -59,7 +68,8 @@ export class TasksService {
 				where: { uid: ref, isDeleted: false },
 				relations: [
 					'owner',
-					'branch'
+					'branch',
+					'subtasks',
 				]
 			});
 
@@ -86,7 +96,12 @@ export class TasksService {
 	public async tasksByUser(ref: number): Promise<{ message: string, tasks: Task[] }> {
 		try {
 			const tasks = await this.taskRepository.find({
-				where: { owner: { uid: ref } }
+				where: { owner: { uid: ref }, isDeleted: false },
+				relations: [
+					'owner',
+					'branch',
+					'subtasks',
+				]
 			});
 
 			if (!tasks) {
@@ -102,6 +117,32 @@ export class TasksService {
 		} catch (error) {
 			const response = {
 				message: `could not get tasks by user - ${error?.message}`,
+				tasks: null
+			}
+
+			return response;
+		}
+	}
+
+	public async subtasksByTask(ref: number): Promise<{ message: string, tasks: SubTask }> {
+		try {
+			const tasks = await this.subTaskRepository.findOne({
+				where: { task: { uid: ref } },
+			});
+
+			if (!tasks) {
+				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
+			}
+
+			const response = {
+				message: process.env.SUCCESS_MESSAGE,
+				tasks
+			};
+
+			return response;
+		} catch (error) {
+			const response = {
+				message: `could not get subtasks by task - ${error?.message}`,
 				tasks: null
 			}
 
@@ -153,6 +194,75 @@ export class TasksService {
 			return {
 				message: error?.message,
 			};
+		}
+	}
+
+	async getTaskStatusSummary(): Promise<{
+		byStatus: Record<Status, number>;
+		total: number;
+	}> {
+		try {
+			const tasks = await this.taskRepository.find({
+				where: { isDeleted: false }
+			});
+
+			const byStatus: Record<Status, number> = {
+				[Status.POSTPONED]: 0,
+				[Status.MISSED]: 0,
+				[Status.COMPLETED]: 0,
+				[Status.CANCELLED]: 0,
+				[Status.PENDING]: 0,
+				[Status.INPROGRESS]: 0,
+				[Status.APPROVED]: 0,
+				[Status.REVIEW]: 0,
+				[Status.DECLINED]: 0,
+				// Initialize other Status enum values to 0
+				[Status.ACTIVE]: 0,
+				[Status.INACTIVE]: 0,
+				[Status.DELETED]: 0,
+				[Status.BANNED]: 0,
+				[Status.DEACTIVATED]: 0,
+				[Status.EXPIRED]: 0,
+				[Status.PAID]: 0,
+				[Status.UNPAID]: 0,
+				[Status.PARTIAL]: 0,
+				[Status.OVERDUE]: 0,
+				[Status.DRIVING]: 0,
+				[Status.PARKING]: 0,
+				[Status.STOPPED]: 0
+			};
+
+			tasks.forEach(task => {
+				if (task.status) byStatus[task.status]++;
+			});
+
+			return {
+				byStatus,
+				total: tasks.length
+			};
+
+		} catch (error) {
+			return {
+				byStatus: Object.values(Status).reduce((acc, status) => ({ ...acc, [status]: 0 }), {} as Record<Status, number>),
+				total: 0
+			};
+		}
+	}
+
+	public async getTasksForDate(date: Date): Promise<{ total: number }> {
+		try {
+			const startOfDay = new Date(date.setHours(0, 0, 0, 0));
+			const endOfDay = new Date(date.setHours(23, 59, 59, 999));
+
+			const tasks = await this.taskRepository.count({
+				where: {
+					createdAt: Between(startOfDay, endOfDay)
+				}
+			});
+
+			return { total: tasks };
+		} catch (error) {
+			return { total: 0 };
 		}
 	}
 }

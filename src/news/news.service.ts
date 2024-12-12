@@ -5,12 +5,14 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { News } from './entities/news.entity';
 import { Status } from 'src/lib/enums/enums';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class NewsService {
   constructor(
     @InjectRepository(News)
-    private newsRepository: Repository<News>
+    private newsRepository: Repository<News>,
+    private eventEmitter: EventEmitter2,
   ) { }
 
   async create(createNewsDto: CreateNewsDto): Promise<{ message: string }> {
@@ -23,6 +25,8 @@ export class NewsService {
         message: process.env.SUCCESS_MESSAGE,
         data: news
       }
+
+      this.eventEmitter.emit('add.xp', { owner: news?.author?.uid, pointsToAdd: 50 });
 
       return response;
     } catch (error) {

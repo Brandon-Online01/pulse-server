@@ -23,7 +23,6 @@ import { LeadsModule } from './leads/leads.module';
 import { Lead } from './leads/entities/lead.entity';
 import { JournalModule } from './journal/journal.module';
 import { Journal } from './journal/entities/journal.entity';
-import { ReportsModule } from './reports/reports.module';
 import { TasksModule } from './tasks/tasks.module';
 import { SubTask, Task } from './tasks/entities/task.entity';
 import { OrganisationModule } from './organisation/organisation.module';
@@ -46,13 +45,33 @@ import { Client } from './clients/entities/client.entity';
 import { ProductsModule } from './products/products.module';
 import { Product } from './products/entities/product.entity';
 import { Reseller } from './resellers/entities/reseller.entity';
+import { ReportsModule } from './reports/reports.module';
 
 @Module({
   imports: [
-    EventEmitterModule.forRoot(),
+    AssetsModule,
+    AttendanceModule,
+    AuthModule,
+    BranchModule,
+    ClaimsModule,
+    ClientsModule,
+    CommunicationModule,
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    DocsModule,
+    EventEmitterModule.forRoot(),
+    JournalModule,
+    LeadsModule,
+    NewsModule,
+    NotificationsModule,
+    OrganisationModule,
+    ProductsModule,
+    ReportsModule,
+    ResellersModule,
+    ShopModule,
+    TasksModule,
+    TrackingModule,
     TypeOrmModule.forRoot({
       type: 'mysql',
       host: process.env.DATABASE_HOST,
@@ -82,7 +101,7 @@ import { Reseller } from './resellers/entities/reseller.entity';
         TaskAttachment,
         Client,
         Product,
-        Reseller
+        Reseller,
       ],
       synchronize: true,
       retryAttempts: 50,
@@ -91,26 +110,7 @@ import { Reseller } from './resellers/entities/reseller.entity';
         connectionLimit: 100,
       },
     }),
-    AuthModule,
     UserModule,
-    CommunicationModule,
-    AttendanceModule,
-    TrackingModule,
-    DocsModule,
-    ClaimsModule,
-    LeadsModule,
-    JournalModule,
-    ReportsModule,
-    TasksModule,
-    OrganisationModule,
-    BranchModule,
-    NewsModule,
-    AssetsModule,
-    ShopModule,
-    ResellersModule,
-    NotificationsModule,
-    ClientsModule,
-    ProductsModule,
   ],
   controllers: [],
   providers: [
