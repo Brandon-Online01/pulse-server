@@ -171,8 +171,6 @@ export class ProductsService {
     try {
       const searchPattern = `%${searchTerm?.toLowerCase()}%`;
 
-      console.log(searchPattern, '- searchPattern')
-
       const products = await this.productRepository.find({
         where: [
           { category: Like(searchPattern) },
