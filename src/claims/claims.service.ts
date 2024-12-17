@@ -3,14 +3,18 @@ import { CreateClaimDto } from './dto/create-claim.dto';
 import { UpdateClaimDto } from './dto/update-claim.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Claim } from './entities/claim.entity';
-import { IsNull, Repository, DeepPartial, Not } from 'typeorm';
-import { ClaimStatus, ClaimCategory } from 'src/lib/enums/enums';
+import { IsNull, Repository, DeepPartial, Not, Between } from 'typeorm';
+import { ClaimStatus, ClaimCategory, NotificationStatus, NotificationType, AccessLevel } from 'src/lib/enums/enums';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { endOfDay } from 'date-fns';
+import { startOfDay } from 'date-fns';
 
 @Injectable()
 export class ClaimsService {
 	constructor(
 		@InjectRepository(Claim)
-		private claimsRepository: Repository<Claim>
+		private claimsRepository: Repository<Claim>,
+		private eventEmitter: EventEmitter2
 	) { }
 
 	private calculateStats(claims: Claim[]): {
@@ -40,6 +44,18 @@ export class ClaimsService {
 			const response = {
 				message: process.env.SUCCESS_MESSAGE,
 			}
+
+			const notification = {
+				type: NotificationType.USER,
+				title: 'New Claim',
+				message: `A new claim has been created`,
+				status: NotificationStatus.UNREAD,
+				owner: claim?.owner
+			}
+
+			const recipients = [AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.OWNER, AccessLevel.SUPERVISOR, AccessLevel.USER]
+
+			this.eventEmitter.emit('send.notification', notification, recipients);
 
 			return response;
 		} catch (error) {
@@ -145,13 +161,72 @@ export class ClaimsService {
 		}
 	}
 
+	async getClaimsForDate(date: Date): Promise<{
+		message: string,
+		claims: {
+			pending: Claim[],
+			approved: Claim[],
+			declined: Claim[],
+			paid: Claim[]
+		}
+	}> {
+		try {
+			const claims = await this.claimsRepository.find({
+				where: { createdAt: Between(startOfDay(date), endOfDay(date)) }
+			});
+
+			if (!claims) {
+				throw new Error(process.env.NOT_FOUND_MESSAGE);
+			}
+
+			// Group claims by status
+			const groupedClaims = {
+				pending: claims.filter(claim => claim.status === ClaimStatus.PENDING),
+				approved: claims.filter(claim => claim.status === ClaimStatus.APPROVED),
+				declined: claims.filter(claim => claim.status === ClaimStatus.DECLINED),
+				paid: claims.filter(claim => claim.status === ClaimStatus.PAID),
+			};
+
+			return {
+				message: process.env.SUCCESS_MESSAGE,
+				claims: groupedClaims
+			};
+		} catch (error) {
+			return {
+				message: error?.message,
+				claims: null
+			};
+		}
+	}
+
 	async update(ref: number, updateClaimDto: UpdateClaimDto): Promise<{ message: string }> {
 		try {
+			const claim = await this.claimsRepository.findOne({
+				where: { uid: ref, isDeleted: false },
+				relations: ['owner']
+			});
+
+			if (!claim) {
+				throw new NotFoundException(process.env.SEARCH_ERROR_MESSAGE);
+			}
+
 			await this.claimsRepository.update(ref, updateClaimDto as unknown as DeepPartial<Claim>);
 
 			const response = {
 				message: process.env.SUCCESS_MESSAGE,
 			}
+
+			const notification = {
+				type: NotificationType.USER,
+				title: 'Claim Updated',
+				message: `A claim has been updated`,
+				status: NotificationStatus.UNREAD,
+				owner: claim?.owner
+			}
+
+			const recipients = [AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.OWNER, AccessLevel.SUPERVISOR, AccessLevel.USER]
+
+			this.eventEmitter.emit('send.notification', notification, recipients);
 
 			return response;
 		} catch (error) {

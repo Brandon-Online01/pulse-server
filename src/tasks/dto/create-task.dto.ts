@@ -1,5 +1,5 @@
 import { IsString, IsNotEmpty, IsEnum, IsDate, IsObject, IsOptional, IsNumber, IsArray, ValidateNested } from "class-validator";
-import { TaskType, Priority, Status, RepetitionType, AttachmentType } from "../../lib/enums/enums";
+import { TaskType, Priority, Status, RepetitionType } from "../../lib/enums/enums";
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 
@@ -22,36 +22,6 @@ class CreateSubTaskDto {
     @IsOptional()
     @ApiProperty({ example: { uid: 1 }, description: 'Assignee of the subtask' })
     assignee?: { uid: number };
-}
-
-class CreateTaskAttachmentDto {
-    @IsString()
-    @IsNotEmpty()
-    @ApiProperty({ example: 'file.pdf', description: 'Filename of the attachment' })
-    filename: string;
-
-    @IsString()
-    @IsNotEmpty()
-    @ApiProperty({ example: 'original_file.pdf', description: 'Original filename of the attachment' })
-    originalFilename: string;
-
-    @IsString()
-    @IsNotEmpty()
-    @ApiProperty({ example: 'application/pdf', description: 'Mime type of the attachment' })
-    mimeType: string;
-
-    @IsEnum(AttachmentType)
-    @ApiProperty({ example: AttachmentType.OTHER, description: 'Type of the attachment' })
-    type: AttachmentType;
-
-    @IsNumber()
-    @ApiProperty({ example: 1024, description: 'Size of the attachment' })
-    fileSize: number;
-
-    @IsString()
-    @IsNotEmpty()
-    @ApiProperty({ example: '/uploads/file.pdf', description: 'Path of the attachment' })
-    path: string;
 }
 
 export class CreateTaskDto {
@@ -131,13 +101,11 @@ export class CreateTaskDto {
     })
     repetitionEndDate?: Date;
 
-    @IsArray()
-    @ValidateNested({ each: true })
-    @Type(() => CreateTaskAttachmentDto)
+    @IsString()
     @IsOptional()
     @ApiProperty({
-        type: [CreateTaskAttachmentDto],
+        example: 'tasklist.pdf',
         description: 'Attachments of the task'
     })
-    attachments?: CreateTaskAttachmentDto[];
+    attachments?: string;
 }

@@ -1,16 +1,20 @@
-import { Repository } from 'typeorm';
+import { Between, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Lead } from './entities/lead.entity';
 import { CreateLeadDto } from './dto/create-lead.dto';
 import { UpdateLeadDto } from './dto/update-lead.dto';
-import { Status } from '../lib/enums/enums';
+import { AccessLevel, NotificationStatus, NotificationType, Status } from '../lib/enums/enums';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { endOfDay } from 'date-fns';
+import { startOfDay } from 'date-fns';
+
 @Injectable()
 export class LeadsService {
   constructor(
     @InjectRepository(Lead)
     private leadRepository: Repository<Lead>,
+    private readonly eventEmitter: EventEmitter2
   ) { }
 
   async create(createLeadDto: CreateLeadDto): Promise<{ message: string, data: Lead | null }> {
@@ -21,6 +25,18 @@ export class LeadsService {
         message: process.env.SUCCESS_MESSAGE,
         data: lead
       };
+
+      const notification = {
+        type: NotificationType.USER,
+        title: 'Lead Created',
+        message: `A lead has been created`,
+        status: NotificationStatus.UNREAD,
+        owner: lead?.owner
+      }
+
+      const recipients = [AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.OWNER, AccessLevel.SUPERVISOR, AccessLevel.USER]
+
+      this.eventEmitter.emit('send.notification', notification, recipients);
 
       return response;
     } catch (error) {
@@ -137,7 +153,8 @@ export class LeadsService {
       await this.leadRepository.update(ref, updateLeadDto as unknown as Lead);
 
       const updatedLead = await this.leadRepository.findOne({
-        where: { uid: ref, isDeleted: false }
+        where: { uid: ref, isDeleted: false },
+        relations: ['owner']
       });
 
       if (!updatedLead) {
@@ -149,6 +166,18 @@ export class LeadsService {
       const response = {
         message: process.env.SUCCESS_MESSAGE,
       };
+
+      const notification = {
+        type: NotificationType.USER,
+        title: 'Lead Updated',
+        message: `A lead has been updated`,
+        status: NotificationStatus.UNREAD,
+        owner: updatedLead?.owner
+      }
+
+      const recipients = [AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.OWNER, AccessLevel.SUPERVISOR, AccessLevel.USER]
+
+      this.eventEmitter.emit('send.notification', notification, recipients);
 
       return response;
 
@@ -225,5 +254,48 @@ export class LeadsService {
       inReview: leads?.filter(lead => lead?.status === Status.REVIEW)?.length || 0,
       declined: leads?.filter(lead => lead?.status === Status.DECLINED)?.length || 0,
     };
+  }
+
+
+  async getLeadsForDate(date: Date): Promise<{
+    message: string,
+    leads: {
+      pending: Lead[],
+      approved: Lead[],
+      review: Lead[],
+      declined: Lead[]
+    }
+  }> {
+    try {
+      const leads = await this.leadRepository.find({
+        where: { createdAt: Between(startOfDay(date), endOfDay(date)) }
+      });
+
+      if (!leads) {
+        throw new Error(process.env.NOT_FOUND_MESSAGE);
+      }
+
+      // Group leads by status
+      const groupedLeads = {
+        pending: leads.filter(lead => lead.status === Status.PENDING),
+        approved: leads.filter(lead => lead.status === Status.APPROVED),
+        review: leads.filter(lead => lead.status === Status.REVIEW),
+        declined: leads.filter(lead => lead.status === Status.DECLINED),
+      };
+
+      const response = {
+        message: process.env.SUCCESS_MESSAGE,
+        leads: groupedLeads
+      };
+
+      return response;
+    } catch (error) {
+      const response = {
+        message: error?.message,
+        leads: null
+      }
+
+      return response;
+    }
   }
 }

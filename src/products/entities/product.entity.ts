@@ -13,7 +13,7 @@ export class Product {
     @Column({ nullable: false, length: 100, type: 'varchar' })
     description: string;
 
-    @Column({ nullable: false, length: 100, type: 'varchar' })
+    @Column({ nullable: false, length: 1000, type: 'varchar' })
     image: string;
 
     @Column({ nullable: false, type: 'float' })
@@ -39,9 +39,6 @@ export class Product {
 
     @Column({ nullable: false, type: 'varchar', length: 100 })
     category: string;
-
-    @Column({ nullable: false, type: 'varchar', length: 100 })
-    subCategory: string;
 
     @Column({ nullable: false, type: 'varchar', length: 100 })
     brand: string;
@@ -70,5 +67,8 @@ export class Product {
 
     @Column({ nullable: false, default: false })
     isDeleted: boolean;
+
+    @Column({ nullable: false, default: false })
+    isOnPromotion: boolean;
 }
 

@@ -2,9 +2,17 @@ import { Injectable } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { Product } from './entities/product.entity';
-import { Repository, In, Not } from 'typeorm';
+import { Repository, In, Not, Like } from 'typeorm';
 import { ProductStatus } from '../lib/enums/enums';
 import { InjectRepository } from '@nestjs/typeorm';
+
+export interface ShopBanner {
+  uid: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  image: string;
+}
 
 @Injectable()
 export class ProductsService {
@@ -103,60 +111,6 @@ export class ProductsService {
     }
   }
 
-  async categories(): Promise<{ categories: string[] | null, message: string }> {
-    try {
-      const allProducts = await this.productRepository.find()
-
-      if (!allProducts) {
-        throw new Error(process.env.NOT_FOUND_MESSAGE);
-      }
-
-      const categories = allProducts.map(product => product?.category);
-
-      const response = {
-        categories: categories,
-        message: process.env.SUCCESS_MESSAGE,
-      };
-
-      return response;
-    } catch (error) {
-      const response = {
-        message: error?.message,
-        categories: null
-      }
-
-      return response;
-    }
-  }
-
-  async specials(): Promise<{ products: Product[] | null, message: string }> {
-    try {
-      const products = await this.productRepository.find({
-        where: {
-          status: In([ProductStatus.SPECIAL, ProductStatus.PROMOTIONAL, ProductStatus.BEST_SELLER, ProductStatus.DISCOUNTED])
-        }
-      });
-
-      if (!products) {
-        throw new Error(process.env.NOT_FOUND_MESSAGE);
-      }
-
-      const response = {
-        products: products,
-        message: process.env.SUCCESS_MESSAGE,
-      };
-
-      return response;
-    } catch (error) {
-      const response = {
-        message: error?.message,
-        products: null
-      }
-
-      return response;
-    }
-  }
-
   async products(): Promise<{ products: Product[] | null, message: string }> {
     try {
       const products = await this.productRepository.find({
@@ -207,6 +161,39 @@ export class ProductsService {
       const response = {
         message: error?.message,
         product: null
+      }
+
+      return response;
+    }
+  }
+
+  async productsBySearchTerm(searchTerm: string): Promise<{ products: Product[] | null, message: string }> {
+    try {
+      const searchPattern = `%${searchTerm?.toLowerCase()}%`;
+
+      console.log(searchPattern, '- searchPattern')
+
+      const products = await this.productRepository.find({
+        where: [
+          { category: Like(searchPattern) },
+          { status: Like(searchTerm?.toLowerCase() as ProductStatus) }
+        ]
+      });
+
+      if (!products) {
+        throw new Error(process.env.NOT_FOUND_MESSAGE);
+      }
+
+      const response = {
+        products: products,
+        message: process.env.SUCCESS_MESSAGE,
+      };
+
+      return response;
+    } catch (error) {
+      const response = {
+        message: error?.message,
+        products: null
       }
 
       return response;

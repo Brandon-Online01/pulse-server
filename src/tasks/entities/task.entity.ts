@@ -1,6 +1,6 @@
 import { User } from 'src/user/entities/user.entity';
 import { Branch } from 'src/branch/entities/branch.entity';
-import { AttachmentType, Priority, RepetitionType, Status, TaskType } from '../../lib/enums/enums';
+import { Priority, RepetitionType, Status, TaskType } from '../../lib/enums/enums';
 import { Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { Client } from 'src/clients/entities/client.entity';
 
@@ -51,8 +51,8 @@ export class Task {
     @Column({ nullable: true })
     lastCompletedAt: Date;
 
-    @OneToMany(() => TaskAttachment, attachment => attachment?.task, { cascade: true })
-    attachments: TaskAttachment[];
+    @Column({ nullable: true, type: 'varchar', length: 5000 })
+    attachments: string;
 
     @ManyToOne(() => User, (user) => user?.tasks)
     owner: User;
@@ -64,7 +64,11 @@ export class Task {
     subtasks: SubTask[];
 
     @ManyToMany(() => User)
-    @JoinTable()
+    @JoinTable({
+        name: 'task_assignees_user',
+        joinColumn: { name: 'taskUid', referencedColumnName: 'uid' },
+        inverseJoinColumn: { name: 'userUid', referencedColumnName: 'uid' }
+    })
     assignees: User[];
 
     @ManyToOne(() => Client, (client) => client?.tasks)
@@ -102,37 +106,4 @@ export class SubTask {
 
     @ManyToOne(() => User, { nullable: true })
     assignee: User;
-}
-
-@Entity('task_attachment')
-export class TaskAttachment {
-    @PrimaryGeneratedColumn()
-    uid: number;
-
-    @Column({ nullable: false })
-    filename: string;
-
-    @Column({ nullable: false })
-    originalFilename: string;
-
-    @Column({ nullable: false })
-    mimeType: string;
-
-    @Column({ type: 'enum', enum: AttachmentType, default: AttachmentType.OTHER })
-    type: AttachmentType;
-
-    @Column({ nullable: false })
-    fileSize: number;
-
-    @Column({ nullable: false })
-    path: string;
-
-    @Column({ nullable: false, default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
-    uploadedAt: Date;
-
-    @ManyToOne(() => User)
-    uploadedBy: User;
-
-    @ManyToOne(() => Task, task => task?.attachments, { onDelete: 'CASCADE' })
-    task: Task;
 }

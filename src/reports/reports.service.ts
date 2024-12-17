@@ -9,8 +9,8 @@ export class ReportsService {
 
 	public async getDailyXP(ref: number): Promise<{ hours: number, xp: number, tasks: number, sales: number }> {
 		const response = {
-			hours: 8,
-			xp: 87,
+			hours: 89,
+			xp: 8987,
 			tasks: 8,
 			sales: 88
 		}
@@ -20,9 +20,9 @@ export class ReportsService {
 
 	async flash(ref: number): Promise<{ hours: number, xp: number, tasks: number, sales: number }> {
 		const response = {
-			hours: 8,
-			xp: 87,
-			tasks: 8,
+			hours: 89,
+			xp: 8987,
+			tasks: 3,
 			sales: 88
 		}
 
@@ -70,31 +70,29 @@ export class ReportsService {
 		return response
 	}
 
-	async overview(ref: number): Promise<{
-		leads: { total: number },
-		journals: { count: number, entries: any[] },
-		attendance: { percentage: number, avg_hours: number },
-		claims: { totalClaims: number, totalValue: number, byCategory: number },
-		tasks: { pending: number, completed: number, total: number, postponed: number },
-		orders: { total: string, basket: number }
-	}> {
+	async overview(ref: number) {
 
 		const response = {
 			leads: {
-				total: 12
+				total: 12,
+				entries: []
 			},
 			journals: {
 				count: 12,
 				entries: []
 			},
 			attendance: {
-				percentage: 80,
-				avg_hours: 8.11
+				progress: 80,
+				avgDailyHours: 8.11,
+				totalLate: 1.11,
+				totalAbsent: 1.11,
+				totalExcused: 1.11,
+				totalPresent: 1.11
 			},
 			claims: {
-				totalClaims: 12,
-				totalValue: 340201.99,
-				byCategory: 12
+				total: 12,
+				entries: [],
+				totalValue: '3400.99',
 			},
 			tasks: {
 				pending: 1,
@@ -104,39 +102,36 @@ export class ReportsService {
 				postponed: 5
 			},
 			orders: {
-				total: '1,210,129.99',
-				basket: 15
+				basketTotal: '1,210.99',
+				totalOrders: 15
 			}
 		}
 
 		return response
 	}
 
-	async managerOverview(ref: number): Promise<{
-		leads: { total: number },
-		journals: { count: number, entries: any[] },
-		attendance: { percentage: number, avg_hours: number },
-		claims: { totalClaims: number, totalValue: number, byCategory: number },
-		tasks: { pending: number, completed: number, total: number, postponed: number },
-		orders: { total: string, basket: number }
-	}> {
-
+	async managerOverview() {
 		const response = {
 			leads: {
-				total: 12
+				total: 12,
+				entries: []
 			},
 			journals: {
-				count: 12,
+				total: 12,
 				entries: []
 			},
 			attendance: {
-				percentage: 80,
-				avg_hours: 8.11
+				attendance: 80,
+				avgDailyHours: 8.11,
+				totalLate: 1.11,
+				totalAbsent: 1.11,
+				totalExcused: 1.11,
+				totalPresent: 1.11
 			},
 			claims: {
-				totalClaims: 12,
-				totalValue: 340201.99,
-				byCategory: 12
+				total: 12,
+				entries: [],
+				totalValue: '340201.99',
 			},
 			tasks: {
 				pending: 1,
@@ -146,7 +141,7 @@ export class ReportsService {
 				postponed: 5
 			},
 			orders: {
-				total: '1,210,129.99',
+				total: '1,219.99',
 				basket: 15
 			}
 		}

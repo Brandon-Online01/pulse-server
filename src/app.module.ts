@@ -39,7 +39,6 @@ import { ResellersModule } from './resellers/resellers.module';
 import { Order } from './shop/entities/order.entity';
 import { NotificationsModule } from './notifications/notifications.module';
 import { Notification } from './notifications/entities/notification.entity';
-import { TaskAttachment } from './tasks/entities/task.entity';
 import { ClientsModule } from './clients/clients.module';
 import { Client } from './clients/entities/client.entity';
 import { ProductsModule } from './products/products.module';
@@ -98,7 +97,6 @@ import { ReportsModule } from './reports/reports.module';
         Notification,
         SubTask,
         Task,
-        TaskAttachment,
         Client,
         Product,
         Reseller,

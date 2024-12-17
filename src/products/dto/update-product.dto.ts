@@ -1,6 +1,6 @@
 import { PartialType } from '@nestjs/swagger';
 import { CreateProductDto } from './create-product.dto';
-import { IsString, IsNotEmpty, IsNumber } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, IsBoolean } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateProductDto extends PartialType(CreateProductDto) {
@@ -90,4 +90,12 @@ export class UpdateProductDto extends PartialType(CreateProductDto) {
         example: { uid: 1 }
     })
     reseller: { uid: number };
+
+    @IsBoolean()
+    @IsNotEmpty()
+    @ApiProperty({
+        description: 'The isOnPromotion of the product',
+        example: true
+    })
+    isOnPromotion: boolean;
 }

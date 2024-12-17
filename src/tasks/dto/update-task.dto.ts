@@ -4,7 +4,6 @@ import { IsDate, IsEnum, IsNotEmpty, IsObject } from 'class-validator';
 import { TaskType } from '../../lib/enums/enums';
 
 export class UpdateTaskDto extends PartialType(CreateTaskDto) {
-
     @IsNotEmpty()
     @IsObject()
     @ApiProperty({

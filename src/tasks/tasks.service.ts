@@ -5,7 +5,7 @@ import { SubTask, Task } from './entities/task.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { Status } from '../lib/enums/enums';
+import { AccessLevel, NotificationStatus, NotificationType, Status } from '../lib/enums/enums';
 import { Between } from 'typeorm';
 
 @Injectable()
@@ -15,15 +15,34 @@ export class TasksService {
 		private taskRepository: Repository<Task>,
 		@InjectRepository(SubTask)
 		private subTaskRepository: Repository<SubTask>,
+		private readonly eventEmitter: EventEmitter2
 	) { }
 
 	async create(createTaskDto: CreateTaskDto): Promise<{ message: string }> {
 		try {
-			const task = await this.taskRepository.save(createTaskDto);
+			// Convert assignees array to proper format
+			const assignees = createTaskDto?.assignees?.map(assignee => ({ uid: assignee?.uid }));
+
+			// Create task entity with properly formatted assignees
+			const task = await this.taskRepository.save({
+				...createTaskDto,
+				assignees: assignees
+			});
 
 			if (!task) {
 				throw new Error(process.env.NOT_FOUND_MESSAGE);
 			}
+
+			const notification = {
+				type: NotificationType.USER,
+				title: 'Task Created',
+				message: `A task has been created`,
+				status: NotificationStatus.UNREAD,
+				owner: task?.owner
+			}
+
+			const recipients = [AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.OWNER, AccessLevel.SUPERVISOR, AccessLevel.USER]
+			this.eventEmitter.emit('send.notification', notification, recipients);
 
 			return {
 				message: process.env.SUCCESS_MESSAGE,
@@ -43,6 +62,7 @@ export class TasksService {
 					'owner',
 					'branch',
 					'subtasks',
+					'client',
 				]
 			});
 
@@ -70,6 +90,7 @@ export class TasksService {
 					'owner',
 					'branch',
 					'subtasks',
+					'client',
 				]
 			});
 
@@ -101,6 +122,7 @@ export class TasksService {
 					'owner',
 					'branch',
 					'subtasks',
+					'client',
 				]
 			});
 
@@ -152,20 +174,75 @@ export class TasksService {
 
 	async update(ref: number, updateTaskDto: UpdateTaskDto): Promise<{ message: string }> {
 		try {
-			await this.taskRepository.update(ref, updateTaskDto);
-
-			const updatedTask = await this.taskRepository.findOne({
-				where: { uid: ref, isDeleted: false }
+			const task = await this.taskRepository.findOne({
+				where: { uid: ref, isDeleted: false },
+				relations: ['assignees']
 			});
 
-			if (!updatedTask) {
+			if (!task) {
 				throw new Error(process.env.NOT_FOUND_MESSAGE);
 			}
+
+			// Create an object with all possible updateable fields except assignees
+			const updateData = {
+				comment: updateTaskDto.comment,
+				notes: updateTaskDto.notes,
+				description: updateTaskDto.description,
+				status: updateTaskDto.status,
+				owner: updateTaskDto.owner,
+				taskType: updateTaskDto.taskType,
+				deadline: updateTaskDto.deadline,
+				branch: updateTaskDto.branch,
+				priority: updateTaskDto.priority,
+				progress: updateTaskDto.progress,
+				subtasks: updateTaskDto.subtasks?.map(subtask => ({
+					title: subtask.title,
+					description: subtask.description,
+					order: subtask.order,
+					assignee: subtask.assignee
+				})),
+				repetitionType: updateTaskDto.repetitionType,
+				repetitionEndDate: updateTaskDto.repetitionEndDate,
+				attachments: updateTaskDto.attachments
+			};
+
+			// Remove undefined properties
+			Object.keys(updateData).forEach(key =>
+				updateData[key] === undefined && delete updateData[key]
+			);
+
+			// First update the basic fields
+			await this.taskRepository.update({ uid: ref }, updateData);
+
+			// If assignees are provided, handle the many-to-many relationship separately
+			if (updateTaskDto.assignees) {
+				// Get the task again with manager to handle relations
+				const taskToUpdate = await this.taskRepository.manager.findOne(Task, {
+					where: { uid: ref },
+					relations: ['assignees']
+				});
+
+				// Clear existing assignees and set new ones
+				taskToUpdate.assignees = updateTaskDto.assignees.map(assignee => ({ uid: assignee.uid } as any));
+				await this.taskRepository.manager.save(taskToUpdate);
+			}
+
+			const notification = {
+				type: NotificationType.USER,
+				title: 'Task Updated',
+				message: `A task has been updated`,
+				status: NotificationStatus.UNREAD,
+				owner: task.owner
+			}
+
+			const recipients = [AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.OWNER, AccessLevel.SUPERVISOR, AccessLevel.USER]
+			this.eventEmitter.emit('send.notification', notification, recipients);
 
 			return {
 				message: process.env.SUCCESS_MESSAGE,
 			};
 		} catch (error) {
+			console.error('Update error:', error);
 			return {
 				message: error?.message,
 			};

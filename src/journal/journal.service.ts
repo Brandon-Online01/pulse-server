@@ -1,15 +1,21 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Between, Repository } from 'typeorm';
 import { Journal } from './entities/journal.entity';
 import { CreateJournalDto } from './dto/create-journal.dto';
 import { UpdateJournalDto } from './dto/update-journal.dto';
+import { NotificationType } from 'src/lib/enums/enums';
+import { NotificationStatus } from 'src/lib/enums/enums';
+import { AccessLevel } from 'src/lib/enums/enums';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { endOfDay, startOfDay } from 'date-fns';
 
 @Injectable()
 export class JournalService {
   constructor(
     @InjectRepository(Journal)
     private journalRepository: Repository<Journal>,
+    private readonly eventEmitter: EventEmitter2
   ) { }
 
   private calculateStats(journals: Journal[]): {
@@ -31,6 +37,18 @@ export class JournalService {
       const response = {
         message: process.env.SUCCESS_MESSAGE,
       }
+
+      const notification = {
+        type: NotificationType.USER,
+        title: 'Journal Created',
+        message: `A journal has been created`,
+        status: NotificationStatus.UNREAD,
+        owner: journal?.owner
+      }
+
+      const recipients = [AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.OWNER, AccessLevel.SUPERVISOR, AccessLevel.USER]
+
+      this.eventEmitter.emit('send.notification', notification, recipients);
 
       return response
     } catch (error) {
@@ -111,7 +129,8 @@ export class JournalService {
   public async journalsByUser(ref: number): Promise<{ message: string, journals: Journal[], stats: { total: number } }> {
     try {
       const journals = await this.journalRepository.find({
-        where: { owner: { uid: ref }, isDeleted: false }
+        where: { owner: { uid: ref }, isDeleted: false },
+        relations: ['owner']
       });
 
       if (!journals) {
@@ -134,6 +153,32 @@ export class JournalService {
     }
   }
 
+  async getJournalsForDate(date: Date): Promise<{ message: string, journals: Journal[] }> {
+    try {
+      const journals = await this.journalRepository.find({
+        where: { createdAt: Between(startOfDay(date), endOfDay(date)) }
+      });
+
+      if (!journals) {
+        throw new Error(process.env.NOT_FOUND_MESSAGE);
+      }
+
+      const response = {
+        message: process.env.SUCCESS_MESSAGE,
+        journals
+      };
+
+      return response;
+    } catch (error) {
+      const response = {
+        message: error?.message,
+        journals: null
+      };
+
+      return response;
+    }
+  }
+
   async update(ref: number, updateJournalDto: UpdateJournalDto) {
     try {
       const journal = await this.journalRepository.findOne({ where: { uid: ref, isDeleted: false } });
@@ -141,38 +186,46 @@ export class JournalService {
       if (!journal) {
         const response = {
           message: process.env.NOT_FOUND_MESSAGE,
-          journal: null
         }
 
         return response
       }
 
-      const updatedJournal = await this.journalRepository.update(ref, updateJournalDto);
+      await this.journalRepository.update(ref, updateJournalDto);
 
       const response = {
         message: process.env.SUCCESS_MESSAGE,
-        journal: updatedJournal
       }
+
+      const notification = {
+        type: NotificationType.USER,
+        title: 'Journal Created',
+        message: `A journal has been created`,
+        status: NotificationStatus.UNREAD,
+        owner: journal?.owner
+      }
+
+      const recipients = [AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.OWNER, AccessLevel.SUPERVISOR, AccessLevel.USER]
+
+      this.eventEmitter.emit('send.notification', notification, recipients);
 
       return response
     } catch (error) {
       const response = {
         message: error?.message,
-        journal: null
       }
 
       return response
     }
   }
 
-  async remove(ref: number): Promise<{ message: string, journal: Journal | null }> {
+  async remove(ref: number): Promise<{ message: string }> {
     try {
       const journal = await this.journalRepository.findOne({ where: { uid: ref } });
 
       if (!journal) {
         const response = {
           message: process.env.NOT_FOUND_MESSAGE,
-          journal: null
         }
 
         return response
@@ -182,28 +235,25 @@ export class JournalService {
 
       const response = {
         message: process.env.SUCCESS_MESSAGE,
-        journal: null
       }
 
       return response
     } catch (error) {
       const response = {
         message: error?.message,
-        journal: null
       }
 
       return response
     }
   }
 
-  async restore(ref: number): Promise<{ message: string, journal: Journal | null }> {
+  async restore(ref: number): Promise<{ message: string }> {
     try {
       const journal = await this.journalRepository.findOne({ where: { uid: ref } });
 
       if (!journal) {
         const response = {
           message: process.env.NOT_FOUND_MESSAGE,
-          journal: null
         }
 
         return response
@@ -213,14 +263,12 @@ export class JournalService {
 
       const response = {
         message: process.env.SUCCESS_MESSAGE,
-        journal: null
       }
 
       return response
     } catch (error) {
       const response = {
         message: error?.message,
-        journal: null
       }
 
       return response

@@ -32,28 +32,20 @@ export class ProductsController {
     return this.productsService.products();
   }
 
-  @Get('categories')
-  @UseGuards(AuthGuard, RoleGuard)
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
-  @ApiOperation({ summary: 'get a list of categories' })
-  categories() {
-    return this.productsService.categories();
-  }
-
-  @Get('specials')
-  @UseGuards(AuthGuard, RoleGuard)
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
-  @ApiOperation({ summary: 'get a list of specials' })
-  specials() {
-    return this.productsService.specials();
-  }
-
   @Get(':ref')
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get a product by reference code' })
   getProductByref(@Param('ref') ref: number) {
     return this.productsService.getProductByref(ref);
+  }
+
+  @Get('category/:category')
+  @UseGuards(AuthGuard, RoleGuard)
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+  @ApiOperation({ summary: 'get a list of products by category' })
+  productsBySearchTerm(@Param('category') category: string) {
+    return this.productsService.productsBySearchTerm(category);
   }
 
   @Patch(':ref')

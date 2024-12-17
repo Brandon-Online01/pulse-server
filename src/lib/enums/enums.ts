@@ -104,11 +104,13 @@ export enum ProductStatus {
     INACTIVE = 'inactive',
     HIDDEN = 'hidden',
     SPECIAL = 'special',
-    PROMOTIONAL = 'promotional',
-    BEST_SELLER = 'best_seller',
+    PROMOTIONAL = 'promotion',
+    BEST_SELLER = 'bestseller',
     DISCONTINUED = 'discontinued',
     DISCOUNTED = 'discounted',
     NORMAL = 'normal',
+    NEW = 'new',
+    HOTDEALS = 'hotdeals',
 }
 
 export enum ResellerStatus {
