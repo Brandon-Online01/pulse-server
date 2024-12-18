@@ -1,20 +1,21 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
-import { SubTask, Task } from './entities/task.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { AccessLevel, NotificationStatus, NotificationType, Status } from '../lib/enums/enums';
 import { Between } from 'typeorm';
+import { NotificationType } from 'src/lib/enums/notification.enums';
+import { AccessLevel } from 'src/lib/enums/user.enums';
+import { NotificationStatus } from 'src/lib/enums/notification.enums';
+import { TaskStatus } from 'src/lib/enums/status.enums';
+import { Task } from './entities/task.entity';
 
 @Injectable()
 export class TasksService {
 	constructor(
 		@InjectRepository(Task)
 		private taskRepository: Repository<Task>,
-		@InjectRepository(SubTask)
-		private subTaskRepository: Repository<SubTask>,
 		private readonly eventEmitter: EventEmitter2
 	) { }
 
@@ -146,32 +147,6 @@ export class TasksService {
 		}
 	}
 
-	public async subtasksByTask(ref: number): Promise<{ message: string, tasks: SubTask }> {
-		try {
-			const tasks = await this.subTaskRepository.findOne({
-				where: { task: { uid: ref } },
-			});
-
-			if (!tasks) {
-				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
-			}
-
-			const response = {
-				message: process.env.SUCCESS_MESSAGE,
-				tasks
-			};
-
-			return response;
-		} catch (error) {
-			const response = {
-				message: `could not get subtasks by task - ${error?.message}`,
-				tasks: null
-			}
-
-			return response;
-		}
-	}
-
 	async update(ref: number, updateTaskDto: UpdateTaskDto): Promise<{ message: string }> {
 		try {
 			const task = await this.taskRepository.findOne({
@@ -195,12 +170,6 @@ export class TasksService {
 				branch: updateTaskDto.branch,
 				priority: updateTaskDto.priority,
 				progress: updateTaskDto.progress,
-				subtasks: updateTaskDto.subtasks?.map(subtask => ({
-					title: subtask.title,
-					description: subtask.description,
-					order: subtask.order,
-					assignee: subtask.assignee
-				})),
 				repetitionType: updateTaskDto.repetitionType,
 				repetitionEndDate: updateTaskDto.repetitionEndDate,
 				attachments: updateTaskDto.attachments
@@ -275,7 +244,7 @@ export class TasksService {
 	}
 
 	async getTaskStatusSummary(): Promise<{
-		byStatus: Record<Status, number>;
+		byStatus: Record<TaskStatus, number>;
 		total: number;
 	}> {
 		try {
@@ -283,30 +252,13 @@ export class TasksService {
 				where: { isDeleted: false }
 			});
 
-			const byStatus: Record<Status, number> = {
-				[Status.POSTPONED]: 0,
-				[Status.MISSED]: 0,
-				[Status.COMPLETED]: 0,
-				[Status.CANCELLED]: 0,
-				[Status.PENDING]: 0,
-				[Status.INPROGRESS]: 0,
-				[Status.APPROVED]: 0,
-				[Status.REVIEW]: 0,
-				[Status.DECLINED]: 0,
-				// Initialize other Status enum values to 0
-				[Status.ACTIVE]: 0,
-				[Status.INACTIVE]: 0,
-				[Status.DELETED]: 0,
-				[Status.BANNED]: 0,
-				[Status.DEACTIVATED]: 0,
-				[Status.EXPIRED]: 0,
-				[Status.PAID]: 0,
-				[Status.UNPAID]: 0,
-				[Status.PARTIAL]: 0,
-				[Status.OVERDUE]: 0,
-				[Status.DRIVING]: 0,
-				[Status.PARKING]: 0,
-				[Status.STOPPED]: 0
+			const byStatus: Record<TaskStatus, number> = {
+				[TaskStatus.POSTPONED]: 0,
+				[TaskStatus.MISSED]: 0,
+				[TaskStatus.COMPLETED]: 0,
+				[TaskStatus.CANCELLED]: 0,
+				[TaskStatus.PENDING]: 0,
+				[TaskStatus.INPROGRESS]: 0
 			};
 
 			tasks.forEach(task => {
@@ -320,7 +272,7 @@ export class TasksService {
 
 		} catch (error) {
 			return {
-				byStatus: Object.values(Status).reduce((acc, status) => ({ ...acc, [status]: 0 }), {} as Record<Status, number>),
+				byStatus: Object.values(TaskStatus).reduce((acc, status) => ({ ...acc, [status]: 0 }), {} as Record<TaskStatus, number>),
 				total: 0
 			};
 		}

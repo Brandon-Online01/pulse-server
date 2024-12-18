@@ -4,7 +4,7 @@ import { CreateClaimDto } from './dto/create-claim.dto';
 import { UpdateClaimDto } from './dto/update-claim.dto';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Roles } from '../decorators/role.decorator';
-import { AccessLevel } from '../lib/enums/enums';
+import { AccessLevel } from '../lib/enums/user.enums';
 import { RoleGuard } from '../guards/role.guard';
 import { AuthGuard } from '../guards/auth.guard';
 

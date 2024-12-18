@@ -1,5 +1,5 @@
 import { IsDate, IsOptional, IsString } from 'class-validator';
-import { AttendanceStatus } from 'src/lib/enums/enums';
+import { AttendanceStatus } from '../../lib/enums/attendance.enums';
 import { IsNumber } from 'class-validator';
 import { IsEnum } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';

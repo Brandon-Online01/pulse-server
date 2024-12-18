@@ -1,8 +1,9 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { AccessLevel, Status } from "src/lib/enums/enums";
+import { AccessLevel } from "src/lib/enums/user.enums";
 import { CreateUserProfileDto } from './create-user-profile.dto';
 import { CreateUserEmploymentProfileDto } from './create-user-employment-profile.dto';
-import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, IsBoolean, IsObject } from "class-validator";
+import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, IsBoolean } from "class-validator";
+import { AccountStatus } from "src/lib/enums/status.enums";
 
 export class CreateUserDto {
     @IsNotEmpty()
@@ -72,14 +73,14 @@ export class CreateUserDto {
     accessLevel?: AccessLevel;
 
     @IsOptional()
-    @IsEnum(Status)
+    @IsEnum(AccountStatus)
     @ApiProperty({
         description: 'The status of the user',
-        enum: Status,
-        example: Status.ACTIVE,
-        default: Status.ACTIVE,
+        enum: AccountStatus,
+        example: AccountStatus.ACTIVE,
+        default: AccountStatus.ACTIVE,
     })
-    status?: Status;
+    status?: AccountStatus;
 
     @IsNotEmpty()
     @IsString()

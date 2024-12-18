@@ -4,7 +4,7 @@ import { CreateJournalDto } from './dto/create-journal.dto';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { RoleGuard } from '../guards/role.guard';
 import { Roles } from '../decorators/role.decorator';
-import { AccessLevel } from '../lib/enums/enums';
+import { AccessLevel } from '../lib/enums/user.enums';
 import { UpdateJournalDto } from './dto/update-journal.dto';
 import { AuthGuard } from '../guards/auth.guard';
 

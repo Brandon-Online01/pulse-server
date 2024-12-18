@@ -1,8 +1,9 @@
 import { User } from 'src/user/entities/user.entity';
 import { Branch } from 'src/branch/entities/branch.entity';
-import { Priority, RepetitionType, Status, TaskType } from '../../lib/enums/enums';
 import { Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { Client } from 'src/clients/entities/client.entity';
+import { Priority, RepetitionType, TaskType } from 'src/lib/enums/task.enums';
+import { GeneralStatus } from 'src/lib/enums/status.enums';
 
 @Entity('task')
 export class Task {
@@ -21,8 +22,8 @@ export class Task {
     @Column({ nullable: false, default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
     updatedAt: Date;
 
-    @Column({ nullable: false, default: Status.PENDING })
-    status: Status;
+    @Column({ nullable: false, default: GeneralStatus.ACTIVE })
+    status: GeneralStatus;
 
     @Column({ nullable: false, default: TaskType.OTHER })
     taskType: TaskType;
@@ -60,9 +61,6 @@ export class Task {
     @ManyToOne(() => Branch, (branch) => branch?.tasks)
     branch: Branch;
 
-    @OneToMany(() => SubTask, subtask => subtask.task, { cascade: true })
-    subtasks: SubTask[];
-
     @ManyToMany(() => User)
     @JoinTable({
         name: 'task_assignees_user',
@@ -73,37 +71,4 @@ export class Task {
 
     @ManyToOne(() => Client, (client) => client?.tasks)
     client: Client;
-}
-
-@Entity('subtask')
-export class SubTask {
-    @PrimaryGeneratedColumn()
-    uid: number;
-
-    @Column({ nullable: false })
-    title: string;
-
-    @Column({ nullable: true, type: 'varchar', length: 5000 })
-    description: string;
-
-    @Column({ nullable: false, default: () => 'CURRENT_TIMESTAMP' })
-    createdAt: Date;
-
-    @Column({ nullable: false, default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
-    updatedAt: Date;
-
-    @Column({ nullable: false, default: false })
-    isCompleted: boolean;
-
-    @Column({ nullable: true })
-    completedAt: Date;
-
-    @Column({ nullable: false, default: 0 })
-    order: number;
-
-    @ManyToOne(() => Task, task => task.subtasks, { onDelete: 'CASCADE' })
-    task: Task;
-
-    @ManyToOne(() => User, { nullable: true })
-    assignee: User;
 }

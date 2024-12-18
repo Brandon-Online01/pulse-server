@@ -1,6 +1,6 @@
 import { UserService } from './user.service';
 import { RoleGuard } from '../guards/role.guard';
-import { AccessLevel } from '../lib/enums/enums';
+import { AccessLevel } from '../lib/enums/user.enums';
 import { AuthGuard } from '../guards/auth.guard';
 import { Roles } from '../decorators/role.decorator';
 import { CreateUserDto } from './dto/create-user.dto';

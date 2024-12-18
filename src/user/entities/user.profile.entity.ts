@@ -1,6 +1,6 @@
-import { Gender } from "src/lib/types/user";
-import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Gender } from "src/lib/enums/gender.enums";
 import { User } from "./user.entity";
+import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity('user_profile')
 export class UserProfile {

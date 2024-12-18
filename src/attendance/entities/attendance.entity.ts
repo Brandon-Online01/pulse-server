@@ -1,5 +1,5 @@
 import { Branch } from '../../branch/entities/branch.entity';
-import { AttendanceStatus } from '../../lib/enums/enums';
+import { AttendanceStatus } from '../../lib/enums/attendance.enums';
 import { User } from '../../user/entities/user.entity';
 import { Column, Entity, PrimaryGeneratedColumn, ManyToOne } from 'typeorm';
 

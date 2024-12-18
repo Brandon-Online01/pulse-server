@@ -1,7 +1,7 @@
 import { PartialType } from '@nestjs/swagger';
 import { CreateResellerDto } from './create-reseller.dto';
 import { IsEmail, IsEnum, IsOptional, IsString } from 'class-validator';
-import { ResellerStatus } from 'src/lib/enums/enums';
+import { ResellerStatus } from '../../lib/enums/product.enums';
 
 export class UpdateResellerDto extends PartialType(CreateResellerDto) {
     @IsString()

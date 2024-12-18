@@ -1,9 +1,11 @@
 import { PartialType } from '@nestjs/swagger';
 import { CreateUserDto } from './create-user.dto';
-import { AccessLevel, Department, Status } from 'src/lib/enums/enums';
+import { Gender } from '../../lib/enums/gender.enums';
+import { AccessLevel } from '../../lib/enums/user.enums';
+import { Department } from '../../lib/enums/user.enums';
+import { AccountStatus } from '../../lib/enums/status.enums';
 import { CreateUserProfileDto } from './create-user-profile.dto';
 import { CreateUserEmploymentProfileDto } from './create-user-employment-profile.dto';
-import { Gender } from 'src/lib/types/user';
 import { IsBoolean, IsDate, IsEmail, IsEnum, IsObject, IsOptional, IsString } from 'class-validator';
 
 export class UpdateUserProfileDto extends CreateUserProfileDto {
@@ -112,8 +114,8 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
     deletedAt?: Date;
 
     @IsOptional()
-    @IsEnum(Status)
-    status?: Status;
+    @IsEnum(AccountStatus)
+    status?: AccountStatus;
 
     @IsOptional()
     @IsString()

@@ -4,9 +4,8 @@ import { Between, Repository } from 'typeorm';
 import { Journal } from './entities/journal.entity';
 import { CreateJournalDto } from './dto/create-journal.dto';
 import { UpdateJournalDto } from './dto/update-journal.dto';
-import { NotificationType } from 'src/lib/enums/enums';
-import { NotificationStatus } from 'src/lib/enums/enums';
-import { AccessLevel } from 'src/lib/enums/enums';
+import { NotificationType, NotificationStatus } from '../lib/enums/notification.enums';
+import { AccessLevel } from '../lib/enums/user.enums';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { endOfDay, startOfDay } from 'date-fns';
 

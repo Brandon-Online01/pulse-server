@@ -1,10 +1,12 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { ShopService } from './shop.service';
 import { AuthGuard } from '../guards/auth.guard';
 import { RoleGuard } from '../guards/role.guard';
-import { AccessLevel } from '../lib/enums/enums';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Roles } from 'src/decorators/role.decorator';
+import { Roles } from '../decorators/role.decorator';
+import { Product } from '../products/entities/product.entity';
+import { CheckoutDto, OrderItemDto } from './dto/checkout.dto';
+import { AccessLevel } from '../lib/enums/user.enums';
 
 @ApiTags('shop')
 @Controller('shop')
@@ -58,5 +60,14 @@ export class ShopController {
   @ApiOperation({ summary: 'get a list of specials' })
   specials() {
     return this.shopService.specials();
+  }
+
+  //ordering
+  @Post('checkout')
+  @UseGuards(AuthGuard, RoleGuard)
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+  @ApiOperation({ summary: 'checkout a list of products' })
+  checkout(@Body() items: CheckoutDto) {
+    return this.shopService.checkout(items);
   }
 }

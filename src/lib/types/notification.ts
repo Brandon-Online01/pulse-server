@@ -1,5 +1,4 @@
-import { NotificationType } from "../enums/enums";
-import { NotificationStatus } from "../enums/enums";
+import { NotificationType, NotificationStatus } from "../enums/notification.enums";
 
 export interface NotificationResponse {
     uid: number;

@@ -4,9 +4,9 @@ import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Roles } from '../decorators/role.decorator';
-import { AccessLevel } from '../lib/enums/enums';
 import { RoleGuard } from '../guards/role.guard';
 import { AuthGuard } from '../guards/auth.guard';
+import { AccessLevel } from 'src/lib/enums/user.enums';
 
 @ApiTags('tasks')
 @Controller('tasks')
@@ -44,14 +44,6 @@ export class TasksController {
   @ApiOperation({ summary: 'get tasks by user reference code' })
   tasksByUser(@Param('ref') ref: number) {
     return this.tasksService.tasksByUser(ref);
-  }
-
-  @Get('sub-tasks/:ref')
-  @UseGuards(AuthGuard, RoleGuard)
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
-  @ApiOperation({ summary: 'get subtasks by task reference code' })
-  subtasksByTask(@Param('ref') ref: number) {
-    return this.tasksService.subtasksByTask(ref);
   }
 
   @Patch(':ref')

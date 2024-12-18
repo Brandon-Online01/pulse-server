@@ -1,4 +1,4 @@
-import { AccessLevel } from "../enums/enums";
+import { AccessLevel } from "../enums/user.enums";
 
 export interface User {
   uid: number;
@@ -30,8 +30,3 @@ export interface NewSignUp {
   password?: string;
 }
 
-export enum Gender {
-  MALE = 'male',
-  FEMALE = 'female',
-  OTHER = 'other'
-}

@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { AttendanceStatus } from '../../lib/enums/enums';
 import { IsEnum, IsOptional, IsString, IsNumber, IsDate, IsObject, IsNotEmpty } from 'class-validator';
+import { AttendanceStatus } from '../../lib/enums/attendance.enums';
 
 export class CreateCheckInDto {
     @IsEnum(AttendanceStatus)

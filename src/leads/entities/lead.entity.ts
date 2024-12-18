@@ -1,8 +1,8 @@
-import { Status } from '../../lib/enums/enums';
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
 import { Branch } from 'src/branch/entities/branch.entity';
 import { Client } from 'src/clients/entities/client.entity';
+import { LeadStatus } from 'src/lib/enums/leads.enums';
 
 @Entity('lead')
 export class Lead {
@@ -34,8 +34,8 @@ export class Lead {
     })
     updatedAt: Date;
 
-    @Column({ nullable: false, default: Status.PENDING })
-    status: Status;
+    @Column({ nullable: false, default: LeadStatus.PENDING })
+    status: LeadStatus;
 
     @Column({ default: false })
     isDeleted: boolean;

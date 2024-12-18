@@ -5,7 +5,7 @@ import { UpdateBranchDto } from './dto/update-branch.dto';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { RoleGuard } from '../guards/role.guard';
 import { AuthGuard } from '../guards/auth.guard';
-import { AccessLevel } from '../lib/enums/enums';
+import { AccessLevel } from '../lib/enums/user.enums';
 import { Roles } from '../decorators/role.decorator';
 
 @ApiTags('branch')

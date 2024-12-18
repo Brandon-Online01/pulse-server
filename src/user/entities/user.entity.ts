@@ -1,5 +1,3 @@
-import { AccessLevel, Status } from '../../lib/enums/enums';
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { UserProfile } from './user.profile.entity';
 import { UserEmployeementProfile } from './user.employeement.profile.entity';
 import { Attendance } from '../../attendance/entities/attendance.entity';
@@ -15,6 +13,9 @@ import { Order } from '../../shop/entities/order.entity';
 import { Notification } from '../../notifications/entities/notification.entity';
 import { Branch } from 'src/branch/entities/branch.entity';
 import { Client } from 'src/clients/entities/client.entity';
+import { AccessLevel } from 'src/lib/enums/user.enums';
+import { AccountStatus } from 'src/lib/enums/status.enums';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('user')
 export class User {
@@ -58,8 +59,8 @@ export class User {
     })
     deletedAt: Date;
 
-    @Column({ nullable: false, default: Status.ACTIVE })
-    status: Status;
+    @Column({ nullable: false, default: AccountStatus.ACTIVE })
+    status: AccountStatus;
 
     @Column({ nullable: false })
     username: string;
@@ -109,7 +110,7 @@ export class User {
     @OneToMany(() => Tracking, (tracking) => tracking?.owner)
     trackings: Tracking[];
 
-    @OneToMany(() => Order, (order) => order?.createdBy)
+    @OneToMany(() => Order, (order) => order?.placedBy)
     orders: Order[];
 
     @OneToMany(() => Notification, (notification) => notification?.owner)

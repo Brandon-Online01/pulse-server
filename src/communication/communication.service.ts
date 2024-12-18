@@ -2,9 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import * as nodemailer from 'nodemailer';
 import { ConfigService } from '@nestjs/config';
-import { AccessLevel } from 'src/lib/enums/enums';
-import { NotificationsService } from 'src/notifications/notifications.service';
-import { CreateNotificationDto } from 'src/notifications/dto/create-notification.dto';
+import { AccessLevel } from '../lib/enums/user.enums';
+import { NotificationsService } from '../notifications/notifications.service';
+import { CreateNotificationDto } from '../notifications/dto/create-notification.dto';
 
 @Injectable()
 export class CommunicationService {

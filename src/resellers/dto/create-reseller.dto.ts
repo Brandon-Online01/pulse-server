@@ -1,6 +1,6 @@
 import { IsString, IsNotEmpty, IsEmail, IsEnum } from 'class-validator';
-import { ResellerStatus } from '../../lib/enums/enums';
 import { ApiProperty } from '@nestjs/swagger';
+import { ResellerStatus } from '../../lib/enums/product.enums';
 
 export class CreateResellerDto {
     @IsString()

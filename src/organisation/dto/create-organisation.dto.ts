@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { IsBoolean, IsEmail, IsEnum, IsNotEmpty, IsString, IsUrl } from "class-validator";
-import { Status } from "../../lib/enums/enums";
+import { GeneralStatus } from "../../lib/enums/status.enums";
 
 export class CreateOrganisationDto {
     @IsNotEmpty()
@@ -60,12 +60,12 @@ export class CreateOrganisationDto {
     logo: string;
 
     @IsNotEmpty()
-    @IsEnum(Status)
+    @IsEnum(GeneralStatus)
     @ApiProperty({
-        example: Status.ACTIVE,
+        example: GeneralStatus.ACTIVE,
         description: 'The status of the organisation'
     })
-    status: Status;
+    status: GeneralStatus;
 
     @IsNotEmpty()
     @IsBoolean()

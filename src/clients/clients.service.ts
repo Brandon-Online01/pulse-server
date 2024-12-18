@@ -4,7 +4,7 @@ import { UpdateClientDto } from './dto/update-client.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Client } from './entities/client.entity';
 import { Repository, DeepPartial } from 'typeorm';
-import { Status } from 'src/lib/enums/enums';
+import { GeneralStatus } from '../lib/enums/status.enums';
 
 @Injectable()
 export class ClientsService {
@@ -146,7 +146,7 @@ export class ClientsService {
         { uid: ref },
         {
           isDeleted: false,
-          status: Status.ACTIVE
+          status: GeneralStatus.ACTIVE
         }
       );
 

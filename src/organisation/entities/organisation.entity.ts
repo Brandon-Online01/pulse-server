@@ -1,4 +1,4 @@
-import { Status } from "../../lib/enums/enums";
+import { GeneralStatus } from "../../lib/enums/status.enums";
 import { Branch } from "../../branch/entities/branch.entity";
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 
@@ -31,8 +31,8 @@ export class Organisation {
     @Column({ nullable: false, default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
     updatedAt: Date;
 
-    @Column({ nullable: false })
-    status: Status;
+    @Column({ nullable: false, default: GeneralStatus.ACTIVE })
+    status: GeneralStatus;
 
     @Column({ nullable: false, default: false })
     isDeleted: boolean;

@@ -4,8 +4,8 @@ import { UpdateNewsDto } from './dto/update-news.dto';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { News } from './entities/news.entity';
-import { Status } from 'src/lib/enums/enums';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { GeneralStatus } from 'src/lib/enums/status.enums';
 
 @Injectable()
 export class NewsService {
@@ -128,7 +128,7 @@ export class NewsService {
         { uid: ref },
         {
           isDeleted: false,
-          status: Status.ACTIVE
+          status: GeneralStatus.ACTIVE
         }
       );
 

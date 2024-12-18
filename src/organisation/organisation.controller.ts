@@ -4,7 +4,7 @@ import { CreateOrganisationDto } from './dto/create-organisation.dto';
 import { UpdateOrganisationDto } from './dto/update-organisation.dto';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Roles } from '../decorators/role.decorator';
-import { AccessLevel } from '../lib/enums/enums';
+import { AccessLevel } from '../lib/enums/user.enums';
 import { AuthGuard } from '../guards/auth.guard';
 import { RoleGuard } from '../guards/role.guard';
 

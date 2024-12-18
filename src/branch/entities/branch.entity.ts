@@ -1,5 +1,5 @@
 import { Organisation } from "../../organisation/entities/organisation.entity";
-import { Status } from "../../lib/enums/enums";
+import { GeneralStatus } from "../../lib/enums/status.enums";
 import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { Tracking } from "../../tracking/entities/tracking.entity";
 import { Task } from "../../tasks/entities/task.entity";
@@ -38,8 +38,8 @@ export class Branch {
     @Column({ nullable: false })
     website: string;
 
-    @Column({ nullable: false })
-    status: Status;
+    @Column({ nullable: false, default: GeneralStatus.ACTIVE })
+    status: GeneralStatus;
 
     @Column({ nullable: false, default: false })
     isDeleted: boolean;

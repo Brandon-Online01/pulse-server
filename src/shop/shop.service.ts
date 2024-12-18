@@ -3,13 +3,17 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ShopBanner } from 'src/products/products.service';
 import { Product } from 'src/products/entities/product.entity';
-import { ProductStatus } from 'src/lib/enums/enums';
+import { CheckoutDto } from './dto/checkout.dto';
+import { Order } from './entities/order.entity';
+import { ProductStatus } from 'src/lib/enums/product.enums';
 
 @Injectable()
 export class ShopService {
     constructor(
         @InjectRepository(Product)
         private productRepository: Repository<Product>,
+        @InjectRepository(Order)
+        private orderRepository: Repository<Order>,
     ) { }
 
     async getBanners(): Promise<{ banners: ShopBanner[], message: string }> {
@@ -142,4 +146,50 @@ export class ShopService {
         return response;
     }
 
+    //ordering
+    async checkout(orderItems: CheckoutDto): Promise<{ message: string }> {
+        try {
+            if (!orderItems?.items?.length) {
+                throw new Error('Order items are required');
+            }
+
+            if (!orderItems?.owner?.uid) {
+                throw new Error('Owner is required');
+            }
+
+            if (!orderItems?.client?.uid) {
+                throw new Error('Client is required');
+            }
+
+            const newOrder = this.orderRepository.create({
+                orderNumber: `ORD-${Date.now()}`,
+                totalItems: orderItems?.totalItems,
+                totalAmount: orderItems?.totalAmount,
+                placedBy: orderItems?.owner?.uid ? { uid: orderItems?.owner?.uid } : null,
+                client: orderItems?.client?.uid ? { uid: orderItems?.client?.uid } : null,
+                orderItems: orderItems?.items?.map(item => ({
+                    quantity: item?.quantity,
+                    totalPrice: item?.totalPrice,
+                    product: { uid: item?.uid },
+                }))
+            });
+
+            await this.orderRepository.save(newOrder);
+
+            const response = {
+                message: process.env.SUCCESS_MESSAGE,
+            };
+
+            return response;
+        }
+        catch (error) {
+            const response = {
+                message: error?.message,
+            };
+
+            console.log(error, ' response');
+
+            return response;
+        }
+    }
 }

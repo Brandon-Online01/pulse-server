@@ -3,7 +3,7 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { Product } from './entities/product.entity';
 import { Repository, In, Not, Like } from 'typeorm';
-import { ProductStatus } from '../lib/enums/enums';
+import { ProductStatus } from '../lib/enums/product.enums';
 import { InjectRepository } from '@nestjs/typeorm';
 
 export interface ShopBanner {

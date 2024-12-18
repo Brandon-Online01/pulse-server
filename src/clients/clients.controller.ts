@@ -3,10 +3,10 @@ import { ClientsService } from './clients.service';
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { AuthGuard } from 'src/guards/auth.guard';
-import { RoleGuard } from 'src/guards/role.guard';
-import { AccessLevel } from 'src/lib/enums/enums';
-import { Roles } from 'src/decorators/role.decorator';
+import { AuthGuard } from '../guards/auth.guard';
+import { RoleGuard } from '../guards/role.guard';
+import { AccessLevel } from '../lib/enums/user.enums';
+import { Roles } from '../decorators/role.decorator';
 
 @ApiTags('clients')
 @Controller('clients')

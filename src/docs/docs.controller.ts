@@ -7,7 +7,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { isPublic } from '../decorators/public.decorator';
 import { extname } from 'path';
 import { Roles } from '../decorators/role.decorator';
-import { AccessLevel } from '../lib/enums/enums';
+import { AccessLevel } from '../lib/enums/user.enums';
 import { RoleGuard } from '../guards/role.guard';
 import { AuthGuard } from '../guards/auth.guard';
 

@@ -2,12 +2,11 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { IsNull, MoreThanOrEqual, Not, Repository, LessThanOrEqual } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Attendance } from './entities/attendance.entity';
-import { AttendanceStatus } from 'src/lib/enums/enums';
+import { AttendanceStatus } from '../lib/enums/attendance.enums';
 import { CreateCheckInDto } from './dto/create-attendance-check-in.dto';
 import { CreateCheckOutDto } from './dto/create-attendance-check-out.dto';
 import { isToday } from 'date-fns';
 import { differenceInMinutes, differenceInHours } from 'date-fns';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class AttendanceService {

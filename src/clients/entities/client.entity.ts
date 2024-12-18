@@ -1,4 +1,4 @@
-import { Status } from '../../lib/enums/enums';
+import { GeneralStatus } from '../../lib/enums/status.enums';
 import { Lead } from '../../leads/entities/lead.entity';
 import { User } from '../../user/entities/user.entity';
 import { Order } from '../../shop/entities/order.entity';
@@ -59,8 +59,8 @@ export class Client {
     })
     updatedAt: Date;
 
-    @Column({ nullable: false, default: Status.ACTIVE })
-    status: Status;
+    @Column({ nullable: false, default: GeneralStatus.ACTIVE })
+    status: GeneralStatus;
 
     @Column({ default: false })
     isDeleted: boolean;

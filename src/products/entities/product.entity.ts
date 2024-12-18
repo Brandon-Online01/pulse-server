@@ -1,6 +1,7 @@
-import { ProductStatus } from "src/lib/enums/enums";
-import { Column, Entity, PrimaryGeneratedColumn, ManyToOne } from "typeorm";
+import { OrderItem } from "../../shop/entities/order-item.entity";
 import { Reseller } from "../../resellers/entities/reseller.entity";
+import { Column, Entity, PrimaryGeneratedColumn, ManyToOne, OneToMany } from "typeorm";
+import { ProductStatus } from "../../lib/enums/product.enums";
 
 @Entity('product')
 export class Product {
@@ -62,7 +63,7 @@ export class Product {
     })
     updatedAt: Date;
 
-    @ManyToOne(() => Reseller, reseller => reseller.products)
+    @ManyToOne(() => Reseller, reseller => reseller?.products)
     reseller: Reseller;
 
     @Column({ nullable: false, default: false })
@@ -70,5 +71,8 @@ export class Product {
 
     @Column({ nullable: false, default: false })
     isOnPromotion: boolean;
+
+    @OneToMany(() => OrderItem, orderItem => orderItem?.product)
+    orderItems: OrderItem[];
 }
 

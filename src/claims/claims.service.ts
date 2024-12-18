@@ -4,10 +4,12 @@ import { UpdateClaimDto } from './dto/update-claim.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Claim } from './entities/claim.entity';
 import { IsNull, Repository, DeepPartial, Not, Between } from 'typeorm';
-import { ClaimStatus, ClaimCategory, NotificationStatus, NotificationType, AccessLevel } from 'src/lib/enums/enums';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { endOfDay } from 'date-fns';
 import { startOfDay } from 'date-fns';
+import { ClaimCategory, ClaimStatus } from '../lib/enums/finance.enums';
+import { AccessLevel } from '../lib/enums/user.enums';
+import { NotificationStatus, NotificationType } from '../lib/enums/notification.enums';
 
 @Injectable()
 export class ClaimsService {

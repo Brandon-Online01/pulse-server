@@ -24,7 +24,7 @@ import { Lead } from './leads/entities/lead.entity';
 import { JournalModule } from './journal/journal.module';
 import { Journal } from './journal/entities/journal.entity';
 import { TasksModule } from './tasks/tasks.module';
-import { SubTask, Task } from './tasks/entities/task.entity';
+import { Task } from './tasks/entities/task.entity';
 import { OrganisationModule } from './organisation/organisation.module';
 import { BranchModule } from './branch/branch.module';
 import { Branch } from './branch/entities/branch.entity';
@@ -45,6 +45,7 @@ import { ProductsModule } from './products/products.module';
 import { Product } from './products/entities/product.entity';
 import { Reseller } from './resellers/entities/reseller.entity';
 import { ReportsModule } from './reports/reports.module';
+import { OrderItem } from './shop/entities/order-item.entity';
 
 @Module({
   imports: [
@@ -93,13 +94,13 @@ import { ReportsModule } from './reports/reports.module';
         News,
         Asset,
         Tracking,
-        Order,
         Notification,
-        SubTask,
         Task,
         Client,
         Product,
         Reseller,
+        Order,
+        OrderItem,
       ],
       synchronize: true,
       retryAttempts: 50,

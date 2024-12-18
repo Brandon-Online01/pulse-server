@@ -5,7 +5,7 @@ import { UpdateLeadDto } from './dto/update-lead.dto';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { RoleGuard } from '../guards/role.guard';
 import { Roles } from '../decorators/role.decorator';
-import { AccessLevel } from '../lib/enums/enums';
+import { AccessLevel } from '../lib/enums/user.enums';
 import { AuthGuard } from '../guards/auth.guard';
 
 @ApiTags('leads')

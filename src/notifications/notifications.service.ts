@@ -6,8 +6,7 @@ import { Repository, Any, Not } from 'typeorm';
 import { Notification } from './entities/notification.entity';
 import { NotificationResponse } from 'src/lib/types/notification';
 import { formatDistanceToNow } from 'date-fns';
-import { NotificationStatus } from 'src/lib/enums/enums';
-import { EventEmitter2 } from '@nestjs/event-emitter';
+import { NotificationStatus } from 'src/lib/enums/notification.enums';
 
 @Injectable()
 export class NotificationsService {

@@ -5,7 +5,6 @@ import * as bcrypt from 'bcrypt';
 import { UserService } from '../user/user.service';
 import { SignInResponse, SignUpResponse } from '../lib/types/auth';
 import { ProfileData } from '../lib/types/auth';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class AuthService {

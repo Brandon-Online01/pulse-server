@@ -1,6 +1,7 @@
 import { IsBoolean, IsDate, IsEnum, IsNotEmpty, IsObject, IsString } from "class-validator";
 import { ApiProperty } from "@nestjs/swagger";
-import { NewsCategory, Status } from "../../lib/enums/enums";
+import { NewsCategory } from "../../lib/enums/news.enums";
+import { GeneralStatus } from "src/lib/enums/status.enums";
 
 export class CreateNewsDto {
     @IsString()
@@ -59,13 +60,13 @@ export class CreateNewsDto {
     })
     publishingDate: Date;
 
-    @IsEnum(Status)
+    @IsEnum(GeneralStatus)
     @IsNotEmpty()
     @ApiProperty({
-        example: Status.ACTIVE,
+        example: GeneralStatus.ACTIVE,
         description: 'The status of the news'
     })
-    status: Status;
+    status: GeneralStatus;
 
     @IsNotEmpty()
     @IsObject()
@@ -94,7 +95,7 @@ export class CreateNewsDto {
     @IsEnum(NewsCategory)
     @IsNotEmpty()
     @ApiProperty({
-        example: NewsCategory.GENERAL,
+        example: NewsCategory.NEWS,
         description: 'The category of the news'
     })
     category: NewsCategory;

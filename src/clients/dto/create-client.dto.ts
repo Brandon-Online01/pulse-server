@@ -1,4 +1,4 @@
-import { Status } from '../../lib/enums/enums';
+import { GeneralStatus } from '../../lib/enums/status.enums';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEmail, IsPhoneNumber, IsOptional, IsString, IsEnum, IsNotEmpty, IsBoolean, IsObject } from 'class-validator';
 
@@ -99,13 +99,13 @@ export class CreateClientDto {
     })
     postalCode?: string;
 
-    @IsEnum(Status)
+    @IsEnum(GeneralStatus)
     @IsNotEmpty()
     @ApiProperty({
-        example: Status.ACTIVE,
+        example: GeneralStatus.ACTIVE,
         description: 'The status of the client'
     })
-    status: Status;
+    status: GeneralStatus;
 
 
     @IsBoolean()

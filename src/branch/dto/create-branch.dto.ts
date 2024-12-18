@@ -1,6 +1,5 @@
-import { Status } from '../../lib/enums/enums';
-
 import { ApiProperty } from "@nestjs/swagger";
+import { GeneralStatus } from '../../lib/enums/status.enums';
 
 export class CreateBranchDto {
     @ApiProperty({
@@ -46,10 +45,10 @@ export class CreateBranchDto {
     address: string;
 
     @ApiProperty({
-        example: Status.ACTIVE,
+        example: GeneralStatus.ACTIVE,
         description: 'The status of the branch'
     })
-    status: Status;
+    status: GeneralStatus;
 
     @ApiProperty({
         example: { uid: 1 },

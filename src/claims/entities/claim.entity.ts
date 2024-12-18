@@ -1,6 +1,6 @@
-import { Branch } from "src/branch/entities/branch.entity";
-import { ClaimCategory, ClaimStatus } from "src/lib/enums/enums";
 import { User } from "src/user/entities/user.entity";
+import { Branch } from "src/branch/entities/branch.entity";
+import { ClaimCategory, ClaimStatus } from "../../lib/enums/finance.enums";
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity('claim')

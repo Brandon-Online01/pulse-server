@@ -4,7 +4,7 @@ import { UpdateResellerDto } from './dto/update-reseller.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Reseller } from './entities/reseller.entity';
-import { ResellerStatus } from 'src/lib/enums/enums';
+import { ResellerStatus } from '../lib/enums/product.enums';
 
 @Injectable()
 export class ResellersService {

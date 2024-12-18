@@ -1,7 +1,7 @@
 import { PartialType } from '@nestjs/swagger';
 import { CreateNotificationDto } from './create-notification.dto';
 import { IsEnum, IsObject, IsOptional, IsString } from 'class-validator';
-import { NotificationStatus, NotificationType } from '../../lib/enums/enums';
+import { NotificationStatus, NotificationType } from '../../lib/enums/notification.enums';
 
 export class UpdateNotificationDto extends PartialType(CreateNotificationDto) {
     @IsOptional()

@@ -1,12 +1,12 @@
 import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
-import { Status } from '../lib/enums/enums';
 import { User } from './entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Injectable } from '@nestjs/common';
 import { NewSignUp } from '../lib/types/user';
+import { AccountStatus } from 'src/lib/enums/status.enums';
 
 @Injectable()
 export class UserService {
@@ -208,7 +208,7 @@ export class UserService {
 
 			await this.userRepository.save({
 				...userData,
-				status: userData?.status as Status
+				status: userData?.status as AccountStatus
 			});
 
 			this.schedulePendingUserCleanup(userData?.email, userData?.tokenExpires);
@@ -236,7 +236,7 @@ export class UserService {
 				{ uid: ref },
 				{
 					isDeleted: false,
-					status: Status.ACTIVE
+					status: AccountStatus.ACTIVE
 				}
 			);
 

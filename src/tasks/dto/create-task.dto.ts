@@ -1,28 +1,7 @@
 import { IsString, IsNotEmpty, IsEnum, IsDate, IsObject, IsOptional, IsNumber, IsArray, ValidateNested } from "class-validator";
-import { TaskType, Priority, Status, RepetitionType } from "../../lib/enums/enums";
+import { TaskType, RepetitionType, Priority } from "../../lib/enums/task.enums";
 import { ApiProperty } from "@nestjs/swagger";
-import { Type } from "class-transformer";
-
-class CreateSubTaskDto {
-    @IsString()
-    @IsNotEmpty()
-    @ApiProperty({ example: 'Subtask title', description: 'Title of the subtask' })
-    title: string;
-
-    @IsString()
-    @IsOptional()
-    @ApiProperty({ example: 'Subtask description', description: 'Description of the subtask' })
-    description?: string;
-
-    @IsNumber()
-    @ApiProperty({ example: 0, description: 'Order of the subtask' })
-    order: number;
-
-    @IsObject()
-    @IsOptional()
-    @ApiProperty({ example: { uid: 1 }, description: 'Assignee of the subtask' })
-    assignee?: { uid: number };
-}
+import { GeneralStatus } from "../../lib/enums/status.enums";
 
 export class CreateTaskDto {
     @IsString()
@@ -40,9 +19,9 @@ export class CreateTaskDto {
     @ApiProperty({ example: 'Task description', description: 'Description of the task' })
     description: string;
 
-    @IsEnum(Status)
-    @ApiProperty({ example: Status.PENDING, description: 'Status of the task' })
-    status: Status;
+    @IsEnum(GeneralStatus)
+    @ApiProperty({ example: GeneralStatus.ACTIVE, description: 'Status of the task' })
+    status: GeneralStatus;
 
     @IsObject()
     @IsNotEmpty()
@@ -70,16 +49,6 @@ export class CreateTaskDto {
     @IsNumber()
     @ApiProperty({ example: 0, description: 'Progress of the task' })
     progress: number;
-
-    @IsArray()
-    @ValidateNested({ each: true })
-    @Type(() => CreateSubTaskDto)
-    @IsOptional()
-    @ApiProperty({
-        type: [CreateSubTaskDto],
-        description: 'Subtasks of the task'
-    })
-    subtasks?: CreateSubTaskDto[];
 
     @IsArray()
     @ApiProperty({ example: [{ uid: 1 }, { uid: 2 }] })

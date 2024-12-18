@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { NotificationStatus, NotificationType } from "src/lib/enums/enums";
-import { IsDate, IsEnum, IsNotEmpty, IsObject, IsString } from "class-validator";
+import { NotificationStatus, NotificationType } from "../../lib/enums/notification.enums";
+import { IsEnum, IsNotEmpty, IsObject, IsString } from "class-validator";
 
 export class CreateNotificationDto {
     @IsNotEmpty()

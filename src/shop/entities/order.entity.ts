@@ -1,43 +1,37 @@
-import { User } from "../../user/entities/user.entity";
-import { InvoiceRecipient } from "src/lib/enums/enums";
+import { OrderItem } from "./order-item.entity";
 import { Client } from "src/clients/entities/client.entity";
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
-import { Product } from "src/products/entities/product.entity";
+import { User } from "src/user/entities/user.entity";
+import { Column, Entity, PrimaryGeneratedColumn, OneToMany, ManyToOne } from "typeorm";
 
 @Entity('order')
 export class Order {
     @PrimaryGeneratedColumn()
     uid: number;
 
-    @Column({ nullable: false, type: 'int' })
-    quantity: number;
+    @Column({ nullable: false, type: 'varchar', length: 100 })
+    orderNumber: string;
 
-    @Column({ nullable: false, type: 'float' })
-    totalPrice: number;
+    @Column({ nullable: false, type: 'varchar', length: 100 })
+    totalItems: string;
 
-    @ManyToOne(() => Product, product => product.uid)
-    product: Product;
+    @Column({ nullable: false, type: 'varchar', length: 100 })
+    totalAmount: string;
 
     @Column({
         nullable: false,
         default: () => 'CURRENT_TIMESTAMP'
     })
-    createdAt: Date;
+    orderDate: Date;
 
-    @Column({
-        nullable: false,
-        default: () => 'CURRENT_TIMESTAMP',
-        onUpdate: 'CURRENT_TIMESTAMP'
+    @ManyToOne(() => User, (user) => user?.orders, { nullable: false })
+    placedBy: User;
+
+    @OneToMany(() => OrderItem, orderItem => orderItem?.order, {
+        cascade: true,
+        eager: true
     })
-    updatedAt: Date
+    orderItems: OrderItem[];
 
-
-    @Column({ nullable: false, type: 'enum', enum: InvoiceRecipient, default: InvoiceRecipient.BUYER })
-    invoiceRecipient: InvoiceRecipient;
-
-    @ManyToOne(() => User, user => user.orders)
-    createdBy: User;
-
-    @ManyToOne(() => Client, (client) => client?.orders)
+    @ManyToOne(() => Client, (client) => client?.orders, { nullable: false })
     client: Client;
 }

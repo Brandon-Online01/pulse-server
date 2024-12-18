@@ -1,6 +1,6 @@
-import { NotificationType, NotificationStatus } from "../../lib/enums/enums";
 import { User } from "../../user/entities/user.entity";
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { NotificationType, NotificationStatus } from "../../lib/enums/notification.enums";
 
 @Entity('notification')
 export class Notification {

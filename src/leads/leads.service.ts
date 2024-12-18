@@ -4,10 +4,12 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { Lead } from './entities/lead.entity';
 import { CreateLeadDto } from './dto/create-lead.dto';
 import { UpdateLeadDto } from './dto/update-lead.dto';
-import { AccessLevel, NotificationStatus, NotificationType, Status } from '../lib/enums/enums';
+import { AccessLevel } from '../lib/enums/user.enums';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { endOfDay } from 'date-fns';
 import { startOfDay } from 'date-fns';
+import { NotificationStatus, NotificationType } from '../lib/enums/notification.enums';
+import { LeadStatus } from 'src/lib/enums/leads.enums';
 
 @Injectable()
 export class LeadsService {
@@ -249,10 +251,10 @@ export class LeadsService {
   } {
     return {
       total: leads?.length || 0,
-      pending: leads?.filter(lead => lead?.status === Status.PENDING)?.length || 0,
-      approved: leads?.filter(lead => lead?.status === Status.APPROVED)?.length || 0,
-      inReview: leads?.filter(lead => lead?.status === Status.REVIEW)?.length || 0,
-      declined: leads?.filter(lead => lead?.status === Status.DECLINED)?.length || 0,
+      pending: leads?.filter(lead => lead?.status === LeadStatus.PENDING)?.length || 0,
+      approved: leads?.filter(lead => lead?.status === LeadStatus.APPROVED)?.length || 0,
+      inReview: leads?.filter(lead => lead?.status === LeadStatus.REVIEW)?.length || 0,
+      declined: leads?.filter(lead => lead?.status === LeadStatus.DECLINED)?.length || 0,
     };
   }
 
@@ -277,10 +279,10 @@ export class LeadsService {
 
       // Group leads by status
       const groupedLeads = {
-        pending: leads.filter(lead => lead.status === Status.PENDING),
-        approved: leads.filter(lead => lead.status === Status.APPROVED),
-        review: leads.filter(lead => lead.status === Status.REVIEW),
-        declined: leads.filter(lead => lead.status === Status.DECLINED),
+        pending: leads.filter(lead => lead.status === LeadStatus.PENDING),
+        approved: leads.filter(lead => lead.status === LeadStatus.APPROVED),
+        review: leads.filter(lead => lead.status === LeadStatus.REVIEW),
+        declined: leads.filter(lead => lead.status === LeadStatus.DECLINED),
       };
 
       const response = {

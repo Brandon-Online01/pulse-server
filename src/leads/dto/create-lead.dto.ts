@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { IsEmail, IsNotEmpty, IsNumber, IsObject, IsOptional, IsString } from "class-validator";
-import { Status } from "../../lib/enums/enums";
+import { GeneralStatus } from "../../lib/enums/status.enums";
 
 export class CreateLeadDto {
     @IsNotEmpty()
@@ -39,9 +39,9 @@ export class CreateLeadDto {
     @IsString()
     @ApiProperty({
         description: 'Status of the lead',
-        example: Status.PENDING,
+        example: GeneralStatus.PENDING,
     })
-    status: Status;
+    status: GeneralStatus;
 
     @IsOptional()
     @IsString()

@@ -1,7 +1,7 @@
 import { PartialType } from '@nestjs/swagger';
 import { CreateProductDto } from './create-product.dto';
+import { ProductStatus } from '../../lib/enums/product.enums';
 import { IsNumber, IsNotEmpty, IsString, IsEnum, IsObject } from 'class-validator';
-import { ProductStatus } from 'src/lib/enums/enums';
 
 export class UpdateProductDto extends PartialType(CreateProductDto) {
     @IsNumber()

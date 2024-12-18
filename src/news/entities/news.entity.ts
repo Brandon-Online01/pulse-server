@@ -1,6 +1,7 @@
-import { Branch } from "src/branch/entities/branch.entity";
-import { NewsCategory, Status } from "src/lib/enums/enums";
-import { User } from "src/user/entities/user.entity";
+import { Branch } from "../../branch/entities/branch.entity";
+import { NewsCategory } from "../../lib/enums/news.enums";
+import { GeneralStatus } from "../../lib/enums/status.enums";
+import { User } from "../../user/entities/user.entity";
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity('news')
@@ -29,8 +30,8 @@ export class News {
     @Column({ nullable: false })
     publishingDate: Date;
 
-    @Column({ nullable: false, default: Status.ACTIVE })
-    status: Status;
+    @Column({ nullable: false, default: GeneralStatus.ACTIVE })
+    status: GeneralStatus;
 
     @ManyToOne(() => User, (user) => user?.articles)
     author: User;
@@ -54,7 +55,7 @@ export class News {
     @Column({ type: 'boolean', nullable: true, default: false })
     isDeleted: boolean;
 
-    @Column({ nullable: false, type: 'enum', enum: NewsCategory })
+    @Column({ nullable: true, type: 'enum', enum: NewsCategory })
     category: NewsCategory;
 
     @Column({ nullable: false })

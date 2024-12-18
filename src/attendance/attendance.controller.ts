@@ -11,7 +11,7 @@ import {
 import { CreateCheckInDto } from './dto/create-attendance-check-in.dto';
 import { CreateCheckOutDto } from './dto/create-attendance-check-out.dto';
 import { Roles } from '../decorators/role.decorator';
-import { AccessLevel } from '../lib/enums/enums';
+import { AccessLevel } from '../lib/enums/user.enums';
 import { AuthGuard } from '../guards/auth.guard';
 import { RoleGuard } from '../guards/role.guard';
 

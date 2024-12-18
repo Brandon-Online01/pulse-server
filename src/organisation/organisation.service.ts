@@ -4,7 +4,7 @@ import { UpdateOrganisationDto } from './dto/update-organisation.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Organisation } from './entities/organisation.entity';
-import { Status } from 'src/lib/enums/enums';
+import { GeneralStatus } from '../lib/enums/status.enums';
 
 @Injectable()
 export class OrganisationService {
@@ -133,7 +133,7 @@ export class OrganisationService {
         { ref },
         {
           isDeleted: false,
-          status: Status.ACTIVE
+          status: GeneralStatus.ACTIVE
         }
       );
 

@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { IsString, IsBoolean, IsOptional, IsEmail, IsDate, IsEnum, IsObject } from "class-validator";
-import { Department } from "src/lib/enums/enums";
+import { Department } from "src/lib/enums/user.enums";
 
 export class CreateUserEmploymentProfileDto {
     @IsOptional()
