@@ -62,7 +62,6 @@ export class TasksService {
 				relations: [
 					'owner',
 					'branch',
-					'subtasks',
 					'client',
 				]
 			});
@@ -90,7 +89,6 @@ export class TasksService {
 				relations: [
 					'owner',
 					'branch',
-					'subtasks',
 					'client',
 				]
 			});
@@ -122,7 +120,6 @@ export class TasksService {
 				relations: [
 					'owner',
 					'branch',
-					'subtasks',
 					'client',
 				]
 			});

@@ -46,6 +46,7 @@ import { Product } from './products/entities/product.entity';
 import { Reseller } from './resellers/entities/reseller.entity';
 import { ReportsModule } from './reports/reports.module';
 import { OrderItem } from './shop/entities/order-item.entity';
+import { Banners } from './shop/entities/banners.entity';
 
 @Module({
   imports: [
@@ -101,6 +102,7 @@ import { OrderItem } from './shop/entities/order-item.entity';
         Reseller,
         Order,
         OrderItem,
+        Banners
       ],
       synchronize: true,
       retryAttempts: 50,

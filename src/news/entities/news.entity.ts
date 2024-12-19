@@ -58,6 +58,6 @@ export class News {
     @Column({ nullable: true, type: 'enum', enum: NewsCategory })
     category: NewsCategory;
 
-    @Column({ nullable: false })
+    @Column({ nullable: true })
     shareLink: string;
 }

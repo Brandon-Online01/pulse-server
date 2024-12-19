@@ -1,11 +1,13 @@
 import { Repository } from 'typeorm';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ShopBanner } from 'src/products/products.service';
-import { Product } from 'src/products/entities/product.entity';
 import { CheckoutDto } from './dto/checkout.dto';
 import { Order } from './entities/order.entity';
+import { Banners } from './entities/banners.entity';
+import { CreateBannerDto } from './dto/create-banner.dto';
+import { UpdateBannerDto } from './dto/update-banner.dto';
 import { ProductStatus } from 'src/lib/enums/product.enums';
+import { Product } from 'src/products/entities/product.entity';
 
 @Injectable()
 export class ShopService {
@@ -14,57 +16,11 @@ export class ShopService {
         private productRepository: Repository<Product>,
         @InjectRepository(Order)
         private orderRepository: Repository<Order>,
+        @InjectRepository(Banners)
+        private bannersRepository: Repository<Banners>,
     ) { }
 
-    async getBanners(): Promise<{ banners: ShopBanner[], message: string }> {
-        try {
-            const banners: ShopBanner[] = [
-                {
-                    uid: '1',
-                    title: 'NEW',
-                    subtitle: 'REWARDS',
-                    description: 'JOIN OUR LOYALTY PROGRAM TODAY!',
-                    image: `https://media.istockphoto.com/id/520410807/photo/cheeseburger.jpg?s=612x612&w=0&k=20&c=fG_OrCzR5HkJGI8RXBk76NwxxTasMb1qpTVlEM0oyg4=`,
-                },
-                {
-                    uid: '2',
-                    title: 'NEW',
-                    subtitle: 'REWARDS',
-                    description: 'JOIN OUR LOYALTY PROGRAM TODAY!',
-                    image: `https://media.istockphoto.com/id/520410807/photo/cheeseburger.jpg?s=612x612&w=0&k=20&c=fG_OrCzR5HkJGI8RXBk76NwxxTasMb1qpTVlEM0oyg4=`,
-                },
-                {
-                    uid: '3',
-                    title: 'NEW',
-                    subtitle: 'REWARDS',
-                    description: 'JOIN OUR LOYALTY PROGRAM TODAY!',
-                    image: `https://media.istockphoto.com/id/520410807/photo/cheeseburger.jpg?s=612x612&w=0&k=20&c=fG_OrCzR5HkJGI8RXBk76NwxxTasMb1qpTVlEM0oyg4=`,
-                },
-                {
-                    uid: '4',
-                    title: 'NEW',
-                    subtitle: 'REWARDS',
-                    description: 'JOIN OUR LOYALTY PROGRAM TODAY!',
-                    image: `https://media.istockphoto.com/id/520410807/photo/cheeseburger.jpg?s=612x612&w=0&k=20&c=fG_OrCzR5HkJGI8RXBk76NwxxTasMb1qpTVlEM0oyg4=`,
-                },
-            ];
-
-            const response = {
-                banners,
-                message: process.env.SUCCESS_MESSAGE,
-            };
-
-            return response;
-        } catch (error) {
-            const response = {
-                message: error?.message,
-                banners: []
-            }
-
-            return response;
-        }
-    }
-
+    //shopping
     async categories(): Promise<{ categories: string[] | null, message: string }> {
         try {
             const allProducts = await this.productRepository.find()
@@ -146,7 +102,6 @@ export class ShopService {
         return response;
     }
 
-    //ordering
     async checkout(orderItems: CheckoutDto): Promise<{ message: string }> {
         try {
             if (!orderItems?.items?.length) {
@@ -169,8 +124,8 @@ export class ShopService {
                 client: orderItems?.client?.uid ? { uid: orderItems?.client?.uid } : null,
                 orderItems: orderItems?.items?.map(item => ({
                     quantity: item?.quantity,
-                    totalPrice: item?.totalPrice,
                     product: { uid: item?.uid },
+                    totalPrice: item?.totalPrice,
                 }))
             });
 
@@ -188,6 +143,179 @@ export class ShopService {
             };
 
             console.log(error, ' response');
+
+            return response;
+        }
+    }
+
+    //shop banners
+    async createBanner(bannerData: CreateBannerDto): Promise<{ banner: Banners | null, message: string }> {
+        try {
+            const newBanner = this.bannersRepository.create(bannerData);
+            const savedBanner = await this.bannersRepository.save(newBanner);
+
+            return {
+                banner: savedBanner,
+                message: process.env.SUCCESS_MESSAGE,
+            };
+        } catch (error) {
+            return {
+                banner: null,
+                message: error?.message,
+            };
+        }
+    }
+
+    async getBanner(): Promise<{ banners: Banners[], message: string }> {
+        try {
+            const banners = await this.bannersRepository.find({
+                take: 5,
+                order: {
+                    createdAt: 'DESC'
+                }
+            });
+
+            const response = {
+                banners,
+                message: process.env.SUCCESS_MESSAGE,
+            };
+
+            return response;
+        } catch (error) {
+            const response = {
+                message: error?.message,
+                banners: []
+            }
+
+            return response;
+        }
+    }
+
+    async updateBanner(uid: number, bannerData: UpdateBannerDto): Promise<{ banner: Banners | null, message: string }> {
+        try {
+            const banner = await this.bannersRepository.findOne({ where: { uid } });
+
+            if (!banner) {
+                throw new Error('Banner not found');
+            }
+
+            await this.bannersRepository.update({ uid }, bannerData);
+            const updatedBanner = await this.bannersRepository.findOne({ where: { uid } });
+
+            return {
+                banner: updatedBanner,
+                message: process.env.SUCCESS_MESSAGE,
+            };
+        } catch (error) {
+            return {
+                banner: null,
+                message: error?.message,
+            };
+        }
+    }
+
+    async deleteBanner(uid: number): Promise<{ message: string }> {
+        try {
+            const banner = await this.bannersRepository.findOne({ where: { uid } });
+
+            if (!banner) {
+                throw new Error('Banner not found');
+            }
+
+            await this.bannersRepository.delete({ uid });
+
+            return {
+                message: process.env.SUCCESS_MESSAGE,
+            };
+        } catch (error) {
+            return {
+                message: error?.message,
+            };
+        }
+    }
+
+    //orders
+    async getAllOrders(): Promise<{ orders: Order[], message: string }> {
+        try {
+            const orders = await this.orderRepository.find({
+                relations: ['placedBy', 'client', 'orderItems']
+            });
+
+            if (!orders) {
+                throw new Error(process.env.NOT_FOUND_MESSAGE);
+            }
+
+            const response = {
+                orders,
+                message: process.env.SUCCESS_MESSAGE,
+            };
+
+            return response;
+        } catch (error) {
+            const response = {
+                message: error?.message,
+                orders: []
+            }
+
+            return response;
+        }
+    }
+
+    async getOrdersByUser(ref: number): Promise<{ orders: Order[], message: string }> {
+        try {
+            const orders = await this.orderRepository.find({
+                where: {
+                    placedBy: {
+                        uid: ref
+                    }
+                },
+                relations: ['placedBy', 'client', 'orderItems']
+            });
+
+            if (!orders) {
+                throw new Error(process.env.NOT_FOUND_MESSAGE);
+            }
+
+            const response = {
+                orders,
+                message: process.env.SUCCESS_MESSAGE,
+            };
+
+            return response;
+        } catch (error) {
+            const response = {
+                message: error?.message,
+                orders: []
+            }
+
+            return response;
+        }
+    }
+
+    async getOrderByRef(ref: number): Promise<{ orders: Order, message: string }> {
+        try {
+            const orders = await this.orderRepository.findOne({
+                where: {
+                    uid: ref
+                },
+                relations: ['placedBy', 'client', 'orderItems', 'orderItems.product']
+            });
+
+            if (!orders) {
+                throw new Error(process.env.NOT_FOUND_MESSAGE);
+            }
+
+            const response = {
+                orders,
+                message: process.env.SUCCESS_MESSAGE,
+            };
+
+            return response;
+        } catch (error) {
+            const response = {
+                message: error?.message,
+                orders: null
+            }
 
             return response;
         }

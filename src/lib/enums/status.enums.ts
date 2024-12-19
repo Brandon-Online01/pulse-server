@@ -59,3 +59,16 @@ export enum GeneralStatus {
     REJECTED = 'rejected',
     APPROVED = 'approved',
 }
+
+
+export enum OrderStatus {
+    PENDING = 'pending',
+    INPROGRESS = 'inprogress',
+    COMPLETED = 'completed',
+    CANCELLED = 'cancelled',
+    POSTPONED = 'postponed',
+    OUTFORDELIVERY = 'outfordelivery',
+    DELIVERED = 'delivered',
+    REJECTED = 'rejected',
+    APPROVED = 'approved',
+}

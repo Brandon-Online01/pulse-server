@@ -1,5 +1,6 @@
 import { OrderItem } from "./order-item.entity";
 import { Client } from "src/clients/entities/client.entity";
+import { OrderStatus } from "src/lib/enums/status.enums";
 import { User } from "src/user/entities/user.entity";
 import { Column, Entity, PrimaryGeneratedColumn, OneToMany, ManyToOne } from "typeorm";
 
@@ -16,6 +17,10 @@ export class Order {
 
     @Column({ nullable: false, type: 'varchar', length: 100 })
     totalAmount: string;
+
+
+    @Column({ nullable: false, type: 'varchar', length: 100, default: OrderStatus.PENDING })
+    status: OrderStatus;
 
     @Column({
         nullable: false,
