@@ -8,23 +8,25 @@ import { Between } from 'typeorm';
 import { NotificationType } from 'src/lib/enums/notification.enums';
 import { AccessLevel } from 'src/lib/enums/user.enums';
 import { NotificationStatus } from 'src/lib/enums/notification.enums';
-import { TaskStatus } from 'src/lib/enums/status.enums';
+import { SubTaskStatus, TaskStatus } from 'src/lib/enums/status.enums';
 import { Task } from './entities/task.entity';
+import { SubTask } from './entities/subtask.entity';
+import { UpdateSubtaskDto } from './dto/update-subtask.dto';
 
 @Injectable()
 export class TasksService {
 	constructor(
 		@InjectRepository(Task)
 		private taskRepository: Repository<Task>,
+		@InjectRepository(SubTask)
+		private subtaskRepository: Repository<SubTask>,
 		private readonly eventEmitter: EventEmitter2
 	) { }
 
 	async create(createTaskDto: CreateTaskDto): Promise<{ message: string }> {
 		try {
-			// Convert assignees array to proper format
 			const assignees = createTaskDto?.assignees?.map(assignee => ({ uid: assignee?.uid }));
 
-			// Create task entity with properly formatted assignees
 			const task = await this.taskRepository.save({
 				...createTaskDto,
 				assignees: assignees
@@ -32,6 +34,16 @@ export class TasksService {
 
 			if (!task) {
 				throw new Error(process.env.NOT_FOUND_MESSAGE);
+			}
+
+			if (createTaskDto?.subtasks && createTaskDto?.subtasks?.length > 0) {
+
+				const subtasks = createTaskDto?.subtasks?.map(subtask => ({
+					...subtask,
+					task: { uid: task?.uid }
+				}));
+
+				await this.subtaskRepository.save(subtasks);
 			}
 
 			const notification = {
@@ -63,6 +75,7 @@ export class TasksService {
 					'owner',
 					'branch',
 					'client',
+					'subtasks'
 				]
 			});
 
@@ -90,6 +103,7 @@ export class TasksService {
 					'owner',
 					'branch',
 					'client',
+					'subtasks'
 				]
 			});
 
@@ -112,7 +126,6 @@ export class TasksService {
 		}
 	}
 
-
 	public async tasksByUser(ref: number): Promise<{ message: string, tasks: Task[] }> {
 		try {
 			const tasks = await this.taskRepository.find({
@@ -121,6 +134,7 @@ export class TasksService {
 					'owner',
 					'branch',
 					'client',
+					'subtasks'
 				]
 			});
 
@@ -148,14 +162,14 @@ export class TasksService {
 		try {
 			const task = await this.taskRepository.findOne({
 				where: { uid: ref, isDeleted: false },
-				relations: ['assignees']
+				relations: ['assignees', 'subtasks']
 			});
 
 			if (!task) {
 				throw new Error(process.env.NOT_FOUND_MESSAGE);
 			}
 
-			// Create an object with all possible updateable fields except assignees
+			// Create an object with all possible updateable fields except assignees and subtasks
 			const updateData = {
 				comment: updateTaskDto.comment,
 				notes: updateTaskDto.notes,
@@ -169,7 +183,7 @@ export class TasksService {
 				progress: updateTaskDto.progress,
 				repetitionType: updateTaskDto.repetitionType,
 				repetitionEndDate: updateTaskDto.repetitionEndDate,
-				attachments: updateTaskDto.attachments
+				attachments: updateTaskDto.attachments,
 			};
 
 			// Remove undefined properties
@@ -177,22 +191,37 @@ export class TasksService {
 				updateData[key] === undefined && delete updateData[key]
 			);
 
-			// First update the basic fields
-			await this.taskRepository.update({ uid: ref }, updateData);
+			// Only perform the update if there are fields to update
+			if (Object.keys(updateData).length > 0) {
+				await this.taskRepository.update({ uid: ref }, updateData);
+			}
 
-			// If assignees are provided, handle the many-to-many relationship separately
+			// If assignees are provided, handle the many-to-many relationship
 			if (updateTaskDto.assignees) {
-				// Get the task again with manager to handle relations
 				const taskToUpdate = await this.taskRepository.manager.findOne(Task, {
 					where: { uid: ref },
 					relations: ['assignees']
 				});
-
-				// Clear existing assignees and set new ones
 				taskToUpdate.assignees = updateTaskDto.assignees.map(assignee => ({ uid: assignee.uid } as any));
 				await this.taskRepository.manager.save(taskToUpdate);
 			}
 
+			// Handle subtasks updates if provided
+			if (updateTaskDto.subtasks) {
+				// Delete existing subtasks
+				await this.subtaskRepository.delete({ task: { uid: ref } });
+
+				// Create new subtasks
+				if (updateTaskDto.subtasks.length > 0) {
+					const subtasks = updateTaskDto.subtasks.map(subtask => ({
+						...subtask,
+						task: { uid: ref }
+					}));
+					await this.subtaskRepository.save(subtasks);
+				}
+			}
+
+			// Emit notification
 			const notification = {
 				type: NotificationType.USER,
 				title: 'Task Updated',
@@ -253,7 +282,7 @@ export class TasksService {
 				where: {
 					isDeleted: false,
 					createdAt: Between(startOfDay, endOfDay)
-				}
+				},
 			});
 
 			const byStatus: Record<TaskStatus, number> = {
@@ -289,13 +318,67 @@ export class TasksService {
 
 			const tasks = await this.taskRepository.count({
 				where: {
-					createdAt: Between(startOfDay, endOfDay)
-				}
+					createdAt: Between(startOfDay, endOfDay),
+					isDeleted: false
+				},
+				relations: ['subtasks']
 			});
 
 			return { total: tasks };
 		} catch (error) {
 			return { total: 0 };
+		}
+	}
+
+	async findOneSubTask(ref: number): Promise<{ tasks: SubTask | null, message: string }> {
+		try {
+			const subtask = await this.subtaskRepository.findOne({
+				where: { uid: ref, isDeleted: false },
+			});
+
+			if (!subtask) {
+				return {
+					tasks: null,
+					message: process.env.NOT_FOUND_MESSAGE,
+				};
+			}
+
+			return {
+				tasks: subtask,
+				message: process.env.SUCCESS_MESSAGE,
+			};
+		} catch (error) {
+			return {
+				message: error?.message,
+				tasks: null
+			};
+		}
+	}
+
+	async updateSubTask(ref: number, updateSubTaskDto: UpdateSubtaskDto): Promise<{ message: string }> {
+		try {
+			await this.subtaskRepository.update(ref, updateSubTaskDto);
+			return { message: process.env.SUCCESS_MESSAGE };
+		} catch (error) {
+			return { message: error?.message };
+		}
+	}
+
+	async deleteSubTask(ref: number): Promise<{ message: string }> {
+		try {
+			await this.subtaskRepository.delete(ref);
+			return { message: process.env.SUCCESS_MESSAGE };
+		} catch (error) {
+			return { message: error?.message };
+		}
+	}
+
+	async completeSubTask(ref: number): Promise<{ message: string }> {
+		try {
+			await this.subtaskRepository.update(ref, { status: SubTaskStatus.COMPLETED });
+			return { message: process.env.SUCCESS_MESSAGE };
+		} catch (error) {
+			return { message: error?.message };
 		}
 	}
 }

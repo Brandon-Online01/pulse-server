@@ -2,6 +2,8 @@ import { IsString, IsNotEmpty, IsEnum, IsDate, IsObject, IsOptional, IsNumber, I
 import { TaskType, RepetitionType, Priority } from "../../lib/enums/task.enums";
 import { ApiProperty } from "@nestjs/swagger";
 import { GeneralStatus } from "../../lib/enums/status.enums";
+import { CreateSubtaskDto } from "./create-subtask.dto";
+import { SubTask } from "../entities/subtask.entity";
 
 export class CreateTaskDto {
     @IsString()
@@ -77,4 +79,14 @@ export class CreateTaskDto {
         description: 'Attachments of the task'
     })
     attachments?: string;
+
+    @IsArray()
+    @IsOptional()
+    @ValidateNested({ each: true })
+    @ApiProperty({
+        example: CreateSubtaskDto,
+        description: 'Subtasks of the task',
+        type: [CreateSubtaskDto]
+    })
+    subtasks?: CreateSubtaskDto[];
 }

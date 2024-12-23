@@ -4,6 +4,7 @@ import { Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGen
 import { Client } from 'src/clients/entities/client.entity';
 import { Priority, RepetitionType, TaskType } from 'src/lib/enums/task.enums';
 import { GeneralStatus } from 'src/lib/enums/status.enums';
+import { SubTask } from './subtask.entity';
 
 @Entity('task')
 export class Task {
@@ -71,4 +72,7 @@ export class Task {
 
     @ManyToOne(() => Client, (client) => client?.tasks)
     client: Client;
+
+    @OneToMany(() => SubTask, subtask => subtask?.task)
+    subtasks: SubTask[];
 }

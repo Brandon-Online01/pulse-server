@@ -47,6 +47,7 @@ import { Reseller } from './resellers/entities/reseller.entity';
 import { ReportsModule } from './reports/reports.module';
 import { OrderItem } from './shop/entities/order-item.entity';
 import { Banners } from './shop/entities/banners.entity';
+import { SubTask } from './tasks/entities/subtask.entity';
 
 @Module({
   imports: [
@@ -102,7 +103,8 @@ import { Banners } from './shop/entities/banners.entity';
         Reseller,
         Order,
         OrderItem,
-        Banners
+        Banners,
+        SubTask
       ],
       synchronize: true,
       retryAttempts: 50,

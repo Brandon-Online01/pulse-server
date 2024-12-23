@@ -60,6 +60,10 @@ export enum GeneralStatus {
     APPROVED = 'approved',
 }
 
+export enum SubTaskStatus {
+    PENDING = 'pending',
+    COMPLETED = 'completed',
+}
 
 export enum OrderStatus {
     PENDING = 'pending',
