@@ -281,7 +281,7 @@ export class TasksService {
 			const tasks = await this.taskRepository.find({
 				where: {
 					isDeleted: false,
-					createdAt: Between(startOfDay, endOfDay)
+					deadline: Between(startOfDay, endOfDay)
 				},
 			});
 

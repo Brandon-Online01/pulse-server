@@ -12,6 +12,10 @@ import { Between } from 'typeorm';
 import { startOfDay, endOfDay } from 'date-fns';
 import { OrderStatus } from 'src/lib/enums/status.enums';
 import { ConfigService } from '@nestjs/config';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { NotificationType } from 'src/lib/enums/notification.enums';
+import { AccessLevel } from 'src/lib/enums/user.enums';
+import { NotificationStatus } from 'src/lib/enums/notification.enums';
 
 @Injectable()
 export class ShopService {
@@ -27,6 +31,7 @@ export class ShopService {
         @InjectRepository(Banners)
         private bannersRepository: Repository<Banners>,
         private readonly configService: ConfigService,
+        private readonly eventEmitter: EventEmitter2,
     ) {
         this.currencyLocale = this.configService.get<string>('CURRENCY_LOCALE') || 'en-ZA';
         this.currencyCode = this.configService.get<string>('CURRENCY_CODE') || 'ZAR';
@@ -161,6 +166,18 @@ export class ShopService {
             const response = {
                 message: process.env.SUCCESS_MESSAGE,
             };
+
+            // Emit notification
+            const notification = {
+                type: NotificationType.SHOPPING,
+                title: 'Order Placed',
+                message: `A new order has been placed`,
+                status: NotificationStatus.UNREAD,
+                owner: newOrder?.placedBy?.uid
+            }
+
+            const recipients = [AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.OWNER, AccessLevel.SUPERVISOR, AccessLevel.USER]
+            this.eventEmitter.emit('send.notification', notification, recipients);
 
             return response;
         }
