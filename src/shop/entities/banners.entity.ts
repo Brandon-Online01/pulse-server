@@ -1,3 +1,4 @@
+import { ProductStatus } from "src/lib/enums/product.enums";
 import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
 
 @Entity('banners')
@@ -29,4 +30,7 @@ export class Banners {
         onUpdate: 'CURRENT_TIMESTAMP'
     })
     updatedAt: Date;
+
+    @Column({ nullable: false, type: 'enum', enum: ProductStatus, default: ProductStatus.NEW })
+    category: ProductStatus;
 } 
