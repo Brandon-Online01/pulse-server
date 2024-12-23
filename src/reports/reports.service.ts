@@ -1,151 +1,100 @@
 import { Injectable } from '@nestjs/common';
-import { UserService } from 'src/user/user.service';
+import { LeadsService } from '../leads/leads.service';
+import { JournalService } from '../journal/journal.service';
+import { ClaimsService } from '../claims/claims.service';
+import { TasksService } from '../tasks/tasks.service';
+import { AttendanceService } from 'src/attendance/attendance.service';
+import { ShopService } from '../shop/shop.service';
 
 @Injectable()
 export class ReportsService {
 	constructor(
-		private readonly userService: UserService,
+		private readonly leadService: LeadsService,
+		private readonly journalService: JournalService,
+		private readonly claimsService: ClaimsService,
+		private readonly tasksService: TasksService,
+		private readonly shopService: ShopService,
+		private readonly attendanceService: AttendanceService,
 	) { }
 
-	public async getDailyXP(ref: number): Promise<{ hours: number, xp: number, tasks: number, sales: number }> {
-		const response = {
-			hours: 89,
-			xp: 8987,
-			tasks: 8,
-			sales: 88
-		}
-
-		return response
-	}
-
-	async flash(ref: number): Promise<{ hours: number, xp: number, tasks: number, sales: number }> {
-		const response = {
-			hours: 89,
-			xp: 8987,
-			tasks: 3,
-			sales: 88
-		}
-
-		return response
-	}
-
-	async dailyReport(ref: number): Promise<{
-		attendance: { checkIn: number, checkOut: number, totalHours: number },
-		locations: { checkInLocation: number, checkOutLocation: number },
-		leads: { total: number, entries: any[] },
-		orders: { total: string, basket: number },
-		claims: { total: number, entries: any[] },
-		tasks: { pending: number, completed: number, total: number, postponed: number }
-	}> {
-		const response = {
-			attendance: {
-				checkIn: 12,
-				checkOut: 12,
-				totalHours: 12
-			},
-			locations: {
-				checkInLocation: 12,
-				checkOutLocation: 12
-			},
-			leads: {
-				total: 12,
-				entries: []
-			},
-			orders: {
-				total: '1,210,129.99',
-				basket: 15
-			},
-			claims: {
-				total: 12,
-				entries: []
-			},
-			tasks: {
-				pending: 12,
-				completed: 12,
-				total: 12,
-				postponed: 12
-			}
-		}
-
-		return response
-	}
-
-	async overview(ref: number) {
-
-		const response = {
-			leads: {
-				total: 12,
-				entries: []
-			},
-			journals: {
-				count: 12,
-				entries: []
-			},
-			attendance: {
-				progress: 80,
-				avgDailyHours: 8.11,
-				totalLate: 1.11,
-				totalAbsent: 1.11,
-				totalExcused: 1.11,
-				totalPresent: 1.11
-			},
-			claims: {
-				total: 12,
-				entries: [],
-				totalValue: '3400.99',
-			},
-			tasks: {
-				pending: 1,
-				completed: 10,
-				total: 24,
-				missed: 8,
-				postponed: 5
-			},
-			orders: {
-				basketTotal: '1,210.99',
-				totalOrders: 15
-			}
-		}
-
-		return response
-	}
-
 	async managerOverview() {
-		const response = {
-			leads: {
-				total: 12,
-				entries: []
-			},
-			journals: {
-				total: 12,
-				entries: []
-			},
-			attendance: {
-				attendance: 80,
-				avgDailyHours: 8.11,
-				totalLate: 1.11,
-				totalAbsent: 1.11,
-				totalExcused: 1.11,
-				totalPresent: 1.11
-			},
-			claims: {
-				total: 12,
-				entries: [],
-				totalValue: '340201.99',
-			},
-			tasks: {
-				pending: 1,
-				completed: 10,
-				total: 24,
-				missed: 8,
-				postponed: 5
-			},
-			orders: {
-				total: '1,219.99',
-				basket: 15
-			}
-		}
+		try {
+			const allData = await Promise.all([
+				this.leadService.getLeadsForDate(new Date()),
+				this.journalService.getJournalsForDate(new Date()),
+				this.claimsService.getClaimsForDate(new Date()),
+				this.shopService.getOrdersForDate(new Date()),
+				this.tasksService.getTaskStatusSummary(),
+				this.attendanceService.getMonthlyAttendanceStats()
+			]);
 
-		return response
+			const [
+				{ leads: leadsStats },
+				{ journals: journalsStats },
+				{ claims: claimsStats },
+				{ stats: ordersStats },
+				{ byStatus: tasksStats },
+				{ stats: attendanceStats }
+			] = allData;
+
+			const response = {
+				leads: {
+					pending: leadsStats?.pending?.length,
+					approved: leadsStats?.approved?.length,
+					inReview: leadsStats?.review?.length,
+					declined: leadsStats?.declined?.length,
+					total: leadsStats?.total
+				},
+				journals: {
+					total: journalsStats?.length,
+				},
+				claims: {
+					pending: claimsStats?.pending?.length || 0,
+					approved: claimsStats?.approved?.length || 0,
+					declined: claimsStats?.declined?.length || 0,
+					paid: claimsStats?.paid?.length || 0,
+					totalValue: claimsStats?.totalValue || 0
+				},
+				tasks: {
+					pending: tasksStats?.pending,
+					completed: tasksStats?.completed,
+					missed: tasksStats?.missed,
+					postponed: tasksStats?.postponed,
+					total: Object?.values(tasksStats)?.reduce((acc, curr) => acc + curr, 0)
+				},
+				attendance: {
+					attendance: attendanceStats?.metrics?.attendancePercentage,
+					present: attendanceStats?.metrics?.totalPresent,
+					total: attendanceStats?.metrics?.totalEmployees
+				},
+				orders: {
+					pending: ordersStats?.orders?.pending?.length,
+					processing: ordersStats?.orders?.processing?.length,
+					completed: ordersStats?.orders?.completed?.length,
+					cancelled: ordersStats?.orders?.cancelled?.length,
+					postponed: ordersStats?.orders?.postponed?.length,
+					outForDelivery: ordersStats?.orders?.outForDelivery?.length,
+					delivered: ordersStats?.orders?.delivered?.length,
+					rejected: ordersStats?.orders?.rejected?.length,
+					approved: ordersStats?.orders?.approved?.length,
+					metrics: {
+						totalOrders: ordersStats?.orders?.metrics?.totalOrders,
+						grossOrderValue: ordersStats?.orders?.metrics?.grossOrderValue || 0,
+						averageOrderValue: ordersStats?.orders?.metrics?.averageOrderValue || 0
+					}
+				},
+			}
+
+			return response
+		} catch (error) {
+			return this.handleError(error)
+		}
+	}
+
+	private handleError(error: any) {
+		return {
+			message: error?.message || 'An error occurred',
+			statusCode: error?.status || 500
+		}
 	}
 }

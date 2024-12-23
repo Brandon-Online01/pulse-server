@@ -245,8 +245,15 @@ export class TasksService {
 		total: number;
 	}> {
 		try {
+			const today = new Date();
+			const startOfDay = new Date(today.setHours(0, 0, 0, 0));
+			const endOfDay = new Date(today.setHours(23, 59, 59, 999));
+
 			const tasks = await this.taskRepository.find({
-				where: { isDeleted: false }
+				where: {
+					isDeleted: false,
+					createdAt: Between(startOfDay, endOfDay)
+				}
 			});
 
 			const byStatus: Record<TaskStatus, number> = {

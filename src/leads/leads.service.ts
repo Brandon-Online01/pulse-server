@@ -265,7 +265,8 @@ export class LeadsService {
       pending: Lead[],
       approved: Lead[],
       review: Lead[],
-      declined: Lead[]
+      declined: Lead[],
+      total: number
     }
   }> {
     try {
@@ -283,6 +284,7 @@ export class LeadsService {
         approved: leads.filter(lead => lead.status === LeadStatus.APPROVED),
         review: leads.filter(lead => lead.status === LeadStatus.REVIEW),
         declined: leads.filter(lead => lead.status === LeadStatus.DECLINED),
+        total: leads?.length
       };
 
       const response = {

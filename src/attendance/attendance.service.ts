@@ -6,13 +6,15 @@ import { AttendanceStatus } from '../lib/enums/attendance.enums';
 import { CreateCheckInDto } from './dto/create-attendance-check-in.dto';
 import { CreateCheckOutDto } from './dto/create-attendance-check-out.dto';
 import { isToday } from 'date-fns';
-import { differenceInMinutes, differenceInHours } from 'date-fns';
+import { differenceInMinutes, differenceInHours, startOfMonth, endOfMonth } from 'date-fns';
+import { UserService } from 'src/user/user.service';
 
 @Injectable()
 export class AttendanceService {
   constructor(
     @InjectRepository(Attendance)
     private attendanceRepository: Repository<Attendance>,
+    private userService: UserService,
   ) { }
 
   public async checkIn(checkInDto: CreateCheckInDto): Promise<{ message: string }> {
@@ -300,19 +302,21 @@ export class AttendanceService {
 
   public async getAttendanceForDate(date: Date): Promise<{ totalHours: number }> {
     try {
-      const startOfDay = new Date(date.setHours(0, 0, 0, 0));
-      const endOfDay = new Date(date.setHours(23, 59, 59, 999));
+      const startOfDayDate = new Date(date.setHours(0, 0, 0, 0));
+      const endOfDayDate = new Date(date.setHours(23, 59, 59, 999));
 
+      // Get completed shifts for the day
       const attendanceRecords = await this.attendanceRepository.find({
         where: {
-          checkIn: MoreThanOrEqual(startOfDay),
-          checkOut: LessThanOrEqual(endOfDay),
+          checkIn: MoreThanOrEqual(startOfDayDate),
+          checkOut: LessThanOrEqual(endOfDayDate),
           status: AttendanceStatus.COMPLETED
         }
       });
 
       let totalMinutesWorked = 0;
 
+      // Calculate minutes from completed shifts
       attendanceRecords.forEach(record => {
         if (record.checkIn && record.checkOut) {
           const minutes = differenceInMinutes(
@@ -323,11 +327,137 @@ export class AttendanceService {
         }
       });
 
+      // Get active shifts for today
+      const activeShifts = await this.attendanceRepository.find({
+        where: {
+          status: AttendanceStatus.PRESENT,
+          checkIn: MoreThanOrEqual(startOfDayDate),
+          checkOut: IsNull(),
+        }
+      });
+
+      // Add minutes from active shifts
+      const now = new Date();
+      activeShifts.forEach(shift => {
+        if (shift.checkIn) {
+          const minutes = differenceInMinutes(now, new Date(shift.checkIn));
+          totalMinutesWorked += minutes;
+        }
+      });
+
       return {
         totalHours: Math.round((totalMinutesWorked / 60) * 10) / 10 // Round to 1 decimal place
       };
     } catch (error) {
       return { totalHours: 0 };
+    }
+  }
+
+  public async getAttendanceForMonth(ref: string): Promise<{ totalHours: number }> {
+    try {
+      const user = await this.userService.findOne(ref);
+      const userId = user.user.uid;
+
+      // Get completed shifts for the month
+      const attendanceRecords = await this.attendanceRepository.find({
+        where: {
+          owner: { uid: userId },
+          checkIn: MoreThanOrEqual(startOfMonth(new Date())),
+          checkOut: LessThanOrEqual(endOfMonth(new Date())),
+          status: AttendanceStatus.COMPLETED
+        }
+      });
+
+      // Calculate hours from completed shifts
+      const completedHours = attendanceRecords.reduce((total, record) => {
+        if (record?.duration) {
+          const [hours, minutes] = record.duration.split(' ');
+          const hoursValue = parseFloat(hours.replace('h', ''));
+          const minutesValue = parseFloat(minutes.replace('m', '')) / 60;
+          return total + hoursValue + minutesValue;
+        }
+        return total;
+      }, 0);
+
+      // Get today's attendance hours
+      const todayHours = (await this.getAttendanceForDate(new Date())).totalHours;
+
+      const totalHours = completedHours + todayHours;
+
+      return {
+        totalHours: Math.round(totalHours * 10) / 10 // Round to 1 decimal place
+      };
+    } catch (error) {
+      return { totalHours: 0 };
+    }
+  }
+
+  public async getMonthlyAttendanceStats(): Promise<{
+    message: string,
+    stats: {
+      metrics: {
+        totalEmployees: number,
+        totalPresent: number,
+        attendancePercentage: number
+      }
+    }
+  }> {
+    try {
+      const todayPresent = await this.attendanceRepository.count({
+        where: {
+          status: AttendanceStatus.PRESENT
+        }
+      });
+
+      const totalUsers = await this.userService.findAll().then(users => users.users.length);
+
+      const attendancePercentage = totalUsers > 0
+        ? Math.round((todayPresent / totalUsers) * 100)
+        : 0;
+
+      return {
+        message: process.env.SUCCESS_MESSAGE,
+        stats: {
+          metrics: {
+            totalEmployees: totalUsers,
+            totalPresent: todayPresent,
+            attendancePercentage
+          }
+        }
+      };
+
+    } catch (error) {
+      return {
+        message: error?.message,
+        stats: null
+      };
+    }
+  }
+
+  public async getCurrentShiftHours(userId: number): Promise<number> {
+    try {
+      const activeShift = await this.attendanceRepository.findOne({
+        where: {
+          status: AttendanceStatus.PRESENT,
+          owner: { uid: userId },
+          checkIn: Not(IsNull()),
+          checkOut: IsNull(),
+        },
+        order: {
+          checkIn: 'DESC'
+        }
+      });
+
+      if (activeShift) {
+        const now = new Date();
+        const checkInTime = new Date(activeShift.checkIn);
+        const minutesWorked = differenceInMinutes(now, checkInTime);
+        return Math.round((minutesWorked / 60) * 10) / 10; // Round to 1 decimal place
+      }
+
+      return 0;
+    } catch (error) {
+      return 0;
     }
   }
 }

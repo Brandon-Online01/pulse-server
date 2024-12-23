@@ -8,9 +8,17 @@ import { CreateBannerDto } from './dto/create-banner.dto';
 import { UpdateBannerDto } from './dto/update-banner.dto';
 import { ProductStatus } from 'src/lib/enums/product.enums';
 import { Product } from 'src/products/entities/product.entity';
+import { Between } from 'typeorm';
+import { startOfDay, endOfDay } from 'date-fns';
+import { OrderStatus } from 'src/lib/enums/status.enums';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class ShopService {
+    private readonly currencyLocale: string;
+    private readonly currencyCode: string;
+    private readonly currencySymbol: string;
+
     constructor(
         @InjectRepository(Product)
         private productRepository: Repository<Product>,
@@ -18,19 +26,38 @@ export class ShopService {
         private orderRepository: Repository<Order>,
         @InjectRepository(Banners)
         private bannersRepository: Repository<Banners>,
-    ) { }
+        private readonly configService: ConfigService,
+    ) {
+        this.currencyLocale = this.configService.get<string>('CURRENCY_LOCALE') || 'en-ZA';
+        this.currencyCode = this.configService.get<string>('CURRENCY_CODE') || 'ZAR';
+        this.currencySymbol = this.configService.get<string>('CURRENCY_SYMBOL') || 'R';
+    }
+
+    private formatCurrency(amount: number): string {
+        return new Intl.NumberFormat(this.currencyLocale, {
+            style: 'currency',
+            currency: this.currencyCode
+        })
+            .format(amount)
+            .replace(this.currencyCode, this.currencySymbol);
+    }
 
     //shopping
     async categories(): Promise<{ categories: string[] | null, message: string }> {
         try {
-            const allProducts = await this.productRepository.find()
+            const allProducts = await this.productRepository.find();
 
             if (!allProducts) {
                 throw new Error(process.env.NOT_FOUND_MESSAGE);
             }
 
-            const categories = allProducts.map(product => product?.category);
+            // Format prices before returning products
+            const formattedProducts = allProducts.map(product => ({
+                ...product,
+                price: this.formatCurrency(Number(product.price) || 0)
+            }));
 
+            const categories = formattedProducts.map(product => product?.category);
             const uniqueCategories = [...new Set(categories)];
 
             const response = {
@@ -62,7 +89,7 @@ export class ShopService {
         const result = await this.getProductsByStatus(ProductStatus.SPECIAL);
 
         const response = {
-            products: result.products,
+            products: result?.products,
             message: process.env.SUCCESS_MESSAGE,
         }
 
@@ -276,8 +303,13 @@ export class ShopService {
                 throw new Error(process.env.NOT_FOUND_MESSAGE);
             }
 
+            const formattedOrders = orders?.map(order => ({
+                ...order,
+                totalAmount: this.formatCurrency(Number(order?.totalAmount) || 0)
+            }));
+
             const response = {
-                orders,
+                orders: formattedOrders,
                 message: process.env.SUCCESS_MESSAGE,
             };
 
@@ -305,8 +337,13 @@ export class ShopService {
                 throw new Error(process.env.NOT_FOUND_MESSAGE);
             }
 
+            const formattedOrders = {
+                ...orders,
+                totalAmount: this.formatCurrency(Number(orders?.totalAmount) || 0)
+            };
+
             const response = {
-                orders,
+                orders: formattedOrders,
                 message: process.env.SUCCESS_MESSAGE,
             };
 
@@ -318,6 +355,82 @@ export class ShopService {
             }
 
             return response;
+        }
+    }
+
+    async getOrdersForDate(date: Date): Promise<{
+        message: string,
+        stats: {
+            orders: {
+                pending: Order[],
+                processing: Order[],
+                completed: Order[],
+                cancelled: Order[],
+                postponed: Order[],
+                outForDelivery: Order[],
+                delivered: Order[],
+                rejected: Order[],
+                approved: Order[],
+                metrics: {
+                    totalOrders: number,
+                    grossOrderValue: string,
+                    averageOrderValue: string
+                }
+            },
+        }
+    }> {
+        try {
+            const orders = await this.orderRepository.find({
+                where: {
+                    orderDate: Between(startOfDay(date), endOfDay(date))
+                },
+                relations: ['orderItems']
+            });
+
+            if (!orders) {
+                throw new Error(process.env.NOT_FOUND_MESSAGE);
+            }
+
+            // Group orders by status
+            const groupedOrders = {
+                pending: orders.filter(order => order?.status === OrderStatus.PENDING),
+                processing: orders.filter(order => order?.status === OrderStatus.INPROGRESS),
+                completed: orders.filter(order => order?.status === OrderStatus.COMPLETED),
+                cancelled: orders.filter(order => order?.status === OrderStatus.CANCELLED),
+                postponed: orders.filter(order => order?.status === OrderStatus.POSTPONED),
+                outForDelivery: orders.filter(order => order?.status === OrderStatus.OUTFORDELIVERY),
+                delivered: orders.filter(order => order?.status === OrderStatus.DELIVERED),
+                rejected: orders.filter(order => order?.status === OrderStatus.REJECTED),
+                approved: orders.filter(order => order?.status === OrderStatus.APPROVED)
+            };
+
+            // Calculate metrics with formatted currency
+            const metrics = {
+                totalOrders: orders?.length,
+                grossOrderValue: this.formatCurrency(
+                    orders?.reduce((sum, order) => sum + (Number(order?.totalAmount) || 0), 0)
+                ),
+                averageOrderValue: this.formatCurrency(
+                    orders?.length > 0
+                        ? orders?.reduce((sum, order) => sum + (Number(order?.totalAmount) || 0), 0) / orders?.length
+                        : 0
+                )
+            };
+
+            return {
+                message: process.env.SUCCESS_MESSAGE,
+                stats: {
+                    orders: {
+                        ...groupedOrders,
+                        metrics
+                    }
+                }
+            };
+        } catch (error) {
+            return {
+                message: error?.message,
+                stats: null
+            };
         }
     }
 }

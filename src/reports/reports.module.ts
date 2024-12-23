@@ -9,7 +9,8 @@ import { AssetsModule } from '../assets/assets.module';
 import { TrackingModule } from '../tracking/tracking.module';
 import { LeadsModule } from '../leads/leads.module';
 import { ClaimsModule } from '../claims/claims.module';
-import { UserModule } from 'src/user/user.module';
+import { UserModule } from '../user/user.module';
+import { ShopModule } from '../shop/shop.module';
 
 @Module({
   imports: [
@@ -31,7 +32,8 @@ import { UserModule } from 'src/user/user.module';
     TrackingModule,
     LeadsModule,
     ClaimsModule,
-    UserModule
+    UserModule,
+    ShopModule
   ],
   controllers: [ReportsController],
   providers: [ReportsService],

@@ -10,14 +10,33 @@ import { startOfDay } from 'date-fns';
 import { ClaimCategory, ClaimStatus } from '../lib/enums/finance.enums';
 import { AccessLevel } from '../lib/enums/user.enums';
 import { NotificationStatus, NotificationType } from '../lib/enums/notification.enums';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class ClaimsService {
+	private readonly currencyLocale: string;
+	private readonly currencyCode: string;
+	private readonly currencySymbol: string;
+
 	constructor(
 		@InjectRepository(Claim)
 		private claimsRepository: Repository<Claim>,
-		private eventEmitter: EventEmitter2
-	) { }
+		private eventEmitter: EventEmitter2,
+		private readonly configService: ConfigService,
+	) {
+		this.currencyLocale = this.configService.get<string>('CURRENCY_LOCALE') || 'en-ZA';
+		this.currencyCode = this.configService.get<string>('CURRENCY_CODE') || 'ZAR';
+		this.currencySymbol = this.configService.get<string>('CURRENCY_SYMBOL') || 'R';
+	}
+
+	private formatCurrency(amount: number): string {
+		return new Intl.NumberFormat(this.currencyLocale, {
+			style: 'currency',
+			currency: this.currencyCode
+		})
+			.format(amount)
+			.replace(this.currencyCode, this.currencySymbol);
+	}
 
 	private calculateStats(claims: Claim[]): {
 		total: number;
@@ -69,10 +88,16 @@ export class ClaimsService {
 		}
 	}
 
-	async findAll(): Promise<{ message: string, claims: Claim[] | null, stats: any }> {
+	async findAll(): Promise<{
+		message: string, claims: Claim[] | null, stats: any
+	}> {
 		try {
 			const claims = await this.claimsRepository.find({
-				where: { isDeleted: false },
+				where: {
+					isDeleted: false,
+					deletedAt: IsNull(),
+					status: Not(ClaimStatus.DELETED)
+				},
 				relations: ['owner']
 			});
 
@@ -80,12 +105,28 @@ export class ClaimsService {
 				throw new NotFoundException(process.env.SEARCH_ERROR_MESSAGE);
 			}
 
+			const formattedClaims = claims?.map(claim => ({
+				...claim,
+				amount: this.formatCurrency(Number(claim?.amount) || 0)
+			}));
+
 			const stats = this.calculateStats(claims);
+
+			const response = {
+				stats: {
+					total: stats?.total,
+					pending: stats?.pending,
+					approved: stats?.approved,
+					declined: stats?.declined,
+					paid: stats?.paid,
+				},
+				claims: formattedClaims,
+			}
 
 			return {
 				message: process.env.SUCCESS_MESSAGE,
-				claims,
-				stats
+				claims: formattedClaims,
+				stats: response
 			};
 		} catch (error) {
 			return {
@@ -113,9 +154,14 @@ export class ClaimsService {
 			const allClaims = await this.claimsRepository.find();
 			const stats = this.calculateStats(allClaims);
 
+			const formattedClaim = {
+				...claim,
+				amount: this.formatCurrency(Number(claim?.amount) || 0)
+			};
+
 			return {
 				message: process.env.SUCCESS_MESSAGE,
-				claim,
+				claim: formattedClaim,
 				stats
 			};
 		} catch (error) {
@@ -147,11 +193,16 @@ export class ClaimsService {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
+			const formattedClaims = claims?.map(claim => ({
+				...claim,
+				amount: this.formatCurrency(Number(claim?.amount) || 0)
+			}));
+
 			const stats = this.calculateStats(claims);
 
 			return {
 				message: process.env.SUCCESS_MESSAGE,
-				claims,
+				claims: formattedClaims,
 				stats
 			};
 		} catch (error) {
@@ -169,7 +220,8 @@ export class ClaimsService {
 			pending: Claim[],
 			approved: Claim[],
 			declined: Claim[],
-			paid: Claim[]
+			paid: Claim[],
+			totalValue: string
 		}
 	}> {
 		try {
@@ -191,7 +243,10 @@ export class ClaimsService {
 
 			return {
 				message: process.env.SUCCESS_MESSAGE,
-				claims: groupedClaims
+				claims: {
+					...groupedClaims,
+					totalValue: this.formatCurrency(claims?.reduce((sum, claim) => sum + (Number(claim?.amount) || 0), 0))
+				}
 			};
 		} catch (error) {
 			return {
@@ -295,7 +350,7 @@ export class ClaimsService {
 
 	async getTotalClaimsStats(): Promise<{
 		totalClaims: number;
-		totalValue: number;
+		totalValue: string;
 		byCategory: Record<ClaimCategory, number>;
 	}> {
 		try {
@@ -328,14 +383,14 @@ export class ClaimsService {
 
 			return {
 				totalClaims: claims.length,
-				totalValue: Math.round(claims.reduce((sum, claim) => sum + (Number(claim.amount) || 0), 0) * 100) / 100,
+				totalValue: this.formatCurrency(claims.reduce((sum, claim) => sum + (Number(claim.amount) || 0), 0)),
 				byCategory
 			};
 
 		} catch (error) {
 			return {
 				totalClaims: 0,
-				totalValue: 0,
+				totalValue: this.formatCurrency(0),
 				byCategory: {
 					[ClaimCategory.GENERAL]: 0,
 					[ClaimCategory.PROMOTION]: 0,
