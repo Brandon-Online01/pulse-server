@@ -184,11 +184,6 @@ export class ShopService {
 
             const recipients = [AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.OWNER, AccessLevel.SUPERVISOR, AccessLevel.USER]
 
-            console.log(recipients, ' recipients');
-            console.log(emailConfig, ' emailConfig');
-
-            console.log(response, ' response');
-
             this.eventEmitter.emit('send.notification', notification, recipients);
             this.eventEmitter.emit('send.email', EmailType.ORDER_CONFIRMATION, recipients, emailConfig);
 
@@ -198,9 +193,6 @@ export class ShopService {
             const response = {
                 message: error?.message,
             };
-
-            console.log(error, ' response');
-
             return response;
         }
     }

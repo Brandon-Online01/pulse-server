@@ -204,8 +204,6 @@ export class DocsService {
 
       return response;
     } catch (error: any) {
-      console.log('error', error);
-
       const response = {
         newFileName: null,
         message: error.message,
