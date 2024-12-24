@@ -48,6 +48,7 @@ import { ReportsModule } from './reports/reports.module';
 import { OrderItem } from './shop/entities/order-item.entity';
 import { Banners } from './shop/entities/banners.entity';
 import { SubTask } from './tasks/entities/subtask.entity';
+import { CommunicationLog } from './communication/entities/communication-log.entity';
 
 @Module({
   imports: [
@@ -104,7 +105,8 @@ import { SubTask } from './tasks/entities/subtask.entity';
         Order,
         OrderItem,
         Banners,
-        SubTask
+        SubTask,
+        CommunicationLog
       ],
       synchronize: true,
       retryAttempts: 50,

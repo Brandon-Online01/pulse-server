@@ -16,6 +16,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { NotificationType } from 'src/lib/enums/notification.enums';
 import { AccessLevel } from 'src/lib/enums/user.enums';
 import { NotificationStatus } from 'src/lib/enums/notification.enums';
+import { EmailType } from 'src/lib/enums/email.enums';
 
 @Injectable()
 export class ShopService {
@@ -167,7 +168,6 @@ export class ShopService {
                 message: process.env.SUCCESS_MESSAGE,
             };
 
-            // Emit notification
             const notification = {
                 type: NotificationType.SHOPPING,
                 title: 'Order Placed',
@@ -176,8 +176,21 @@ export class ShopService {
                 owner: newOrder?.placedBy?.uid
             }
 
+            const emailConfig = {
+                name: 'New Order',
+                orderNumber: newOrder?.orderNumber,
+                total: this.formatCurrency(Number(newOrder?.totalAmount) || 0),
+            }
+
             const recipients = [AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.OWNER, AccessLevel.SUPERVISOR, AccessLevel.USER]
+
+            console.log(recipients, ' recipients');
+            console.log(emailConfig, ' emailConfig');
+
+            console.log(response, ' response');
+
             this.eventEmitter.emit('send.notification', notification, recipients);
+            this.eventEmitter.emit('send.email', EmailType.ORDER_CONFIRMATION, recipients, emailConfig);
 
             return response;
         }

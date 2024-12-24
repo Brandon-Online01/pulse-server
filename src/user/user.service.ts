@@ -1,5 +1,5 @@
 import * as bcrypt from 'bcrypt';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -7,6 +7,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { Injectable } from '@nestjs/common';
 import { NewSignUp } from '../lib/types/user';
 import { AccountStatus } from 'src/lib/enums/status.enums';
+import { AccessLevel } from 'src/lib/enums/user.enums';
 
 @Injectable()
 export class UserService {
@@ -143,6 +144,31 @@ export class UserService {
 		}
 	}
 
+	async getUsersByRole(recipientRoles: AccessLevel[]): Promise<{ users: User[] | null, message: string }> {
+		try {
+			const users = await this.userRepository.find({
+				where: { accessLevel: In(recipientRoles) },
+			});
+
+			if (!users) {
+				throw new Error(process.env.NOT_FOUND_MESSAGE);
+			}
+
+			const response = {
+				users: users,
+				message: process.env.SUCCESS_MESSAGE,
+			};
+
+			return response;
+		} catch (error) {
+			const response = {
+				message: error?.message,
+				users: null
+			}
+
+			return response;
+		}
+	}
 
 	async update(ref: number, updateUserDto: UpdateUserDto): Promise<{ message: string }> {
 		try {
