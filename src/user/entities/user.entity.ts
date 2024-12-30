@@ -16,6 +16,7 @@ import { Client } from 'src/clients/entities/client.entity';
 import { AccessLevel } from 'src/lib/enums/user.enums';
 import { AccountStatus } from 'src/lib/enums/status.enums';
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { CheckIn } from 'src/check-ins/entities/check-in.entity';
 
 @Entity('user')
 export class User {
@@ -121,4 +122,7 @@ export class User {
 
     @OneToMany(() => Client, (client) => client?.assignedSalesRep)
     clients: Client[];
+
+    @OneToMany(() => CheckIn, (checkIn) => checkIn?.owner)
+    checkIns: CheckIn[];
 }

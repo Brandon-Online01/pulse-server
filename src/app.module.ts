@@ -49,6 +49,8 @@ import { OrderItem } from './shop/entities/order-item.entity';
 import { Banners } from './shop/entities/banners.entity';
 import { SubTask } from './tasks/entities/subtask.entity';
 import { CommunicationLog } from './communication/entities/communication-log.entity';
+import { CheckInsModule } from './check-ins/check-ins.module';
+import { CheckIn } from './check-ins/entities/check-in.entity';
 
 @Module({
   imports: [
@@ -106,7 +108,8 @@ import { CommunicationLog } from './communication/entities/communication-log.ent
         OrderItem,
         Banners,
         SubTask,
-        CommunicationLog
+        CommunicationLog,
+        CheckIn
       ],
       synchronize: true,
       retryAttempts: 50,
@@ -116,6 +119,7 @@ import { CommunicationLog } from './communication/entities/communication-log.ent
       },
     }),
     UserModule,
+    CheckInsModule,
   ],
   controllers: [],
   providers: [
