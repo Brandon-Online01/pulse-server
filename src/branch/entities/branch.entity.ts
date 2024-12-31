@@ -11,6 +11,7 @@ import { Claim } from "../../claims/entities/claim.entity";
 import { Attendance } from "../../attendance/entities/attendance.entity";
 import { Asset } from "../../assets/entities/asset.entity";
 import { User } from "src/user/entities/user.entity";
+import { CheckIn } from "src/check-ins/entities/check-in.entity";
 
 @Entity('branch')
 export class Branch {
@@ -20,10 +21,10 @@ export class Branch {
     @Column({ nullable: false })
     name: string;
 
-    @Column({ nullable: false })
+    @Column({ nullable: false, unique: true })
     email: string;
 
-    @Column({ nullable: false })
+    @Column({ nullable: false, unique: true })
     phone: string;
 
     @Column({ nullable: false })
@@ -35,7 +36,7 @@ export class Branch {
     @Column({ nullable: false })
     address: string;
 
-    @Column({ nullable: false })
+    @Column({ nullable: false, unique: true })
     website: string;
 
     @Column({ nullable: false, default: GeneralStatus.ACTIVE })
@@ -82,4 +83,7 @@ export class Branch {
 
     @OneToMany(() => User, (user) => user?.branch)
     users: User[];
+
+    @OneToMany(() => CheckIn, (checkIn) => checkIn?.branch)
+    checkIns: CheckIn[];
 }

@@ -42,7 +42,7 @@ async function bootstrap() {
 		.addTag('shop', 'E-commerce and order management')
 		.addTag('tasks', 'Task and project management system')
 		.addTag('gps', 'GPS tracking and location services')
-		.addTag('user', 'User account and fleet management')
+		.addTag('user', 'User account management')
 		.build();
 
 	const document = SwaggerModule.createDocument(app, config, {

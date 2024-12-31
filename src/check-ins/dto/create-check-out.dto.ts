@@ -6,7 +6,7 @@ export class CreateCheckOutDto {
     @IsString()
     @ApiProperty({
         description: 'The photo of the check-out',
-        example: 'https://example.com/check-out.jpg'
+        example: `${new Date()}`
     })
     checkOutTime: string;
 
@@ -14,15 +14,15 @@ export class CreateCheckOutDto {
     @IsString()
     @ApiProperty({
         description: 'The location of the check-out',
-        example: '123456'
+        example: '-36.3434314, 149.8488864'
     })
     checkOutLocation: string;
 
     @IsNotEmpty()
     @IsString()
     @ApiProperty({
-        description: 'The photo of the check-out',
-        example: 'https://example.com/check-out.jpg'
+        description: 'The saved check out photo tag name i.e check-out.jpg',
+        example: 'check-out.jpg'
     })
     checkOutPhoto: string;
 
@@ -31,10 +31,20 @@ export class CreateCheckOutDto {
     @ApiProperty({
         description: 'The reference of the check-in',
         example: {
-            uid: 123456
+            uid: 1
         }
     })
     owner: {
         uid: number;
     };
+
+    @IsNotEmpty()
+    @IsObject()
+    @ApiProperty({
+        example: {
+            uid: 1
+        },
+        description: 'The branch reference code of the attendance check in'
+    })
+    branch: { uid: number };
 }

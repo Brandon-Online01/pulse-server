@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, IsString } from "class-validator";
+import { IsNotEmpty, IsNumber, IsObject, IsString } from "class-validator";
 import { ApiProperty } from "@nestjs/swagger";
 
 export class CreateCheckInDto {
@@ -6,23 +6,23 @@ export class CreateCheckInDto {
     @IsString()
     @ApiProperty({
         description: 'The photo of the check-in',
-        example: 'https://example.com/check-in.jpg'
+        example: `${new Date()}`
     })
     checkInTime: string;
 
     @IsNotEmpty()
     @IsString()
     @ApiProperty({
-        description: 'The location of the check-in',
-        example: '123456'
+        description: 'The saved check in photo tag name i.e check-in.jpg',
+        example: 'check-in.jpg'
     })
     checkInPhoto: string;
 
     @IsNotEmpty()
     @IsString()
     @ApiProperty({
-        description: 'The photo of the check-out',
-        example: 'https://example.com/check-out.jpg'
+        description: 'The location of the check-in',
+        example: '-36.3434314, 149.8488864'
     })
     checkInLocation: string;
 
@@ -30,11 +30,21 @@ export class CreateCheckInDto {
     @IsNumber()
     @ApiProperty({
         example: {
-            uid: 123456
+            uid: 1
         },
         description: 'The reference of the user',
     })
     owner: {
         uid: number;
     };
+
+    @IsNotEmpty()
+    @IsObject()
+    @ApiProperty({
+        example: {
+            uid: 1
+        },
+        description: 'The branch reference code of the attendance check in'
+    })
+    branch: { uid: number };
 }

@@ -10,7 +10,7 @@ export class Asset {
     @Column({ nullable: false })
     brand: string;
 
-    @Column({ nullable: false })
+    @Column({ nullable: false, unique: true })
     serialNumber: string;
 
     @Column({ nullable: false })

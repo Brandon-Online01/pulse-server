@@ -1,3 +1,4 @@
+import { Branch } from "src/branch/entities/branch.entity";
 import { User } from "src/user/entities/user.entity";
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
@@ -29,4 +30,7 @@ export class CheckIn {
 
     @ManyToOne(() => User, (user) => user?.checkIns)
     owner: User;
+
+    @ManyToOne(() => Branch, (branch) => branch?.checkIns)
+    branch: Branch;
 }

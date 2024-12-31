@@ -41,7 +41,6 @@ export class Claim {
     @Column({ type: 'enum', enum: ClaimCategory, nullable: true, default: ClaimCategory.GENERAL })
     category: ClaimCategory;
 
-    //relationships
     @ManyToOne(() => User, (user) => user?.userClaims)
     owner: User;
 

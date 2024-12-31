@@ -54,7 +54,6 @@ export class Attendance {
     @Column({ type: 'timestamp', nullable: true, default: () => 'CURRENT_TIMESTAMP' })
     verifiedAt: Date;
 
-    // relations
     @ManyToOne(() => User, (user) => user?.userAttendances)
     owner: User;
 

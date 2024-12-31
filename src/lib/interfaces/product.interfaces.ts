@@ -16,3 +16,8 @@ export interface PaginatedResponse<T> {
     };
     message: string;
 }
+
+export interface PaginationQuery {
+    page: number;
+    limit: number;
+}

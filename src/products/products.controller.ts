@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -9,6 +9,7 @@ import { RoleGuard } from '../guards/role.guard';
 import { AuthGuard } from '../guards/auth.guard';
 import { Roles } from '../decorators/role.decorator';
 import { ApiTags } from '@nestjs/swagger';
+import { PaginationQuery } from '../lib/interfaces/product.interfaces';
 
 @ApiTags('products')
 @Controller('products')
@@ -27,9 +28,9 @@ export class ProductsController {
   @Get()
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
-  @ApiOperation({ summary: 'get a list of products' })
-  products() {
-    return this.productsService.products();
+  @ApiOperation({ summary: 'get a list of products i.e /products?page=1&limit=10' })
+  products(@Query() query: PaginationQuery) {
+    return this.productsService.products(query.page, query.limit);
   }
 
   @Get(':ref')
@@ -43,7 +44,7 @@ export class ProductsController {
   @Get('category/:category')
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
-  @ApiOperation({ summary: 'get a list of products by category' })
+  @ApiOperation({ summary: 'get a list of products by category i.e products/category/specials?page=1&limit=10' })
   productsBySearchTerm(@Param('category') category: string) {
     return this.productsService.productsBySearchTerm(category);
   }

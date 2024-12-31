@@ -3,5 +3,9 @@
   "trailingComma": "all",
   "useTabs": true,
   "indentStyle": "tab",
-  "indentWidth": 4
+  "indentWidth": 4,
+  "printWidth": 120,
+  "tabWidth": 4,
+  "semi": true,
+  "singleAttributePerLine": true
 }

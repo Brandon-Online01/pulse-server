@@ -1,1 +1,1 @@
-export class Report {}
+export class Report { }
