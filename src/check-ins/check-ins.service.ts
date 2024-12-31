@@ -17,8 +17,6 @@ export class CheckInsService {
     try {
       await this.checkInRepository.save(createCheckInDto);
 
-      console.log(createCheckInDto, 'check in data');
-
       const response = {
         message: process.env.SUCCESS_MESSAGE,
       }
@@ -33,13 +31,27 @@ export class CheckInsService {
     }
   }
 
-  async checkOut(createCheckOutDto: CreateCheckOutDto, reference: number): Promise<{ message: string, duration?: string }> {
+  async checkOut(createCheckOutDto: CreateCheckOutDto): Promise<{ message: string, duration?: string }> {
     try {
-      const checkIn = await this.checkInRepository.findOne({ where: { uid: reference } });
+
+      console.log(createCheckOutDto, 'checkout data');
+
+      const checkIn = await this.checkInRepository.findOne({
+        where: {
+          owner: {
+            uid: createCheckOutDto.owner.uid
+          }
+        },
+        order: {
+          checkInTime: 'DESC'
+        }
+      });
 
       if (!checkIn) {
         throw new NotFoundException('Check-in not found');
       }
+
+      console.log(checkIn, 'checkIn');
 
       const checkOutTime = new Date(createCheckOutDto.checkOutTime);
       const checkInTime = new Date(checkIn.checkInTime);
@@ -50,10 +62,10 @@ export class CheckInsService {
 
       const duration = `${hoursWorked}h ${remainingMinutes}m`;
 
-      await this.checkInRepository.update(reference, {
-        checkOutTime: createCheckOutDto.checkOutTime,
-        checkOutPhoto: createCheckOutDto.checkOutPhoto,
-        checkOutLocation: createCheckOutDto.checkOutLocation,
+      await this.checkInRepository.update(checkIn.uid, {
+        checkOutTime: createCheckOutDto?.checkOutTime,
+        checkOutPhoto: createCheckOutDto?.checkOutPhoto,
+        checkOutLocation: createCheckOutDto?.checkOutLocation,
         duration: duration,
       });
 
@@ -89,13 +101,13 @@ export class CheckInsService {
       }
 
       const nextAction = checkIn.checkInTime && checkIn.checkInLocation && !checkIn.checkOutTime
-        ? 'Check Out'
-        : 'Check In';
+        ? 'checkOut'
+        : 'checkIn';
 
       const response = {
         message: process.env.SUCCESS_MESSAGE,
         nextAction,
-        checkedIn: nextAction === 'Check Out',
+        checkedIn: nextAction === 'checkOut',
         ...checkIn
       };
 

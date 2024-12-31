@@ -31,7 +31,7 @@ export class CheckInsController {
   @Patch(':reference')
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'manage attendance, check out' })
-  checkOut(@Body() createCheckOutDto: CreateCheckOutDto, @Param('reference') reference: number) {
-    return this.checkInsService.checkOut(createCheckOutDto, reference);
+  checkOut(@Body() createCheckOutDto: CreateCheckOutDto) {
+    return this.checkInsService.checkOut(createCheckOutDto);
   }
 }

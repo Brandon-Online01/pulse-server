@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString } from "class-validator";
+import { IsNotEmpty, IsObject, IsString } from "class-validator";
 import { ApiProperty } from "@nestjs/swagger";
 
 export class CreateCheckOutDto {
@@ -25,4 +25,16 @@ export class CreateCheckOutDto {
         example: 'https://example.com/check-out.jpg'
     })
     checkOutPhoto: string;
+
+    @IsNotEmpty()
+    @IsObject()
+    @ApiProperty({
+        description: 'The reference of the check-in',
+        example: {
+            uid: 123456
+        }
+    })
+    owner: {
+        uid: number;
+    };
 }
