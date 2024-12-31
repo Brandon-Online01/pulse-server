@@ -18,6 +18,7 @@ import { AccountStatus } from 'src/lib/enums/status.enums';
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { CheckIn } from 'src/check-ins/entities/check-in.entity';
 import { UserRewards } from 'src/rewards/entities/user-rewards.entity';
+import { Report } from 'src/reports/entities/report.entity';
 
 @Entity('user')
 export class User {
@@ -129,4 +130,7 @@ export class User {
 
     @OneToOne(() => UserRewards, (userRewards) => userRewards?.owner)
     rewards: UserRewards;
+
+    @OneToMany(() => Report, (report) => report?.owner)
+    reports: Report[];
 }

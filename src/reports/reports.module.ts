@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ReportsService } from './reports.service';
 import { ReportsController } from './reports.controller';
-import { ScheduleModule } from '@nestjs/schedule';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Report } from './entities/report.entity';
 import { LeadsModule } from '../leads/leads.module';
 import { JournalModule } from '../journal/journal.module';
 import { ClaimsModule } from '../claims/claims.module';
@@ -13,7 +14,7 @@ import { UserModule } from '../user/user.module';
 
 @Module({
   imports: [
-    ScheduleModule.forRoot(),
+    TypeOrmModule.forFeature([Report]),
     LeadsModule,
     JournalModule,
     ClaimsModule,

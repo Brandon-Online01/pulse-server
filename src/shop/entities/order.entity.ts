@@ -1,42 +1,59 @@
-import { OrderItem } from "./order-item.entity";
-import { Client } from "src/clients/entities/client.entity";
-import { OrderStatus } from "src/lib/enums/status.enums";
-import { User } from "src/user/entities/user.entity";
-import { Column, Entity, PrimaryGeneratedColumn, OneToMany, ManyToOne } from "typeorm";
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany } from 'typeorm';
+import { Client } from '../../clients/entities/client.entity';
+import { OrderItem } from './order-item.entity';
+import { OrderStatus } from '../../lib/enums/status.enums';
+import { User } from 'src/user/entities/user.entity';
 
-@Entity('order')
+@Entity()
 export class Order {
     @PrimaryGeneratedColumn()
     uid: number;
 
-    @Column({ nullable: false, type: 'varchar', length: 100 })
+    @Column({ unique: true })
     orderNumber: string;
 
-    @Column({ nullable: false, type: 'varchar', length: 100 })
-    totalItems: string;
+    @Column({ type: 'decimal', precision: 10, scale: 2 })
+    totalAmount: number;
 
-    @Column({ nullable: false, type: 'varchar', length: 100 })
-    totalAmount: string;
+    @Column()
+    totalItems: number;
 
-
-    @Column({ nullable: false, type: 'varchar', length: 100, default: OrderStatus.PENDING })
+    @Column({ type: 'enum', enum: OrderStatus, default: OrderStatus.PENDING })
     status: OrderStatus;
 
-    @Column({
-        nullable: false,
-        default: () => 'CURRENT_TIMESTAMP'
-    })
+    @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     orderDate: Date;
 
-    @ManyToOne(() => User, (user) => user?.orders, { nullable: false })
+    @ManyToOne(() => User, { eager: true })
     placedBy: User;
 
-    @OneToMany(() => OrderItem, orderItem => orderItem?.order, {
-        cascade: true,
-        eager: true
-    })
+    @ManyToOne(() => Client, { eager: true })
+    client: Client;
+
+    @OneToMany(() => OrderItem, orderItem => orderItem.order, { eager: true })
     orderItems: OrderItem[];
 
-    @ManyToOne(() => Client, (client) => client?.orders, { nullable: false })
-    client: Client;
+    @Column({ nullable: true })
+    shippingMethod: string;
+
+    @Column({ nullable: true })
+    notes: string;
+
+    @Column({ nullable: true })
+    shippingInstructions: string;
+
+    @Column({ nullable: true })
+    packagingRequirements: string;
+
+    @ManyToOne(() => User, { nullable: true })
+    reseller: User;
+
+    @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+    resellerCommission: number;
+
+    @CreateDateColumn()
+    createdAt: Date;
+
+    @UpdateDateColumn()
+    updatedAt: Date;
 }

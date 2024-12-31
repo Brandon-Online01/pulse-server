@@ -57,6 +57,7 @@ import { Achievement } from './rewards/entities/achievement.entity';
 import { UnlockedItem } from './rewards/entities/unlocked-item.entity';
 import { XPTransaction } from './rewards/entities/xp-transaction.entity';
 import { CacheModule } from '@nestjs/cache-manager';
+import { Report } from './reports/entities/report.entity';
 
 @Module({
   imports: [
@@ -105,7 +106,8 @@ import { CacheModule } from '@nestjs/cache-manager';
         UserRewards,
         Achievement,
         UnlockedItem,
-        XPTransaction
+        XPTransaction,
+        Report
       ],
       synchronize: true,
       retryAttempts: 100,

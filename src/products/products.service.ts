@@ -28,6 +28,8 @@ export class ProductsService {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
+			await this.productRepository.save(product);
+
 			const response = {
 				product: product,
 				message: process.env.SUCCESS_MESSAGE,

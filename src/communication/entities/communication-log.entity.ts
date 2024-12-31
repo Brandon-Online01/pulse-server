@@ -1,6 +1,5 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn } from 'typeorm';
 import { EmailType } from '../../lib/enums/email.enums';
-import { AccessLevel } from '../../lib/enums/user.enums';
 
 @Entity('communication_logs')
 export class CommunicationLog {
@@ -10,31 +9,31 @@ export class CommunicationLog {
 	@Column({ type: 'enum', enum: EmailType })
 	emailType: EmailType;
 
-	@Column('simple-array')
-	recipientRoles: AccessLevel[];
+	@Column('simple-array', { nullable: true })
+	recipientEmails: string[];
 
-	@Column('simple-array')
+	@Column('simple-array', { nullable: true })
 	accepted: string[];
 
-	@Column('simple-array')
+	@Column('simple-array', { nullable: true })
 	rejected: string[];
 
 	@Column({ nullable: true })
 	messageId: string;
 
-	@Column()
+	@Column({ nullable: true })
 	messageSize: number;
 
-	@Column()
+	@Column({ nullable: true })
 	envelopeTime: number;
 
-	@Column()
+	@Column({ nullable: true })
 	messageTime: number;
 
 	@Column('json', { nullable: true })
 	response: string;
 
-	@Column('json')
+	@Column('json', { nullable: true })
 	envelope: {
 		from: string;
 		to: string[];

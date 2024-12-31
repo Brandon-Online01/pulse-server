@@ -5,9 +5,16 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Order } from './entities/order.entity';
 import { Product } from '../products/entities/product.entity';
 import { Banners } from './entities/banners.entity';
+import { ClientsModule } from '../clients/clients.module';
+import { NotificationsModule } from '../notifications/notifications.module';
+import { CommunicationModule } from '../communication/communication.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Order, Product, Banners])],
+  imports: [
+    ClientsModule,
+    NotificationsModule,
+    CommunicationModule,
+    TypeOrmModule.forFeature([Order, Product, Banners])],
   controllers: [ShopController],
   providers: [ShopService],
   exports: [ShopService]

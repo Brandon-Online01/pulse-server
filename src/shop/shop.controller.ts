@@ -122,4 +122,20 @@ export class ShopController {
   deleteBanner(@Param('uid') uid: number) {
     return this.shopService.deleteBanner(uid);
   }
+
+  @Post('generate-missing-skus')
+  @UseGuards(AuthGuard)
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
+  @ApiOperation({ summary: 'generate missing SKUs for products' })
+  async generateMissingSKUs() {
+    return this.shopService.generateSKUsForExistingProducts();
+  }
+
+  @Post('regenerate-all-skus')
+  @UseGuards(AuthGuard)
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
+  @ApiOperation({ summary: 'regenerate all SKUs for products' })
+  async regenerateAllSKUs() {
+    return this.shopService.regenerateAllSKUs();
+  }
 }

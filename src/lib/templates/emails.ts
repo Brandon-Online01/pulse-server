@@ -1,211 +1,456 @@
 import {
-    SignupEmailData,
-    VerificationEmailData,
-    PasswordResetData,
-    PasswordChangedData,
-    InvoiceData,
-    OrderData,
-    DailyReportData,
-    OrderDeliveredData,
-    OrderOutForDeliveryData
+  SignupEmailData,
+  VerificationEmailData,
+  PasswordResetData,
+  PasswordChangedData,
+  InvoiceData,
+  OrderData,
+  DailyReportData,
+  OrderDeliveredData,
+  OrderOutForDeliveryData,
+  OrderResellerNotificationData,
+  OrderInternalNotificationData,
+  OrderWarehouseFulfillmentData
 } from '../types/email-templates.types';
 
 const BASE_STYLES = {
-    container: 'max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; line-height: 1.6;',
-    button: 'display: inline-block; padding: 12px 24px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; text-align: center;',
-    header: 'background-color: #1a73e8; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;',
-    footer: 'background-color: #f5f5f5; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; margin-top: 20px;',
-    alert: 'background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 15px 0;',
+  wrapper: '@media (max-width: 600px) { width: 100% !important; padding: 10px !important; } width: 100%; padding: 20px;',
+  container: 'max-width: 600px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #2d3748; background-color: #ffffff;',
+  button: 'display: inline-block; padding: 14px 28px; background-color: #0066FF; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; text-align: center; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,102,255,0.1);',
+  header: 'background: linear-gradient(135deg, #0066FF, #5B8DEF); color: white; padding: 32px 20px; text-align: center; border-radius: 12px 12px 0 0;',
+  footer: 'background-color: #f8f9fa; padding: 24px 20px; text-align: center; border-radius: 0 0 12px 12px; margin-top: 24px; color: #6c757d;',
+  alert: 'background-color: #fff8f0; border-left: 4px solid #ff9800; padding: 16px; margin: 16px 0; border-radius: 4px;',
+  card: 'background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 20px; margin: 16px 0;',
+  heading: 'margin: 0 0 16px; color: #0066FF; font-size: 20px; font-weight: 600;',
+  text: 'margin: 0 0 16px; color: #4a5568; font-size: 16px; line-height: 1.6;',
+  link: 'color: #0066FF; text-decoration: none; font-weight: 500; transition: color 0.2s;',
+  grid: 'display: grid; grid-template-columns: 1fr; gap: 16px; @media (min-width: 480px) { grid-template-columns: 1fr 1fr; }',
+  highlight: 'background: #f7fafc; border-radius: 8px; padding: 16px; margin-bottom: 24px;',
+  badge: 'display: inline-block; padding: 4px 12px; border-radius: 16px; font-size: 14px; font-weight: 500;',
 };
 
-export const renderSignupTemplate = (data: SignupEmailData): string => {
-    return `
-    <div style="${BASE_STYLES.container}">
-      <div style="${BASE_STYLES.header}">
-        <img src="your-logo-url" alt="Logo" style="max-width: 150px;" />
-        <h1>🎉 Welcome to Our LORO!</h1>
-      </div>
-      
-      <div style="padding: 20px;">
-        <h2>Hello ${data.name}! </h2>
-        <p style="font-size: 16px;">We're absolutely thrilled to have you join our community. Your journey with us begins now!</p>
-        
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="${data.verificationLink}" style="${BASE_STYLES.button}">
-            ✨ Verify Your Email
-          </a>
-        </div>
+// Helper function for common sections
+const createSection = (title: string, content: string) => `
+  <div style="${BASE_STYLES.card}">
+    <h3 style="${BASE_STYLES.heading}">${title}</h3>
+    ${content}
+  </div>
+`;
 
-        ${data.welcomeOffers ? `
-          <div style="background-color: #e8f5e9; padding: 15px; border-radius: 5px; margin: 20px 0;">
-            <h3>🎁 Welcome Gifts</h3>
-            <ul>
-              ${data.welcomeOffers.map(offer => `<li>${offer}</li>`).join('')}
-            </ul>
+export const Signup = (data: SignupEmailData): string => {
+  const welcomeSection = data.welcomeOffers ? `
+    <div style="${BASE_STYLES.card}">
+      <h3 style="${BASE_STYLES.heading}">🎁 Your VIP Welcome Package</h3>
+      <div style="display: grid; gap: 12px;">
+        ${data.welcomeOffers.map(offer => `
+          <div style="background: #f7fafc; padding: 12px; border-radius: 6px; display: flex; align-items: center;">
+            <span style="background: #0066FF; color: white; ${BASE_STYLES.badge}">NEW</span>
+            <span style="margin-left: 12px">${offer}</span>
           </div>
-        ` : ''}
-
-        <div style="${BASE_STYLES.alert}">
-          <p><strong>📌 Quick Tips:</strong></p>
-          <ul>
-            <li>Complete your profile to personalize your experience</li>
-            <li>Check out our getting started guide</li>
-            <li>Join our community forums</li>
-          </ul>
-        </div>
+        `).join('')}
       </div>
+    </div>
+  ` : '';
 
-      <div style="${BASE_STYLES.footer}">
-        <p>Need help? Our support team is available 24/7</p>
-        <div style="margin-top: 15px;">
-          <a href="#" style="margin: 0 10px;">📘 Facebook</a>
-          <a href="#" style="margin: 0 10px;">📸 Instagram</a>
-          <a href="#" style="margin: 0 10px;">📱 Twitter</a>
+  return `
+    <div style="${BASE_STYLES.wrapper}">
+      <div style="${BASE_STYLES.container}">
+        <div style="${BASE_STYLES.header}">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="white">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm4.59-12.42L10 14.17l-2.59-2.58L6 13l4 4 8-8z"/>
+          </svg>
+          <h1 style="margin: 16px 0 8px; font-size: 24px;">Welcome to the Future</h1>
+          <p style="margin: 0; opacity: 0.9;">We're thrilled to have you, ${data.name}!</p>
+        </div>
+
+        <div style="padding: 24px 20px;">
+          <div style="${BASE_STYLES.card}">
+            <p style="${BASE_STYLES.text}">Your journey to excellence begins now. Let's make it official!</p>
+            <div style="text-align: center; margin: 24px 0;">
+              <a href="${data.verificationLink}" style="${BASE_STYLES.button}">
+                Activate Your Account
+              </a>
+            </div>
+          </div>
+
+          ${welcomeSection}
+
+          ${createSection("🚀 Quick Start Guide", `
+            <ul style="list-style: none; padding: 0; margin: 0;">
+              <li style="margin-bottom: 12px; display: flex; align-items: center;">
+                <span style="background: #e6efff; border-radius: 50%; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; margin-right: 12px;">1</span>
+                Complete your profile
+              </li>
+              <li style="margin-bottom: 12px; display: flex; align-items: center;">
+                <span style="background: #e6efff; border-radius: 50%; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; margin-right: 12px;">2</span>
+                Explore our features
+              </li>
+              <li style="display: flex; align-items: center;">
+                <span style="background: #e6efff; border-radius: 50%; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; margin-right: 12px;">3</span>
+                Connect with the community
+              </li>
+            </ul>
+          `)}
+        </div>
+
+        <div style="${BASE_STYLES.footer}">
+          <p style="margin: 0 0 16px;">Join our growing community</p>
+          <div style="display: flex; justify-content: center; gap: 16px;">
+            <a href="#" style="${BASE_STYLES.link}">Twitter</a>
+            <a href="#" style="${BASE_STYLES.link}">LinkedIn</a>
+            <a href="#" style="${BASE_STYLES.link}">Discord</a>
+          </div>
         </div>
       </div>
     </div>
   `;
 };
 
-export const renderVerificationTemplate = (data: VerificationEmailData): string => {
-    return `
-    <div style="${BASE_STYLES.container}">
-      <div style="${BASE_STYLES.header}">
-        <h1>✨ Verify Your Email</h1>
-      </div>
-
-      <div style="padding: 20px;">
-        <h2>Hello ${data.name},</h2>
-        <p>You're just one click away from getting started! Please verify your email address to ensure the security of your account.</p>
-
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="${data.verificationLink}" 
-             style="${BASE_STYLES.button}">
-            Verify Email Now
-          </a>
+export const Verification = (data: VerificationEmailData): string => {
+  return `
+    <div style="${BASE_STYLES.wrapper}">
+      <div style="${BASE_STYLES.container}">
+        <div style="${BASE_STYLES.header}">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="white">
+            <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>
+          </svg>
+          <h1 style="margin: 16px 0 8px; font-size: 24px;">Verify Your Email</h1>
+          <p style="margin: 0; opacity: 0.9;">One small step for security</p>
         </div>
 
-        <div style="${BASE_STYLES.alert}">
-          <p>⚠️ This link will expire in ${data.expiryHours} hours</p>
-          <p>If you didn't create an account, please ignore this email.</p>
+        <div style="padding: 24px 20px;">
+          <div style="${BASE_STYLES.card}">
+            <h2 style="${BASE_STYLES.heading}">Hi ${data.name},</h2>
+            <p style="${BASE_STYLES.text}">Your account is almost ready! Just one click to get started.</p>
+            
+            <div style="text-align: center; margin: 24px 0;">
+              <a href="${data.verificationLink}" style="${BASE_STYLES.button}">
+                Verify My Email
+              </a>
+            </div>
+
+            <p style="color: #718096; font-size: 14px;">
+              This link expires in ${data.expiryHours} hours
+            </p>
+          </div>
+
+          ${createSection("🔐 Security First", `
+            <ul style="list-style: none; padding: 0; margin: 0;">
+              <li style="margin-bottom: 12px; display: flex; align-items: center;">
+                <span style="color: #0066FF; margin-right: 8px;">✓</span>
+                Enable two-factor authentication
+              </li>
+              <li style="margin-bottom: 12px; display: flex; align-items: center;">
+                <span style="color: #0066FF; margin-right: 8px;">✓</span>
+                Use a strong password
+              </li>
+              <li style="display: flex; align-items: center;">
+                <span style="color: #0066FF; margin-right: 8px;">✓</span>
+                Keep your recovery email updated
+              </li>
+            </ul>
+          `)}
         </div>
 
-        <div style="background-color: #e3f2fd; padding: 15px; border-radius: 5px; margin-top: 20px;">
-          <h3>🔒 Security Tips:</h3>
-          <ul>
-            <li>Never share your password</li>
-            <li>Enable two-factor authentication</li>
-            <li>Use a strong, unique password</li>
-          </ul>
+        <div style="${BASE_STYLES.footer}">
+          <p style="margin: 0;">Didn't request this? Please ignore this email.</p>
         </div>
-      </div>
-
-      <div style="${BASE_STYLES.footer}">
-        <p>Questions? Contact our support team</p>
       </div>
     </div>
   `;
 };
 
-export const renderPasswordResetTemplate = (data: PasswordResetData): string => {
-    return `
-    <div style="${BASE_STYLES.container}">
-      <div style="${BASE_STYLES.header}">
-        <h1>Reset Your Password 🔐</h1>
-      </div>
-
-      <div style="padding: 20px;">
-        <h2>Hello ${data.name},</h2>
-        <p>We received a request to reset your password. Don't worry, we've got you covered!</p>
-
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="${data.resetLink}" style="${BASE_STYLES.button}">Reset Password</a>
+export const PasswordReset = (data: PasswordResetData): string => {
+  return `
+    <div style="${BASE_STYLES.wrapper}">
+      <div style="${BASE_STYLES.container}">
+        <div style="${BASE_STYLES.header}">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="white">
+            <path d="M12 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6-9h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM8.9 6c0-1.71 1.39-3.1 3.1-3.1s3.1 1.39 3.1 3.1v2H8.9V6z"/>
+          </svg>
+          <h1 style="margin: 16px 0 8px; font-size: 24px;">Reset Your Password</h1>
+          <p style="margin: 0; opacity: 0.9;">We've got you covered</p>
         </div>
 
-        <div style="${BASE_STYLES.alert}">
-          <p><strong>For your security:</strong></p>
-          <ul>
-            <li>This link expires in 1 hour</li>
-            <li>If you didn't request this reset, please contact us immediately</li>
-            <li>Never share your password with anyone</li>
-          </ul>
-        </div>
-      </div>
+        <div style="padding: 24px 20px;">
+          <div style="${BASE_STYLES.card}">
+            <h2 style="${BASE_STYLES.heading}">Hi ${data.name},</h2>
+            <p style="${BASE_STYLES.text}">We received a request to reset your password. No worries - it happens to the best of us!</p>
+            
+            <div style="text-align: center; margin: 24px 0;">
+              <a href="${data.resetLink}" style="${BASE_STYLES.button}">
+                Reset Password
+              </a>
+            </div>
 
-      <div style="${BASE_STYLES.footer}">
-        <p>Need help? Contact our support team</p>
+            <div style="${BASE_STYLES.alert}">
+              <p style="margin: 0; font-weight: 500;">⚡ Quick Tips:</p>
+              <ul style="margin: 8px 0 0; padding-left: 20px;">
+                <li>Link expires in 1 hour</li>
+                <li>Use a unique password</li>
+                <li>Never share your credentials</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div style="${BASE_STYLES.footer}">
+          <p style="margin: 0;">Didn't request this reset? Please contact support immediately.</p>
+        </div>
       </div>
     </div>
-    `;
-}
+  `;
+};
 
-export const renderOrderTemplate = (data: OrderData): string => {
-    return `
-    <div style="${BASE_STYLES.container}">
-      <div style="${BASE_STYLES.header}">
-        <h1>Thank You for Your Order! 🛍️</h1>
-      </div>
+export const NewOrder = (data: OrderData): string => {
+  const deliveryDate = new Date(data?.expectedDelivery);
+  const formattedDate = deliveryDate.toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric'
+  });
 
-      <div style="padding: 20px;">
-        <h2>Dear ${data.name},</h2>
-        <p>We're excited to confirm your order #${data.orderId}. Here's what happens next:</p>
-        
-        <ul>
-          <li>You'll receive updates at every step of the delivery process</li>
-          <li>Track your order anytime through your account dashboard</li>
-          <li>Expected delivery: ${data.expectedDelivery}</li>
-        </ul>
-
-        <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
-          <h3>Order Summary</h3>
-          <p>Order Total: ${data.total}</p>
-          <p>Shipping Method: ${data.shippingMethod}</p>
+  return `
+    <div style="${BASE_STYLES.wrapper}">
+      <div style="${BASE_STYLES.container}">
+        <div style="${BASE_STYLES.header}">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="white">
+            <path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+          </svg>
+          <h1 style="margin: 16px 0 8px; font-size: 24px;">Your Order is Confirmed! 🎉</h1>
+          <p style="margin: 0; opacity: 0.9; font-size: 16px;">Order ${data?.orderId}</p>
         </div>
-      </div>
 
-      <div style="${BASE_STYLES.footer}">
-        <p>Need help? We're just a click away!</p>
+        <div style="padding: 24px 20px;">
+          <div style="${BASE_STYLES.card}">
+            <h2 style="${BASE_STYLES.heading}">Thank you, ${data?.name}! 💫</h2>
+            <p style="${BASE_STYLES.text}">We're excited to be preparing your order. Here's everything you need to know:</p>
+
+            <div style="${BASE_STYLES.highlight}">
+              <div style="display: grid; gap: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0;">
+                  <span style="color: #4a5568">Expected Delivery</span>
+                  <span style="font-weight: 600; color: #0066FF">${formattedDate}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0;">
+                  <span style="color: #4a5568">Shipping Method</span>
+                  <span style="font-weight: 500">${data?.shippingMethod}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="color: #4a5568">Order Total</span>
+                  <span style="font-size: 18px; font-weight: 600; color: #0066FF">${data?.total}</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="text-align: center; margin: 24px 0;">
+              <a href="/track-order/${data?.orderId}" 
+                 style="${BASE_STYLES.button}">
+                Track Your Order
+              </a>
+            </div>
+          </div>
+
+          ${createSection("✨ What's Next?", `
+            <ul style="list-style: none; padding: 0; margin: 0;">
+              <li style="margin-bottom: 16px; display: flex; align-items: start;">
+                <span style="background: #e6efff; border-radius: 50%; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; margin-right: 12px; flex-shrink: 0;">1</span>
+                <div>
+                  <strong style="display: block; margin-bottom: 4px;">Order Preparation</strong>
+                  <span style="color: #718096">We're carefully preparing your items for shipping</span>
+                </div>
+              </li>
+              <li style="margin-bottom: 16px; display: flex; align-items: start;">
+                <span style="background: #e6efff; border-radius: 50%; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; margin-right: 12px; flex-shrink: 0;">2</span>
+                <div>
+                  <strong style="display: block; margin-bottom: 4px;">Shipping Updates</strong>
+                  <span style="color: #718096">We'll notify you when your order ships and is out for delivery</span>
+                </div>
+              </li>
+              <li style="display: flex; align-items: start;">
+                <span style="background: #e6efff; border-radius: 50%; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; margin-right: 12px; flex-shrink: 0;">3</span>
+                <div>
+                  <strong style="display: block; margin-bottom: 4px;">Delivery Day</strong>
+                  <span style="color: #718096">We'll ensure a smooth delivery to your doorstep</span>
+                </div>
+              </li>
+            </ul>
+          `)}
+
+          <div style="${BASE_STYLES.alert}">
+            <p style="margin: 0; font-weight: 500;">💝 Special Thank You Gift</p>
+            <p style="margin: 8px 0 0; color: #718096">Use code <strong>THANKYOU10</strong> on your next order for 10% off!</p>
+          </div>
+        </div>
+
+        <div style="${BASE_STYLES.footer}">
+          <p style="margin: 0 0 12px;">Need assistance with your order?</p>
+          <div style="display: flex; justify-content: center; gap: 16px;">
+            <a href="#" style="${BASE_STYLES.link}">Contact Support</a>
+            <a href="#" style="${BASE_STYLES.link}">FAQs</a>
+            <a href="#" style="${BASE_STYLES.link}">Track Order</a>
+          </div>
+        </div>
       </div>
     </div>
-    `;
-}
+  `;
+};
 
-export const renderInvoiceTemplate = (data: InvoiceData): string => {
-    return `
-    <div style="${BASE_STYLES.container}">
-      <div style="${BASE_STYLES.header}">
-        <h1>Your Invoice is Ready 📋</h1>
-      </div>
-
-      <div style="padding: 20px;">
-        <h2>Dear ${data.name},</h2>
-        
-        <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
-          <h3>Invoice Details</h3>
-          <p>Invoice Number: #${data.invoiceId}</p>
-          <p>Date: ${data.date}</p>
-          <p>Amount: ${data.amount}</p>
-          <p>Payment Method: ${data.paymentMethod}</p>
+export const NewOrderInternal = (data: OrderInternalNotificationData): string => {
+  return `
+    <div style="${BASE_STYLES.wrapper}">
+      <div style="${BASE_STYLES.container}">
+        <div style="${BASE_STYLES.header}">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="white">
+            <path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+          </svg>
+          <h1 style="margin: 16px 0 8px; font-size: 24px;">New Order Received</h1>
+          <p style="margin: 0; opacity: 0.9;">Order ${data.orderId}</p>
         </div>
 
-        <div style="${BASE_STYLES.alert}">
-          <p><strong>Quick Actions:</strong></p>
-          <ul>
-            <li>View and download your full invoice from your account dashboard</li>
-            <li>Update your billing information in account settings</li>
-          </ul>
-        </div>
-      </div>
+        <div style="padding: 24px 20px;">
+          <div style="${BASE_STYLES.card}">
+            <div style="${BASE_STYLES.highlight}">
+              <div style="display: grid; gap: 12px;">
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Order Total</span>
+                  <span style="font-weight: 600">${data?.total} ${data?.currency}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Items</span>
+                  <span style="font-weight: 500">${data?.orderItems?.length} products</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Shipping Method</span>
+                  <span style="font-weight: 500">${data?.shippingMethod}</span>
+                </div>
+              </div>
+            </div>
 
-      <div style="${BASE_STYLES.footer}">
-        <p>Thank you for your business!</p>
+            <div style="margin-top: 24px;">
+              <h3 style="${BASE_STYLES.heading}">Order Items</h3>
+              ${data?.orderItems?.map(item => `
+                <div style="padding: 12px; border-bottom: 1px solid #e2e8f0;">
+                  <div style="display: flex; justify-content: space-between;">
+                    <span>Product ID: ${item.product.uid}</span>
+                    <span>Qty: ${item.quantity}</span>
+                  </div>
+                  <div style="color: #0066FF; margin-top: 4px;">
+                    Total: ${item.totalPrice} ${data.currency}
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+
+        <div style="${BASE_STYLES.footer}">
+          <p>Please process this order according to standard procedures.</p>
+        </div>
       </div>
     </div>
-    `;
-}
+  `;
+};
 
-export const renderPasswordChangedTemplate = (data: PasswordChangedData): string => {
-    return `
+export const NewOrderReseller = (data: OrderResellerNotificationData): string => {
+  return `
+    <div style="${BASE_STYLES.wrapper}">
+      <div style="${BASE_STYLES.container}">
+        <div style="${BASE_STYLES.header}">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="white">
+            <path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+          </svg>
+          <h1 style="margin: 16px 0 8px; font-size: 24px;">New Sale from Your Products! 🎉</h1>
+          <p style="margin: 0; opacity: 0.9;">Order ${data.orderId}</p>
+        </div>
+
+        <div style="padding: 24px 20px;">
+          <div style="${BASE_STYLES.card}">
+            <h2 style="${BASE_STYLES.heading}">Hi ${data.name},</h2>
+            <p style="${BASE_STYLES.text}">Great news! We've just received an order containing your products.</p>
+
+            <div style="${BASE_STYLES.highlight}">
+              <div style="display: grid; gap: 12px;">
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Order Value</span>
+                  <span style="font-weight: 600">${data.total} ${data.currency}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; color: #0066FF;">
+                  <span>Your Commission</span>
+                  <span style="font-weight: 600">${data.resellerCommission} ${data.currency}</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="${BASE_STYLES.alert}" style="margin-top: 24px;">
+              <p style="margin: 0;">
+                <strong>Reseller Code Used:</strong> ${data.resellerCode}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div style="${BASE_STYLES.footer}">
+          <p>Keep up the great work! Your products are making a difference.</p>
+          <p>View your reseller dashboard for more details.</p>
+        </div>
+      </div>
+    </div>
+  `;
+};
+
+export const Invoice = (data: InvoiceData): string => {
+  return `
+    <div style="${BASE_STYLES.wrapper}">
+      <div style="${BASE_STYLES.container}">
+        <div style="${BASE_STYLES.header}">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="white">
+            <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+          </svg>
+          <h1 style="margin: 16px 0 8px; font-size: 24px;">Invoice #${data.invoiceId}</h1>
+          <p style="margin: 0; opacity: 0.9;">${data.date}</p>
+        </div>
+
+        <div style="padding: 24px 20px;">
+          <div style="${BASE_STYLES.card}">
+            <div style="display: grid; gap: 16px;">
+              <div style="${BASE_STYLES.highlight}">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="color: #4a5568">Amount Due</span>
+                  <span style="font-size: 24px; font-weight: 600; color: #0066FF">${data.amount}</span>
+                </div>
+              </div>
+              
+              <div style="display: grid; gap: 12px;">
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="color: #718096">Payment Method</span>
+                  <span style="font-weight: 500">${data.paymentMethod}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="color: #718096">Invoice Date</span>
+                  <span style="font-weight: 500">${data.date}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="text-align: center; margin: 24px 0;">
+            <a href="#" style="${BASE_STYLES.button}">
+              Download Invoice
+            </a>
+          </div>
+        </div>
+
+        <div style="${BASE_STYLES.footer}">
+          <p style="margin: 0;">Thank you for your business!</p>
+        </div>
+      </div>
+    </div>
+  `;
+};
+
+export const PasswordChanged = (data: PasswordChangedData): string => {
+  return `
     <div style="${BASE_STYLES.container}">
       <div style="${BASE_STYLES.header}">
         <h1>Password Successfully Changed 🔒</h1>
@@ -234,8 +479,8 @@ export const renderPasswordChangedTemplate = (data: PasswordChangedData): string
     `;
 }
 
-export const renderOrderOutForDeliveryTemplate = (data: OrderOutForDeliveryData): string => {
-    return `
+export const OrderOutForDelivery = (data: OrderOutForDeliveryData): string => {
+  return `
     <div style="${BASE_STYLES.container}">
       <div style="${BASE_STYLES.header}">
         <h1>Great News! Your Order is On Its Way 🚚</h1>
@@ -271,8 +516,8 @@ export const renderOrderOutForDeliveryTemplate = (data: OrderOutForDeliveryData)
     `;
 }
 
-export const renderOrderDeliveredTemplate = (data: OrderDeliveredData): string => {
-    return `
+export const OrderDelivered = (data: OrderDeliveredData): string => {
+  return `
     <div style="${BASE_STYLES.container}">
       <div style="${BASE_STYLES.header}">
         <h1>Your Order Has Arrived! 🎉</h1>
@@ -300,8 +545,8 @@ export const renderOrderDeliveredTemplate = (data: OrderDeliveredData): string =
     `;
 }
 
-export const renderDailyReportTemplate = (data: DailyReportData): string => {
-    return `
+export const DailyReport = (data: DailyReportData): string => {
+  return `
     <div style="${BASE_STYLES.container}">
       <div style="${BASE_STYLES.header}">
         <h1>Daily Business Insights 📊</h1>
@@ -339,3 +584,134 @@ export const renderDailyReportTemplate = (data: DailyReportData): string => {
     </div>
     `;
 }
+
+export const OrderResellerNotification = (data: OrderResellerNotificationData): string => {
+  return `
+    <div style="${BASE_STYLES.wrapper}">
+      <div style="${BASE_STYLES.container}">
+        <div style="${BASE_STYLES.header}">
+          <h1 style="margin: 16px 0 8px; font-size: 24px;">New Order from Your Referral! 🎯</h1>
+          <p style="margin: 0; opacity: 0.9;">Order ${data.orderId}</p>
+        </div>
+
+        <div style="padding: 24px 20px;">
+          <div style="${BASE_STYLES.card}">
+            <h2 style="${BASE_STYLES.heading}">Order Details</h2>
+            
+            <div style="${BASE_STYLES.highlight}">
+              <div style="display: grid; gap: 12px;">
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Order Total</span>
+                  <span style="font-weight: 600">${data.total} ${data.currency}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Your Commission</span>
+                  <span style="font-weight: 600; color: #0066FF">${data.resellerCommission} ${data.currency}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Reseller Code Used</span>
+                  <span style="font-weight: 500">${data.resellerCode}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="${BASE_STYLES.footer}">
+          <p>Keep up the great work! 🌟</p>
+        </div>
+      </div>
+    </div>
+  `;
+};
+
+export const OrderInternalNotification = (data: OrderInternalNotificationData): string => {
+  return `
+    <div style="${BASE_STYLES.wrapper}">
+      <div style="${BASE_STYLES.container}">
+        <div style="${BASE_STYLES.header}">
+          <h1 style="margin: 16px 0 8px; font-size: 24px;">New Order Received 📦</h1>
+          <p style="margin: 0; opacity: 0.9;">Internal Processing Required</p>
+        </div>
+
+        <div style="padding: 24px 20px;">
+          <div style="${BASE_STYLES.card}">
+            <div style="${BASE_STYLES.highlight}">
+              <div style="display: grid; gap: 12px;">
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Order ID</span>
+                  <span style="font-weight: 600">${data.orderId}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Customer Type</span>
+                  <span style="font-weight: 500">${data.customerType}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Priority</span>
+                  <span style="font-weight: 600; color: ${data.priority === 'high' ? '#dc3545' :
+      data.priority === 'medium' ? '#ffc107' : '#28a745'
+    }">${data.priority.toUpperCase()}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Total Value</span>
+                  <span style="font-weight: 600">${data.total} ${data.currency}</span>
+                </div>
+              </div>
+            </div>
+            ${data.notes ? `
+              <div style="${BASE_STYLES.alert}">
+                <p style="margin: 0;"><strong>Notes:</strong> ${data.notes}</p>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+};
+
+export const OrderWarehouseFulfillment = (data: OrderWarehouseFulfillmentData): string => {
+  return `
+    <div style="${BASE_STYLES.wrapper}">
+      <div style="${BASE_STYLES.container}">
+        <div style="${BASE_STYLES.header}">
+          <h1 style="margin: 16px 0 8px; font-size: 24px;">New Fulfillment Request 📦</h1>
+          <p style="margin: 0; opacity: 0.9;">Priority: ${data.fulfillmentPriority.toUpperCase()}</p>
+        </div>
+
+        <div style="padding: 24px 20px;">
+          <div style="${BASE_STYLES.card}">
+            <h2 style="${BASE_STYLES.heading}">Order #${data.orderId}</h2>
+            
+            <div style="${BASE_STYLES.highlight}">
+              <h3 style="margin: 0 0 12px;">Items to Fulfill</h3>
+              ${data.items.map(item => `
+                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+                  <div>
+                    <strong>SKU: ${item.sku}</strong>
+                    ${item.location ? `<br><small>Location: ${item.location}</small>` : ''}
+                  </div>
+                  <span style="font-weight: 500">Qty: ${item.quantity}</span>
+                </div>
+              `).join('')}
+            </div>
+
+            ${data.shippingInstructions ? `
+              <div style="${BASE_STYLES.alert}">
+                <p style="margin: 0 0 8px;"><strong>Shipping Instructions:</strong></p>
+                <p style="margin: 0;">${data.shippingInstructions}</p>
+              </div>
+            ` : ''}
+
+            ${data.packagingRequirements ? `
+              <div style="${BASE_STYLES.alert}" style="margin-top: 16px;">
+                <p style="margin: 0 0 8px;"><strong>Packaging Requirements:</strong></p>
+                <p style="margin: 0;">${data.packagingRequirements}</p>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+};

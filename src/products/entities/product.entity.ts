@@ -1,78 +1,88 @@
-import { OrderItem } from "../../shop/entities/order-item.entity";
-import { Reseller } from "../../resellers/entities/reseller.entity";
-import { Column, Entity, PrimaryGeneratedColumn, ManyToOne, OneToMany } from "typeorm";
-import { ProductStatus } from "../../lib/enums/product.enums";
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany, ManyToOne, BeforeInsert, AfterInsert } from 'typeorm';
+import { ProductStatus } from '../../lib/enums/product.enums';
+import { OrderItem } from 'src/shop/entities/order-item.entity';
+import { Reseller } from 'src/resellers/entities/reseller.entity';
+import { getRepository } from 'typeorm';
 
-@Entity('product')
+@Entity()
 export class Product {
     @PrimaryGeneratedColumn()
     uid: number;
 
-    @Column({ nullable: false, length: 100, type: 'varchar' })
+    @Column()
     name: string;
 
-    @Column({ nullable: false, length: 100, type: 'varchar' })
+    @Column({ type: 'text', nullable: true })
     description: string;
 
-    @Column({ nullable: false, length: 1000, type: 'varchar' })
-    image: string;
-
-    @Column({ nullable: false, type: 'float' })
+    @Column({ type: 'decimal', precision: 10, scale: 2 })
     price: number;
 
-    @Column({ nullable: true, type: 'float' })
-    salePrice: number;
-
-    @Column({ nullable: true, type: 'datetime' })
-    saleStart: Date;
-
-    @Column({ nullable: true, type: 'datetime' })
-    saleEnd: Date;
-
-    @Column({ nullable: true, type: 'float' })
-    discount: number;
-
-    @Column({ nullable: false, type: 'int' })
-    barcode: number;
-
-    @Column({ nullable: true, type: 'int' })
-    packageQuantity: number;
-
-    @Column({ nullable: false, type: 'varchar', length: 100 })
+    @Column()
     category: string;
 
-    @Column({ nullable: false, type: 'varchar', length: 100 })
-    brand: string;
-
-    @Column({ nullable: true, type: 'int' })
-    weight: number;
-
-    @Column({ nullable: false, type: 'enum', enum: ProductStatus, default: ProductStatus.ACTIVE })
+    @Column({ type: 'enum', enum: ProductStatus, default: ProductStatus.NEW })
     status: ProductStatus;
 
-    @Column({
-        nullable: false,
-        default: () => 'CURRENT_TIMESTAMP'
-    })
+    @Column({ nullable: true })
+    imageUrl: string;
+
+    @Column({ nullable: true })
+    sku: string;
+
+    @Column({ nullable: true })
+    warehouseLocation: string;
+
+    @Column({ default: 0 })
+    stockQuantity: number;
+
+    @Column({ default: 10 })
+    reorderPoint: number;
+
+    @CreateDateColumn()
     createdAt: Date;
 
-    @Column({
-        nullable: false,
-        default: () => 'CURRENT_TIMESTAMP',
-        onUpdate: 'CURRENT_TIMESTAMP'
-    })
+    @UpdateDateColumn()
     updatedAt: Date;
+
+    @OneToMany(() => OrderItem, orderItem => orderItem?.product)
+    orderItems: OrderItem[];
 
     @ManyToOne(() => Reseller, reseller => reseller?.products)
     reseller: Reseller;
 
-    @Column({ nullable: false, default: false })
+    @Column({ default: false })
     isDeleted: boolean;
 
-    @Column({ nullable: false, default: false })
-    isOnPromotion: boolean;
+    static generateSKU(category: string, name: string, uid: number, reseller: Reseller): string {
+        // Get first 3 letters of category (uppercase)
+        const categoryCode = (category || 'XXX').slice(0, 3).toUpperCase();
 
-    @OneToMany(() => OrderItem, orderItem => orderItem?.product)
-    orderItems: OrderItem[];
+        // Get first 3 letters of product name (uppercase)
+        const nameCode = (name || 'XXX').slice(0, 3).toUpperCase();
+
+        // Get reseller code
+        const resellerCode = reseller ? reseller.uid.toString().padStart(3, '0') : '000';
+
+        // Pad the uid with zeros to ensure it's 6 digits
+        const paddedUid = uid.toString().padStart(6, '0');
+
+        // Simplified SKU format: CAT-NAME-RESELLER-UID
+        return `${categoryCode}-${nameCode}-${resellerCode}-${paddedUid}`;
+    }
+
+    @BeforeInsert()
+    async generateSKUBeforeInsert() {
+        if (!this.sku && this.category && this.name) {
+            this.sku = Product.generateSKU(this.category, this.name, 0, this.reseller);
+        }
+    }
+
+    @AfterInsert()
+    async updateSKUWithCorrectUid() {
+        const repository = getRepository(Product);
+        this.sku = Product.generateSKU(this.category, this.name, this.uid, this.reseller);
+        await repository.save(this);
+    }
 }
 

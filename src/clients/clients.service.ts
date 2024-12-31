@@ -70,7 +70,6 @@ export class ClientsService {
           uid: ref,
           isDeleted: false
         },
-        relations: ['user']
       });
 
       if (!client) {

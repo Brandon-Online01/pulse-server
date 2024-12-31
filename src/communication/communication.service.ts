@@ -12,9 +12,12 @@ import { User } from '../user/entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CommunicationLog } from './entities/communication-log.entity';
-import { renderSignupTemplate, renderVerificationTemplate, renderPasswordResetTemplate, renderOrderTemplate, renderInvoiceTemplate, renderPasswordChangedTemplate, renderOrderOutForDeliveryTemplate, renderOrderDeliveredTemplate, renderDailyReportTemplate } from '../lib/templates/emails';
+import { Signup, Verification, PasswordReset, NewOrder, Invoice, PasswordChanged, OrderOutForDelivery, OrderDelivered, DailyReport, NewOrderInternal } from '../lib/templates/emails';
 import { DailyReportData, InvoiceData, OrderData, OrderDeliveredData, OrderOutForDeliveryData, PasswordChangedData, PasswordResetData, VerificationEmailData } from 'src/lib/types/email-templates.types';
 import { SignupEmailData } from 'src/lib/types/email-templates.types';
+import { EmailTemplateData } from 'src/lib/types/email-templates.types';
+import { OrderResellerNotificationData, OrderInternalNotificationData, OrderWarehouseFulfillmentData } from 'src/lib/types/email-templates.types';
+import { OrderResellerNotification, OrderInternalNotification, OrderWarehouseFulfillment, NewOrderReseller } from '../lib/templates/emails';
 
 @Injectable()
 export class CommunicationService {
@@ -42,17 +45,13 @@ export class CommunicationService {
 	}
 
 	@OnEvent('send.email')
-	async sendEmail(
-		emailType: EmailType,
-		recipientRoles: AccessLevel[],
-		data: Record<string, any>
+	async sendEmail<T extends EmailType>(
+		emailType: T,
+		recipientsEmails: string[],
+		data: EmailTemplateData<T>
 	) {
 		try {
-			const users = await this.userService.getUsersByRole(recipientRoles);
-
-			const recipients = users?.users?.map((user: User) => user?.email);
-
-			if (!recipients) {
+			if (!recipientsEmails) {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
@@ -60,14 +59,14 @@ export class CommunicationService {
 
 			const result = await this.emailService.sendMail({
 				from: this.configService.get<string>('SMTP_FROM'),
-				to: recipients,
+				to: recipientsEmails,
 				subject: template.subject,
 				html: template.body,
 			});
 
 			await this.communicationLogRepository.save({
 				emailType,
-				recipientRoles,
+				recipientEmails: recipientsEmails,
 				accepted: result.accepted,
 				rejected: result.rejected,
 				messageId: result.messageId,
@@ -84,52 +83,85 @@ export class CommunicationService {
 		}
 	}
 
-	private getEmailTemplate(type: EmailType, data: Record<string, any>): EmailTemplate {
+	private getEmailTemplate<T extends EmailType>(
+		type: T,
+		data: EmailTemplateData<T>
+	): EmailTemplate {
 		switch (type) {
 			case EmailType.SIGNUP:
 				return {
 					subject: 'Welcome to Our Platform',
-					body: renderSignupTemplate(data as SignupEmailData),
+					body: Signup(data as SignupEmailData),
 				};
 			case EmailType.VERIFICATION:
 				return {
 					subject: 'Verify Your Email',
-					body: renderVerificationTemplate(data as VerificationEmailData),
+					body: Verification(data as VerificationEmailData),
 				};
 			case EmailType.PASSWORD_RESET:
 				return {
 					subject: 'Password Reset Request',
-					body: renderPasswordResetTemplate(data as PasswordResetData),
+					body: PasswordReset(data as PasswordResetData),
 				};
 			case EmailType.ORDER_CONFIRMATION:
 				return {
 					subject: 'Order Confirmation',
-					body: renderOrderTemplate(data as OrderData),
+					body: NewOrder(data as OrderData),
 				};
 			case EmailType.INVOICE:
 				return {
 					subject: 'Invoice for Your Order',
-					body: renderInvoiceTemplate(data as InvoiceData),
+					body: Invoice(data as InvoiceData),
 				};
 			case EmailType.PASSWORD_CHANGED:
 				return {
 					subject: 'Password Successfully Changed',
-					body: renderPasswordChangedTemplate(data as PasswordChangedData),
+					body: PasswordChanged(data as PasswordChangedData),
 				};
 			case EmailType.ORDER_OUT_FOR_DELIVERY:
 				return {
 					subject: 'Your Order is Out for Delivery',
-					body: renderOrderOutForDeliveryTemplate(data as OrderOutForDeliveryData),
+					body: OrderOutForDelivery(data as OrderOutForDeliveryData),
 				};
 			case EmailType.ORDER_DELIVERED:
 				return {
 					subject: 'Your Order Has Been Delivered',
-					body: renderOrderDeliveredTemplate(data as OrderDeliveredData),
+					body: OrderDelivered(data as OrderDeliveredData),
 				};
 			case EmailType.DAILY_REPORT:
 				return {
 					subject: 'Daily Report',
-					body: renderDailyReportTemplate(data as DailyReportData),
+					body: DailyReport(data as DailyReportData),
+				};
+			case EmailType.ORDER_RESELLER_NOTIFICATION:
+				return {
+					subject: 'New Order from Your Referral',
+					body: OrderResellerNotification(data as OrderResellerNotificationData),
+				};
+			case EmailType.ORDER_INTERNAL_NOTIFICATION:
+				return {
+					subject: 'New Internal Order Notification',
+					body: OrderInternalNotification(data as OrderInternalNotificationData),
+				};
+			case EmailType.ORDER_WAREHOUSE_FULFILLMENT:
+				return {
+					subject: 'New Warehouse Fulfillment Request',
+					body: OrderWarehouseFulfillment(data as OrderWarehouseFulfillmentData),
+				};
+			case EmailType.NEW_ORDER_CLIENT:
+				return {
+					subject: 'Your Order Confirmation',
+					body: NewOrder(data as OrderData),
+				};
+			case EmailType.NEW_ORDER_INTERNAL:
+				return {
+					subject: 'New Order Internal Notification',
+					body: NewOrderInternal(data as OrderInternalNotificationData),
+				};
+			case EmailType.NEW_ORDER_RESELLER:
+				return {
+					subject: 'New Order from Your Products',
+					body: NewOrderReseller(data as OrderResellerNotificationData),
 				};
 			default:
 				throw new NotFoundException(`Unknown email template type: ${type}`);
@@ -137,7 +169,7 @@ export class CommunicationService {
 	}
 
 	@OnEvent('send.notification')
-	async sendNotification(notification: CreateNotificationDto, recipients: AccessLevel[]) {
+	async sendNotification(notification: CreateNotificationDto, recipients: string[]) {
 		try {
 			const users = await this.userService.getUsersByRole(recipients);
 

@@ -1,3 +1,5 @@
+import { EmailType } from "../enums/email.enums";
+
 export interface BaseEmailData {
     name: string;
 }
@@ -23,11 +25,6 @@ export interface OrderData extends BaseEmailData {
     total: number;
     currency: string;
     shippingMethod: string;
-    items: Array<{
-        name: string;
-        quantity: number;
-        price: number;
-    }>;
 }
 
 export interface InvoiceData extends BaseEmailData {
@@ -101,3 +98,50 @@ export interface DailyReportData extends BaseEmailData {
         customerGrowth: string;
     };
 }
+
+export interface OrderResellerNotificationData extends OrderData {
+    resellerCommission: number;
+    resellerCode: string;
+}
+
+export interface OrderInternalNotificationData extends OrderData {
+    customerType: string;
+    priority: 'low' | 'medium' | 'high';
+    notes?: string;
+    orderItems?: Array<{
+        quantity: number;
+        product: { uid: string };
+        totalPrice: number;
+    }>;
+}
+
+export interface OrderWarehouseFulfillmentData extends OrderData {
+    fulfillmentPriority: 'standard' | 'express' | 'rush';
+    shippingInstructions?: string;
+    packagingRequirements?: string;
+    items: Array<{
+        sku: string;
+        quantity: number;
+        location?: string;
+    }>;
+}
+
+export type EmailDataMap = {
+    [EmailType.SIGNUP]: SignupEmailData;
+    [EmailType.VERIFICATION]: VerificationEmailData;
+    [EmailType.PASSWORD_RESET]: PasswordResetData;
+    [EmailType.ORDER_CONFIRMATION]: OrderData;
+    [EmailType.INVOICE]: InvoiceData;
+    [EmailType.PASSWORD_CHANGED]: PasswordChangedData;
+    [EmailType.ORDER_OUT_FOR_DELIVERY]: OrderOutForDeliveryData;
+    [EmailType.ORDER_DELIVERED]: OrderDeliveredData;
+    [EmailType.DAILY_REPORT]: DailyReportData;
+    [EmailType.ORDER_RESELLER_NOTIFICATION]: OrderResellerNotificationData;
+    [EmailType.ORDER_INTERNAL_NOTIFICATION]: OrderInternalNotificationData;
+    [EmailType.ORDER_WAREHOUSE_FULFILLMENT]: OrderWarehouseFulfillmentData;
+    [EmailType.NEW_ORDER_CLIENT]: OrderData;
+    [EmailType.NEW_ORDER_INTERNAL]: OrderInternalNotificationData;
+    [EmailType.NEW_ORDER_RESELLER]: OrderResellerNotificationData;
+};
+
+export type EmailTemplateData<T extends EmailType> = EmailDataMap[T];

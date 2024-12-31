@@ -144,10 +144,10 @@ export class UserService {
 		}
 	}
 
-	async getUsersByRole(recipientRoles: AccessLevel[]): Promise<{ users: User[] | null, message: string }> {
+	async getUsersByRole(recipients: string[]): Promise<{ users: User[] | null, message: string }> {
 		try {
 			const users = await this.userRepository.find({
-				where: { accessLevel: In(recipientRoles) },
+				where: { email: In(recipients) },
 			});
 
 			if (!users) {

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateCheckInDto } from './dto/create-check-in.dto';
 import { Repository } from 'typeorm';
 import { CheckIn } from './entities/check-in.entity';
@@ -19,6 +19,14 @@ export class CheckInsService {
 
   async checkIn(createCheckInDto: CreateCheckInDto): Promise<{ message: string }> {
     try {
+      if (!createCheckInDto?.owner) {
+        throw new BadRequestException('Invalid owner information');
+      }
+
+      if (!createCheckInDto?.branch) {
+        throw new BadRequestException('Invalid branch information');
+      }
+
       await this.checkInRepository.save(createCheckInDto);
 
       const response = {
@@ -30,7 +38,7 @@ export class CheckInsService {
         amount: XP_VALUES.CHECK_IN_CLIENT,
         action: XP_VALUES_TYPES.CHECK_IN_CLIENT,
         source: {
-          id: createCheckInDto.owner.uid.toString(),
+          id: String(createCheckInDto.owner),
           type: XP_VALUES_TYPES.CHECK_IN_CLIENT,
           details: 'Check-in reward'
         }
@@ -48,6 +56,13 @@ export class CheckInsService {
 
   async checkOut(createCheckOutDto: CreateCheckOutDto): Promise<{ message: string, duration?: string }> {
     try {
+      if (!createCheckOutDto?.owner?.uid) {
+        throw new BadRequestException('Invalid owner information');
+      }
+
+      if (!createCheckOutDto?.branch) {
+        throw new BadRequestException('Invalid branch information');
+      }
 
       const checkIn = await this.checkInRepository.findOne({
         where: {
@@ -89,7 +104,7 @@ export class CheckInsService {
         amount: 10,
         action: 'CHECK_OUT',
         source: {
-          id: createCheckOutDto.owner.uid.toString(),
+          id: createCheckOutDto.owner.toString(),
           type: 'check-in',
           details: 'Check-out reward'
         }
@@ -115,7 +130,8 @@ export class CheckInsService {
         },
         order: {
           checkInTime: 'DESC'
-        }
+        },
+        relations: ['owner', 'client']
       });
 
       if (!checkIn) {

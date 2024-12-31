@@ -4,6 +4,14 @@ import { User } from '../../user/entities/user.entity';
 import { Order } from '../../shop/entities/order.entity';
 import { Task } from 'src/tasks/entities/task.entity';
 import { Column, Entity, OneToMany, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { CheckIn } from 'src/check-ins/entities/check-in.entity';
+
+export enum CustomerType {
+    STANDARD = 'standard',
+    PREMIUM = 'premium',
+    VIP = 'vip',
+    WHOLESALE = 'wholesale'
+}
 
 @Entity('client')
 export class Client {
@@ -79,4 +87,10 @@ export class Client {
 
     @OneToMany(() => Task, (task) => task?.client, { nullable: true })
     tasks: Task[];
+
+    @OneToMany(() => CheckIn, (checkIn) => checkIn?.client, { nullable: true })
+    checkIns: CheckIn[];
+
+    @Column({ type: 'enum', enum: CustomerType, default: CustomerType.STANDARD })
+    type: CustomerType;
 }

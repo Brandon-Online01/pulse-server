@@ -12,6 +12,7 @@ import { Attendance } from "../../attendance/entities/attendance.entity";
 import { Asset } from "../../assets/entities/asset.entity";
 import { User } from "src/user/entities/user.entity";
 import { CheckIn } from "src/check-ins/entities/check-in.entity";
+import { Report } from "../../reports/entities/report.entity";
 
 @Entity('branch')
 export class Branch {
@@ -86,4 +87,8 @@ export class Branch {
 
     @OneToMany(() => CheckIn, (checkIn) => checkIn?.branch)
     checkIns: CheckIn[];
+
+    @OneToMany(() => Report, (report) => report?.branch)
+    reports: Report[];
 }
+

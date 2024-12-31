@@ -8,12 +8,18 @@ import { ShopService } from '../shop/shop.service';
 import { NewsService } from '../news/news.service';
 import { UserService } from '../user/user.service';
 import { OnEvent } from '@nestjs/event-emitter';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Report } from './entities/report.entity';
+import { ReportType } from 'src/lib/enums/reports.enums';
 
 @Injectable()
 export class ReportsService {
 	private readonly logger = new Logger(ReportsService.name);
 
 	constructor(
+		@InjectRepository(Report)
+		private readonly reportRepository: Repository<Report>,
 		private readonly leadService: LeadsService,
 		private readonly journalService: JournalService,
 		private readonly claimsService: ClaimsService,
@@ -170,7 +176,6 @@ export class ReportsService {
 				}
 			};
 
-
 			// User specific report data
 			if (reference && userData?.user) {
 				const userSpecificData = await Promise.all([
@@ -211,6 +216,17 @@ export class ReportsService {
 					}
 				};
 			}
+
+			const report = this.reportRepository.create({
+				title: 'Daily Report',
+				description: `Daily report for the date ${new Date()}`,
+				type: ReportType.DAILY,
+				metadata: response,
+				owner: userData?.user,
+				branch: userData?.user?.branch
+			});
+
+			await this.reportRepository.save(report);
 
 			return response;
 		} catch (error) {

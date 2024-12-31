@@ -1,4 +1,5 @@
 import { Branch } from "src/branch/entities/branch.entity";
+import { Client } from "src/clients/entities/client.entity";
 import { User } from "src/user/entities/user.entity";
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
@@ -33,4 +34,7 @@ export class CheckIn {
 
     @ManyToOne(() => Branch, (branch) => branch?.checkIns)
     branch: Branch;
+
+    @ManyToOne(() => Client, (client) => client?.checkIns, { nullable: true })
+    client: Client;
 }

@@ -6,17 +6,16 @@ import { Order } from './entities/order.entity';
 import { Banners } from './entities/banners.entity';
 import { CreateBannerDto } from './dto/create-banner.dto';
 import { UpdateBannerDto } from './dto/update-banner.dto';
-import { ProductStatus } from 'src/lib/enums/product.enums';
-import { Product } from 'src/products/entities/product.entity';
+import { ProductStatus } from '../lib/enums/product.enums';
+import { Product } from '../products/entities/product.entity';
 import { Between } from 'typeorm';
 import { startOfDay, endOfDay } from 'date-fns';
-import { OrderStatus } from 'src/lib/enums/status.enums';
+import { OrderStatus } from '../lib/enums/status.enums';
 import { ConfigService } from '@nestjs/config';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import { NotificationType } from 'src/lib/enums/notification.enums';
-import { AccessLevel } from 'src/lib/enums/user.enums';
-import { NotificationStatus } from 'src/lib/enums/notification.enums';
+import { ClientsService } from '../clients/clients.service';
+import { CreateProductDto } from '../products/dto/create-product.dto';
 import { EmailType } from 'src/lib/enums/email.enums';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class ShopService {
@@ -32,6 +31,7 @@ export class ShopService {
         @InjectRepository(Banners)
         private bannersRepository: Repository<Banners>,
         private readonly configService: ConfigService,
+        private readonly clientsService: ClientsService,
         private readonly eventEmitter: EventEmitter2,
     ) {
         this.currencyLocale = this.configService.get<string>('CURRENCY_LOCALE') || 'en-ZA';
@@ -145,47 +145,83 @@ export class ShopService {
                 throw new Error('Owner is required');
             }
 
-            if (!orderItems?.client?.uid) {
-                throw new Error('Client is required');
+            const clientData = await this.clientsService?.findOne(Number(orderItems?.client?.uid));
+
+            if (!clientData) {
+                throw new NotFoundException(process.env.CLIENT_NOT_FOUND_MESSAGE);
             }
 
-            const newOrder = this.orderRepository.create({
-                orderNumber: `ORD-${Date.now()}`,
-                totalItems: orderItems?.totalItems,
-                totalAmount: orderItems?.totalAmount,
-                placedBy: orderItems?.owner?.uid ? { uid: orderItems?.owner?.uid } : null,
-                client: orderItems?.client?.uid ? { uid: orderItems?.client?.uid } : null,
-                orderItems: orderItems?.items?.map(item => ({
-                    quantity: item?.quantity,
-                    product: { uid: item?.uid },
-                    totalPrice: item?.totalPrice,
+            const { name: clientName } = clientData?.client;
+            const internalEmail = this.configService.get<string>('INTERNAL_BROADCAST_EMAIL');
+
+            const productPromises = orderItems?.items?.map(item =>
+                this.productRepository.find({ where: { uid: item?.uid }, relations: ['reseller'] })
+            );
+
+            const products = await Promise.all(productPromises);
+
+            const resellerEmails = products
+                .flat()
+                .map(product => ({
+                    email: product?.reseller?.email,
+                    retailerName: product?.reseller?.name
                 }))
-            });
+                .filter(email => email?.email)
+                .reduce((unique, item) => {
+                    return unique?.some(u => u?.email === item?.email)
+                        ? unique
+                        : [...unique, item];
+                }, []);
+
+            const newOrder = {
+                orderNumber: `ORD-${Date.now()}`,
+                totalItems: Number(orderItems?.totalItems),
+                totalAmount: Number(orderItems?.totalAmount),
+                placedBy: { uid: orderItems?.owner?.uid },
+                client: { uid: orderItems?.client?.uid },
+                orderItems: orderItems?.items?.map(item => ({
+                    quantity: Number(item?.quantity),
+                    product: { uid: item?.uid },
+                    totalPrice: Number(item?.totalPrice),
+                }))
+            } as const;
+
+            const baseConfig = {
+                name: clientName,
+                orderId: newOrder?.orderNumber,
+                expectedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+                total: Number(newOrder?.totalAmount),
+                currency: this.currencyCode,
+                shippingMethod: 'Standard Delivery',
+                orderItems: orderItems?.items?.map(item => ({
+                    quantity: Number(item?.quantity),
+                    product: { uid: item?.uid },
+                    totalPrice: Number(item?.totalPrice),
+                }))
+            }
+
+            const clientConfig = {
+                ...baseConfig,
+            }
+
+            const internalConfig = {
+                ...baseConfig,
+            }
+
+            const resellerConfigs = resellerEmails?.map(email => ({
+                ...baseConfig,
+                name: email?.retailerName,
+                email: email?.email,
+            }));
 
             await this.orderRepository.save(newOrder);
+
+            this.eventEmitter.emit('send.email', EmailType.NEW_ORDER_INTERNAL, [internalEmail], internalConfig);
+            this.eventEmitter.emit('send.email', EmailType.NEW_ORDER_CLIENT, [clientData?.client?.email], clientConfig);
 
             const response = {
                 message: process.env.SUCCESS_MESSAGE,
             };
-
-            const notification = {
-                type: NotificationType.SHOPPING,
-                title: 'Order Placed',
-                message: `A new order has been placed`,
-                status: NotificationStatus.UNREAD,
-                owner: newOrder?.placedBy?.uid
-            }
-
-            const emailConfig = {
-                name: 'New Order',
-                orderNumber: newOrder?.orderNumber,
-                total: this.formatCurrency(Number(newOrder?.totalAmount) || 0),
-            }
-
-            const recipients = [AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.OWNER, AccessLevel.SUPERVISOR, AccessLevel.USER]
-
-            this.eventEmitter.emit('send.notification', notification, recipients);
-            this.eventEmitter.emit('send.email', EmailType.ORDER_CONFIRMATION, recipients, emailConfig);
 
             return response;
         }
@@ -193,11 +229,11 @@ export class ShopService {
             const response = {
                 message: error?.message,
             };
+
             return response;
         }
     }
 
-    //shop banners
     async createBanner(bannerData: CreateBannerDto): Promise<{ banner: Banners | null, message: string }> {
         try {
             const newBanner = this.bannersRepository.create(bannerData);
@@ -287,7 +323,6 @@ export class ShopService {
         }
     }
 
-    //orders
     async getAllOrders(): Promise<{ orders: Order[], message: string }> {
         try {
             const orders = await this.orderRepository.find({
@@ -329,58 +364,50 @@ export class ShopService {
                 throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
 
-            const formattedOrders = orders?.map(order => ({
+            const formattedOrders = orders.map(order => ({
                 ...order,
-                totalAmount: this.formatCurrency(Number(order?.totalAmount) || 0)
+                totalAmount: Number(order.totalAmount)
             }));
 
-            const response = {
+            return {
                 orders: formattedOrders,
                 message: process.env.SUCCESS_MESSAGE,
             };
-
-            return response;
         } catch (error) {
-            const response = {
+            return {
                 message: error?.message,
                 orders: []
             }
-
-            return response;
         }
     }
 
     async getOrderByRef(ref: number): Promise<{ orders: Order, message: string }> {
         try {
-            const orders = await this.orderRepository.findOne({
+            const order = await this.orderRepository.findOne({
                 where: {
                     uid: ref
                 },
                 relations: ['placedBy', 'client', 'orderItems', 'orderItems.product']
             });
 
-            if (!orders) {
+            if (!order) {
                 throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
 
-            const formattedOrders = {
-                ...orders,
-                totalAmount: this.formatCurrency(Number(orders?.totalAmount) || 0)
+            const formattedOrder = {
+                ...order,
+                totalAmount: Number(order.totalAmount)
             };
 
-            const response = {
-                orders: formattedOrders,
+            return {
+                orders: formattedOrder,
                 message: process.env.SUCCESS_MESSAGE,
             };
-
-            return response;
         } catch (error) {
-            const response = {
+            return {
                 message: error?.message,
                 orders: null
             }
-
-            return response;
         }
     }
 
@@ -459,4 +486,85 @@ export class ShopService {
             };
         }
     }
+
+    private async ensureUniqueSKU(product: Product): Promise<string> {
+        let sku = Product.generateSKU(product.category, product.name, product.uid, product.reseller);
+        let counter = 1;
+
+        while (await this.productRepository.findOne({ where: { sku } })) {
+            sku = `${Product.generateSKU(product.category, product.name, product.uid, product.reseller)}-${counter}`;
+            counter++;
+        }
+
+        return sku;
+    }
+
+    async createProduct(productData: CreateProductDto): Promise<Product> {
+        let product = this.productRepository.create(productData);
+        product = await this.productRepository.save(product);
+
+        product.sku = await this.ensureUniqueSKU(product);
+        return this.productRepository.save(product);
+    }
+
+    async generateSKUsForExistingProducts(): Promise<{ message: string, updatedCount: number }> {
+        try {
+            const productsWithoutSKU = await this.productRepository.find({
+                where: [
+                    { sku: null },
+                    { sku: '' }
+                ]
+            });
+
+            if (!productsWithoutSKU.length) {
+                return {
+                    message: 'No products found requiring SKU generation',
+                    updatedCount: 0
+                };
+            }
+
+            const updatePromises = productsWithoutSKU.map(async (product) => {
+                product.sku = await this.ensureUniqueSKU(product);
+                return this.productRepository.save(product);
+            });
+
+            await Promise.all(updatePromises);
+
+            return {
+                message: `Successfully generated SKUs for ${productsWithoutSKU.length} products`,
+                updatedCount: productsWithoutSKU.length
+            };
+        } catch (error) {
+            return {
+                message: `Error generating SKUs: ${error.message}`,
+                updatedCount: 0
+            };
+        }
+    }
+
+    async regenerateAllSKUs(): Promise<{ message: string, updatedCount: number }> {
+        try {
+            // Get all products
+            const allProducts = await this.productRepository.find();
+
+            // Update each product with a new unique SKU
+            const updatePromises = allProducts.map(async (product) => {
+                product.sku = await this.ensureUniqueSKU(product);
+                return this.productRepository.save(product);
+            });
+
+            await Promise.all(updatePromises);
+
+            return {
+                message: `Successfully regenerated SKUs for ${allProducts.length} products`,
+                updatedCount: allProducts.length
+            };
+        } catch (error) {
+            return {
+                message: `Error regenerating SKUs: ${error.message}`,
+                updatedCount: 0
+            };
+        }
+    }
 }
+
