@@ -10,13 +10,15 @@ import { endOfDay } from 'date-fns';
 import { startOfDay } from 'date-fns';
 import { NotificationStatus, NotificationType } from '../lib/enums/notification.enums';
 import { LeadStatus } from 'src/lib/enums/leads.enums';
+import { RewardsService } from 'src/rewards/rewards.service';
 
 @Injectable()
 export class LeadsService {
   constructor(
     @InjectRepository(Lead)
     private leadRepository: Repository<Lead>,
-    private readonly eventEmitter: EventEmitter2
+    private readonly eventEmitter: EventEmitter2,
+    private readonly rewardsService: RewardsService
   ) { }
 
   async create(createLeadDto: CreateLeadDto): Promise<{ message: string, data: Lead | null }> {
@@ -27,6 +29,17 @@ export class LeadsService {
         message: process.env.SUCCESS_MESSAGE,
         data: lead
       };
+
+      await this.rewardsService.awardXP({
+        owner: createLeadDto.owner.uid,
+        amount: 10,
+        action: 'LEAD',
+        source: {
+          id: createLeadDto.owner.uid.toString(),
+          type: 'lead',
+          details: 'Lead reward'
+        }
+      });
 
       const notification = {
         type: NotificationType.USER,
@@ -180,6 +193,17 @@ export class LeadsService {
       const recipients = [AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.OWNER, AccessLevel.SUPERVISOR, AccessLevel.USER]
 
       this.eventEmitter.emit('send.notification', notification, recipients);
+
+      await this.rewardsService.awardXP({
+        owner: updateLeadDto.owner.uid,
+        amount: 10,
+        action: 'LEAD',
+        source: {
+          id: updateLeadDto.owner.uid.toString(),
+          type: 'lead',
+          details: 'Lead reward'
+        }
+      });
 
       return response;
 

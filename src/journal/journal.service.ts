@@ -8,13 +8,15 @@ import { NotificationType, NotificationStatus } from '../lib/enums/notification.
 import { AccessLevel } from '../lib/enums/user.enums';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { endOfDay, startOfDay } from 'date-fns';
+import { RewardsService } from 'src/rewards/rewards.service';
 
 @Injectable()
 export class JournalService {
   constructor(
     @InjectRepository(Journal)
     private journalRepository: Repository<Journal>,
-    private readonly eventEmitter: EventEmitter2
+    private readonly eventEmitter: EventEmitter2,
+    private readonly rewardsService: RewardsService
   ) { }
 
   private calculateStats(journals: Journal[]): {
@@ -48,6 +50,17 @@ export class JournalService {
       const recipients = [AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.OWNER, AccessLevel.SUPERVISOR, AccessLevel.USER]
 
       this.eventEmitter.emit('send.notification', notification, recipients);
+
+      await this.rewardsService.awardXP({
+        owner: createJournalDto.owner.uid,
+        amount: 10,
+        action: 'JOURNAL',
+        source: {
+          id: createJournalDto.owner.uid.toString(),
+          type: 'journal',
+          details: 'Journal reward'
+        }
+      });
 
       return response
     } catch (error) {
@@ -207,6 +220,17 @@ export class JournalService {
       const recipients = [AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.OWNER, AccessLevel.SUPERVISOR, AccessLevel.USER]
 
       this.eventEmitter.emit('send.notification', notification, recipients);
+
+      await this.rewardsService.awardXP({
+        owner: updateJournalDto.owner.uid,
+        amount: 10,
+        action: 'JOURNAL',
+        source: {
+          id: updateJournalDto.owner.uid.toString(),
+          type: 'journal',
+          details: 'Journal reward'
+        }
+      });
 
       return response
     } catch (error) {

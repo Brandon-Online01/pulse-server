@@ -51,6 +51,11 @@ import { SubTask } from './tasks/entities/subtask.entity';
 import { CommunicationLog } from './communication/entities/communication-log.entity';
 import { CheckInsModule } from './check-ins/check-ins.module';
 import { CheckIn } from './check-ins/entities/check-in.entity';
+import { RewardsModule } from './rewards/rewards.module';
+import { UserRewards } from './rewards/entities/user-rewards.entity';
+import { Achievement } from './rewards/entities/achievement.entity';
+import { UnlockedItem } from './rewards/entities/unlocked-item.entity';
+import { XPTransaction } from './rewards/entities/xp-transaction.entity';
 
 @Module({
   imports: [
@@ -109,7 +114,11 @@ import { CheckIn } from './check-ins/entities/check-in.entity';
         Banners,
         SubTask,
         CommunicationLog,
-        CheckIn
+        CheckIn,
+        UserRewards,
+        Achievement,
+        UnlockedItem,
+        XPTransaction
       ],
       synchronize: true,
       retryAttempts: 50,
@@ -120,6 +129,7 @@ import { CheckIn } from './check-ins/entities/check-in.entity';
     }),
     UserModule,
     CheckInsModule,
+    RewardsModule,
   ],
   controllers: [],
   providers: [

@@ -12,6 +12,7 @@ import { SubTaskStatus, TaskStatus } from 'src/lib/enums/status.enums';
 import { Task } from './entities/task.entity';
 import { SubTask } from './entities/subtask.entity';
 import { UpdateSubtaskDto } from './dto/update-subtask.dto';
+import { RewardsService } from 'src/rewards/rewards.service';
 
 @Injectable()
 export class TasksService {
@@ -20,7 +21,8 @@ export class TasksService {
 		private taskRepository: Repository<Task>,
 		@InjectRepository(SubTask)
 		private subtaskRepository: Repository<SubTask>,
-		private readonly eventEmitter: EventEmitter2
+		private readonly eventEmitter: EventEmitter2,
+		private readonly rewardsService: RewardsService
 	) { }
 
 	async create(createTaskDto: CreateTaskDto): Promise<{ message: string }> {
@@ -232,6 +234,17 @@ export class TasksService {
 
 			const recipients = [AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.OWNER, AccessLevel.SUPERVISOR, AccessLevel.USER]
 			this.eventEmitter.emit('send.notification', notification, recipients);
+
+			await this.rewardsService.awardXP({
+				owner: task.owner.uid,
+				amount: 10,
+				action: 'TASK',
+				source: {
+					id: task.uid.toString(),
+					type: 'task',
+					details: 'Task reward'
+				}
+			});
 
 			return {
 				message: process.env.SUCCESS_MESSAGE,

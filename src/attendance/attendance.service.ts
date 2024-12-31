@@ -8,6 +8,7 @@ import { CreateCheckOutDto } from './dto/create-attendance-check-out.dto';
 import { isToday } from 'date-fns';
 import { differenceInMinutes, differenceInHours, startOfMonth, endOfMonth } from 'date-fns';
 import { UserService } from 'src/user/user.service';
+import { RewardsService } from 'src/rewards/rewards.service';
 
 @Injectable()
 export class AttendanceService {
@@ -15,6 +16,7 @@ export class AttendanceService {
     @InjectRepository(Attendance)
     private attendanceRepository: Repository<Attendance>,
     private userService: UserService,
+    private rewardsService: RewardsService,
   ) { }
 
   public async checkIn(checkInDto: CreateCheckInDto): Promise<{ message: string }> {
@@ -28,6 +30,17 @@ export class AttendanceService {
       const response = {
         message: process.env.SUCCESS_MESSAGE,
       }
+
+      await this.rewardsService.awardXP({
+        owner: checkInDto.owner.uid,
+        amount: 10,
+        action: 'CHECK_IN',
+        source: {
+          id: checkInDto.owner.uid.toString(),
+          type: 'attendance',
+          details: 'Check-in reward'
+        }
+      });
 
       return response;
     } catch (error) {
@@ -78,6 +91,17 @@ export class AttendanceService {
           message: process.env.SUCCESS_MESSAGE,
           duration
         }
+
+        await this.rewardsService.awardXP({
+          owner: checkOutDto.owner.uid,
+          amount: 10,
+          action: 'CHECK_OUT',
+          source: {
+            id: checkOutDto.owner.uid.toString(),
+            type: 'attendance',
+            details: 'Check-out reward'
+          }
+        });
 
         return response;
       }

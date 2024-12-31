@@ -11,6 +11,7 @@ import { ClaimCategory, ClaimStatus } from '../lib/enums/finance.enums';
 import { AccessLevel } from '../lib/enums/user.enums';
 import { NotificationStatus, NotificationType } from '../lib/enums/notification.enums';
 import { ConfigService } from '@nestjs/config';
+import { RewardsService } from 'src/rewards/rewards.service';
 
 @Injectable()
 export class ClaimsService {
@@ -21,6 +22,7 @@ export class ClaimsService {
 	constructor(
 		@InjectRepository(Claim)
 		private claimsRepository: Repository<Claim>,
+		private rewardsService: RewardsService,
 		private eventEmitter: EventEmitter2,
 		private readonly configService: ConfigService,
 	) {
@@ -77,6 +79,17 @@ export class ClaimsService {
 			const recipients = [AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.OWNER, AccessLevel.SUPERVISOR, AccessLevel.USER]
 
 			this.eventEmitter.emit('send.notification', notification, recipients);
+
+			await this.rewardsService.awardXP({
+				owner: createClaimDto.owner.uid,
+				amount: 10,
+				action: 'CLAIM',
+				source: {
+					id: createClaimDto.owner.uid.toString(),
+					type: 'claim',
+					details: 'Claim reward'
+				}
+			});
 
 			return response;
 		} catch (error) {
@@ -284,6 +297,17 @@ export class ClaimsService {
 			const recipients = [AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.OWNER, AccessLevel.SUPERVISOR, AccessLevel.USER]
 
 			this.eventEmitter.emit('send.notification', notification, recipients);
+
+			await this.rewardsService.awardXP({
+				owner: updateClaimDto.owner.uid,
+				amount: 10,
+				action: 'CLAIM',
+				source: {
+					id: updateClaimDto.owner.uid.toString(),
+					type: 'claim',
+					details: 'Claim reward'
+				}
+			});
 
 			return response;
 		} catch (error) {

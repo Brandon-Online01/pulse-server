@@ -12,6 +12,9 @@ import { User } from '../user/entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CommunicationLog } from './entities/communication-log.entity';
+import { renderSignupTemplate, renderVerificationTemplate, renderPasswordResetTemplate, renderOrderTemplate, renderInvoiceTemplate, renderPasswordChangedTemplate, renderOrderOutForDeliveryTemplate, renderOrderDeliveredTemplate, renderDailyReportTemplate } from '../lib/templates/emails';
+import { DailyReportData, InvoiceData, OrderData, OrderDeliveredData, OrderOutForDeliveryData, PasswordChangedData, PasswordResetData, VerificationEmailData } from 'src/lib/types/email-templates.types';
+import { SignupEmailData } from 'src/lib/types/email-templates.types';
 
 @Injectable()
 export class CommunicationService {
@@ -86,128 +89,51 @@ export class CommunicationService {
 			case EmailType.SIGNUP:
 				return {
 					subject: 'Welcome to Our Platform',
-					body: this.renderSignupTemplate(data),
+					body: renderSignupTemplate(data as SignupEmailData),
 				};
 			case EmailType.VERIFICATION:
 				return {
 					subject: 'Verify Your Email',
-					body: this.renderVerificationTemplate(data),
+					body: renderVerificationTemplate(data as VerificationEmailData),
 				};
 			case EmailType.PASSWORD_RESET:
 				return {
 					subject: 'Password Reset Request',
-					body: this.renderPasswordResetTemplate(data),
+					body: renderPasswordResetTemplate(data as PasswordResetData),
 				};
 			case EmailType.ORDER_CONFIRMATION:
 				return {
 					subject: 'Order Confirmation',
-					body: this.renderOrderTemplate(data),
+					body: renderOrderTemplate(data as OrderData),
 				};
 			case EmailType.INVOICE:
 				return {
 					subject: 'Invoice for Your Order',
-					body: this.renderInvoiceTemplate(data),
+					body: renderInvoiceTemplate(data as InvoiceData),
 				};
 			case EmailType.PASSWORD_CHANGED:
 				return {
 					subject: 'Password Successfully Changed',
-					body: this.renderPasswordChangedTemplate(data),
+					body: renderPasswordChangedTemplate(data as PasswordChangedData),
 				};
 			case EmailType.ORDER_OUT_FOR_DELIVERY:
 				return {
 					subject: 'Your Order is Out for Delivery',
-					body: this.renderOrderOutForDeliveryTemplate(data),
+					body: renderOrderOutForDeliveryTemplate(data as OrderOutForDeliveryData),
 				};
 			case EmailType.ORDER_DELIVERED:
 				return {
 					subject: 'Your Order Has Been Delivered',
-					body: this.renderOrderDeliveredTemplate(data),
+					body: renderOrderDeliveredTemplate(data as OrderDeliveredData),
 				};
 			case EmailType.DAILY_REPORT:
 				return {
 					subject: 'Daily Report',
-					body: this.renderDailyReportTemplate(data),
+					body: renderDailyReportTemplate(data as DailyReportData),
 				};
 			default:
 				throw new Error(`Unknown email template type: ${type}`);
 		}
-	}
-
-	private renderSignupTemplate(data: Record<string, any>): string {
-		return `
-			< h1 > Welcome ${data.name}! </h1>
-			< p > Thank you for joining our platform.</p>
-				< p > Please click the link below to verify your email: </p>
-					< a href = "${data.verificationLink}" > Verify Email </a>
-						`;
-	}
-
-	private renderVerificationTemplate(data: Record<string, any>): string {
-		return `
-						< h1 > Verify Your Email </h1>
-							< p > Hello ${data.name}, </p>
-								< p > Please click the link below to verify your email: </p>
-									< a href = "${data.verificationLink}" > Verify Email </a>
-										`;
-	}
-
-	private renderPasswordResetTemplate(data: Record<string, any>): string {
-		return `
-										< h1 > Reset Your Password </h1>
-											< p > Hello ${data.name}, </p>
-												< p > Click the link below to reset your password: </p>
-													< a href = "${data.resetLink}" > Reset Password </a>
-														`;
-	}
-
-	private renderOrderTemplate(data: Record<string, any>): string {
-		return `
-														< h1 > Order Confirmation </h1>
-															< p > Thank you for your order #${data.orderId} </p>
-																< p > Total: ${data.total} </p>
-																	`;
-	}
-
-	private renderInvoiceTemplate(data: Record<string, any>): string {
-		return `
-																	< h1 > Invoice </h1>
-																	< p > Invoice #${data.invoiceId} </p>
-																		< p > Amount: ${data.amount} </p>
-																			`;
-	}
-
-	private renderPasswordChangedTemplate(data: Record<string, any>): string {
-		return `
-																			< h1 > Password Changed Successfully </h1>
-																				< p > Hello ${data.name}, </p>
-																					< p > Your password has been successfully changed.If you did not make this change, please contact support immediately.</p>
-																						`;
-	}
-
-	private renderOrderOutForDeliveryTemplate(data: Record<string, any>): string {
-		return `
-																						< h1 > Your Order is Out for Delivery </h1>
-																							< p > Order #${data.orderId} is now out for delivery! </p>
-																								< p > Estimated delivery time: ${data.estimatedDeliveryTime} </p>
-																									`;
-	}
-
-	private renderOrderDeliveredTemplate(data: Record<string, any>): string {
-		return `
-																									< h1 > Order Delivered </h1>
-																										< p > Order #${data.orderId} has been delivered.</p>
-																											< p > Thank you for shopping with us! </p>
-																												`;
-	}
-
-	private renderDailyReportTemplate(data: Record<string, any>): string {
-		return `
-																												< h1 > Daily Report - ${data.date} </h1>
-																													< p > Summary of today's activities:</p>
-																														< p > Total Orders: ${data.totalOrders} </p>
-																															< p > Total Revenue: ${data.totalRevenue} </p>
-																																< p > New Customers: ${data.newCustomers} </p>
-																																	`;
 	}
 
 	@OnEvent('send.notification')

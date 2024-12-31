@@ -4,9 +4,10 @@ import { TasksController } from './tasks.controller';
 import { Task } from './entities/task.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SubTask } from './entities/subtask.entity';
+import { RewardsModule } from 'src/rewards/rewards.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Task, SubTask])],
+  imports: [TypeOrmModule.forFeature([Task, SubTask]), RewardsModule],
   controllers: [TasksController],
   providers: [TasksService],
   exports: [TasksService]

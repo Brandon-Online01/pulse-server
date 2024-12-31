@@ -7,12 +7,14 @@ import { Notification } from './entities/notification.entity';
 import { NotificationResponse } from 'src/lib/types/notification';
 import { formatDistanceToNow } from 'date-fns';
 import { NotificationStatus } from 'src/lib/enums/notification.enums';
+import { RewardsService } from 'src/rewards/rewards.service';
 
 @Injectable()
 export class NotificationsService {
 	constructor(
 		@InjectRepository(Notification)
 		private readonly notificationRepository: Repository<Notification>,
+		private readonly rewardsService: RewardsService
 	) { }
 
 	async create(createNotificationDto: CreateNotificationDto): Promise<{ message: string }> {
@@ -129,6 +131,17 @@ export class NotificationsService {
 			if (!notification) {
 				throw new Error(process.env.NOT_FOUND_MESSAGE);
 			}
+
+			await this.rewardsService.awardXP({
+				owner: updateNotificationDto.owner.uid,
+				amount: 10,
+				action: 'NOTIFICATION',
+				source: {
+					id: updateNotificationDto.owner.uid.toString(),
+					type: 'notification',
+					details: 'Notification reward'
+				}
+			});
 
 			const response = {
 				message: process.env.SUCCESS_MESSAGE,

@@ -5,12 +5,14 @@ import * as bcrypt from 'bcrypt';
 import { UserService } from '../user/user.service';
 import { SignInResponse, SignUpResponse } from '../lib/types/auth';
 import { ProfileData } from '../lib/types/auth';
+import { RewardsService } from '../rewards/rewards.service';
 
 @Injectable()
 export class AuthService {
 	constructor(
 		private jwtService: JwtService,
 		private userService: UserService,
+		private rewardsService: RewardsService,
 	) { }
 
 	async signIn(signInInput: SignInInput): Promise<SignInResponse> {
@@ -51,6 +53,17 @@ export class AuthService {
 
 			const accessToken = await this.jwtService.signAsync(payload, { expiresIn: `${process.env.JWT_ACCESS_EXPIRES_IN}` });
 			const refreshToken = await this.jwtService.signAsync(payload, { expiresIn: `${process.env.JWT_REFRESH_EXPIRES_IN}` });
+
+			await this.rewardsService.awardXP({
+				owner: uid,
+				amount: 10,
+				action: 'DAILY_LOGIN',
+				source: {
+					id: uid.toString(),
+					type: 'attendance',
+					details: 'Daily login reward'
+				}
+			});
 
 			return {
 				profileData,

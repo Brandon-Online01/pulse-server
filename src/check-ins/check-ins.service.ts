@@ -5,12 +5,14 @@ import { CheckIn } from './entities/check-in.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateCheckOutDto } from './dto/create-check-out.dto';
 import { differenceInMinutes, differenceInHours } from 'date-fns';
+import { RewardsService } from 'src/rewards/rewards.service';
 
 @Injectable()
 export class CheckInsService {
   constructor(
     @InjectRepository(CheckIn)
     private checkInRepository: Repository<CheckIn>,
+    private rewardsService: RewardsService,
   ) { }
 
   async checkIn(createCheckInDto: CreateCheckInDto): Promise<{ message: string }> {
@@ -20,6 +22,17 @@ export class CheckInsService {
       const response = {
         message: process.env.SUCCESS_MESSAGE,
       }
+
+      await this.rewardsService.awardXP({
+        owner: createCheckInDto.owner.uid,
+        amount: 10,
+        action: 'CHECK_IN',
+        source: {
+          id: createCheckInDto.owner.uid.toString(),
+          type: 'check-in',
+          details: 'Check-in reward'
+        }
+      });
 
       return response;
     } catch (error) {
@@ -33,8 +46,6 @@ export class CheckInsService {
 
   async checkOut(createCheckOutDto: CreateCheckOutDto): Promise<{ message: string, duration?: string }> {
     try {
-
-      console.log(createCheckOutDto, 'checkout data');
 
       const checkIn = await this.checkInRepository.findOne({
         where: {
@@ -50,8 +61,6 @@ export class CheckInsService {
       if (!checkIn) {
         throw new NotFoundException('Check-in not found');
       }
-
-      console.log(checkIn, 'checkIn');
 
       const checkOutTime = new Date(createCheckOutDto.checkOutTime);
       const checkInTime = new Date(checkIn.checkInTime);
@@ -72,6 +81,17 @@ export class CheckInsService {
       const response = {
         message: process.env.SUCCESS_MESSAGE,
       }
+
+      await this.rewardsService.awardXP({
+        owner: createCheckOutDto.owner.uid,
+        amount: 10,
+        action: 'CHECK_OUT',
+        source: {
+          id: createCheckOutDto.owner.uid.toString(),
+          type: 'check-in',
+          details: 'Check-out reward'
+        }
+      });
 
       return response;
     } catch (error) {
