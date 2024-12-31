@@ -17,7 +17,7 @@ export class BranchService {
 			const branch = await this.branchRepository.save(createBranchDto);
 
 			if (!branch) {
-				throw new Error(process.env.CREATE_ERROR_MESSAGE);
+				throw new NotFoundException(process.env.CREATE_ERROR_MESSAGE);
 			}
 
 			return {

@@ -4,7 +4,7 @@ import { User } from './entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { NewSignUp } from '../lib/types/user';
 import { AccountStatus } from 'src/lib/enums/status.enums';
 import { AccessLevel } from 'src/lib/enums/user.enums';
@@ -21,7 +21,7 @@ export class UserService {
 			const user = await this.userRepository.save(createUserDto);
 
 			if (!user) {
-				throw new Error(process.env.NOT_FOUND_MESSAGE);
+				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
 			const response = {
@@ -43,7 +43,7 @@ export class UserService {
 			const users = await this.userRepository.find({ where: { isDeleted: false } });
 
 			if (!users) {
-				throw new Error(process.env.NOT_FOUND_MESSAGE);
+				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
 			const response = {
@@ -151,7 +151,7 @@ export class UserService {
 			});
 
 			if (!users) {
-				throw new Error(process.env.NOT_FOUND_MESSAGE);
+				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
 			const response = {
@@ -179,7 +179,7 @@ export class UserService {
 			});
 
 			if (!updatedUser) {
-				throw new Error(process.env.NOT_FOUND_MESSAGE);
+				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
 			const response = {
@@ -204,7 +204,7 @@ export class UserService {
 			});
 
 			if (!user) {
-				throw new Error(process.env.NOT_FOUND_MESSAGE);
+				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			};
 
 			await this.userRepository.update(

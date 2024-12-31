@@ -11,6 +11,8 @@ import { startOfDay } from 'date-fns';
 import { NotificationStatus, NotificationType } from '../lib/enums/notification.enums';
 import { LeadStatus } from 'src/lib/enums/leads.enums';
 import { RewardsService } from 'src/rewards/rewards.service';
+import { XP_VALUES } from 'src/lib/constants/constants';
+import { XP_VALUES_TYPES } from 'src/lib/constants/constants';
 
 @Injectable()
 export class LeadsService {
@@ -52,6 +54,18 @@ export class LeadsService {
       const recipients = [AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.OWNER, AccessLevel.SUPERVISOR, AccessLevel.USER]
 
       this.eventEmitter.emit('send.notification', notification, recipients);
+
+
+      await this.rewardsService.awardXP({
+        owner: createLeadDto.owner.uid,
+        amount: XP_VALUES.LEAD,
+        action: XP_VALUES_TYPES.LEAD,
+        source: {
+          id: createLeadDto.owner.uid.toString(),
+          type: XP_VALUES_TYPES.LEAD,
+          details: 'Lead reward'
+        }
+      });
 
       return response;
     } catch (error) {
@@ -196,11 +210,11 @@ export class LeadsService {
 
       await this.rewardsService.awardXP({
         owner: updateLeadDto.owner.uid,
-        amount: 10,
-        action: 'LEAD',
+        amount: XP_VALUES.LEAD,
+        action: XP_VALUES_TYPES.LEAD,
         source: {
           id: updateLeadDto.owner.uid.toString(),
-          type: 'lead',
+          type: XP_VALUES_TYPES.LEAD,
           details: 'Lead reward'
         }
       });
@@ -223,7 +237,7 @@ export class LeadsService {
       });
 
       if (!lead) {
-        throw new Error(process.env.NOT_FOUND_MESSAGE);
+        throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
       };
 
       await this.leadRepository.update(
@@ -299,7 +313,7 @@ export class LeadsService {
       });
 
       if (!leads) {
-        throw new Error(process.env.NOT_FOUND_MESSAGE);
+        throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
       }
 
       // Group leads by status

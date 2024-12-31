@@ -12,6 +12,8 @@ import { AccessLevel } from '../lib/enums/user.enums';
 import { NotificationStatus, NotificationType } from '../lib/enums/notification.enums';
 import { ConfigService } from '@nestjs/config';
 import { RewardsService } from 'src/rewards/rewards.service';
+import { XP_VALUES_TYPES } from 'src/lib/constants/constants';
+import { XP_VALUES } from 'src/lib/constants/constants';
 
 @Injectable()
 export class ClaimsService {
@@ -82,11 +84,11 @@ export class ClaimsService {
 
 			await this.rewardsService.awardXP({
 				owner: createClaimDto.owner.uid,
-				amount: 10,
-				action: 'CLAIM',
+				amount: XP_VALUES.CLAIM,
+				action: XP_VALUES_TYPES.CLAIM,
 				source: {
 					id: createClaimDto.owner.uid.toString(),
-					type: 'claim',
+					type: XP_VALUES_TYPES.CLAIM,
 					details: 'Claim reward'
 				}
 			});
@@ -243,7 +245,7 @@ export class ClaimsService {
 			});
 
 			if (!claims) {
-				throw new Error(process.env.NOT_FOUND_MESSAGE);
+				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
 			// Group claims by status
@@ -300,11 +302,11 @@ export class ClaimsService {
 
 			await this.rewardsService.awardXP({
 				owner: updateClaimDto.owner.uid,
-				amount: 10,
-				action: 'CLAIM',
+				amount: XP_VALUES.CLAIM,
+				action: XP_VALUES_TYPES.CLAIM,
 				source: {
 					id: updateClaimDto.owner.uid.toString(),
-					type: 'claim',
+					type: XP_VALUES_TYPES.CLAIM,
 					details: 'Claim reward'
 				}
 			});

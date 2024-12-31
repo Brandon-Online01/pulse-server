@@ -26,6 +26,7 @@ export class TrackingService {
     } catch (error) {
       const response = {
         message: error.message,
+        tracking: null
       }
 
       return response;

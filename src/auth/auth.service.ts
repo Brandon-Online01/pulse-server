@@ -6,6 +6,10 @@ import { UserService } from '../user/user.service';
 import { SignInResponse, SignUpResponse } from '../lib/types/auth';
 import { ProfileData } from '../lib/types/auth';
 import { RewardsService } from '../rewards/rewards.service';
+import { XP_VALUES, XP_VALUES_TYPES } from 'src/lib/constants/constants';
+import { EmailType } from '../lib/enums/email.enums';
+import { AccessLevel } from 'src/lib/enums/user.enums';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class AuthService {
@@ -13,6 +17,7 @@ export class AuthService {
 		private jwtService: JwtService,
 		private userService: UserService,
 		private rewardsService: RewardsService,
+		private eventEmitter: EventEmitter2,
 	) { }
 
 	async signIn(signInInput: SignInInput): Promise<SignInResponse> {
@@ -56,11 +61,11 @@ export class AuthService {
 
 			await this.rewardsService.awardXP({
 				owner: uid,
-				amount: 10,
+				amount: XP_VALUES.DAILY_LOGIN,
 				action: 'DAILY_LOGIN',
 				source: {
 					id: uid.toString(),
-					type: 'attendance',
+					type: XP_VALUES_TYPES.LOGIN,
 					details: 'Daily login reward'
 				}
 			});
@@ -90,7 +95,6 @@ export class AuthService {
 			}
 
 			const verificationToken = await this.generateShortToken();
-
 			const verificationUrl = `${process.env.SIGNUP_DOMAIN}/verify/${verificationToken}`;
 
 			await this.userService.createPendingUser({
@@ -100,8 +104,15 @@ export class AuthService {
 				tokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000)
 			});
 
-			//await email service 🚀
-			// await this.emailService.sendVerificationEmail(email, verificationUrl);
+			this.eventEmitter.emit('send.email',
+				EmailType.VERIFICATION,
+				[AccessLevel.USER],
+				{
+					name: email?.split('@')[0],
+					verificationLink: verificationUrl,
+					expiryHours: 24
+				}
+			);
 
 			return {
 				message: 'please check your email and verify your account within the next 24 hours.',

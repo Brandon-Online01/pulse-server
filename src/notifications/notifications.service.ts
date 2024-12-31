@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -8,6 +8,8 @@ import { NotificationResponse } from 'src/lib/types/notification';
 import { formatDistanceToNow } from 'date-fns';
 import { NotificationStatus } from 'src/lib/enums/notification.enums';
 import { RewardsService } from 'src/rewards/rewards.service';
+import { XP_VALUES } from 'src/lib/constants/constants';
+import { XP_VALUES_TYPES } from 'src/lib/constants/constants';
 
 @Injectable()
 export class NotificationsService {
@@ -22,7 +24,7 @@ export class NotificationsService {
 			const notification = await this.notificationRepository.save(createNotificationDto);
 
 			if (!notification) {
-				throw new Error(process.env.NOT_FOUND_MESSAGE);
+				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
 			const response = {
@@ -44,7 +46,7 @@ export class NotificationsService {
 			const notifications = await this.notificationRepository.find();
 
 			if (!notifications) {
-				throw new Error(process.env.NOT_FOUND_MESSAGE);
+				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
 			const response = {
@@ -68,7 +70,7 @@ export class NotificationsService {
 			const notification = await this.notificationRepository.findOne({ where: { uid: ref }, relations: ['owner'] });
 
 			if (!notification) {
-				throw new Error(process.env.NOT_FOUND_MESSAGE);
+				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
 			const response = {
@@ -99,7 +101,7 @@ export class NotificationsService {
 			});
 
 			if (!notifications.length) {
-				throw new Error(process.env.NOT_FOUND_MESSAGE);
+				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
 			const response = {
@@ -129,16 +131,16 @@ export class NotificationsService {
 			const notification = await this.notificationRepository.update(ref, updateNotificationDto);
 
 			if (!notification) {
-				throw new Error(process.env.NOT_FOUND_MESSAGE);
+				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
 			await this.rewardsService.awardXP({
 				owner: updateNotificationDto.owner.uid,
-				amount: 10,
-				action: 'NOTIFICATION',
+				amount: XP_VALUES.NOTIFICATION,
+				action: XP_VALUES_TYPES.NOTIFICATION,
 				source: {
 					id: updateNotificationDto.owner.uid.toString(),
-					type: 'notification',
+					type: XP_VALUES_TYPES.NOTIFICATION,
 					details: 'Notification reward'
 				}
 			});
@@ -162,7 +164,7 @@ export class NotificationsService {
 			const notification = await this.notificationRepository.delete(ref);
 
 			if (!notification) {
-				throw new Error(process.env.NOT_FOUND_MESSAGE);
+				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
 			const response = {
@@ -174,6 +176,8 @@ export class NotificationsService {
 			const response = {
 				message: error?.message,
 			}
+
+			return response;
 		}
 	}
 }

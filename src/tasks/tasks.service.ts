@@ -13,6 +13,8 @@ import { Task } from './entities/task.entity';
 import { SubTask } from './entities/subtask.entity';
 import { UpdateSubtaskDto } from './dto/update-subtask.dto';
 import { RewardsService } from 'src/rewards/rewards.service';
+import { XP_VALUES } from 'src/lib/constants/constants';
+import { XP_VALUES_TYPES } from 'src/lib/constants/constants';
 
 @Injectable()
 export class TasksService {
@@ -35,7 +37,7 @@ export class TasksService {
 			});
 
 			if (!task) {
-				throw new Error(process.env.NOT_FOUND_MESSAGE);
+				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
 			if (createTaskDto?.subtasks && createTaskDto?.subtasks?.length > 0) {
@@ -82,7 +84,7 @@ export class TasksService {
 			});
 
 			if (!tasks) {
-				throw new Error(process.env.NOT_FOUND_MESSAGE);
+				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
 			return {
@@ -168,7 +170,7 @@ export class TasksService {
 			});
 
 			if (!task) {
-				throw new Error(process.env.NOT_FOUND_MESSAGE);
+				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
 			// Create an object with all possible updateable fields except assignees and subtasks
@@ -237,11 +239,11 @@ export class TasksService {
 
 			await this.rewardsService.awardXP({
 				owner: task.owner.uid,
-				amount: 10,
-				action: 'TASK',
+				amount: XP_VALUES.TASK,
+				action: XP_VALUES_TYPES.TASK,
 				source: {
 					id: task.uid.toString(),
-					type: 'task',
+					type: XP_VALUES_TYPES.TASK,
 					details: 'Task reward'
 				}
 			});
@@ -250,7 +252,6 @@ export class TasksService {
 				message: process.env.SUCCESS_MESSAGE,
 			};
 		} catch (error) {
-			console.error('Update error:', error);
 			return {
 				message: error?.message,
 			};
@@ -264,7 +265,7 @@ export class TasksService {
 			});
 
 			if (!task) {
-				throw new Error(process.env.NOT_FOUND_MESSAGE);
+				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
 			await this.taskRepository.update(

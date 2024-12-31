@@ -6,6 +6,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { CreateCheckOutDto } from './dto/create-check-out.dto';
 import { differenceInMinutes, differenceInHours } from 'date-fns';
 import { RewardsService } from 'src/rewards/rewards.service';
+import { XP_VALUES_TYPES } from 'src/lib/constants/constants';
+import { XP_VALUES } from 'src/lib/constants/constants';
 
 @Injectable()
 export class CheckInsService {
@@ -25,11 +27,11 @@ export class CheckInsService {
 
       await this.rewardsService.awardXP({
         owner: createCheckInDto.owner.uid,
-        amount: 10,
-        action: 'CHECK_IN',
+        amount: XP_VALUES.CHECK_IN_CLIENT,
+        action: XP_VALUES_TYPES.CHECK_IN_CLIENT,
         source: {
           id: createCheckInDto.owner.uid.toString(),
-          type: 'check-in',
+          type: XP_VALUES_TYPES.CHECK_IN_CLIENT,
           details: 'Check-in reward'
         }
       });

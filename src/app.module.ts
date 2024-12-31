@@ -56,32 +56,19 @@ import { UserRewards } from './rewards/entities/user-rewards.entity';
 import { Achievement } from './rewards/entities/achievement.entity';
 import { UnlockedItem } from './rewards/entities/unlocked-item.entity';
 import { XPTransaction } from './rewards/entities/xp-transaction.entity';
+import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
   imports: [
-    AssetsModule,
-    AttendanceModule,
-    AuthModule,
-    BranchModule,
-    ClaimsModule,
-    ClientsModule,
-    CommunicationModule,
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    DocsModule,
+    CacheModule.register({
+      ttl: +process.env.CACHE_EXPIRATION_TIME,
+      max: +process.env.CACHE_MAX_ITEMS,
+      isGlobal: true,
+    }),
     EventEmitterModule.forRoot(),
-    JournalModule,
-    LeadsModule,
-    NewsModule,
-    NotificationsModule,
-    OrganisationModule,
-    ProductsModule,
-    ReportsModule,
-    ResellersModule,
-    ShopModule,
-    TasksModule,
-    TrackingModule,
     TypeOrmModule.forRoot({
       type: 'mysql',
       host: process.env.DATABASE_HOST,
@@ -121,12 +108,31 @@ import { XPTransaction } from './rewards/entities/xp-transaction.entity';
         XPTransaction
       ],
       synchronize: true,
-      retryAttempts: 50,
+      retryAttempts: 100,
       retryDelay: 2000,
       extra: {
-        connectionLimit: 100,
+        connectionLimit: 100000,
       },
     }),
+    AssetsModule,
+    AttendanceModule,
+    AuthModule,
+    BranchModule,
+    ClaimsModule,
+    ClientsModule,
+    CommunicationModule,
+    DocsModule,
+    JournalModule,
+    LeadsModule,
+    NewsModule,
+    NotificationsModule,
+    OrganisationModule,
+    ProductsModule,
+    ReportsModule,
+    ResellersModule,
+    ShopModule,
+    TasksModule,
+    TrackingModule,
     UserModule,
     CheckInsModule,
     RewardsModule,

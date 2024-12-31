@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { RewardsService } from './rewards.service';
-import { XP_VALUES } from '../lib/contants/constants';
+import { XP_VALUES } from '../lib/constants/constants';
 
 @Injectable()
 export class RewardsSubscriber {

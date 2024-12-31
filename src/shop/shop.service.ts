@@ -1,5 +1,5 @@
 import { Repository } from 'typeorm';
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CheckoutDto } from './dto/checkout.dto';
 import { Order } from './entities/order.entity';
@@ -54,7 +54,7 @@ export class ShopService {
             const allProducts = await this.productRepository.find();
 
             if (!allProducts) {
-                throw new Error(process.env.NOT_FOUND_MESSAGE);
+                throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
 
             // Format prices before returning products
@@ -224,6 +224,10 @@ export class ShopService {
                 }
             });
 
+            if (!banners) {
+                throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
+            }
+
             const response = {
                 banners,
                 message: process.env.SUCCESS_MESSAGE,
@@ -245,7 +249,7 @@ export class ShopService {
             const banner = await this.bannersRepository.findOne({ where: { uid } });
 
             if (!banner) {
-                throw new Error('Banner not found');
+                throw new NotFoundException('Banner not found');
             }
 
             await this.bannersRepository.update({ uid }, bannerData);
@@ -268,7 +272,7 @@ export class ShopService {
             const banner = await this.bannersRepository.findOne({ where: { uid } });
 
             if (!banner) {
-                throw new Error('Banner not found');
+                throw new NotFoundException('Banner not found');
             }
 
             await this.bannersRepository.delete({ uid });
@@ -291,7 +295,7 @@ export class ShopService {
             });
 
             if (!orders) {
-                throw new Error(process.env.NOT_FOUND_MESSAGE);
+                throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
 
             const response = {
@@ -322,7 +326,7 @@ export class ShopService {
             });
 
             if (!orders) {
-                throw new Error(process.env.NOT_FOUND_MESSAGE);
+                throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
 
             const formattedOrders = orders?.map(order => ({
@@ -356,7 +360,7 @@ export class ShopService {
             });
 
             if (!orders) {
-                throw new Error(process.env.NOT_FOUND_MESSAGE);
+                throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
 
             const formattedOrders = {

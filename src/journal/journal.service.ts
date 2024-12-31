@@ -9,6 +9,7 @@ import { AccessLevel } from '../lib/enums/user.enums';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { endOfDay, startOfDay } from 'date-fns';
 import { RewardsService } from 'src/rewards/rewards.service';
+import { XP_VALUES, XP_VALUES_TYPES } from 'src/lib/constants/constants';
 
 @Injectable()
 export class JournalService {
@@ -32,7 +33,7 @@ export class JournalService {
       const journal = await this.journalRepository.save(createJournalDto);
 
       if (!journal) {
-        throw new Error(process.env.NOT_FOUND_MESSAGE);
+        throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
       }
 
       const response = {
@@ -172,7 +173,7 @@ export class JournalService {
       });
 
       if (!journals) {
-        throw new Error(process.env.NOT_FOUND_MESSAGE);
+        throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
       }
 
       const response = {
@@ -223,11 +224,11 @@ export class JournalService {
 
       await this.rewardsService.awardXP({
         owner: updateJournalDto.owner.uid,
-        amount: 10,
-        action: 'JOURNAL',
+        amount: XP_VALUES.JOURNAL,
+        action: XP_VALUES_TYPES.JOURNAL,
         source: {
           id: updateJournalDto.owner.uid.toString(),
-          type: 'journal',
+          type: XP_VALUES_TYPES.JOURNAL,
           details: 'Journal reward'
         }
       });

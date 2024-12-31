@@ -9,6 +9,9 @@ import { isToday } from 'date-fns';
 import { differenceInMinutes, differenceInHours, startOfMonth, endOfMonth } from 'date-fns';
 import { UserService } from 'src/user/user.service';
 import { RewardsService } from 'src/rewards/rewards.service';
+import { XP_VALUES_TYPES } from 'src/lib/constants/constants';
+import { XP_VALUES } from 'src/lib/constants/constants';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class AttendanceService {
@@ -17,6 +20,7 @@ export class AttendanceService {
     private attendanceRepository: Repository<Attendance>,
     private userService: UserService,
     private rewardsService: RewardsService,
+    private readonly eventEmitter: EventEmitter2,
   ) { }
 
   public async checkIn(checkInDto: CreateCheckInDto): Promise<{ message: string }> {
@@ -33,11 +37,11 @@ export class AttendanceService {
 
       await this.rewardsService.awardXP({
         owner: checkInDto.owner.uid,
-        amount: 10,
-        action: 'CHECK_IN',
+        amount: XP_VALUES.CHECK_IN,
+        action: XP_VALUES_TYPES.ATTENDANCE,
         source: {
           id: checkInDto.owner.uid.toString(),
-          type: 'attendance',
+          type: XP_VALUES_TYPES.ATTENDANCE,
           details: 'Check-in reward'
         }
       });
@@ -94,14 +98,16 @@ export class AttendanceService {
 
         await this.rewardsService.awardXP({
           owner: checkOutDto.owner.uid,
-          amount: 10,
-          action: 'CHECK_OUT',
+          amount: XP_VALUES.CHECK_OUT,
+          action: XP_VALUES_TYPES.ATTENDANCE,
           source: {
             id: checkOutDto.owner.uid.toString(),
-            type: 'attendance',
+            type: XP_VALUES_TYPES.ATTENDANCE,
             details: 'Check-out reward'
           }
         });
+
+        this.eventEmitter.emit('daily-report', checkOutDto?.owner?.uid?.toString());
 
         return response;
       }

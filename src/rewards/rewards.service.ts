@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { CreateRewardDto } from './dto/create-reward.dto';
 import { UserRewards } from './entities/user-rewards.entity';
 import { XPTransaction } from './entities/xp-transaction.entity';
-import { LEVELS, RANKS } from '../lib/contants/constants';
+import { LEVELS, RANKS } from '../lib/constants/constants';
 
 @Injectable()
 export class RewardsService {
@@ -17,9 +17,6 @@ export class RewardsService {
 
   async awardXP(createRewardDto: CreateRewardDto) {
     try {
-
-      console.log(createRewardDto);
-
       let userRewards = await this.userRewardsRepository.findOne({
         where: { owner: { uid: createRewardDto.owner } }
       });
@@ -82,11 +79,18 @@ export class RewardsService {
 
   private mapSourceTypeToCategory(sourceType: string): string {
     const mapping: { [key: string]: string } = {
-      task: 'tasks',
-      lead: 'leads',
-      sale: 'sales',
+      login: 'login',
+      task: 'task',
+      subtask: 'subtask',
+      lead: 'lead',
+      sale: 'sale',
+      collaboration: 'collaboration',
       attendance: 'attendance',
-      collaboration: 'collaboration'
+      'check-in-client': 'check-in-client',
+      'check-out-client': 'check-out-client',
+      claim: 'claim',
+      journal: 'journal',
+      notification: 'notification'
     };
 
     return mapping[sourceType] || 'other';

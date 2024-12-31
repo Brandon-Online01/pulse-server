@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateNewsDto } from './dto/create-news.dto';
 import { UpdateNewsDto } from './dto/update-news.dto';
 import { Repository } from 'typeorm';
@@ -42,7 +42,7 @@ export class NewsService {
     try {
       const news = await this.newsRepository.find({ where: { isDeleted: false } });
 
-      if (!news) throw new Error(process.env.NOT_FOUND_MESSAGE);
+      if (!news) throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 
       const response = {
         message: process.env.SUCCESS_MESSAGE,
@@ -64,7 +64,7 @@ export class NewsService {
     try {
       const news = await this.newsRepository.findOne({ where: { uid: ref, isDeleted: false }, relations: ['author', 'branch'] });
 
-      if (!news) throw new Error(process.env.NOT_FOUND_MESSAGE);
+      if (!news) throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 
       const response = {
         message: process.env.SUCCESS_MESSAGE,
@@ -86,7 +86,7 @@ export class NewsService {
     try {
       const news = await this.newsRepository.update(ref, updateNewsDto);
 
-      if (!news) throw new Error(process.env.NOT_FOUND_MESSAGE);
+      if (!news) throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 
       const response = {
         message: process.env.SUCCESS_MESSAGE
@@ -106,7 +106,7 @@ export class NewsService {
     try {
       const news = await this.newsRepository.update(ref, { isDeleted: true });
 
-      if (!news) throw new Error(process.env.NOT_FOUND_MESSAGE);
+      if (!news) throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 
       const response = {
         message: process.env.SUCCESS_MESSAGE

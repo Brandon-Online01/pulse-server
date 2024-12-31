@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateDocDto } from './dto/create-doc.dto';
 import { UpdateDocDto } from './dto/update-doc.dto';
@@ -22,7 +22,7 @@ export class DocsService {
       const doc = await this.docsRepository.save(createDocDto as unknown as DeepPartial<Doc>);
 
       if (!doc) {
-        throw new Error(process.env.NOT_FOUND_MESSAGE);
+        throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
       }
 
       const response = {
@@ -44,7 +44,7 @@ export class DocsService {
       const docs = await this.docsRepository.find();
 
       if (!docs) {
-        throw new Error(process.env.NOT_FOUND_MESSAGE);
+        throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
       }
 
       const response = {
@@ -71,7 +71,7 @@ export class DocsService {
       });
 
       if (!doc) {
-        throw new Error(process.env.NOT_FOUND_MESSAGE);
+        throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
       }
 
       const response = {
@@ -98,7 +98,7 @@ export class DocsService {
       });
 
       if (!docs) {
-        throw new Error(process.env.NOT_FOUND_MESSAGE);
+        throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
       }
 
       const response = {
@@ -122,7 +122,7 @@ export class DocsService {
       const doc = await this.docsRepository.update(ref, updateDocDto as unknown as DeepPartial<Doc>);
 
       if (!doc) {
-        throw new Error(process.env.NOT_FOUND_MESSAGE);
+        throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
       }
 
       const response = {

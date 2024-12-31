@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateResellerDto } from './dto/create-reseller.dto';
 import { UpdateResellerDto } from './dto/update-reseller.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -18,7 +18,7 @@ export class ResellersService {
       const reseller = await this.resellerRepository.save(createResellerDto);
 
       if (!reseller) {
-        throw new Error(process.env.NOT_FOUND_MESSAGE);
+        throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
       }
 
       const response = {
@@ -40,7 +40,7 @@ export class ResellersService {
       const resellers = await this.resellerRepository.find({ where: { isDeleted: false } });
 
       if (!resellers) {
-        throw new Error(process.env.NOT_FOUND_MESSAGE);
+        throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
       }
 
       const response = {
@@ -64,7 +64,7 @@ export class ResellersService {
       const reseller = await this.resellerRepository.findOne({ where: { uid: ref }, relations: ['products'] });
 
       if (!reseller) {
-        throw new Error(process.env.NOT_FOUND_MESSAGE);
+        throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
       }
 
       const response = {
@@ -88,7 +88,7 @@ export class ResellersService {
       const reseller = await this.resellerRepository.update(ref, updateResellerDto);
 
       if (!reseller) {
-        throw new Error(process.env.NOT_FOUND_MESSAGE);
+        throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
       }
 
       const response = {
@@ -110,7 +110,7 @@ export class ResellersService {
       const reseller = await this.resellerRepository.update(ref, { isDeleted: true });
 
       if (!reseller) {
-        throw new Error(process.env.NOT_FOUND_MESSAGE);
+        throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
       }
 
       const response = {

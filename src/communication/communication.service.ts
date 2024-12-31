@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import * as nodemailer from 'nodemailer';
 import { ConfigService } from '@nestjs/config';
@@ -53,7 +53,7 @@ export class CommunicationService {
 			const recipients = users?.users?.map((user: User) => user?.email);
 
 			if (!recipients) {
-				throw new Error(process.env.NOT_FOUND_MESSAGE);
+				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
 			const template = this.getEmailTemplate(emailType, data);
@@ -132,7 +132,7 @@ export class CommunicationService {
 					body: renderDailyReportTemplate(data as DailyReportData),
 				};
 			default:
-				throw new Error(`Unknown email template type: ${type}`);
+				throw new NotFoundException(`Unknown email template type: ${type}`);
 		}
 	}
 

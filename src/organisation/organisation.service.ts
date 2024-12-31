@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateOrganisationDto } from './dto/create-organisation.dto';
 import { UpdateOrganisationDto } from './dto/update-organisation.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -8,146 +8,146 @@ import { GeneralStatus } from '../lib/enums/status.enums';
 
 @Injectable()
 export class OrganisationService {
-  constructor(
-    @InjectRepository(Organisation)
-    private organisationRepository: Repository<Organisation>
-  ) { }
+	constructor(
+		@InjectRepository(Organisation)
+		private organisationRepository: Repository<Organisation>
+	) { }
 
-  async create(createOrganisationDto: CreateOrganisationDto): Promise<{ message: string }> {
-    try {
-      const organisation = await this.organisationRepository.save(createOrganisationDto);
+	async create(createOrganisationDto: CreateOrganisationDto): Promise<{ message: string }> {
+		try {
+			const organisation = await this.organisationRepository.save(createOrganisationDto);
 
-      if (!organisation) {
-        throw new Error(process.env.NOT_FOUND_MESSAGE);
-      }
+			if (!organisation) {
+				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
+			}
 
-      return {
-        message: process.env.SUCCESS_MESSAGE,
-      };
-    } catch (error) {
-      return {
-        message: error?.message,
-      };
-    }
-  }
+			return {
+				message: process.env.SUCCESS_MESSAGE,
+			};
+		} catch (error) {
+			return {
+				message: error?.message,
+			};
+		}
+	}
 
-  async findAll(): Promise<{ organisations: Organisation[] | null, message: string }> {
-    try {
-      const organisations = await this.organisationRepository.find({
-        where: { isDeleted: false },
-        relations: ['branches']
-      });
+	async findAll(): Promise<{ organisations: Organisation[] | null, message: string }> {
+		try {
+			const organisations = await this.organisationRepository.find({
+				where: { isDeleted: false },
+				relations: ['branches']
+			});
 
-      if (!organisations) {
-        throw new Error(process.env.NOT_FOUND_MESSAGE);
-      }
+			if (!organisations) {
+				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
+			}
 
-      return {
-        organisations,
-        message: process.env.SUCCESS_MESSAGE,
-      };
-    } catch (error) {
-      return {
-        organisations: null,
-        message: error?.message,
-      };
-    }
-  }
+			return {
+				organisations,
+				message: process.env.SUCCESS_MESSAGE,
+			};
+		} catch (error) {
+			return {
+				organisations: null,
+				message: error?.message,
+			};
+		}
+	}
 
-  async findOne(ref: string): Promise<{ organisation: Organisation | null, message: string }> {
-    try {
-      const organisation = await this.organisationRepository.findOne({
-        where: { ref, isDeleted: false },
-        relations: ['branches']
-      });
+	async findOne(ref: string): Promise<{ organisation: Organisation | null, message: string }> {
+		try {
+			const organisation = await this.organisationRepository.findOne({
+				where: { ref, isDeleted: false },
+				relations: ['branches']
+			});
 
-      if (!organisation) {
-        return {
-          organisation: null,
-          message: 'organisation not found',
-        };
-      }
+			if (!organisation) {
+				return {
+					organisation: null,
+					message: process.env.NOT_FOUND_MESSAGE,
+				};
+			}
 
-      return {
-        organisation,
-        message: 'organisation found',
-      };
-    } catch (error) {
-      return {
-        organisation: null,
-        message: error?.message,
-      };
-    }
-  }
+			return {
+				organisation,
+				message: process.env.SUCCESS_MESSAGE,
+			};
+		} catch (error) {
+			return {
+				organisation: null,
+				message: error?.message,
+			};
+		}
+	}
 
-  async update(ref: string, updateOrganisationDto: UpdateOrganisationDto): Promise<{ message: string }> {
-    try {
-      await this.organisationRepository.update({ ref }, updateOrganisationDto);
+	async update(ref: string, updateOrganisationDto: UpdateOrganisationDto): Promise<{ message: string }> {
+		try {
+			await this.organisationRepository.update({ ref }, updateOrganisationDto);
 
-      const updatedOrganisation = await this.organisationRepository.findOne({
-        where: { ref, isDeleted: false }
-      });
+			const updatedOrganisation = await this.organisationRepository.findOne({
+				where: { ref, isDeleted: false }
+			});
 
-      if (!updatedOrganisation) {
-        throw new Error(process.env.NOT_FOUND_MESSAGE);
-      }
+			if (!updatedOrganisation) {
+				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
+			}
 
-      return {
-        message: process.env.SUCCESS_MESSAGE,
-      };
-    } catch (error) {
-      return {
-        message: error?.message,
-      };
-    }
-  }
+			return {
+				message: process.env.SUCCESS_MESSAGE,
+			};
+		} catch (error) {
+			return {
+				message: error?.message,
+			};
+		}
+	}
 
-  async remove(ref: string): Promise<{ message: string }> {
-    try {
-      const organisation = await this.organisationRepository.findOne({
-        where: { ref, isDeleted: false }
-      });
+	async remove(ref: string): Promise<{ message: string }> {
+		try {
+			const organisation = await this.organisationRepository.findOne({
+				where: { ref, isDeleted: false }
+			});
 
-      if (!organisation) {
-        throw new Error(process.env.NOT_FOUND_MESSAGE);
-      }
+			if (!organisation) {
+				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
+			}
 
-      await this.organisationRepository.update(
-        { ref },
-        { isDeleted: true }
-      );
+			await this.organisationRepository.update(
+				{ ref },
+				{ isDeleted: true }
+			);
 
-      return {
-        message: process.env.SUCCESS_MESSAGE,
-      };
-    } catch (error) {
-      return {
-        message: error?.message,
-      };
-    }
-  }
+			return {
+				message: process.env.SUCCESS_MESSAGE,
+			};
+		} catch (error) {
+			return {
+				message: error?.message,
+			};
+		}
+	}
 
-  async restore(ref: string): Promise<{ message: string }> {
-    try {
-      await this.organisationRepository.update(
-        { ref },
-        {
-          isDeleted: false,
-          status: GeneralStatus.ACTIVE
-        }
-      );
+	async restore(ref: string): Promise<{ message: string }> {
+		try {
+			await this.organisationRepository.update(
+				{ ref },
+				{
+					isDeleted: false,
+					status: GeneralStatus.ACTIVE
+				}
+			);
 
-      const response = {
-        message: process.env.SUCCESS_MESSAGE,
-      };
+			const response = {
+				message: process.env.SUCCESS_MESSAGE,
+			};
 
-      return response;
-    } catch (error) {
-      const response = {
-        message: error?.message,
-      }
+			return response;
+		} catch (error) {
+			const response = {
+				message: error?.message,
+			}
 
-      return response;
-    }
-  }
+			return response;
+		}
+	}
 }
