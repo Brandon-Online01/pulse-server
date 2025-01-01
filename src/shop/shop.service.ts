@@ -186,6 +186,8 @@ export class ShopService {
                 }))
             } as const;
 
+            await this.orderRepository.save(newOrder);
+
             const baseConfig = {
                 name: clientName,
                 orderId: newOrder?.orderNumber,
@@ -213,8 +215,6 @@ export class ShopService {
                 name: email?.retailerName,
                 email: email?.email,
             }));
-
-            await this.orderRepository.save(newOrder);
 
             this.eventEmitter.emit('send.email', EmailType.NEW_ORDER_INTERNAL, [internalEmail], internalConfig);
 

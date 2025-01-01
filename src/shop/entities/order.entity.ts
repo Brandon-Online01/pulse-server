@@ -30,7 +30,7 @@ export class Order {
     @ManyToOne(() => Client, { eager: true })
     client: Client;
 
-    @OneToMany(() => OrderItem, orderItem => orderItem.order, { eager: true })
+    @OneToMany(() => OrderItem, orderItem => orderItem.order, { eager: true, cascade: true })
     orderItems: OrderItem[];
 
     @Column({ nullable: true })
