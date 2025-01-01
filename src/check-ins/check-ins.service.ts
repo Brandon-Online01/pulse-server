@@ -56,7 +56,7 @@ export class CheckInsService {
 
   async checkOut(createCheckOutDto: CreateCheckOutDto): Promise<{ message: string, duration?: string }> {
     try {
-      if (!createCheckOutDto?.owner?.uid) {
+      if (!createCheckOutDto?.owner) {
         throw new BadRequestException('Invalid owner information');
       }
 

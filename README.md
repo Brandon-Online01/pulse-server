@@ -1,60 +1,183 @@
-# Enterprise CRM Backend Service 🏢
+# Enterprise CRM Backend Service 🚀
 
-A robust CRM backend service built with NestJS, featuring comprehensive business management capabilities including asset tracking, user management, and communication systems.
+A powerful and scalable backend service built with NestJS for enterprise-level CRM operations. This service provides comprehensive business management capabilities including user management, asset tracking, communication systems, and more.
 
-## Core Features 🌟
+## 🌟 Key Features
 
-- **Asset Management** 📦
-  - Complete tracking of company assets with insurance details
-- **User Management** 👥
-  - Role-based access control with multiple access levels
-- **Branch Management** 🏗️
-  - Multi-branch business support
-- **Communication System** 💬
-  - Internal messaging and notification system
-- **Task Management** ✅
-  - Task tracking with subtasks support
-- **Document Management** 📄
-  - Document storage and handling
-- **Claims Processing** ⚖️
-  - Insurance and other claims management
-- **Lead Management** 🎯
-  - Sales lead tracking and processing
-- **Journal System** 📝
-  - Activity logging and tracking
-- **Organization Management** 🏢
-  - Multi-organization support
-- **Shop Module** 🛍️
-  - E-commerce capabilities
-- **Reporting System** 📊
-  - Comprehensive business reporting
+-   **🔐 Authentication & Authorization**
 
-## Technical Architecture 🛠️
+    -   JWT-based secure authentication
+    -   Role-based access control (RBAC)
+    -   Multiple access levels
 
-### Core Technologies
+-   **👥 User Management**
 
-- **Framework**: [NestJS](https://nestjs.com/) - Enterprise Node.js Framework
-- **Language**: [TypeScript](https://www.typescriptlang.org/) - Type-safe development
-- **Database**: MySQL with TypeORM
-- **Authentication**: JWT with Role-based Guards
-- **API Documentation**: Swagger/OpenAPI
-- **Event Handling**: EventEmitter2
+    -   Complete user lifecycle management
+    -   Profile management
+    -   Role-based permissions
 
-// ... rest of the existing code remains the same ...
+-   **🏢 Organization Management**
 
-## Environment Setup ⚙️
+    -   Multi-tenant architecture
+    -   Branch management
+    -   Hierarchical structure
 
-// ... existing environment variables section ...
+-   **📱 Communication System**
 
-## Development 🚀
+    -   Email notifications
+    -   Real-time updates
+    -   Event-driven architecture
 
-// ... existing development section ...
+-   **📦 Asset Management**
 
-## Code Style 📝
+    -   Asset tracking
+    -   Insurance management
+    -   Assignment tracking
 
-// ... existing code style section ...
+-   **🛍️ E-commerce Platform**
 
-## Contributing 🤝
+    -   Product management
+    -   Order processing
+    -   Shopping cart functionality
+
+-   **📊 Reporting & Analytics**
+    -   Custom reports
+    -   Data visualization
+    -   AI-powered insights
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+```bash
+Node.js >= 14
+MySQL >= 8.0
+Yarn
+```
+
+### Installation
+
+1. Clone the repository:
+
+```bash
+git clone [repository-url]
+cd server
+```
+
+2. Install dependencies:
+
+```bash
+yarn install
+```
+
+3. Set up environment variables:
+
+```bash
+cp .env.example .env
+# Edit .env with your configuration
+```
+
+4. Start the development server:
+
+```bash
+yarn start:dev
+```
+
+The API will be available at `http://localhost:4400`
+
+## 🛠️ Development
+
+### Available Scripts
+
+```bash
+# Development
+yarn start:dev
+
+# Production build
+yarn build
+yarn start:prod
+
+# Run tests
+yarn test
+yarn test:e2e
+yarn test:cov
+
+# Linting
+yarn lint
+yarn format
+```
+
+### Database Migrations
+
+```bash
+# Generate migration
+yarn migration:generate
+
+# Run migrations
+yarn migration:run
+
+# Revert migration
+yarn migration:revert
+```
+
+## 📚 API Documentation
+
+Once the server is running, access the Swagger documentation at:
+
+```
+http://localhost:4400/api
+```
+
+## 🧪 Testing
+
+### Unit Tests
+
+```bash
+yarn test
+```
+
+### E2E Tests
+
+```bash
+yarn test:e2e
+```
+
+### Test Coverage
+
+```bash
+yarn test:cov
+```
+
+## 📦 Project Structure
+
+```
+src/
+├── assets/           # Asset management module
+├── attendance/       # Attendance tracking
+├── auth/            # Authentication & authorization
+├── communication/   # Communication system
+├── lib/             # Shared libraries
+│   ├── docs/        # Documentation
+│   ├── enums/       # Enumerations
+│   ├── interfaces/  # TypeScript interfaces
+│   └── templates/   # Email templates
+├── notifications/   # Notification system
+├── organisation/    # Organization management
+├── shop/           # E-commerce platform
+├── tasks/          # Task management
+├── tracking/       # GPS tracking
+└── user/           # User management
+```
+
+## 🔒 Security
+
+-   JWT authentication
+-   Role-based authorization
+-   Request validation
+-   Data encryption
+-   Rate limiting
+
+## 🤝 Contributing
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
@@ -62,10 +185,17 @@ A robust CRM backend service built with NestJS, featuring comprehensive business
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## License 📄
+## 📝 Code Style
 
-MIT Licensed
+-   Follow TypeScript best practices
+-   Use ESLint and Prettier for code formatting
+-   Follow NestJS architectural patterns
+-   Write comprehensive tests
 
-## Author 👨‍💻
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 👨‍💻 Author
 
 [@Brandon-Online01](https://github.com/Brandon-Online01)
