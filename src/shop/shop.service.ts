@@ -217,6 +217,11 @@ export class ShopService {
             await this.orderRepository.save(newOrder);
 
             this.eventEmitter.emit('send.email', EmailType.NEW_ORDER_INTERNAL, [internalEmail], internalConfig);
+
+            resellerConfigs?.forEach(config => {
+                this.eventEmitter.emit('send.email', EmailType.NEW_ORDER_RESELLER, [config?.email], config);
+            });
+
             this.eventEmitter.emit('send.email', EmailType.NEW_ORDER_CLIENT, [clientData?.client?.email], clientConfig);
 
             const response = {

@@ -69,7 +69,7 @@ export class OrderNotificationsService {
             const resellerData: OrderResellerNotificationData = {
                 ...baseOrderData,
                 resellerCommission: Number(order.resellerCommission) || 0,
-                resellerCode: String(order.reseller?.uid)
+                resellerCode: String(order.reseller?.uid),
             };
             await this.sendEmail(EmailType.ORDER_RESELLER_NOTIFICATION, resellerData);
         }

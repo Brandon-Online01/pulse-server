@@ -110,7 +110,7 @@ export interface OrderInternalNotificationData extends OrderData {
     notes?: string;
     orderItems?: Array<{
         quantity: number;
-        product: { uid: string };
+        product: { uid: string, name: string };
         totalPrice: number;
     }>;
 }

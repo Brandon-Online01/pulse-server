@@ -2,7 +2,6 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import * as nodemailer from 'nodemailer';
 import { ConfigService } from '@nestjs/config';
-import { AccessLevel } from '../lib/enums/user.enums';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreateNotificationDto } from '../notifications/dto/create-notification.dto';
 import { EmailType } from '../lib/enums/email.enums';
@@ -140,12 +139,12 @@ export class CommunicationService {
 				};
 			case EmailType.ORDER_INTERNAL_NOTIFICATION:
 				return {
-					subject: 'New Internal Order Notification',
+					subject: 'New Order from a Valued Customer',
 					body: OrderInternalNotification(data as OrderInternalNotificationData),
 				};
 			case EmailType.ORDER_WAREHOUSE_FULFILLMENT:
 				return {
-					subject: 'New Warehouse Fulfillment Request',
+					subject: 'New Order from a Valued Customer',
 					body: OrderWarehouseFulfillment(data as OrderWarehouseFulfillmentData),
 				};
 			case EmailType.NEW_ORDER_CLIENT:
@@ -155,12 +154,12 @@ export class CommunicationService {
 				};
 			case EmailType.NEW_ORDER_INTERNAL:
 				return {
-					subject: 'New Order Internal Notification',
+					subject: 'New Order from a Valued Customer',
 					body: NewOrderInternal(data as OrderInternalNotificationData),
 				};
 			case EmailType.NEW_ORDER_RESELLER:
 				return {
-					subject: 'New Order from Your Products',
+					subject: 'New Purchase from Your Products',
 					body: NewOrderReseller(data as OrderResellerNotificationData),
 				};
 			default:
