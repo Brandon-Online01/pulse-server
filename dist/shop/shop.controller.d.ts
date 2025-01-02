@@ -49,11 +49,11 @@ export declare class ShopController {
         banner: import("./entities/banners.entity").Banners | null;
         message: string;
     }>;
-    updateBanner(uid: number, bannerData: UpdateBannerDto): Promise<{
+    updateBanner(ref: number, bannerData: UpdateBannerDto): Promise<{
         banner: import("./entities/banners.entity").Banners | null;
         message: string;
     }>;
-    deleteBanner(uid: number): Promise<{
+    deleteBanner(ref: number): Promise<{
         message: string;
     }>;
     generateMissingSKUs(): Promise<{

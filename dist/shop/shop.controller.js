@@ -60,11 +60,11 @@ let ShopController = class ShopController {
     createBanner(bannerData) {
         return this.shopService.createBanner(bannerData);
     }
-    updateBanner(uid, bannerData) {
-        return this.shopService.updateBanner(uid, bannerData);
+    updateBanner(ref, bannerData) {
+        return this.shopService.updateBanner(ref, bannerData);
     }
-    deleteBanner(uid) {
-        return this.shopService.deleteBanner(uid);
+    deleteBanner(ref) {
+        return this.shopService.deleteBanner(ref);
     }
     async generateMissingSKUs() {
         return this.shopService.generateSKUsForExistingProducts();
@@ -178,22 +178,22 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], ShopController.prototype, "createBanner", null);
 __decorate([
-    (0, common_1.Patch)('banners/:uid'),
+    (0, common_1.Patch)('banners/:ref'),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'update a banner' }),
-    __param(0, (0, common_1.Param)('uid')),
+    __param(0, (0, common_1.Param)('ref')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number, update_banner_dto_1.UpdateBannerDto]),
     __metadata("design:returntype", void 0)
 ], ShopController.prototype, "updateBanner", null);
 __decorate([
-    (0, common_1.Delete)('banners/:uid'),
+    (0, common_1.Delete)('banners/:ref'),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'delete a banner' }),
-    __param(0, (0, common_1.Param)('uid')),
+    __param(0, (0, common_1.Param)('ref')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", void 0)

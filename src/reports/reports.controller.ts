@@ -19,7 +19,7 @@ export class ReportsController {
     return this.reportsService.managerDailyReport();
   }
 
-  @Get('daily-report/:reference')
+  @Get('daily-report/:ref')
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.USER)
   @ApiOperation({ summary: 'get daily activity report, optionally filtered for specific user roles' })
   userDailyReport(@Param('reference') reference?: string) {

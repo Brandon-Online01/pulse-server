@@ -107,20 +107,20 @@ export class ShopController {
     return this.shopService.createBanner(bannerData);
   }
 
-  @Patch('banners/:uid')
+  @Patch('banners/:ref')
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'update a banner' })
-  updateBanner(@Param('uid') uid: number, @Body() bannerData: UpdateBannerDto) {
-    return this.shopService.updateBanner(uid, bannerData);
+  updateBanner(@Param('ref') ref: number, @Body() bannerData: UpdateBannerDto) {
+    return this.shopService.updateBanner(ref, bannerData);
   }
 
-  @Delete('banners/:uid')
+  @Delete('banners/:ref')
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'delete a banner' })
-  deleteBanner(@Param('uid') uid: number) {
-    return this.shopService.deleteBanner(uid);
+  deleteBanner(@Param('ref') ref: number) {
+    return this.shopService.deleteBanner(ref);
   }
 
   @Post('generate-missing-skus')

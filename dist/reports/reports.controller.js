@@ -41,7 +41,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], ReportsController.prototype, "managerDailyReport", null);
 __decorate([
-    (0, common_1.Get)('daily-report/:reference'),
+    (0, common_1.Get)('daily-report/:ref'),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'get daily activity report, optionally filtered for specific user roles' }),
     __param(0, (0, common_1.Param)('reference')),
