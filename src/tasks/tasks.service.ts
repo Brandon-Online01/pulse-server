@@ -5,16 +5,16 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Between } from 'typeorm';
-import { NotificationType } from 'src/lib/enums/notification.enums';
-import { AccessLevel } from 'src/lib/enums/user.enums';
-import { NotificationStatus } from 'src/lib/enums/notification.enums';
-import { SubTaskStatus, TaskStatus } from 'src/lib/enums/status.enums';
+import { NotificationType } from '../lib/enums/notification.enums';
+import { AccessLevel } from '../lib/enums/user.enums';
+import { NotificationStatus } from '../lib/enums/notification.enums';
+import { SubTaskStatus, TaskStatus } from '../lib/enums/status.enums';
 import { Task } from './entities/task.entity';
 import { SubTask } from './entities/subtask.entity';
 import { UpdateSubtaskDto } from './dto/update-subtask.dto';
-import { RewardsService } from 'src/rewards/rewards.service';
-import { XP_VALUES } from 'src/lib/constants/constants';
-import { XP_VALUES_TYPES } from 'src/lib/constants/constants';
+import { RewardsService } from '../rewards/rewards.service';
+import { XP_VALUES } from '../lib/constants/constants';
+import { XP_VALUES_TYPES } from '../lib/constants/constants';
 
 @Injectable()
 export class TasksService {

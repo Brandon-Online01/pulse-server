@@ -1,4 +1,4 @@
-import { ProductStatus } from "src/lib/enums/product.enums";
+import { ProductStatus } from "../../lib/enums/product.enums";
 import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
 
 @Entity('banners')

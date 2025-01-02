@@ -12,10 +12,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CommunicationLog } from './entities/communication-log.entity';
 import { Signup, Verification, PasswordReset, NewOrder, Invoice, PasswordChanged, OrderOutForDelivery, OrderDelivered, DailyReport, NewOrderInternal } from '../lib/templates/emails';
-import { DailyReportData, InvoiceData, OrderData, OrderDeliveredData, OrderOutForDeliveryData, PasswordChangedData, PasswordResetData, VerificationEmailData } from 'src/lib/types/email-templates.types';
-import { SignupEmailData } from 'src/lib/types/email-templates.types';
-import { EmailTemplateData } from 'src/lib/types/email-templates.types';
-import { OrderResellerNotificationData, OrderInternalNotificationData, OrderWarehouseFulfillmentData } from 'src/lib/types/email-templates.types';
+import { DailyReportData, InvoiceData, OrderData, OrderDeliveredData, OrderOutForDeliveryData, PasswordChangedData, PasswordResetData, VerificationEmailData } from '../lib/types/email-templates.types';
+import { SignupEmailData } from '../lib/types/email-templates.types';
+import { EmailTemplateData } from '../lib/types/email-templates.types';
+import { OrderResellerNotificationData, OrderInternalNotificationData, OrderWarehouseFulfillmentData } from '../lib/types/email-templates.types';
 import { OrderResellerNotification, OrderInternalNotification, OrderWarehouseFulfillment, NewOrderReseller } from '../lib/templates/emails';
 
 @Injectable()

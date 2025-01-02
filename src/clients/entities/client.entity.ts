@@ -2,9 +2,9 @@ import { GeneralStatus } from '../../lib/enums/status.enums';
 import { Lead } from '../../leads/entities/lead.entity';
 import { User } from '../../user/entities/user.entity';
 import { Order } from '../../shop/entities/order.entity';
-import { Task } from 'src/tasks/entities/task.entity';
+import { Task } from '../../tasks/entities/task.entity';
 import { Column, Entity, OneToMany, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
-import { CheckIn } from 'src/check-ins/entities/check-in.entity';
+import { CheckIn } from '../../check-ins/entities/check-in.entity';
 
 export enum CustomerType {
     STANDARD = 'standard',

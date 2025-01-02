@@ -1,5 +1,5 @@
 import { NewsCategory } from "../../lib/enums/news.enums";
-import { GeneralStatus } from "src/lib/enums/status.enums";
+import { GeneralStatus } from "../../lib/enums/status.enums";
 export declare class CreateNewsDto {
     title: string;
     subtitle: string;

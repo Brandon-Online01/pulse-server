@@ -1,6 +1,6 @@
-import { Branch } from "src/branch/entities/branch.entity";
-import { Client } from "src/clients/entities/client.entity";
-import { User } from "src/user/entities/user.entity";
+import { Branch } from "../../branch/entities/branch.entity";
+import { Client } from "../../clients/entities/client.entity";
+import { User } from "../../user/entities/user.entity";
 export declare class CheckIn {
     uid: number;
     checkInTime: Date;

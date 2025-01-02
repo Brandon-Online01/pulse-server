@@ -1,6 +1,6 @@
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { UserRewards } from './user-rewards.entity';
-import { AchievementCategory } from 'src/lib/enums/rewards.enum';
+import { AchievementCategory } from '../../lib/enums/rewards.enum';
 
 @Entity('achievement')
 export class Achievement {

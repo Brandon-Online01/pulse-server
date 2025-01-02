@@ -9,10 +9,10 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { endOfDay } from 'date-fns';
 import { startOfDay } from 'date-fns';
 import { NotificationStatus, NotificationType } from '../lib/enums/notification.enums';
-import { LeadStatus } from 'src/lib/enums/leads.enums';
-import { RewardsService } from 'src/rewards/rewards.service';
-import { XP_VALUES } from 'src/lib/constants/constants';
-import { XP_VALUES_TYPES } from 'src/lib/constants/constants';
+import { LeadStatus } from '../lib/enums/leads.enums';
+import { RewardsService } from '../rewards/rewards.service';
+import { XP_VALUES } from '../lib/constants/constants';
+import { XP_VALUES_TYPES } from '../lib/constants/constants';
 
 @Injectable()
 export class LeadsService {

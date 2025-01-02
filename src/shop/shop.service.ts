@@ -14,7 +14,7 @@ import { OrderStatus } from '../lib/enums/status.enums';
 import { ConfigService } from '@nestjs/config';
 import { ClientsService } from '../clients/clients.service';
 import { CreateProductDto } from '../products/dto/create-product.dto';
-import { EmailType } from 'src/lib/enums/email.enums';
+import { EmailType } from '../lib/enums/email.enums';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()

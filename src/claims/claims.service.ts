@@ -11,9 +11,9 @@ import { ClaimCategory, ClaimStatus } from '../lib/enums/finance.enums';
 import { AccessLevel } from '../lib/enums/user.enums';
 import { NotificationStatus, NotificationType } from '../lib/enums/notification.enums';
 import { ConfigService } from '@nestjs/config';
-import { RewardsService } from 'src/rewards/rewards.service';
-import { XP_VALUES_TYPES } from 'src/lib/constants/constants';
-import { XP_VALUES } from 'src/lib/constants/constants';
+import { RewardsService } from '../rewards/rewards.service';
+import { XP_VALUES_TYPES } from '../lib/constants/constants';
+import { XP_VALUES } from '../lib/constants/constants';
 
 @Injectable()
 export class ClaimsService {

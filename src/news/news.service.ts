@@ -5,7 +5,7 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { News } from './entities/news.entity';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { GeneralStatus } from 'src/lib/enums/status.enums';
+import { GeneralStatus } from '../lib/enums/status.enums';
 
 @Injectable()
 export class NewsService {

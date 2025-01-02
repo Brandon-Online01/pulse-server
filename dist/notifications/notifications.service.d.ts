@@ -2,8 +2,8 @@ import { CreateNotificationDto } from './dto/create-notification.dto';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
 import { Repository } from 'typeorm';
 import { Notification } from './entities/notification.entity';
-import { NotificationResponse } from 'src/lib/types/notification';
-import { RewardsService } from 'src/rewards/rewards.service';
+import { NotificationResponse } from '../lib/types/notification';
+import { RewardsService } from '../rewards/rewards.service';
 export declare class NotificationsService {
     private readonly notificationRepository;
     private readonly rewardsService;

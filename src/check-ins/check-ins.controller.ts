@@ -2,11 +2,11 @@ import { Controller, Post, Body, Patch, Param, UseGuards, Get } from '@nestjs/co
 import { CheckInsService } from './check-ins.service';
 import { CreateCheckInDto } from './dto/create-check-in.dto';
 import { CreateCheckOutDto } from './dto/create-check-out.dto';
-import { AccessLevel } from 'src/lib/enums/user.enums';
+import { AccessLevel } from '../lib/enums/user.enums';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Roles } from 'src/decorators/role.decorator';
-import { AuthGuard } from 'src/guards/auth.guard';
-import { RoleGuard } from 'src/guards/role.guard';
+import { Roles } from '../decorators/role.decorator';
+import { AuthGuard } from '../guards/auth.guard';
+import { RoleGuard } from '../guards/role.guard';
 
 @ApiTags('check-ins')
 @Controller('check-ins')

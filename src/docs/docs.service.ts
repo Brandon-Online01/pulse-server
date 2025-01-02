@@ -6,7 +6,7 @@ import { Doc } from './entities/doc.entity';
 import { DeepPartial, Repository } from 'typeorm';
 import { extname } from 'path';
 import { Storage } from '@google-cloud/storage';
-import { storageConfig } from 'src/config/storage.config';
+import { storageConfig } from '../config/storage.config';
 
 @Injectable()
 export class DocsService {

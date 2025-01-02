@@ -1,4 +1,4 @@
-import { Gender } from "src/lib/enums/gender.enums";
+import { Gender } from "../../lib/enums/gender.enums";
 export declare class CreateUserProfileDto {
     owner: {
         uid: number;

@@ -5,7 +5,7 @@ import { Repository } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ClaimCategory } from '../lib/enums/finance.enums';
 import { ConfigService } from '@nestjs/config';
-import { RewardsService } from 'src/rewards/rewards.service';
+import { RewardsService } from '../rewards/rewards.service';
 export declare class ClaimsService {
     private claimsRepository;
     private rewardsService;

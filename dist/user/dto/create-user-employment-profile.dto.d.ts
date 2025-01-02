@@ -1,4 +1,4 @@
-import { Department } from "src/lib/enums/user.enums";
+import { Department } from "../../lib/enums/user.enums";
 export declare class CreateUserEmploymentProfileDto {
     branchref?: {
         uid: number;

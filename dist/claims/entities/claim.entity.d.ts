@@ -1,5 +1,5 @@
-import { User } from "src/user/entities/user.entity";
-import { Branch } from "src/branch/entities/branch.entity";
+import { User } from "../../user/entities/user.entity";
+import { Branch } from "../../branch/entities/branch.entity";
 import { ClaimCategory, ClaimStatus } from "../../lib/enums/finance.enums";
 export declare class Claim {
     uid: number;

@@ -7,7 +7,7 @@ import { ProductStatus } from '../lib/enums/product.enums';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { PaginatedResponse } from 'src/lib/interfaces/product.interfaces';
+import { PaginatedResponse } from '../lib/interfaces/product.interfaces';
 
 @Injectable()
 export class ProductsService {

@@ -7,10 +7,10 @@ import { CreateCheckInDto } from './dto/create-attendance-check-in.dto';
 import { CreateCheckOutDto } from './dto/create-attendance-check-out.dto';
 import { isToday } from 'date-fns';
 import { differenceInMinutes, differenceInHours, startOfMonth, endOfMonth } from 'date-fns';
-import { UserService } from 'src/user/user.service';
-import { RewardsService } from 'src/rewards/rewards.service';
-import { XP_VALUES_TYPES } from 'src/lib/constants/constants';
-import { XP_VALUES } from 'src/lib/constants/constants';
+import { UserService } from '../user/user.service';
+import { RewardsService } from '../rewards/rewards.service';
+import { XP_VALUES_TYPES } from '../lib/constants/constants';
+import { XP_VALUES } from '../lib/constants/constants';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()

@@ -3,8 +3,8 @@ import { AttendanceService } from './attendance.service';
 import { AttendanceController } from './attendance.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Attendance } from './entities/attendance.entity';
-import { UserModule } from 'src/user/user.module';
-import { RewardsModule } from 'src/rewards/rewards.module';
+import { UserModule } from '../user/user.module';
+import { RewardsModule } from '../rewards/rewards.module';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Attendance]), UserModule, RewardsModule],

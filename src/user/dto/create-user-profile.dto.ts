@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { Gender } from "src/lib/enums/gender.enums";
+import { Gender } from "../../lib/enums/gender.enums";
 import { IsString, IsOptional, IsEnum, IsDate } from "class-validator";
 
 export class CreateUserProfileDto {

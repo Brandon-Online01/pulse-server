@@ -6,7 +6,7 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { RoleGuard } from '../guards/role.guard';
 import { AuthGuard } from '../guards/auth.guard';
 import { AccessLevel } from '../lib/enums/user.enums';
-import { Roles } from 'src/decorators/role.decorator';
+import { Roles } from '../decorators/role.decorator';
 
 @ApiTags('notifications')
 @Controller('notifications')

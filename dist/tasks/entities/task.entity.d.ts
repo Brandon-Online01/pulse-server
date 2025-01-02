@@ -1,8 +1,8 @@
-import { User } from 'src/user/entities/user.entity';
-import { Branch } from 'src/branch/entities/branch.entity';
-import { Client } from 'src/clients/entities/client.entity';
-import { Priority, RepetitionType, TaskType } from 'src/lib/enums/task.enums';
-import { GeneralStatus } from 'src/lib/enums/status.enums';
+import { User } from '../../user/entities/user.entity';
+import { Branch } from '../../branch/entities/branch.entity';
+import { Client } from '../../clients/entities/client.entity';
+import { Priority, RepetitionType, TaskType } from '../../lib/enums/task.enums';
+import { GeneralStatus } from '../../lib/enums/status.enums';
 import { SubTask } from './subtask.entity';
 export declare class Task {
     uid: number;

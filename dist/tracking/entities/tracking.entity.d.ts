@@ -1,4 +1,4 @@
-import { User } from 'src/user/entities/user.entity';
+import { User } from '../../user/entities/user.entity';
 import { Branch } from '../../branch/entities/branch.entity';
 export declare class Tracking {
     uid: number;

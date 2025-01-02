@@ -5,7 +5,7 @@ import { EmailType } from '../lib/enums/email.enums';
 import { UserService } from '../user/user.service';
 import { Repository } from 'typeorm';
 import { CommunicationLog } from './entities/communication-log.entity';
-import { EmailTemplateData } from 'src/lib/types/email-templates.types';
+import { EmailTemplateData } from '../lib/types/email-templates.types';
 export declare class CommunicationService {
     private readonly configService;
     private readonly notificationsService;

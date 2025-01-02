@@ -4,12 +4,12 @@ import { UpdateNotificationDto } from './dto/update-notification.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Any, Not } from 'typeorm';
 import { Notification } from './entities/notification.entity';
-import { NotificationResponse } from 'src/lib/types/notification';
+import { NotificationResponse } from '../lib/types/notification';
 import { formatDistanceToNow } from 'date-fns';
-import { NotificationStatus } from 'src/lib/enums/notification.enums';
-import { RewardsService } from 'src/rewards/rewards.service';
-import { XP_VALUES } from 'src/lib/constants/constants';
-import { XP_VALUES_TYPES } from 'src/lib/constants/constants';
+import { NotificationStatus } from '../lib/enums/notification.enums';
+import { RewardsService } from '../rewards/rewards.service';
+import { XP_VALUES } from '../lib/constants/constants';
+import { XP_VALUES_TYPES } from '../lib/constants/constants';
 
 @Injectable()
 export class NotificationsService {

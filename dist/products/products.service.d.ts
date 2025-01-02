@@ -3,7 +3,7 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { Product } from './entities/product.entity';
 import { Repository } from 'typeorm';
 import { Cache } from 'cache-manager';
-import { PaginatedResponse } from 'src/lib/interfaces/product.interfaces';
+import { PaginatedResponse } from '../lib/interfaces/product.interfaces';
 export declare class ProductsService {
     private productRepository;
     private cacheManager;

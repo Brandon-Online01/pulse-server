@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
 import { Task } from './task.entity';
-import { SubTaskStatus } from 'src/lib/enums/status.enums';
+import { SubTaskStatus } from '../../lib/enums/status.enums';
 
 @Entity('subtask')
 export class SubTask {

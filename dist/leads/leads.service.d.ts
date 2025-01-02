@@ -3,7 +3,7 @@ import { Lead } from './entities/lead.entity';
 import { CreateLeadDto } from './dto/create-lead.dto';
 import { UpdateLeadDto } from './dto/update-lead.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { RewardsService } from 'src/rewards/rewards.service';
+import { RewardsService } from '../rewards/rewards.service';
 export declare class LeadsService {
     private leadRepository;
     private readonly eventEmitter;

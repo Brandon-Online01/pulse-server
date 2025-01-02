@@ -2,8 +2,8 @@ import { Repository } from 'typeorm';
 import { Attendance } from './entities/attendance.entity';
 import { CreateCheckInDto } from './dto/create-attendance-check-in.dto';
 import { CreateCheckOutDto } from './dto/create-attendance-check-out.dto';
-import { UserService } from 'src/user/user.service';
-import { RewardsService } from 'src/rewards/rewards.service';
+import { UserService } from '../user/user.service';
+import { RewardsService } from '../rewards/rewards.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 export declare class AttendanceService {
     private attendanceRepository;

@@ -5,9 +5,9 @@ import { CheckIn } from './entities/check-in.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateCheckOutDto } from './dto/create-check-out.dto';
 import { differenceInMinutes, differenceInHours } from 'date-fns';
-import { RewardsService } from 'src/rewards/rewards.service';
-import { XP_VALUES_TYPES } from 'src/lib/constants/constants';
-import { XP_VALUES } from 'src/lib/constants/constants';
+import { RewardsService } from '../rewards/rewards.service';
+import { XP_VALUES_TYPES } from '../lib/constants/constants';
+import { XP_VALUES } from '../lib/constants/constants';
 
 @Injectable()
 export class CheckInsService {

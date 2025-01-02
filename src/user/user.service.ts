@@ -6,8 +6,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { NewSignUp } from '../lib/types/user';
-import { AccountStatus } from 'src/lib/enums/status.enums';
-import { AccessLevel } from 'src/lib/enums/user.enums';
+import { AccountStatus } from '../lib/enums/status.enums';
 
 @Injectable()
 export class UserService {

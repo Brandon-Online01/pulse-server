@@ -1,5 +1,5 @@
 import { Task } from './task.entity';
-import { SubTaskStatus } from 'src/lib/enums/status.enums';
+import { SubTaskStatus } from '../../lib/enums/status.enums';
 export declare class SubTask {
     uid: number;
     title: string;

@@ -1,8 +1,8 @@
+import { Column, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity } from 'typeorm';
 import { Branch } from '../../branch/entities/branch.entity';
 import { ReportType } from '../../lib/enums/reports.enums';
-
-import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
-import { User } from 'src/user/entities/user.entity';
+import { User } from '../../user/entities/user.entity';
 
 @Entity('reports')
 export class Report {

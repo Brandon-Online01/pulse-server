@@ -1,5 +1,5 @@
 import { IsEnum, IsNotEmpty, IsString } from "class-validator";
-import { ProductStatus } from "src/lib/enums/product.enums";
+import { ProductStatus } from "../../lib/enums/product.enums";
 
 export class CreateBannerDto {
     @IsNotEmpty()

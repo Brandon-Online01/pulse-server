@@ -1,7 +1,7 @@
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { UserRewards } from './user-rewards.entity';
-import { ItemRarity } from 'src/lib/enums/rewards.enum';
-import { ItemType } from 'src/lib/enums/rewards.enum';
+import { ItemRarity } from '../../lib/enums/rewards.enum';
+import { ItemType } from '../../lib/enums/rewards.enum';
 
 @Entity('unlocked_item')
 export class UnlockedItem {

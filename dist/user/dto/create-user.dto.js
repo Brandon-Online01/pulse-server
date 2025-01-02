@@ -12,10 +12,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateUserDto = void 0;
 const swagger_1 = require("@nestjs/swagger");
 const user_enums_1 = require("../../lib/enums/user.enums");
+const status_enums_1 = require("../../lib/enums/status.enums");
 const create_user_profile_dto_1 = require("./create-user-profile.dto");
 const create_user_employment_profile_dto_1 = require("./create-user-employment-profile.dto");
 const class_validator_1 = require("class-validator");
-const status_enums_1 = require("../../lib/enums/status.enums");
 class CreateUserDto {
 }
 exports.CreateUserDto = CreateUserDto;

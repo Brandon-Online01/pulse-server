@@ -2,11 +2,11 @@ import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { Repository } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { TaskStatus } from 'src/lib/enums/status.enums';
+import { TaskStatus } from '../lib/enums/status.enums';
 import { Task } from './entities/task.entity';
 import { SubTask } from './entities/subtask.entity';
 import { UpdateSubtaskDto } from './dto/update-subtask.dto';
-import { RewardsService } from 'src/rewards/rewards.service';
+import { RewardsService } from '../rewards/rewards.service';
 export declare class TasksService {
     private taskRepository;
     private subtaskRepository;

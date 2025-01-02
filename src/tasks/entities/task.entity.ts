@@ -1,9 +1,9 @@
-import { User } from 'src/user/entities/user.entity';
-import { Branch } from 'src/branch/entities/branch.entity';
+import { User } from '../../user/entities/user.entity';
+import { Branch } from '../../branch/entities/branch.entity';
 import { Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
-import { Client } from 'src/clients/entities/client.entity';
-import { Priority, RepetitionType, TaskType } from 'src/lib/enums/task.enums';
-import { GeneralStatus } from 'src/lib/enums/status.enums';
+import { Client } from '../../clients/entities/client.entity';
+import { Priority, RepetitionType, TaskType } from '../../lib/enums/task.enums';
+import { GeneralStatus } from '../../lib/enums/status.enums';
 import { SubTask } from './subtask.entity';
 
 @Entity('task')

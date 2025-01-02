@@ -1,5 +1,5 @@
 import { UserRewards } from './user-rewards.entity';
-import { AchievementCategory } from 'src/lib/enums/rewards.enum';
+import { AchievementCategory } from '../../lib/enums/rewards.enum';
 export declare class Achievement {
     uid: number;
     name: string;

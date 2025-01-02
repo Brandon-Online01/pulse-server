@@ -1,7 +1,7 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany, ManyToOne, BeforeInsert, AfterInsert } from 'typeorm';
 import { ProductStatus } from '../../lib/enums/product.enums';
-import { OrderItem } from 'src/shop/entities/order-item.entity';
-import { Reseller } from 'src/resellers/entities/reseller.entity';
+import { OrderItem } from '../../shop/entities/order-item.entity';
+import { Reseller } from '../../resellers/entities/reseller.entity';
 import { getRepository } from 'typeorm';
 
 @Entity()

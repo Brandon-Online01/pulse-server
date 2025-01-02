@@ -10,9 +10,10 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Report = void 0;
+const typeorm_1 = require("typeorm");
+const typeorm_2 = require("typeorm");
 const branch_entity_1 = require("../../branch/entities/branch.entity");
 const reports_enums_1 = require("../../lib/enums/reports.enums");
-const typeorm_1 = require("typeorm");
 const user_entity_1 = require("../../user/entities/user.entity");
 let Report = class Report {
 };
@@ -65,6 +66,6 @@ __decorate([
     __metadata("design:type", user_entity_1.User)
 ], Report.prototype, "owner", void 0);
 exports.Report = Report = __decorate([
-    (0, typeorm_1.Entity)('reports')
+    (0, typeorm_2.Entity)('reports')
 ], Report);
 //# sourceMappingURL=report.entity.js.map

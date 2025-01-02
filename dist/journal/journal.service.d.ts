@@ -3,7 +3,7 @@ import { Journal } from './entities/journal.entity';
 import { CreateJournalDto } from './dto/create-journal.dto';
 import { UpdateJournalDto } from './dto/update-journal.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { RewardsService } from 'src/rewards/rewards.service';
+import { RewardsService } from '../rewards/rewards.service';
 export declare class JournalService {
     private journalRepository;
     private readonly eventEmitter;

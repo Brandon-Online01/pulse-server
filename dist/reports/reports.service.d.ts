@@ -2,7 +2,7 @@ import { LeadsService } from '../leads/leads.service';
 import { JournalService } from '../journal/journal.service';
 import { ClaimsService } from '../claims/claims.service';
 import { TasksService } from '../tasks/tasks.service';
-import { AttendanceService } from 'src/attendance/attendance.service';
+import { AttendanceService } from '../attendance/attendance.service';
 import { ShopService } from '../shop/shop.service';
 import { NewsService } from '../news/news.service';
 import { UserService } from '../user/user.service';

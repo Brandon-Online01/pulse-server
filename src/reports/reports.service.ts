@@ -3,7 +3,7 @@ import { LeadsService } from '../leads/leads.service';
 import { JournalService } from '../journal/journal.service';
 import { ClaimsService } from '../claims/claims.service';
 import { TasksService } from '../tasks/tasks.service';
-import { AttendanceService } from 'src/attendance/attendance.service';
+import { AttendanceService } from '../attendance/attendance.service';
 import { ShopService } from '../shop/shop.service';
 import { NewsService } from '../news/news.service';
 import { UserService } from '../user/user.service';
@@ -11,7 +11,7 @@ import { OnEvent } from '@nestjs/event-emitter';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Report } from './entities/report.entity';
-import { ReportType } from 'src/lib/enums/reports.enums';
+import { ReportType } from '../lib/enums/reports.enums';
 
 @Injectable()
 export class ReportsService {

@@ -4,7 +4,7 @@ import { TasksController } from './tasks.controller';
 import { Task } from './entities/task.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SubTask } from './entities/subtask.entity';
-import { RewardsModule } from 'src/rewards/rewards.module';
+import { RewardsModule } from '../rewards/rewards.module';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Task, SubTask]), RewardsModule],

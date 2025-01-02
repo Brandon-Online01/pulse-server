@@ -1,7 +1,7 @@
 import { Client } from '../../clients/entities/client.entity';
 import { OrderItem } from './order-item.entity';
 import { OrderStatus } from '../../lib/enums/status.enums';
-import { User } from 'src/user/entities/user.entity';
+import { User } from '../../user/entities/user.entity';
 export declare class Order {
     uid: number;
     orderNumber: string;

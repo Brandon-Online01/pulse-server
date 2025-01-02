@@ -1,8 +1,8 @@
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
-import { Branch } from 'src/branch/entities/branch.entity';
-import { Client } from 'src/clients/entities/client.entity';
-import { LeadStatus } from 'src/lib/enums/leads.enums';
+import { Branch } from '../../branch/entities/branch.entity';
+import { Client } from '../../clients/entities/client.entity';
+import { LeadStatus } from '../../lib/enums/leads.enums';
 
 @Entity('lead')
 export class Lead {

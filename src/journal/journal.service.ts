@@ -8,8 +8,8 @@ import { NotificationType, NotificationStatus } from '../lib/enums/notification.
 import { AccessLevel } from '../lib/enums/user.enums';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { endOfDay, startOfDay } from 'date-fns';
-import { RewardsService } from 'src/rewards/rewards.service';
-import { XP_VALUES, XP_VALUES_TYPES } from 'src/lib/constants/constants';
+import { RewardsService } from '../rewards/rewards.service';
+import { XP_VALUES, XP_VALUES_TYPES } from '../lib/constants/constants';
 
 @Injectable()
 export class JournalService {

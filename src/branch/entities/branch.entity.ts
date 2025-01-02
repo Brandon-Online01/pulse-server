@@ -10,8 +10,8 @@ import { Doc } from "../../docs/entities/doc.entity";
 import { Claim } from "../../claims/entities/claim.entity";
 import { Attendance } from "../../attendance/entities/attendance.entity";
 import { Asset } from "../../assets/entities/asset.entity";
-import { User } from "src/user/entities/user.entity";
-import { CheckIn } from "src/check-ins/entities/check-in.entity";
+import { User } from "../../user/entities/user.entity";
+import { CheckIn } from "../../check-ins/entities/check-in.entity";
 import { Report } from "../../reports/entities/report.entity";
 
 @Entity('branch')

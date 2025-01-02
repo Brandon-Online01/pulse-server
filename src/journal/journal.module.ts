@@ -3,7 +3,7 @@ import { JournalService } from './journal.service';
 import { JournalController } from './journal.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Journal } from './entities/journal.entity';
-import { RewardsModule } from 'src/rewards/rewards.module';
+import { RewardsModule } from '../rewards/rewards.module';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Journal]), RewardsModule],

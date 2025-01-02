@@ -3,7 +3,7 @@ import { ClaimsService } from './claims.service';
 import { ClaimsController } from './claims.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Claim } from './entities/claim.entity';
-import { RewardsModule } from 'src/rewards/rewards.module';
+import { RewardsModule } from '../rewards/rewards.module';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Claim]), RewardsModule],

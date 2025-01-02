@@ -1,6 +1,6 @@
 import { UserRewards } from './user-rewards.entity';
-import { ItemRarity } from 'src/lib/enums/rewards.enum';
-import { ItemType } from 'src/lib/enums/rewards.enum';
+import { ItemRarity } from '../../lib/enums/rewards.enum';
+import { ItemType } from '../../lib/enums/rewards.enum';
 export declare class UnlockedItem {
     uid: number;
     name: string;
