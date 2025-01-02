@@ -1,0 +1,19 @@
+import { User } from "src/user/entities/user.entity";
+import { Branch } from "src/branch/entities/branch.entity";
+import { ClaimCategory, ClaimStatus } from "../../lib/enums/finance.enums";
+export declare class Claim {
+    uid: number;
+    amount: string;
+    fileUrl: string;
+    verifiedBy: number;
+    verifiedAt: Date;
+    createdAt: Date;
+    updatedAt: Date;
+    deletedAt: Date;
+    comments: string;
+    isDeleted: boolean;
+    status: ClaimStatus;
+    category: ClaimCategory;
+    owner: User;
+    branch: Branch;
+}

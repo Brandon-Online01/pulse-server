@@ -1,0 +1,15 @@
+import { SignupEmailData, VerificationEmailData, PasswordResetData, PasswordChangedData, InvoiceData, OrderData, DailyReportData, OrderDeliveredData, OrderOutForDeliveryData, OrderResellerNotificationData, OrderInternalNotificationData, OrderWarehouseFulfillmentData } from '../types/email-templates.types';
+export declare const Signup: (data: SignupEmailData) => string;
+export declare const Verification: (data: VerificationEmailData) => string;
+export declare const PasswordReset: (data: PasswordResetData) => string;
+export declare const NewOrder: (data: OrderData) => string;
+export declare const NewOrderInternal: (data: OrderInternalNotificationData) => string;
+export declare const NewOrderReseller: (data: OrderResellerNotificationData) => string;
+export declare const Invoice: (data: InvoiceData) => string;
+export declare const PasswordChanged: (data: PasswordChangedData) => string;
+export declare const OrderOutForDelivery: (data: OrderOutForDeliveryData) => string;
+export declare const OrderDelivered: (data: OrderDeliveredData) => string;
+export declare const DailyReport: (data: DailyReportData) => string;
+export declare const OrderResellerNotification: (data: OrderResellerNotificationData) => string;
+export declare const OrderInternalNotification: (data: OrderInternalNotificationData) => string;
+export declare const OrderWarehouseFulfillment: (data: OrderWarehouseFulfillmentData) => string;

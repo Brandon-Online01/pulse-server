@@ -1,0 +1,287 @@
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.JournalService = void 0;
+const common_1 = require("@nestjs/common");
+const typeorm_1 = require("@nestjs/typeorm");
+const typeorm_2 = require("typeorm");
+const journal_entity_1 = require("./entities/journal.entity");
+const notification_enums_1 = require("../lib/enums/notification.enums");
+const user_enums_1 = require("../lib/enums/user.enums");
+const event_emitter_1 = require("@nestjs/event-emitter");
+const date_fns_1 = require("date-fns");
+const rewards_service_1 = require("../rewards/rewards.service");
+const constants_1 = require("../lib/constants/constants");
+let JournalService = class JournalService {
+    constructor(journalRepository, eventEmitter, rewardsService) {
+        this.journalRepository = journalRepository;
+        this.eventEmitter = eventEmitter;
+        this.rewardsService = rewardsService;
+    }
+    calculateStats(journals) {
+        return {
+            total: journals?.length || 0,
+        };
+    }
+    async create(createJournalDto) {
+        try {
+            const journal = await this.journalRepository.save(createJournalDto);
+            if (!journal) {
+                throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
+            }
+            const response = {
+                message: process.env.SUCCESS_MESSAGE,
+            };
+            const notification = {
+                type: notification_enums_1.NotificationType.USER,
+                title: 'Journal Created',
+                message: `A journal has been created`,
+                status: notification_enums_1.NotificationStatus.UNREAD,
+                owner: journal?.owner
+            };
+            const recipients = [user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.OWNER, user_enums_1.AccessLevel.SUPERVISOR, user_enums_1.AccessLevel.USER];
+            this.eventEmitter.emit('send.notification', notification, recipients);
+            await this.rewardsService.awardXP({
+                owner: createJournalDto.owner.uid,
+                amount: 10,
+                action: 'JOURNAL',
+                source: {
+                    id: createJournalDto.owner.uid.toString(),
+                    type: 'journal',
+                    details: 'Journal reward'
+                }
+            });
+            return response;
+        }
+        catch (error) {
+            const response = {
+                message: error?.message,
+            };
+            return response;
+        }
+    }
+    async findAll() {
+        try {
+            const journals = await this.journalRepository.find({
+                where: { isDeleted: false },
+                relations: ['owner'],
+                order: {
+                    timestamp: 'DESC'
+                }
+            });
+            if (journals?.length === 0) {
+                return {
+                    message: process.env.NOT_FOUND_MESSAGE,
+                    journals: null,
+                    stats: null
+                };
+            }
+            const stats = this.calculateStats(journals);
+            return {
+                journals,
+                message: process.env.SUCCESS_MESSAGE,
+                stats
+            };
+        }
+        catch (error) {
+            return {
+                message: error?.message,
+                journals: null,
+                stats: null
+            };
+        }
+    }
+    async findOne(ref) {
+        try {
+            const journal = await this.journalRepository.findOne({
+                where: { uid: ref, isDeleted: false },
+                relations: ['owner']
+            });
+            if (!journal) {
+                return {
+                    message: process.env.NOT_FOUND_MESSAGE,
+                    journal: null,
+                    stats: null
+                };
+            }
+            const allJournals = await this.journalRepository.find();
+            const stats = this.calculateStats(allJournals);
+            return {
+                journal,
+                message: process.env.SUCCESS_MESSAGE,
+                stats
+            };
+        }
+        catch (error) {
+            return {
+                message: error?.message,
+                journal: null,
+                stats: null
+            };
+        }
+    }
+    async journalsByUser(ref) {
+        try {
+            const journals = await this.journalRepository.find({
+                where: { owner: { uid: ref }, isDeleted: false },
+                relations: ['owner']
+            });
+            if (!journals) {
+                throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
+            }
+            const stats = this.calculateStats(journals);
+            return {
+                message: process.env.SUCCESS_MESSAGE,
+                journals,
+                stats
+            };
+        }
+        catch (error) {
+            return {
+                message: `could not get journals by user - ${error?.message}`,
+                journals: null,
+                stats: null
+            };
+        }
+    }
+    async getJournalsForDate(date) {
+        try {
+            const journals = await this.journalRepository.find({
+                where: { createdAt: (0, typeorm_2.Between)((0, date_fns_1.startOfDay)(date), (0, date_fns_1.endOfDay)(date)) }
+            });
+            if (!journals) {
+                throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
+            }
+            const response = {
+                message: process.env.SUCCESS_MESSAGE,
+                journals
+            };
+            return response;
+        }
+        catch (error) {
+            const response = {
+                message: error?.message,
+                journals: null
+            };
+            return response;
+        }
+    }
+    async update(ref, updateJournalDto) {
+        try {
+            const journal = await this.journalRepository.findOne({ where: { uid: ref, isDeleted: false } });
+            if (!journal) {
+                const response = {
+                    message: process.env.NOT_FOUND_MESSAGE,
+                };
+                return response;
+            }
+            await this.journalRepository.update(ref, updateJournalDto);
+            const response = {
+                message: process.env.SUCCESS_MESSAGE,
+            };
+            const notification = {
+                type: notification_enums_1.NotificationType.USER,
+                title: 'Journal Created',
+                message: `A journal has been created`,
+                status: notification_enums_1.NotificationStatus.UNREAD,
+                owner: journal?.owner
+            };
+            const recipients = [user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.OWNER, user_enums_1.AccessLevel.SUPERVISOR, user_enums_1.AccessLevel.USER];
+            this.eventEmitter.emit('send.notification', notification, recipients);
+            await this.rewardsService.awardXP({
+                owner: updateJournalDto.owner.uid,
+                amount: constants_1.XP_VALUES.JOURNAL,
+                action: constants_1.XP_VALUES_TYPES.JOURNAL,
+                source: {
+                    id: updateJournalDto.owner.uid.toString(),
+                    type: constants_1.XP_VALUES_TYPES.JOURNAL,
+                    details: 'Journal reward'
+                }
+            });
+            return response;
+        }
+        catch (error) {
+            const response = {
+                message: error?.message,
+            };
+            return response;
+        }
+    }
+    async remove(ref) {
+        try {
+            const journal = await this.journalRepository.findOne({ where: { uid: ref } });
+            if (!journal) {
+                const response = {
+                    message: process.env.NOT_FOUND_MESSAGE,
+                };
+                return response;
+            }
+            await this.journalRepository.update(ref, { isDeleted: true });
+            const response = {
+                message: process.env.SUCCESS_MESSAGE,
+            };
+            return response;
+        }
+        catch (error) {
+            const response = {
+                message: error?.message,
+            };
+            return response;
+        }
+    }
+    async restore(ref) {
+        try {
+            const journal = await this.journalRepository.findOne({ where: { uid: ref } });
+            if (!journal) {
+                const response = {
+                    message: process.env.NOT_FOUND_MESSAGE,
+                };
+                return response;
+            }
+            await this.journalRepository.update(ref, { isDeleted: false });
+            const response = {
+                message: process.env.SUCCESS_MESSAGE,
+            };
+            return response;
+        }
+        catch (error) {
+            const response = {
+                message: error?.message,
+            };
+            return response;
+        }
+    }
+    async count() {
+        try {
+            const total = await this.journalRepository.count();
+            return {
+                total
+            };
+        }
+        catch (error) {
+            return {
+                total: 0
+            };
+        }
+    }
+};
+exports.JournalService = JournalService;
+exports.JournalService = JournalService = __decorate([
+    (0, common_1.Injectable)(),
+    __param(0, (0, typeorm_1.InjectRepository)(journal_entity_1.Journal)),
+    __metadata("design:paramtypes", [typeorm_2.Repository,
+        event_emitter_1.EventEmitter2,
+        rewards_service_1.RewardsService])
+], JournalService);
+//# sourceMappingURL=journal.service.js.map

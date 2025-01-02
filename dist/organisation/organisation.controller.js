@@ -1,0 +1,110 @@
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.OrganisationController = void 0;
+const common_1 = require("@nestjs/common");
+const organisation_service_1 = require("./organisation.service");
+const create_organisation_dto_1 = require("./dto/create-organisation.dto");
+const update_organisation_dto_1 = require("./dto/update-organisation.dto");
+const swagger_1 = require("@nestjs/swagger");
+const role_decorator_1 = require("../decorators/role.decorator");
+const user_enums_1 = require("../lib/enums/user.enums");
+const auth_guard_1 = require("../guards/auth.guard");
+const role_guard_1 = require("../guards/role.guard");
+let OrganisationController = class OrganisationController {
+    constructor(organisationService) {
+        this.organisationService = organisationService;
+    }
+    create(createOrganisationDto) {
+        return this.organisationService.create(createOrganisationDto);
+    }
+    findAll() {
+        return this.organisationService.findAll();
+    }
+    findOne(ref) {
+        return this.organisationService.findOne(ref);
+    }
+    update(ref, updateOrganisationDto) {
+        return this.organisationService.update(ref, updateOrganisationDto);
+    }
+    restore(ref) {
+        return this.organisationService.restore(ref);
+    }
+    remove(ref) {
+        return this.organisationService.remove(ref);
+    }
+};
+exports.OrganisationController = OrganisationController;
+__decorate([
+    (0, common_1.Post)(),
+    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER),
+    (0, swagger_1.ApiOperation)({ summary: 'create a new organisation' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [create_organisation_dto_1.CreateOrganisationDto]),
+    __metadata("design:returntype", void 0)
+], OrganisationController.prototype, "create", null);
+__decorate([
+    (0, common_1.Get)(),
+    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER),
+    (0, swagger_1.ApiOperation)({ summary: 'get all organisations' }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], OrganisationController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)(':ref'),
+    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER),
+    (0, swagger_1.ApiOperation)({ summary: 'get an organisation by reference code' }),
+    __param(0, (0, common_1.Param)('ref')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], OrganisationController.prototype, "findOne", null);
+__decorate([
+    (0, common_1.Patch)(':ref'),
+    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER),
+    (0, swagger_1.ApiOperation)({ summary: 'update an organisation by reference code' }),
+    __param(0, (0, common_1.Param)('ref')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, update_organisation_dto_1.UpdateOrganisationDto]),
+    __metadata("design:returntype", void 0)
+], OrganisationController.prototype, "update", null);
+__decorate([
+    (0, common_1.Patch)('restore/:ref'),
+    (0, swagger_1.ApiOperation)({ summary: 'Restore a deleted user by reference code' }),
+    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
+    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
+    __param(0, (0, common_1.Param)('ref')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], OrganisationController.prototype, "restore", null);
+__decorate([
+    (0, common_1.Delete)(':ref'),
+    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER),
+    (0, swagger_1.ApiOperation)({ summary: 'soft delete an organisation by reference code' }),
+    __param(0, (0, common_1.Param)('ref')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], OrganisationController.prototype, "remove", null);
+exports.OrganisationController = OrganisationController = __decorate([
+    (0, swagger_1.ApiTags)('org'),
+    (0, common_1.Controller)('org'),
+    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
+    __metadata("design:paramtypes", [organisation_service_1.OrganisationService])
+], OrganisationController);
+//# sourceMappingURL=organisation.controller.js.map

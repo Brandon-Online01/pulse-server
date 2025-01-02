@@ -1,0 +1,30 @@
+import { Gender } from "src/lib/enums/gender.enums";
+import { User } from "./user.entity";
+export declare class UserProfile {
+    uid: number;
+    height: string;
+    weight: string;
+    hairColor: string;
+    eyeColor: string;
+    gender: Gender;
+    ethnicity: string;
+    bodyType: string;
+    smokingHabits: string;
+    drinkingHabits: string;
+    dateOfBirth: Date;
+    address: string;
+    city: string;
+    country: string;
+    zipCode: string;
+    aboutMe: string;
+    socialMedia: string;
+    currentAge: number;
+    maritalStatus: string;
+    numberDependents: number;
+    shoeSize: string;
+    shirtSize: string;
+    pantsSize: string;
+    dressSize: string;
+    coatSize: string;
+    owner: User;
+}
