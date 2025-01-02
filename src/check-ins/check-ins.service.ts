@@ -20,11 +20,11 @@ export class CheckInsService {
   async checkIn(createCheckInDto: CreateCheckInDto): Promise<{ message: string }> {
     try {
       if (!createCheckInDto?.owner) {
-        throw new BadRequestException('Invalid owner information');
+        throw new BadRequestException(process.env.NOT_FOUND_MESSAGE);
       }
 
       if (!createCheckInDto?.branch) {
-        throw new BadRequestException('Invalid branch information');
+        throw new BadRequestException(process.env.NOT_FOUND_MESSAGE);
       }
 
       await this.checkInRepository.save(createCheckInDto);
@@ -57,11 +57,11 @@ export class CheckInsService {
   async checkOut(createCheckOutDto: CreateCheckOutDto): Promise<{ message: string, duration?: string }> {
     try {
       if (!createCheckOutDto?.owner) {
-        throw new BadRequestException('Invalid owner information');
+        throw new BadRequestException(process.env.NOT_FOUND_MESSAGE);
       }
 
       if (!createCheckOutDto?.branch) {
-        throw new BadRequestException('Invalid branch information');
+        throw new BadRequestException(process.env.NOT_FOUND_MESSAGE);
       }
 
       const checkIn = await this.checkInRepository.findOne({
@@ -76,7 +76,7 @@ export class CheckInsService {
       });
 
       if (!checkIn) {
-        throw new NotFoundException('Check-in not found');
+        throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
       }
 
       const checkOutTime = new Date(createCheckOutDto.checkOutTime);

@@ -5,7 +5,7 @@ import { AuthGuard } from '../guards/auth.guard';
 import { RoleGuard } from '../guards/role.guard';
 import { Roles } from '../decorators/role.decorator';
 import { AccessLevel } from '../lib/enums/user.enums';
-import { ApiOperation, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('rewards')
 @Controller('rewards')
@@ -20,10 +20,10 @@ export class RewardsController {
     return this.rewardsService.awardXP(createRewardDto);
   }
 
-  @Get('user/:  ')
+  @Get('/:reference')
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.USER)
   @ApiOperation({ summary: 'get user rewards' })
-  getUserRewards(@Param('reference') reference: string) {
+  getUserRewards(@Param('reference') reference: number) {
     return this.rewardsService.getUserRewards(reference);
   }
 

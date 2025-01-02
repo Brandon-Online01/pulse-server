@@ -98,7 +98,7 @@ export class RewardsService {
 
   private calculateLevel(xp: number): number {
     for (const [level, range] of Object.entries(LEVELS)) {
-      if (xp >= range.min && xp <= range.max) {
+      if (xp >= range?.min && xp <= range?.max) {
         return parseInt(level);
       }
     }
@@ -107,37 +107,39 @@ export class RewardsService {
 
   private calculateRank(level: number): string {
     for (const [rank, range] of Object.entries(RANKS)) {
-      if (level >= range.levels[0] && level <= range.levels[1]) {
+      if (level >= range?.levels[0] && level <= range?.levels[1]) {
         return rank;
       }
     }
     return 'ROOKIE';
   }
 
-  async getUserRewards(reference: string) {
+  async getUserRewards(reference: number) {
     try {
       const userRewards = await this.userRewardsRepository.findOne({
         where: {
-          owner: {
-
-          }
+          owner: { uid: reference }
         },
         relations: ['xpTransactions', 'achievements', 'inventory']
       });
 
       if (!userRewards) {
-        throw new NotFoundException('User rewards not found');
+        throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
       }
 
-      return {
+      const response = {
         message: process.env.SUCCESS_MESSAGE,
         data: userRewards
       };
+
+      return response;
     } catch (error) {
-      return {
+      const response = {
         message: error?.message,
         data: null
       };
+
+      return response;
     }
   }
 
@@ -151,21 +153,25 @@ export class RewardsService {
         take: 10
       });
 
-      return {
+      const response = {
         message: process.env.SUCCESS_MESSAGE,
         data: leaderboard.map(entry => ({
-          owner: { uid: entry.owner.uid },
-          username: entry.owner.username,
-          totalXP: entry.totalXP,
-          level: entry.level,
-          rank: entry.rank
+          owner: { uid: entry?.owner?.uid },
+          username: entry?.owner?.username,
+          totalXP: entry?.totalXP,
+          level: entry?.level,
+          rank: entry?.rank
         }))
-      };
+      }
+
+      return response;
     } catch (error) {
-      return {
+      const response = {
         message: error?.message,
         data: null
       };
+
+      return response;
     }
   }
 }

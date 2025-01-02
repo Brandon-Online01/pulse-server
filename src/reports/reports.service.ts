@@ -30,7 +30,7 @@ export class ReportsService {
 		private readonly userService: UserService,
 	) { }
 
-	async managerOverview() {
+	async managerDailyReport() {
 		try {
 			const allData = await Promise.all([
 				this.leadService.getLeadsForDate(new Date()),
@@ -105,7 +105,7 @@ export class ReportsService {
 	}
 
 	@OnEvent('daily-report')
-	async dailyReport(reference?: string) {
+	async userDailyReport(reference?: string) {
 		try {
 			const date = new Date();
 
