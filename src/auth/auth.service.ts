@@ -135,4 +135,41 @@ export class AuthService {
 
 		return token;
 	}
+
+	async refreshToken(token: string) {
+		try {
+			const payload = await this.jwtService.verifyAsync(token);
+			if (!payload) {
+				throw new BadRequestException('Invalid refresh token');
+			}
+
+			const authProfile = await this.userService.findOne(payload.uid);
+
+			if (!authProfile?.user) {
+				throw new BadRequestException('User not found');
+			}
+
+			const newPayload = {
+				uid: payload.uid,
+				role: authProfile.user.accessLevel?.toLowerCase()
+			};
+
+			const accessToken = await this.jwtService.signAsync(newPayload, {
+				expiresIn: `${process.env.JWT_ACCESS_EXPIRES_IN}`
+			});
+
+			return {
+				accessToken,
+				message: 'Access token refreshed successfully'
+			};
+		} catch (error) {
+			if (error?.name === 'TokenExpiredError') {
+				throw new HttpException('Refresh token has expired', HttpStatus.UNAUTHORIZED);
+			}
+			throw new HttpException(
+				error.message || 'Failed to refresh token',
+				error.status || HttpStatus.BAD_REQUEST
+			);
+		}
+	}
 }

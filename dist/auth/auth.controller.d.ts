@@ -5,4 +5,8 @@ export declare class AuthController {
     constructor(authService: AuthService);
     signUp(signUpInput: SignUpInput): Promise<import("../lib/types/auth").SignUpResponse>;
     signIn(signInInput: SignInInput): Promise<import("../lib/types/auth").SignInResponse>;
+    refreshToken(refreshToken: string): Promise<{
+        accessToken: string;
+        message: string;
+    }>;
 }

@@ -13,4 +13,8 @@ export declare class AuthService {
     signIn(signInInput: SignInInput): Promise<SignInResponse>;
     signUp(signUpInput: SignUpInput): Promise<SignUpResponse>;
     private generateShortToken;
+    refreshToken(token: string): Promise<{
+        accessToken: string;
+        message: string;
+    }>;
 }

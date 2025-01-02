@@ -2,6 +2,8 @@ import {
 	Controller,
 	Post,
 	Body,
+	HttpCode,
+	HttpStatus,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignInInput, SignUpInput } from './dto/auth.dto';
@@ -25,6 +27,12 @@ export class AuthController {
 	@ApiOperation({ summary: 'Authenticate a user using existing credentials' })
 	signIn(@Body() signInInput: SignInInput) {
 		return this.authService.signIn(signInInput);
+	}
+
+	@Post('refresh')
+	@HttpCode(HttpStatus.OK)
+	async refreshToken(@Body('refreshToken') refreshToken: string) {
+		return this.authService.refreshToken(refreshToken);
 	}
 
 }
