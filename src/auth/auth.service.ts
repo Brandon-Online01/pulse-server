@@ -6,7 +6,7 @@ import { UserService } from '../user/user.service';
 import { SignInResponse, SignUpResponse } from '../lib/types/auth';
 import { ProfileData } from '../lib/types/auth';
 import { RewardsService } from '../rewards/rewards.service';
-import { XP_VALUES, XP_VALUES_TYPES } from '../lib/constants/constants';
+import { XP_VALUES, XP_VALUES_TYPES } from 'src/lib/constants/constants';
 import { EmailType } from '../lib/enums/email.enums';
 import { AccessLevel } from '../lib/enums/user.enums';
 import { EventEmitter2 } from '@nestjs/event-emitter';

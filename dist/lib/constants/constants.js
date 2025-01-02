@@ -42,14 +42,14 @@ exports.XP_VALUES_TYPES = {
     NOTIFICATION: 'notification'
 };
 exports.LEVELS = {
-    1: { min: 0, max: 500 },
-    2: { min: 501, max: 1500 },
-    3: { min: 1501, max: 3000 },
-    4: { min: 3001, max: 5000 },
-    5: { min: 5001, max: 7500 },
-    6: { min: 7501, max: 10000 },
-    7: { min: 10001, max: 15000 },
-    8: { min: 15001, max: Infinity }
+    1: { min: 0, max: 1500 },
+    2: { min: 1501, max: 4500 },
+    3: { min: 4501, max: 9000 },
+    4: { min: 9001, max: 15000 },
+    5: { min: 15001, max: 22500 },
+    6: { min: 22501, max: 30000 },
+    7: { min: 30001, max: 45000 },
+    8: { min: 45001, max: Infinity }
 };
 exports.RANKS = {
     BRONZE: { levels: [1, 2] },
