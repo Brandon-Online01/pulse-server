@@ -67,12 +67,12 @@ export class RewardsService {
 
       return {
         message: process.env.SUCCESS_MESSAGE,
-        data: userRewards
+        rewards: userRewards
       };
     } catch (error) {
       return {
         message: error?.message,
-        data: null
+        rewards: null
       };
     }
   }
@@ -129,14 +129,14 @@ export class RewardsService {
 
       const response = {
         message: process.env.SUCCESS_MESSAGE,
-        data: userRewards
+        rewards: userRewards
       };
 
       return response;
     } catch (error) {
       const response = {
         message: error?.message,
-        data: null
+        rewards: null
       };
 
       return response;
@@ -155,7 +155,7 @@ export class RewardsService {
 
       const response = {
         message: process.env.SUCCESS_MESSAGE,
-        data: leaderboard.map(entry => ({
+        rewards: leaderboard.map(entry => ({
           owner: { uid: entry?.owner?.uid },
           username: entry?.owner?.username,
           totalXP: entry?.totalXP,
@@ -168,7 +168,7 @@ export class RewardsService {
     } catch (error) {
       const response = {
         message: error?.message,
-        data: null
+        rewards: null
       };
 
       return response;

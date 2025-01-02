@@ -5,17 +5,17 @@ export declare class RewardsController {
     constructor(rewardsService: RewardsService);
     awardXP(createRewardDto: CreateRewardDto): Promise<{
         message: string;
-        data: import("./entities/user-rewards.entity").UserRewards;
+        rewards: import("./entities/user-rewards.entity").UserRewards;
     } | {
         message: any;
-        data: any;
+        rewards: any;
     }>;
     getUserRewards(reference: number): Promise<{
         message: any;
-        data: any;
+        rewards: any;
     }>;
     getLeaderboard(): Promise<{
         message: any;
-        data: any;
+        rewards: any;
     }>;
 }

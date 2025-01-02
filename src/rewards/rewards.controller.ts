@@ -20,7 +20,7 @@ export class RewardsController {
     return this.rewardsService.awardXP(createRewardDto);
   }
 
-  @Get('/:reference')
+  @Get('user-stats/:reference')
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.USER)
   @ApiOperation({ summary: 'get user rewards' })
   getUserRewards(@Param('reference') reference: number) {

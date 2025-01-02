@@ -46,7 +46,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], RewardsController.prototype, "awardXP", null);
 __decorate([
-    (0, common_1.Get)('/:reference'),
+    (0, common_1.Get)('user-stats/:reference'),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'get user rewards' }),
     __param(0, (0, common_1.Param)('reference')),

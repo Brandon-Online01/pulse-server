@@ -8,20 +8,20 @@ export declare class RewardsService {
     constructor(userRewardsRepository: Repository<UserRewards>, xpTransactionRepository: Repository<XPTransaction>);
     awardXP(createRewardDto: CreateRewardDto): Promise<{
         message: string;
-        data: UserRewards;
+        rewards: UserRewards;
     } | {
         message: any;
-        data: any;
+        rewards: any;
     }>;
     private mapSourceTypeToCategory;
     private calculateLevel;
     private calculateRank;
     getUserRewards(reference: number): Promise<{
         message: any;
-        data: any;
+        rewards: any;
     }>;
     getLeaderboard(): Promise<{
         message: any;
-        data: any;
+        rewards: any;
     }>;
 }
