@@ -28,8 +28,13 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const report_entity_1 = require("./entities/report.entity");
 const reports_enums_1 = require("../lib/enums/reports.enums");
+const event_emitter_2 = require("@nestjs/event-emitter");
+const notification_enums_1 = require("../lib/enums/notification.enums");
+const user_enums_1 = require("../lib/enums/user.enums");
+const email_enums_1 = require("../lib/enums/email.enums");
+const config_1 = require("@nestjs/config");
 let ReportsService = ReportsService_1 = class ReportsService {
-    constructor(reportRepository, leadService, journalService, claimsService, tasksService, shopService, attendanceService, newsService, userService) {
+    constructor(reportRepository, leadService, journalService, claimsService, tasksService, shopService, attendanceService, newsService, userService, eventEmitter, configService) {
         this.reportRepository = reportRepository;
         this.leadService = leadService;
         this.journalService = journalService;
@@ -39,7 +44,32 @@ let ReportsService = ReportsService_1 = class ReportsService {
         this.attendanceService = attendanceService;
         this.newsService = newsService;
         this.userService = userService;
+        this.eventEmitter = eventEmitter;
+        this.configService = configService;
         this.logger = new common_1.Logger(ReportsService_1.name);
+        this.currencyLocale = this.configService.get('CURRENCY_LOCALE') || 'en-ZA';
+        this.currencyCode = this.configService.get('CURRENCY_CODE') || 'ZAR';
+        this.currencySymbol = this.configService.get('CURRENCY_SYMBOL') || 'R';
+    }
+    formatCurrency(amount) {
+        return new Intl.NumberFormat(this.currencyLocale, {
+            style: 'currency',
+            currency: this.currencyCode
+        })
+            .format(amount)
+            .replace(this.currencyCode, this.currencySymbol);
+    }
+    calculateGrowth(current, previous) {
+        if (previous === 0)
+            return '+100%';
+        const growth = ((current - previous) / previous) * 100;
+        return `${growth >= 0 ? '+' : ''}${growth.toFixed(1)}%`;
+    }
+    handleError(error) {
+        return {
+            message: error?.message || 'An error occurred',
+            statusCode: error?.status || 500
+        };
     }
     async managerDailyReport() {
         try {
@@ -140,7 +170,8 @@ let ReportsService = ReportsService_1 = class ReportsService {
                         totalValue: claimsStats?.totalValue || 0
                     },
                     tasks: {
-                        total: tasksTotal || 0
+                        total: tasksTotal || 0,
+                        pending: tasksTotal || 0
                     },
                     attendance: {
                         hoursWorked: attendanceHours || 0
@@ -192,17 +223,67 @@ let ReportsService = ReportsService_1 = class ReportsService {
                 branch: userData?.user?.branch
             });
             await this.reportRepository.save(report);
+            const notification = {
+                type: notification_enums_1.NotificationType.USER,
+                title: 'Daily Report Generated',
+                message: `Your daily activity report for ${new Date().toLocaleDateString()} has been generated`,
+                status: notification_enums_1.NotificationStatus.UNREAD,
+                owner: userData?.user
+            };
+            const recipients = [user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.OWNER, user_enums_1.AccessLevel.SUPERVISOR, user_enums_1.AccessLevel.USER];
+            this.eventEmitter.emit('send.notification', notification, recipients);
+            if (userData?.user?.email) {
+                const previousDayOrders = ordersStats?.orders?.metrics?.totalOrders || 0;
+                const previousDayRevenue = Number(ordersStats?.orders?.metrics?.grossOrderValue?.replace(/[^0-9.-]+/g, '')) || 0;
+                const currentRevenue = Number(response?.overview?.orders?.metrics?.grossOrderValue) || 0;
+                const currentOrders = response?.overview?.orders?.metrics?.totalOrders || 0;
+                const totalTasks = response?.overview?.tasks?.total || 0;
+                const pendingTasks = response?.overview?.tasks?.pending || 0;
+                const satisfactionRate = totalTasks > 0
+                    ? Math.round(((totalTasks - pendingTasks) / totalTasks) * 100)
+                    : 98;
+                const emailData = {
+                    name: userData?.user?.username,
+                    date: new Date(),
+                    metrics: {
+                        totalOrders: currentOrders,
+                        totalRevenue: this.formatCurrency(currentRevenue),
+                        newCustomers: response.overview?.leads?.total || 0,
+                        satisfactionRate: Math.max(0, Math.min(100, satisfactionRate)),
+                        orderGrowth: this.calculateGrowth(currentOrders, previousDayOrders),
+                        revenueGrowth: this.calculateGrowth(currentRevenue, previousDayRevenue),
+                        customerGrowth: this.calculateGrowth(response.overview?.leads?.total || 0, (response.overview?.leads?.total || 0) - (response.overview?.leads?.pending || 0))
+                    }
+                };
+                this.eventEmitter.emit('send.email', email_enums_1.EmailType.DAILY_REPORT, [userData?.user?.email], emailData);
+                const userSpecificData = response['userSpecific'];
+                if (userSpecificData) {
+                    const internalEmailData = {
+                        name: 'Management Team',
+                        date: new Date(),
+                        metrics: {
+                            ...emailData.metrics,
+                            userSpecific: {
+                                name: userSpecificData.user?.name,
+                                todayLeads: userSpecificData.todaysActivity?.leads || 0,
+                                todayClaims: userSpecificData.todaysActivity?.claims || 0,
+                                todayTasks: userSpecificData.todaysActivity?.tasks || 0,
+                                todayOrders: userSpecificData.todaysActivity?.orders || 0,
+                                hoursWorked: userSpecificData.todaysActivity?.currentShiftHours || 0
+                            }
+                        }
+                    };
+                    const internalEmail = this.configService.get('INTERNAL_BROADCAST_EMAIL');
+                    if (internalEmail) {
+                        this.eventEmitter.emit('send.email', email_enums_1.EmailType.DAILY_REPORT, [internalEmail], internalEmailData);
+                    }
+                }
+            }
             return response;
         }
         catch (error) {
             return this.handleError(error);
         }
-    }
-    handleError(error) {
-        return {
-            message: error?.message || 'An error occurred',
-            statusCode: error?.status || 500
-        };
     }
 };
 exports.ReportsService = ReportsService;
@@ -223,6 +304,8 @@ exports.ReportsService = ReportsService = ReportsService_1 = __decorate([
         shop_service_1.ShopService,
         attendance_service_1.AttendanceService,
         news_service_1.NewsService,
-        user_service_1.UserService])
+        user_service_1.UserService,
+        event_emitter_2.EventEmitter2,
+        config_1.ConfigService])
 ], ReportsService);
 //# sourceMappingURL=reports.service.js.map

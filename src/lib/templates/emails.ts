@@ -467,40 +467,89 @@ export const DailyReport = (data: DailyReportData): string => {
   return `
     <div style="${BASE_STYLES?.container}">
       <div style="${BASE_STYLES?.header}">
-        <h1>Daily Business Insights 📊</h1>
+        <h1>Daily Wrap ⭐</h1>
       </div>
 
       <div style="padding: 20px;">
-        <h2>Good morning!</h2>
-        <p>Here's your daily overview for ${data?.date}:</p>
+        <h2>Hi ${data?.name},</h2>
+        <p>Your daily in highlights:</p>
         
-        <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 15px 0;">
-          <h3>Performance Highlights</h3>
-          <ul>
-            <li>Orders Processed: ${data?.metrics?.totalOrders}</li>
-            <li>Revenue Generated: ${data?.metrics?.totalRevenue}</li>
-            <li>New Customer Acquisitions: ${data?.metrics?.newCustomers}</li>
-            <li>Customer Satisfaction Rate: ${data?.metrics?.satisfactionRate}%</li>
-          </ul>
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 12px; margin: 20px 0;">
+          <h3 style="color: #0066FF; margin-bottom: 16px;">🎯 Today's Achievements</h3>
+          <div style="display: grid; gap: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+              <span>Orders Processed</span>
+              <strong style="color: #0066FF">${data?.metrics?.totalOrders}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+              <span>Revenue Generated</span>
+              <strong style="color: #28a745">${data?.metrics?.totalRevenue}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+              <span>New Customers</span>
+              <strong style="color: #17a2b8">${data?.metrics?.newCustomers}</strong>
+            </div>
+          </div>
         </div>
 
-        <div style="background-color: #e8f5e9; padding: 15px; border-radius: 5px; margin: 15px 0;">
-          <h3>Key Metrics Comparison</h3>
-          <p>Compared to Previous Day:</p>
-          <ul>
-            <li>Orders: ${data?.metrics?.orderGrowth}</li>
-            <li>Revenue: ${data?.metrics?.revenueGrowth}</li>
-            <li>Customer Growth: ${data?.metrics?.customerGrowth}</li>
-          </ul>
+        <div style="background-color: #e8f5e9; padding: 20px; border-radius: 12px; margin: 20px 0;">
+          <h3 style="color: #28a745; margin-bottom: 16px;">📈 Growth Indicators</h3>
+          <div style="display: grid; gap: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span>Orders Growth</span>
+              <strong style="color: ${data?.metrics?.orderGrowth.startsWith('+') ? '#28a745' : '#dc3545'}">${data?.metrics?.orderGrowth}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span>Revenue Growth</span>
+              <strong style="color: ${data?.metrics?.revenueGrowth.startsWith('+') ? '#28a745' : '#dc3545'}">${data?.metrics?.revenueGrowth}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span>Customer Growth</span>
+              <strong style="color: ${data?.metrics?.customerGrowth.startsWith('+') ? '#28a745' : '#dc3545'}">${data?.metrics?.customerGrowth}</strong>
+            </div>
+          </div>
+        </div>
+
+        ${data?.metrics?.userSpecific ? `
+          <div style="background-color: #e3f2fd; padding: 20px; border-radius: 12px; margin: 20px 0;">
+            <h3 style="color: #0066FF; margin-bottom: 16px;">🌟 Your Personal Impact</h3>
+            <div style="display: grid; gap: 12px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span>Leads Generated</span>
+                <strong>${data?.metrics?.userSpecific?.todayLeads}</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span>Claims Processed</span>
+                <strong>${data?.metrics?.userSpecific?.todayClaims}</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span>Tasks Completed</span>
+                <strong>${data?.metrics?.userSpecific?.todayTasks}</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span>Orders Handled</span>
+                <strong>${data?.metrics?.userSpecific?.todayOrders}</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span>Hours Worked</span>
+                <strong>${data?.metrics?.userSpecific?.hoursWorked} hrs</strong>
+              </div>
+            </div>
+          </div>
+        ` : ''}
+
+        <div style="${BASE_STYLES?.alert}">
+          <p style="margin: 0; font-weight: 500;">💡 Quick Tip</p>
+          <p style="margin: 8px 0 0;">Set your goals for tomorrow and start fresh! Remember, every small win counts towards big success.</p>
         </div>
       </div>
 
       <div style="${BASE_STYLES?.footer}">
-        <p>For detailed analytics and insights, visit your dashboard.</p>
-        <p>Keep up the great work! 🌟</p>
+        <p>Keep up the amazing work! 🚀</p>
+        <p style="font-size: 14px; color: #6c757d;">This report was generated on ${new Date(data?.date).toLocaleDateString()} at ${new Date(data?.date).toLocaleTimeString()}</p>
       </div>
     </div>
-    `;
+  `;
 }
 
 export const OrderResellerNotification = (data: OrderResellerNotificationData): string => {

@@ -77,6 +77,7 @@ export declare class ReportsController {
             };
             tasks: {
                 total: number;
+                pending: number;
             };
             attendance: {
                 hoursWorked: number;

@@ -54,12 +54,20 @@ export interface DailyReportData extends BaseEmailData {
     date: Date;
     metrics: {
         totalOrders: number;
-        totalRevenue: number;
+        totalRevenue: number | string;
         newCustomers: number;
         satisfactionRate: number;
         orderGrowth: string;
         revenueGrowth: string;
         customerGrowth: string;
+        userSpecific?: {
+            name: string;
+            todayLeads: number;
+            todayClaims: number;
+            todayTasks: number;
+            todayOrders: number;
+            hoursWorked: number;
+        };
     };
 }
 export interface OrderOutForDeliveryData extends BaseEmailData {
@@ -73,18 +81,6 @@ export interface OrderDeliveredData extends BaseEmailData {
     orderId: string;
     deliveryDate: Date;
     deliveryStatus: string;
-}
-export interface DailyReportData extends BaseEmailData {
-    date: Date;
-    metrics: {
-        totalOrders: number;
-        totalRevenue: number;
-        newCustomers: number;
-        satisfactionRate: number;
-        orderGrowth: string;
-        revenueGrowth: string;
-        customerGrowth: string;
-    };
 }
 export interface OrderResellerNotificationData extends OrderData {
     resellerCommission: number;

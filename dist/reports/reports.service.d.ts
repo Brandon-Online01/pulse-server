@@ -8,6 +8,8 @@ import { NewsService } from '../news/news.service';
 import { UserService } from '../user/user.service';
 import { Repository } from 'typeorm';
 import { Report } from './entities/report.entity';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { ConfigService } from '@nestjs/config';
 export declare class ReportsService {
     private readonly reportRepository;
     private readonly leadService;
@@ -18,8 +20,16 @@ export declare class ReportsService {
     private readonly attendanceService;
     private readonly newsService;
     private readonly userService;
+    private readonly eventEmitter;
+    private readonly configService;
     private readonly logger;
-    constructor(reportRepository: Repository<Report>, leadService: LeadsService, journalService: JournalService, claimsService: ClaimsService, tasksService: TasksService, shopService: ShopService, attendanceService: AttendanceService, newsService: NewsService, userService: UserService);
+    private readonly currencyLocale;
+    private readonly currencyCode;
+    private readonly currencySymbol;
+    constructor(reportRepository: Repository<Report>, leadService: LeadsService, journalService: JournalService, claimsService: ClaimsService, tasksService: TasksService, shopService: ShopService, attendanceService: AttendanceService, newsService: NewsService, userService: UserService, eventEmitter: EventEmitter2, configService: ConfigService);
+    private formatCurrency;
+    private calculateGrowth;
+    private handleError;
     managerDailyReport(): Promise<{
         leads: {
             pending: number;
@@ -95,6 +105,7 @@ export declare class ReportsService {
             };
             tasks: {
                 total: number;
+                pending: number;
             };
             attendance: {
                 hoursWorked: number;
@@ -114,5 +125,4 @@ export declare class ReportsService {
             };
         };
     }>;
-    private handleError;
 }

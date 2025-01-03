@@ -12,10 +12,18 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Report } from './entities/report.entity';
 import { ReportType } from '../lib/enums/reports.enums';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { NotificationStatus, NotificationType } from '../lib/enums/notification.enums';
+import { AccessLevel } from '../lib/enums/user.enums';
+import { EmailType } from '../lib/enums/email.enums';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class ReportsService {
 	private readonly logger = new Logger(ReportsService.name);
+	private readonly currencyLocale: string;
+	private readonly currencyCode: string;
+	private readonly currencySymbol: string;
 
 	constructor(
 		@InjectRepository(Report)
@@ -28,7 +36,35 @@ export class ReportsService {
 		private readonly attendanceService: AttendanceService,
 		private readonly newsService: NewsService,
 		private readonly userService: UserService,
-	) { }
+		private readonly eventEmitter: EventEmitter2,
+		private readonly configService: ConfigService,
+	) {
+		this.currencyLocale = this.configService.get<string>('CURRENCY_LOCALE') || 'en-ZA';
+		this.currencyCode = this.configService.get<string>('CURRENCY_CODE') || 'ZAR';
+		this.currencySymbol = this.configService.get<string>('CURRENCY_SYMBOL') || 'R';
+	}
+
+	private formatCurrency(amount: number): string {
+		return new Intl.NumberFormat(this.currencyLocale, {
+			style: 'currency',
+			currency: this.currencyCode
+		})
+			.format(amount)
+			.replace(this.currencyCode, this.currencySymbol);
+	}
+
+	private calculateGrowth(current: number, previous: number): string {
+		if (previous === 0) return '+100%';
+		const growth = ((current - previous) / previous) * 100;
+		return `${growth >= 0 ? '+' : ''}${growth.toFixed(1)}%`;
+	}
+
+	private handleError(error: any) {
+		return {
+			message: error?.message || 'An error occurred',
+			statusCode: error?.status || 500
+		}
+	}
 
 	async managerDailyReport() {
 		try {
@@ -153,7 +189,8 @@ export class ReportsService {
 						totalValue: claimsStats?.totalValue || 0
 					},
 					tasks: {
-						total: tasksTotal || 0
+						total: tasksTotal || 0,
+						pending: tasksTotal || 0 // Using total as pending for now
 					},
 					attendance: {
 						hoursWorked: attendanceHours || 0
@@ -228,16 +265,87 @@ export class ReportsService {
 
 			await this.reportRepository.save(report);
 
+			// Send notification
+			const notification = {
+				type: NotificationType.USER,
+				title: 'Daily Report Generated',
+				message: `Your daily activity report for ${new Date().toLocaleDateString()} has been generated`,
+				status: NotificationStatus.UNREAD,
+				owner: userData?.user
+			}
+
+			const recipients = [AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.OWNER, AccessLevel.SUPERVISOR, AccessLevel.USER];
+
+			this.eventEmitter.emit('send.notification', notification, recipients);
+
+			// Prepare and send email
+			if (userData?.user?.email) {
+				// Get previous day metrics for comparison
+				const previousDayOrders = ordersStats?.orders?.metrics?.totalOrders || 0;
+				const previousDayRevenue = Number(ordersStats?.orders?.metrics?.grossOrderValue?.replace(/[^0-9.-]+/g, '')) || 0;
+
+				// Calculate current day metrics
+				const currentRevenue = Number(response?.overview?.orders?.metrics?.grossOrderValue) || 0;
+				const currentOrders = response?.overview?.orders?.metrics?.totalOrders || 0;
+
+				// Calculate satisfaction rate based on task completion (assuming non-pending tasks are completed)
+				const totalTasks = response?.overview?.tasks?.total || 0;
+				const pendingTasks = response?.overview?.tasks?.pending || 0;
+				const satisfactionRate = totalTasks > 0
+					? Math.round(((totalTasks - pendingTasks) / totalTasks) * 100)
+					: 98;
+
+				// Format metrics for better readability
+				const emailData = {
+					name: userData?.user?.username,
+					date: new Date(),
+					metrics: {
+						totalOrders: currentOrders,
+						totalRevenue: this.formatCurrency(currentRevenue),
+						newCustomers: response.overview?.leads?.total || 0,
+						satisfactionRate: Math.max(0, Math.min(100, satisfactionRate)), // Ensure between 0-100
+						orderGrowth: this.calculateGrowth(currentOrders, previousDayOrders),
+						revenueGrowth: this.calculateGrowth(currentRevenue, previousDayRevenue),
+						customerGrowth: this.calculateGrowth(
+							response.overview?.leads?.total || 0,
+							(response.overview?.leads?.total || 0) - (response.overview?.leads?.pending || 0)
+						)
+					}
+				};
+
+				// Send to the user
+				this.eventEmitter.emit('send.email', EmailType.DAILY_REPORT, [userData?.user?.email], emailData);
+
+				// Send internal notification to managers/admins with user specific data if available
+				const userSpecificData = response['userSpecific'];
+				if (userSpecificData) {
+					const internalEmailData = {
+						name: 'Management Team',
+						date: new Date(),
+						metrics: {
+							...emailData.metrics,
+							userSpecific: {
+								name: userSpecificData.user?.name,
+								todayLeads: userSpecificData.todaysActivity?.leads || 0,
+								todayClaims: userSpecificData.todaysActivity?.claims || 0,
+								todayTasks: userSpecificData.todaysActivity?.tasks || 0,
+								todayOrders: userSpecificData.todaysActivity?.orders || 0,
+								hoursWorked: userSpecificData.todaysActivity?.currentShiftHours || 0
+							}
+						}
+					};
+
+					// Get internal broadcast email from config
+					const internalEmail = this.configService.get<string>('INTERNAL_BROADCAST_EMAIL');
+					if (internalEmail) {
+						this.eventEmitter.emit('send.email', EmailType.DAILY_REPORT, [internalEmail], internalEmailData);
+					}
+				}
+			}
+
 			return response;
 		} catch (error) {
 			return this.handleError(error);
-		}
-	}
-
-	private handleError(error: any) {
-		return {
-			message: error?.message || 'An error occurred',
-			statusCode: error?.status || 500
 		}
 	}
 }
