@@ -107,7 +107,7 @@ import { Report } from './reports/entities/report.entity';
         Achievement,
         UnlockedItem,
         XPTransaction,
-        Report
+        Report,
       ],
       synchronize: true,
       retryAttempts: 100,

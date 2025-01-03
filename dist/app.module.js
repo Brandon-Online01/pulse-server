@@ -119,7 +119,7 @@ exports.AppModule = AppModule = __decorate([
                     achievement_entity_1.Achievement,
                     unlocked_item_entity_1.UnlockedItem,
                     xp_transaction_entity_1.XPTransaction,
-                    report_entity_1.Report
+                    report_entity_1.Report,
                 ],
                 synchronize: true,
                 retryAttempts: 100,
