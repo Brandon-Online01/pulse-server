@@ -48,6 +48,8 @@ export declare class AttendanceService {
     }>;
     getAttendanceForDate(date: Date): Promise<{
         totalHours: number;
+        activeShifts: Attendance[];
+        attendanceRecords: Attendance[];
     }>;
     getAttendanceForMonth(ref: string): Promise<{
         totalHours: number;

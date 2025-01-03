@@ -293,7 +293,7 @@ let AttendanceService = class AttendanceService {
                 }
             });
             let totalMinutesWorked = 0;
-            attendanceRecords.forEach(record => {
+            attendanceRecords?.forEach(record => {
                 if (record.checkIn && record.checkOut) {
                     const minutes = (0, date_fns_2.differenceInMinutes)(new Date(record.checkOut), new Date(record.checkIn));
                     totalMinutesWorked += minutes;
@@ -308,17 +308,25 @@ let AttendanceService = class AttendanceService {
             });
             const now = new Date();
             activeShifts.forEach(shift => {
-                if (shift.checkIn) {
-                    const minutes = (0, date_fns_2.differenceInMinutes)(now, new Date(shift.checkIn));
+                if (shift?.checkIn) {
+                    const minutes = (0, date_fns_2.differenceInMinutes)(now, new Date(shift?.checkIn));
                     totalMinutesWorked += minutes;
                 }
             });
-            return {
-                totalHours: Math.round((totalMinutesWorked / 60) * 10) / 10
+            const response = {
+                totalHours: Math.round((totalMinutesWorked / 60) * 10) / 10,
+                activeShifts,
+                attendanceRecords
             };
+            return response;
         }
         catch (error) {
-            return { totalHours: 0 };
+            const response = {
+                totalHours: 0,
+                activeShifts: [],
+                attendanceRecords: []
+            };
+            return response;
         }
     }
     async getAttendanceForMonth(ref) {

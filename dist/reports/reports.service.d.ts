@@ -10,6 +10,7 @@ import { Repository } from 'typeorm';
 import { Report } from './entities/report.entity';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ConfigService } from '@nestjs/config';
+import { RewardsService } from 'src/rewards/rewards.service';
 export declare class ReportsService {
     private readonly reportRepository;
     private readonly leadService;
@@ -22,11 +23,11 @@ export declare class ReportsService {
     private readonly userService;
     private readonly eventEmitter;
     private readonly configService;
-    private readonly logger;
+    private readonly rewardsService;
     private readonly currencyLocale;
     private readonly currencyCode;
     private readonly currencySymbol;
-    constructor(reportRepository: Repository<Report>, leadService: LeadsService, journalService: JournalService, claimsService: ClaimsService, tasksService: TasksService, shopService: ShopService, attendanceService: AttendanceService, newsService: NewsService, userService: UserService, eventEmitter: EventEmitter2, configService: ConfigService);
+    constructor(reportRepository: Repository<Report>, leadService: LeadsService, journalService: JournalService, claimsService: ClaimsService, tasksService: TasksService, shopService: ShopService, attendanceService: AttendanceService, newsService: NewsService, userService: UserService, eventEmitter: EventEmitter2, configService: ConfigService, rewardsService: RewardsService);
     private formatCurrency;
     private calculateGrowth;
     private handleError;
@@ -83,46 +84,5 @@ export declare class ReportsService {
     userDailyReport(reference?: string): Promise<{
         message: any;
         statusCode: any;
-    } | {
-        date: string;
-        overview: {
-            leads: {
-                pending: number;
-                approved: number;
-                inReview: number;
-                declined: number;
-                total: number;
-            };
-            journals: {
-                total: number;
-            };
-            claims: {
-                pending: number;
-                approved: number;
-                declined: number;
-                paid: number;
-                totalValue: string | number;
-            };
-            tasks: {
-                total: number;
-                pending: number;
-            };
-            attendance: {
-                hoursWorked: number;
-            };
-            orders: {
-                pending: number;
-                processing: number;
-                completed: number;
-                metrics: {
-                    totalOrders: number;
-                    grossOrderValue: string;
-                    averageOrderValue: string;
-                };
-            };
-            news: {
-                total: number;
-            };
-        };
-    }>;
+    } | Report>;
 }

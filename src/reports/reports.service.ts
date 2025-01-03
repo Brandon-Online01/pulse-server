@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { LeadsService } from '../leads/leads.service';
 import { JournalService } from '../journal/journal.service';
 import { ClaimsService } from '../claims/claims.service';
@@ -17,10 +17,11 @@ import { NotificationStatus, NotificationType } from '../lib/enums/notification.
 import { AccessLevel } from '../lib/enums/user.enums';
 import { EmailType } from '../lib/enums/email.enums';
 import { ConfigService } from '@nestjs/config';
+import { RewardsService } from 'src/rewards/rewards.service';
+import { DailyReportData } from '../lib/types/email-templates.types';
 
 @Injectable()
 export class ReportsService {
-	private readonly logger = new Logger(ReportsService.name);
 	private readonly currencyLocale: string;
 	private readonly currencyCode: string;
 	private readonly currencySymbol: string;
@@ -38,6 +39,7 @@ export class ReportsService {
 		private readonly userService: UserService,
 		private readonly eventEmitter: EventEmitter2,
 		private readonly configService: ConfigService,
+		private readonly rewardsService: RewardsService,
 	) {
 		this.currencyLocale = this.configService.get<string>('CURRENCY_LOCALE') || 'en-ZA';
 		this.currencyCode = this.configService.get<string>('CURRENCY_CODE') || 'ZAR';
@@ -153,6 +155,7 @@ export class ReportsService {
 				this.tasksService.getTasksForDate(date),
 				this.attendanceService.getAttendanceForDate(date),
 				this.newsService.findAll(),
+				this.rewardsService.getUserRewards(Number(reference)),
 				reference ? this.userService.findOne(reference.toString()) : null
 			]);
 
@@ -162,103 +165,27 @@ export class ReportsService {
 				{ claims: claimsStats },
 				{ stats: ordersStats },
 				{ total: tasksTotal },
-				{ totalHours: attendanceHours },
+				{ totalHours: attendanceHours, activeShifts, attendanceRecords },
 				{ data: newsItems },
+				{ rewards: userRewards },
 				userData
 			] = allData;
 
-			//overview report data
-			const response = {
-				date: new Date().toISOString(),
-				overview: {
-					leads: {
-						pending: leadsStats?.pending?.length || 0,
-						approved: leadsStats?.approved?.length || 0,
-						inReview: leadsStats?.review?.length || 0,
-						declined: leadsStats?.declined?.length || 0,
-						total: leadsStats?.total || 0
-					},
-					journals: {
-						total: journalsStats?.length || 0,
-					},
-					claims: {
-						pending: claimsStats?.pending?.length || 0,
-						approved: claimsStats?.approved?.length || 0,
-						declined: claimsStats?.declined?.length || 0,
-						paid: claimsStats?.paid?.length || 0,
-						totalValue: claimsStats?.totalValue || 0
-					},
-					tasks: {
-						total: tasksTotal || 0,
-						pending: tasksTotal || 0 // Using total as pending for now
-					},
-					attendance: {
-						hoursWorked: attendanceHours || 0
-					},
-					orders: {
-						pending: ordersStats?.orders?.pending?.length || 0,
-						processing: ordersStats?.orders?.processing?.length || 0,
-						completed: ordersStats?.orders?.completed?.length || 0,
-						metrics: ordersStats?.orders?.metrics || {
-							totalOrders: 0,
-							grossOrderValue: '0',
-							averageOrderValue: '0'
-						}
-					},
-					news: {
-						total: newsItems?.filter(item =>
-							new Date(item.createdAt).toDateString() === new Date().toDateString()
-						).length || 0
-					}
-				}
-			};
-
-			// User specific report data
-			if (reference && userData?.user) {
-				const userSpecificData = await Promise.all([
-					this.leadService.leadsByUser(Number(userData.user.uid)),
-					this.claimsService.claimsByUser(Number(userData.user.uid)),
-					this.tasksService.tasksByUser(Number(userData.user.uid)),
-					this.shopService.getOrdersByUser(Number(userData.user.uid)),
-					this.attendanceService.getCurrentShiftHours(Number(userData.user.uid))
-				]);
-
-				const [
-					userLeads,
-					userClaims,
-					userTasks,
-					userOrders,
-					currentShiftHours
-				] = userSpecificData;
-
-				response['userSpecific'] = {
-					user: {
-						uid: Number(userData.user.uid),
-						name: userData.user.username,
-					},
-					todaysActivity: {
-						leads: userLeads?.leads?.filter(lead =>
-							new Date(lead?.createdAt).toDateString() === new Date().toDateString()
-						).length || 0,
-						claims: userClaims?.claims?.filter(claim =>
-							new Date(claim?.createdAt).toDateString() === new Date().toDateString()
-						).length || 0,
-						tasks: userTasks?.tasks?.filter(task =>
-							new Date(task?.createdAt).toDateString() === new Date().toDateString()
-						).length || 0,
-						orders: userOrders?.orders?.filter(order =>
-							new Date(order?.orderDate).toDateString() === new Date().toDateString()
-						).length || 0,
-						currentShiftHours: currentShiftHours || 0
-					}
-				};
-			}
-
+			// Create report record
 			const report = this.reportRepository.create({
 				title: 'Daily Report',
 				description: `Daily report for the date ${new Date()}`,
 				type: ReportType.DAILY,
-				metadata: response,
+				metadata: {
+					leads: leadsStats,
+					journals: journalsStats,
+					claims: claimsStats,
+					tasks: tasksTotal,
+					attendance: { totalHours: attendanceHours, activeShifts, attendanceRecords },
+					orders: ordersStats?.orders,
+					news: newsItems,
+					rewards: userRewards
+				},
 				owner: userData?.user,
 				branch: userData?.user?.branch
 			});
@@ -272,78 +199,74 @@ export class ReportsService {
 				message: `Your daily activity report for ${new Date().toLocaleDateString()} has been generated`,
 				status: NotificationStatus.UNREAD,
 				owner: userData?.user
-			}
+			};
 
-			const recipients = [AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.OWNER, AccessLevel.SUPERVISOR, AccessLevel.USER];
-
+			const recipients = [AccessLevel.USER];
 			this.eventEmitter.emit('send.notification', notification, recipients);
 
-			// Prepare and send email
+			// Send email only to the user
 			if (userData?.user?.email) {
 				// Get previous day metrics for comparison
 				const previousDayOrders = ordersStats?.orders?.metrics?.totalOrders || 0;
 				const previousDayRevenue = Number(ordersStats?.orders?.metrics?.grossOrderValue?.replace(/[^0-9.-]+/g, '')) || 0;
 
 				// Calculate current day metrics
-				const currentRevenue = Number(response?.overview?.orders?.metrics?.grossOrderValue) || 0;
-				const currentOrders = response?.overview?.orders?.metrics?.totalOrders || 0;
+				const currentRevenue = Number(ordersStats?.orders?.metrics?.grossOrderValue) || 0;
+				const currentOrders = ordersStats?.orders?.metrics?.totalOrders || 0;
 
-				// Calculate satisfaction rate based on task completion (assuming non-pending tasks are completed)
-				const totalTasks = response?.overview?.tasks?.total || 0;
-				const pendingTasks = response?.overview?.tasks?.pending || 0;
-				const satisfactionRate = totalTasks > 0
-					? Math.round(((totalTasks - pendingTasks) / totalTasks) * 100)
-					: 98;
-
-				// Format metrics for better readability
-				const emailData = {
-					name: userData?.user?.username,
+				// Format metrics for email
+				const emailData: DailyReportData = {
+					name: userData.user.username,
 					date: new Date(),
 					metrics: {
+						xp: {
+							level: userRewards?.rewards?.rank || 1,
+							currentXP: userRewards?.rewards?.totalXP || 0,
+							todayXP: userRewards?.rewards?.todayXP || 0,
+						},
+						attendance: attendanceRecords[0] ? {
+							startTime: attendanceRecords[0].checkIn.toLocaleTimeString(),
+							endTime: attendanceRecords[0].checkOut?.toLocaleTimeString(),
+							totalHours: attendanceHours,
+							duration: attendanceRecords[0].duration,
+							status: attendanceRecords[0].status,
+							checkInLocation: attendanceRecords[0].checkInLatitude && attendanceRecords[0].checkInLongitude ? {
+								latitude: attendanceRecords[0].checkInLatitude,
+								longitude: attendanceRecords[0].checkInLongitude,
+								notes: attendanceRecords[0].checkInNotes,
+							} : undefined,
+							checkOutLocation: attendanceRecords[0].checkOutLatitude && attendanceRecords[0].checkOutLongitude ? {
+								latitude: attendanceRecords[0].checkOutLatitude,
+								longitude: attendanceRecords[0].checkOutLongitude,
+								notes: attendanceRecords[0].checkOutNotes,
+							} : undefined,
+							verifiedAt: attendanceRecords[0].verifiedAt?.toISOString(),
+							verifiedBy: attendanceRecords[0].verifiedBy,
+						} : undefined,
 						totalOrders: currentOrders,
 						totalRevenue: this.formatCurrency(currentRevenue),
-						newCustomers: response.overview?.leads?.total || 0,
-						satisfactionRate: Math.max(0, Math.min(100, satisfactionRate)), // Ensure between 0-100
+						newCustomers: leadsStats?.total || 0,
 						orderGrowth: this.calculateGrowth(currentOrders, previousDayOrders),
 						revenueGrowth: this.calculateGrowth(currentRevenue, previousDayRevenue),
 						customerGrowth: this.calculateGrowth(
-							response.overview?.leads?.total || 0,
-							(response.overview?.leads?.total || 0) - (response.overview?.leads?.pending || 0)
-						)
-					}
+							leadsStats?.total || 0,
+							(leadsStats?.total || 0) - (leadsStats?.pending?.length || 0)
+						),
+						userSpecific: {
+							todayLeads: leadsStats?.pending?.length || 0,
+							todayClaims: claimsStats?.pending?.length || 0,
+							todayTasks: tasksTotal || 0,
+							todayOrders: currentOrders,
+							hoursWorked: attendanceHours,
+						},
+					},
 				};
 
-				// Send to the user
-				this.eventEmitter.emit('send.email', EmailType.DAILY_REPORT, [userData?.user?.email], emailData);
-
-				// Send internal notification to managers/admins with user specific data if available
-				const userSpecificData = response['userSpecific'];
-				if (userSpecificData) {
-					const internalEmailData = {
-						name: 'Management Team',
-						date: new Date(),
-						metrics: {
-							...emailData.metrics,
-							userSpecific: {
-								name: userSpecificData.user?.name,
-								todayLeads: userSpecificData.todaysActivity?.leads || 0,
-								todayClaims: userSpecificData.todaysActivity?.claims || 0,
-								todayTasks: userSpecificData.todaysActivity?.tasks || 0,
-								todayOrders: userSpecificData.todaysActivity?.orders || 0,
-								hoursWorked: userSpecificData.todaysActivity?.currentShiftHours || 0
-							}
-						}
-					};
-
-					// Get internal broadcast email from config
-					const internalEmail = this.configService.get<string>('INTERNAL_BROADCAST_EMAIL');
-					if (internalEmail) {
-						this.eventEmitter.emit('send.email', EmailType.DAILY_REPORT, [internalEmail], internalEmailData);
-					}
-				}
+				// Send email only to the user
+				this.eventEmitter.emit('send.email', EmailType.DAILY_REPORT, [userData.user.email], emailData);
 			}
 
-			return response;
+			return report;
 		} catch (error) {
 			return this.handleError(error);
 		}

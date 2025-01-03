@@ -11,6 +11,8 @@ import { ShopModule } from '../shop/shop.module';
 import { AttendanceModule } from '../attendance/attendance.module';
 import { NewsModule } from '../news/news.module';
 import { UserModule } from '../user/user.module';
+import { RewardsModule } from '../rewards/rewards.module';
+import { CheckInsModule } from '../check-ins/check-ins.module';
 
 @Module({
   imports: [
@@ -22,7 +24,9 @@ import { UserModule } from '../user/user.module';
     ShopModule,
     AttendanceModule,
     NewsModule,
-    UserModule
+    UserModule,
+    RewardsModule,
+    CheckInsModule
   ],
   controllers: [ReportsController],
   providers: [ReportsService],

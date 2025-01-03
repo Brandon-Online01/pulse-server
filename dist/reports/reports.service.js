@@ -11,7 +11,6 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-var ReportsService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReportsService = void 0;
 const common_1 = require("@nestjs/common");
@@ -33,8 +32,9 @@ const notification_enums_1 = require("../lib/enums/notification.enums");
 const user_enums_1 = require("../lib/enums/user.enums");
 const email_enums_1 = require("../lib/enums/email.enums");
 const config_1 = require("@nestjs/config");
-let ReportsService = ReportsService_1 = class ReportsService {
-    constructor(reportRepository, leadService, journalService, claimsService, tasksService, shopService, attendanceService, newsService, userService, eventEmitter, configService) {
+const rewards_service_1 = require("../rewards/rewards.service");
+let ReportsService = class ReportsService {
+    constructor(reportRepository, leadService, journalService, claimsService, tasksService, shopService, attendanceService, newsService, userService, eventEmitter, configService, rewardsService) {
         this.reportRepository = reportRepository;
         this.leadService = leadService;
         this.journalService = journalService;
@@ -46,7 +46,7 @@ let ReportsService = ReportsService_1 = class ReportsService {
         this.userService = userService;
         this.eventEmitter = eventEmitter;
         this.configService = configService;
-        this.logger = new common_1.Logger(ReportsService_1.name);
+        this.rewardsService = rewardsService;
         this.currencyLocale = this.configService.get('CURRENCY_LOCALE') || 'en-ZA';
         this.currencyCode = this.configService.get('CURRENCY_CODE') || 'ZAR';
         this.currencySymbol = this.configService.get('CURRENCY_SYMBOL') || 'R';
@@ -146,79 +146,24 @@ let ReportsService = ReportsService_1 = class ReportsService {
                 this.tasksService.getTasksForDate(date),
                 this.attendanceService.getAttendanceForDate(date),
                 this.newsService.findAll(),
+                this.rewardsService.getUserRewards(Number(reference)),
                 reference ? this.userService.findOne(reference.toString()) : null
             ]);
-            const [{ leads: leadsStats }, { journals: journalsStats }, { claims: claimsStats }, { stats: ordersStats }, { total: tasksTotal }, { totalHours: attendanceHours }, { data: newsItems }, userData] = allData;
-            const response = {
-                date: new Date().toISOString(),
-                overview: {
-                    leads: {
-                        pending: leadsStats?.pending?.length || 0,
-                        approved: leadsStats?.approved?.length || 0,
-                        inReview: leadsStats?.review?.length || 0,
-                        declined: leadsStats?.declined?.length || 0,
-                        total: leadsStats?.total || 0
-                    },
-                    journals: {
-                        total: journalsStats?.length || 0,
-                    },
-                    claims: {
-                        pending: claimsStats?.pending?.length || 0,
-                        approved: claimsStats?.approved?.length || 0,
-                        declined: claimsStats?.declined?.length || 0,
-                        paid: claimsStats?.paid?.length || 0,
-                        totalValue: claimsStats?.totalValue || 0
-                    },
-                    tasks: {
-                        total: tasksTotal || 0,
-                        pending: tasksTotal || 0
-                    },
-                    attendance: {
-                        hoursWorked: attendanceHours || 0
-                    },
-                    orders: {
-                        pending: ordersStats?.orders?.pending?.length || 0,
-                        processing: ordersStats?.orders?.processing?.length || 0,
-                        completed: ordersStats?.orders?.completed?.length || 0,
-                        metrics: ordersStats?.orders?.metrics || {
-                            totalOrders: 0,
-                            grossOrderValue: '0',
-                            averageOrderValue: '0'
-                        }
-                    },
-                    news: {
-                        total: newsItems?.filter(item => new Date(item.createdAt).toDateString() === new Date().toDateString()).length || 0
-                    }
-                }
-            };
-            if (reference && userData?.user) {
-                const userSpecificData = await Promise.all([
-                    this.leadService.leadsByUser(Number(userData.user.uid)),
-                    this.claimsService.claimsByUser(Number(userData.user.uid)),
-                    this.tasksService.tasksByUser(Number(userData.user.uid)),
-                    this.shopService.getOrdersByUser(Number(userData.user.uid)),
-                    this.attendanceService.getCurrentShiftHours(Number(userData.user.uid))
-                ]);
-                const [userLeads, userClaims, userTasks, userOrders, currentShiftHours] = userSpecificData;
-                response['userSpecific'] = {
-                    user: {
-                        uid: Number(userData.user.uid),
-                        name: userData.user.username,
-                    },
-                    todaysActivity: {
-                        leads: userLeads?.leads?.filter(lead => new Date(lead?.createdAt).toDateString() === new Date().toDateString()).length || 0,
-                        claims: userClaims?.claims?.filter(claim => new Date(claim?.createdAt).toDateString() === new Date().toDateString()).length || 0,
-                        tasks: userTasks?.tasks?.filter(task => new Date(task?.createdAt).toDateString() === new Date().toDateString()).length || 0,
-                        orders: userOrders?.orders?.filter(order => new Date(order?.orderDate).toDateString() === new Date().toDateString()).length || 0,
-                        currentShiftHours: currentShiftHours || 0
-                    }
-                };
-            }
+            const [{ leads: leadsStats }, { journals: journalsStats }, { claims: claimsStats }, { stats: ordersStats }, { total: tasksTotal }, { totalHours: attendanceHours, activeShifts, attendanceRecords }, { data: newsItems }, { rewards: userRewards }, userData] = allData;
             const report = this.reportRepository.create({
                 title: 'Daily Report',
                 description: `Daily report for the date ${new Date()}`,
                 type: reports_enums_1.ReportType.DAILY,
-                metadata: response,
+                metadata: {
+                    leads: leadsStats,
+                    journals: journalsStats,
+                    claims: claimsStats,
+                    tasks: tasksTotal,
+                    attendance: { totalHours: attendanceHours, activeShifts, attendanceRecords },
+                    orders: ordersStats?.orders,
+                    news: newsItems,
+                    rewards: userRewards
+                },
                 owner: userData?.user,
                 branch: userData?.user?.branch
             });
@@ -230,56 +175,59 @@ let ReportsService = ReportsService_1 = class ReportsService {
                 status: notification_enums_1.NotificationStatus.UNREAD,
                 owner: userData?.user
             };
-            const recipients = [user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.OWNER, user_enums_1.AccessLevel.SUPERVISOR, user_enums_1.AccessLevel.USER];
+            const recipients = [user_enums_1.AccessLevel.USER];
             this.eventEmitter.emit('send.notification', notification, recipients);
             if (userData?.user?.email) {
                 const previousDayOrders = ordersStats?.orders?.metrics?.totalOrders || 0;
                 const previousDayRevenue = Number(ordersStats?.orders?.metrics?.grossOrderValue?.replace(/[^0-9.-]+/g, '')) || 0;
-                const currentRevenue = Number(response?.overview?.orders?.metrics?.grossOrderValue) || 0;
-                const currentOrders = response?.overview?.orders?.metrics?.totalOrders || 0;
-                const totalTasks = response?.overview?.tasks?.total || 0;
-                const pendingTasks = response?.overview?.tasks?.pending || 0;
-                const satisfactionRate = totalTasks > 0
-                    ? Math.round(((totalTasks - pendingTasks) / totalTasks) * 100)
-                    : 98;
+                const currentRevenue = Number(ordersStats?.orders?.metrics?.grossOrderValue) || 0;
+                const currentOrders = ordersStats?.orders?.metrics?.totalOrders || 0;
                 const emailData = {
-                    name: userData?.user?.username,
+                    name: userData.user.username,
                     date: new Date(),
                     metrics: {
+                        xp: {
+                            level: userRewards?.rewards?.rank || 1,
+                            currentXP: userRewards?.rewards?.totalXP || 0,
+                            todayXP: userRewards?.rewards?.todayXP || 0,
+                        },
+                        attendance: attendanceRecords[0] ? {
+                            startTime: attendanceRecords[0].checkIn.toLocaleTimeString(),
+                            endTime: attendanceRecords[0].checkOut?.toLocaleTimeString(),
+                            totalHours: attendanceHours,
+                            duration: attendanceRecords[0].duration,
+                            status: attendanceRecords[0].status,
+                            checkInLocation: attendanceRecords[0].checkInLatitude && attendanceRecords[0].checkInLongitude ? {
+                                latitude: attendanceRecords[0].checkInLatitude,
+                                longitude: attendanceRecords[0].checkInLongitude,
+                                notes: attendanceRecords[0].checkInNotes,
+                            } : undefined,
+                            checkOutLocation: attendanceRecords[0].checkOutLatitude && attendanceRecords[0].checkOutLongitude ? {
+                                latitude: attendanceRecords[0].checkOutLatitude,
+                                longitude: attendanceRecords[0].checkOutLongitude,
+                                notes: attendanceRecords[0].checkOutNotes,
+                            } : undefined,
+                            verifiedAt: attendanceRecords[0].verifiedAt?.toISOString(),
+                            verifiedBy: attendanceRecords[0].verifiedBy,
+                        } : undefined,
                         totalOrders: currentOrders,
                         totalRevenue: this.formatCurrency(currentRevenue),
-                        newCustomers: response.overview?.leads?.total || 0,
-                        satisfactionRate: Math.max(0, Math.min(100, satisfactionRate)),
+                        newCustomers: leadsStats?.total || 0,
                         orderGrowth: this.calculateGrowth(currentOrders, previousDayOrders),
                         revenueGrowth: this.calculateGrowth(currentRevenue, previousDayRevenue),
-                        customerGrowth: this.calculateGrowth(response.overview?.leads?.total || 0, (response.overview?.leads?.total || 0) - (response.overview?.leads?.pending || 0))
-                    }
+                        customerGrowth: this.calculateGrowth(leadsStats?.total || 0, (leadsStats?.total || 0) - (leadsStats?.pending?.length || 0)),
+                        userSpecific: {
+                            todayLeads: leadsStats?.pending?.length || 0,
+                            todayClaims: claimsStats?.pending?.length || 0,
+                            todayTasks: tasksTotal || 0,
+                            todayOrders: currentOrders,
+                            hoursWorked: attendanceHours,
+                        },
+                    },
                 };
-                this.eventEmitter.emit('send.email', email_enums_1.EmailType.DAILY_REPORT, [userData?.user?.email], emailData);
-                const userSpecificData = response['userSpecific'];
-                if (userSpecificData) {
-                    const internalEmailData = {
-                        name: 'Management Team',
-                        date: new Date(),
-                        metrics: {
-                            ...emailData.metrics,
-                            userSpecific: {
-                                name: userSpecificData.user?.name,
-                                todayLeads: userSpecificData.todaysActivity?.leads || 0,
-                                todayClaims: userSpecificData.todaysActivity?.claims || 0,
-                                todayTasks: userSpecificData.todaysActivity?.tasks || 0,
-                                todayOrders: userSpecificData.todaysActivity?.orders || 0,
-                                hoursWorked: userSpecificData.todaysActivity?.currentShiftHours || 0
-                            }
-                        }
-                    };
-                    const internalEmail = this.configService.get('INTERNAL_BROADCAST_EMAIL');
-                    if (internalEmail) {
-                        this.eventEmitter.emit('send.email', email_enums_1.EmailType.DAILY_REPORT, [internalEmail], internalEmailData);
-                    }
-                }
+                this.eventEmitter.emit('send.email', email_enums_1.EmailType.DAILY_REPORT, [userData.user.email], emailData);
             }
-            return response;
+            return report;
         }
         catch (error) {
             return this.handleError(error);
@@ -293,7 +241,7 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], ReportsService.prototype, "userDailyReport", null);
-exports.ReportsService = ReportsService = ReportsService_1 = __decorate([
+exports.ReportsService = ReportsService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(report_entity_1.Report)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
@@ -306,6 +254,7 @@ exports.ReportsService = ReportsService = ReportsService_1 = __decorate([
         news_service_1.NewsService,
         user_service_1.UserService,
         event_emitter_2.EventEmitter2,
-        config_1.ConfigService])
+        config_1.ConfigService,
+        rewards_service_1.RewardsService])
 ], ReportsService);
 //# sourceMappingURL=reports.service.js.map

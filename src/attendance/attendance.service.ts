@@ -330,7 +330,7 @@ export class AttendanceService {
     }
   }
 
-  public async getAttendanceForDate(date: Date): Promise<{ totalHours: number }> {
+  public async getAttendanceForDate(date: Date): Promise<{ totalHours: number, activeShifts: Attendance[], attendanceRecords: Attendance[] }> {
     try {
       const startOfDayDate = new Date(date.setHours(0, 0, 0, 0));
       const endOfDayDate = new Date(date.setHours(23, 59, 59, 999));
@@ -347,7 +347,7 @@ export class AttendanceService {
       let totalMinutesWorked = 0;
 
       // Calculate minutes from completed shifts
-      attendanceRecords.forEach(record => {
+      attendanceRecords?.forEach(record => {
         if (record.checkIn && record.checkOut) {
           const minutes = differenceInMinutes(
             new Date(record.checkOut),
@@ -369,17 +369,27 @@ export class AttendanceService {
       // Add minutes from active shifts
       const now = new Date();
       activeShifts.forEach(shift => {
-        if (shift.checkIn) {
-          const minutes = differenceInMinutes(now, new Date(shift.checkIn));
+        if (shift?.checkIn) {
+          const minutes = differenceInMinutes(now, new Date(shift?.checkIn));
           totalMinutesWorked += minutes;
         }
       });
 
-      return {
-        totalHours: Math.round((totalMinutesWorked / 60) * 10) / 10 // Round to 1 decimal place
+      const response = {
+        totalHours: Math.round((totalMinutesWorked / 60) * 10) / 10, // Round to 1 decimal place
+        activeShifts,
+        attendanceRecords
       };
+
+      return response;
     } catch (error) {
-      return { totalHours: 0 };
+      const response = {
+        totalHours: 0,
+        activeShifts: [],
+        attendanceRecords: []
+      };
+
+      return response;
     }
   }
 

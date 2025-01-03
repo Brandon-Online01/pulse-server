@@ -472,8 +472,108 @@ export const DailyReport = (data: DailyReportData): string => {
 
       <div style="padding: 20px;">
         <h2>Hi ${data?.name},</h2>
-        <p>Your daily in highlights:</p>
+        <p>Your daily highlights:</p>
         
+        ${data?.metrics?.xp ? `
+        <div style="background-color: #fff3cd; padding: 20px; border-radius: 12px; margin: 20px 0;">
+          <h3 style="color: #856404; margin-bottom: 16px;">✨ XP & Level</h3>
+          <div style="display: grid; gap: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: white; border-radius: 8px;">
+              <span>Current Level</span>
+              <strong style="color: #856404">${data?.metrics?.xp?.level}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: white; border-radius: 8px;">
+              <span>Total XP</span>
+              <strong style="color: #856404">${data?.metrics?.xp?.currentXP}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: white; border-radius: 8px;">
+              <span>Today's XP</span>
+              <strong style="color: #28a745">+${data?.metrics?.xp?.todayXP}</strong>
+            </div>
+          </div>
+        </div>
+        ` : ''}
+
+        ${data?.metrics?.attendance ? `
+        <div style="background-color: #d1ecf1; padding: 20px; border-radius: 12px; margin: 20px 0;">
+          <h3 style="color: #0c5460; margin-bottom: 16px;">⏰ Today's Schedule</h3>
+          <div style="display: grid; gap: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: white; border-radius: 8px;">
+              <span>Status</span>
+              <strong style="color: ${data?.metrics?.attendance?.status === 'PRESENT' ? '#28a745' : '#6c757d'}">${data?.metrics?.attendance?.status}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: white; border-radius: 8px;">
+              <span>Start Time</span>
+              <strong>${data?.metrics?.attendance?.startTime}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: white; border-radius: 8px;">
+              <span>End Time</span>
+              <strong>${data?.metrics?.attendance?.endTime || 'Still Working'}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: white; border-radius: 8px;">
+              <span>Duration</span>
+              <strong style="color: #0c5460">${data?.metrics?.attendance?.duration || `${data?.metrics?.attendance?.totalHours}h`}</strong>
+            </div>
+            ${data?.metrics?.attendance?.afterHours > 0 ? `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: white; border-radius: 8px;">
+              <span>After Hours</span>
+              <strong style="color: #28a745">+${data?.metrics?.attendance?.afterHours}h</strong>
+            </div>
+            ` : ''}
+            ${data?.metrics?.attendance?.checkInLocation ? `
+            <div style="padding: 12px; background: white; border-radius: 8px;">
+              <div style="margin-bottom: 8px; color: #0c5460;">Check-in Location</div>
+              <div style="font-size: 14px; color: #666;">
+                <div>Coordinates: ${data?.metrics?.attendance?.checkInLocation?.latitude}, ${data?.metrics?.attendance?.checkInLocation?.longitude}</div>
+                ${data?.metrics?.attendance?.checkInLocation?.notes ? `
+                <div style="margin-top: 4px; font-style: italic;">${data?.metrics?.attendance?.checkInLocation?.notes}</div>
+                ` : ''}
+              </div>
+            </div>
+            ` : ''}
+            ${data?.metrics?.attendance?.checkOutLocation ? `
+            <div style="padding: 12px; background: white; border-radius: 8px;">
+              <div style="margin-bottom: 8px; color: #0c5460;">Check-out Location</div>
+              <div style="font-size: 14px; color: #666;">
+                <div>Coordinates: ${data?.metrics?.attendance?.checkOutLocation?.latitude}, ${data?.metrics?.attendance?.checkOutLocation?.longitude}</div>
+                ${data?.metrics?.attendance?.checkOutLocation?.notes ? `
+                <div style="margin-top: 4px; font-style: italic;">${data?.metrics?.attendance?.checkOutLocation?.notes}</div>
+                ` : ''}
+              </div>
+            </div>
+            ` : ''}
+            ${data?.metrics?.attendance?.verifiedBy ? `
+            <div style="padding: 12px; background: white; border-radius: 8px;">
+              <div style="margin-bottom: 4px; color: #0c5460;">Verified By</div>
+              <div style="font-size: 14px; color: #666;">
+                <div>${data?.metrics?.attendance?.verifiedBy}</div>
+                <div style="font-size: 12px; color: #999; margin-top: 4px;">
+                  ${new Date(data?.metrics?.attendance?.verifiedAt).toLocaleString()}
+                </div>
+              </div>
+            </div>
+            ` : ''}
+          </div>
+        </div>
+        ` : ''}
+
+        ${data?.metrics?.checkIns?.length > 0 ? `
+        <div style="background-color: #d4edda; padding: 20px; border-radius: 12px; margin: 20px 0;">
+          <h3 style="color: #155724; margin-bottom: 16px;">📍 Today's Check-ins</h3>
+          <div style="display: grid; gap: 16px;">
+            ${data?.metrics?.checkIns?.map(checkIn => `
+              <div style="padding: 16px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                  <span style="color: #666">${checkIn.time}</span>
+                  ${checkIn.photo ? `<span style="color: #28a745">📸</span>` : ''}
+                </div>
+                <div style="color: #155724; font-weight: 500;">${checkIn.location}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        ` : ''}
+
         <div style="background-color: #f8f9fa; padding: 20px; border-radius: 12px; margin: 20px 0;">
           <h3 style="color: #0066FF; margin-bottom: 16px;">🎯 Today's Achievements</h3>
           <div style="display: grid; gap: 16px;">

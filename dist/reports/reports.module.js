@@ -20,6 +20,8 @@ const shop_module_1 = require("../shop/shop.module");
 const attendance_module_1 = require("../attendance/attendance.module");
 const news_module_1 = require("../news/news.module");
 const user_module_1 = require("../user/user.module");
+const rewards_module_1 = require("../rewards/rewards.module");
+const check_ins_module_1 = require("../check-ins/check-ins.module");
 let ReportsModule = class ReportsModule {
 };
 exports.ReportsModule = ReportsModule;
@@ -34,7 +36,9 @@ exports.ReportsModule = ReportsModule = __decorate([
             shop_module_1.ShopModule,
             attendance_module_1.AttendanceModule,
             news_module_1.NewsModule,
-            user_module_1.UserModule
+            user_module_1.UserModule,
+            rewards_module_1.RewardsModule,
+            check_ins_module_1.CheckInsModule
         ],
         controllers: [reports_controller_1.ReportsController],
         providers: [reports_service_1.ReportsService],

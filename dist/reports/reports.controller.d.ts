@@ -52,49 +52,8 @@ export declare class ReportsController {
         message: any;
         statusCode: any;
     }>;
-    userDailyReport(reference?: string): Promise<{
+    userDailyReport(reference?: string): Promise<import("./entities/report.entity").Report | {
         message: any;
         statusCode: any;
-    } | {
-        date: string;
-        overview: {
-            leads: {
-                pending: number;
-                approved: number;
-                inReview: number;
-                declined: number;
-                total: number;
-            };
-            journals: {
-                total: number;
-            };
-            claims: {
-                pending: number;
-                approved: number;
-                declined: number;
-                paid: number;
-                totalValue: string | number;
-            };
-            tasks: {
-                total: number;
-                pending: number;
-            };
-            attendance: {
-                hoursWorked: number;
-            };
-            orders: {
-                pending: number;
-                processing: number;
-                completed: number;
-                metrics: {
-                    totalOrders: number;
-                    grossOrderValue: string;
-                    averageOrderValue: string;
-                };
-            };
-            news: {
-                total: number;
-            };
-        };
     }>;
 }
