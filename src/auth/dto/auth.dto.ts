@@ -23,7 +23,7 @@ export class SignUpInput {
   @IsNotEmpty()
   @IsString()
   @ApiProperty({
-    example: 'brandon@Loro.co.za',
+    example: 'brandon@loro.co.za',
     description: 'The email of the user',
   })
   email: string;
@@ -33,7 +33,7 @@ export class ForgotPasswordInput {
   @IsNotEmpty()
   @IsString()
   @ApiProperty({
-    example: 'brandon@Loro.co.za',
+    example: 'brandon@loro.co.za',
     description: 'The email of the user',
   })
   email: string;
@@ -43,7 +43,7 @@ export class ResetPasswordInput {
   @IsNotEmpty()
   @IsString()
   @ApiProperty({
-    example: 'brandon@Loro.co.za',
+    example: 'brandon@loro.co.za',
     description: 'The email of the user',
   })
   email: string;

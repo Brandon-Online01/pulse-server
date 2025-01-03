@@ -30,6 +30,7 @@ export class AuthController {
 	}
 
 	@Post('refresh')
+	@isPublic()
 	@HttpCode(HttpStatus.OK)
 	async refreshToken(@Body('refreshToken') refreshToken: string) {
 		return this.authService.refreshToken(refreshToken);

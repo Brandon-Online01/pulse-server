@@ -15,6 +15,7 @@ export declare class AuthService {
     private generateShortToken;
     refreshToken(token: string): Promise<{
         accessToken: string;
+        profileData: import("../user/entities/user.entity").User;
         message: string;
     }>;
 }

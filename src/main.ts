@@ -18,8 +18,8 @@ async function bootstrap() {
 	});
 
 	const config = new DocumentBuilder()
-		.setTitle('LORO API Playground')
-		.setDescription('LORO API Documentation with detailed endpoints and schemas')
+		.setTitle('loro API Playground')
+		.setDescription('loro API Documentation with detailed endpoints and schemas')
 		.setVersion('1.0')
 		.addTag('assets', 'Manage and track digital assets and resources')
 		.addTag('att', 'Employee attendance tracking and management')

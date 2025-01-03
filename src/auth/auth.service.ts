@@ -139,11 +139,12 @@ export class AuthService {
 	async refreshToken(token: string) {
 		try {
 			const payload = await this.jwtService.verifyAsync(token);
+
 			if (!payload) {
 				throw new BadRequestException('Invalid refresh token');
 			}
 
-			const authProfile = await this.userService.findOne(payload.uid);
+			const authProfile = await this.userService.findOne(payload?.uid);
 
 			if (!authProfile?.user) {
 				throw new BadRequestException('User not found');
@@ -160,6 +161,7 @@ export class AuthService {
 
 			return {
 				accessToken,
+				profileData: authProfile?.user,
 				message: 'Access token refreshed successfully'
 			};
 		} catch (error) {

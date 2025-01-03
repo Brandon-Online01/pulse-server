@@ -40,7 +40,7 @@ __decorate([
     (0, class_validator_1.IsNotEmpty)(),
     (0, class_validator_1.IsString)(),
     (0, swagger_1.ApiProperty)({
-        example: 'brandon@Loro.co.za',
+        example: 'brandon@loro.co.za',
         description: 'The email of the user',
     }),
     __metadata("design:type", String)
@@ -52,7 +52,7 @@ __decorate([
     (0, class_validator_1.IsNotEmpty)(),
     (0, class_validator_1.IsString)(),
     (0, swagger_1.ApiProperty)({
-        example: 'brandon@Loro.co.za',
+        example: 'brandon@loro.co.za',
         description: 'The email of the user',
     }),
     __metadata("design:type", String)
@@ -64,7 +64,7 @@ __decorate([
     (0, class_validator_1.IsNotEmpty)(),
     (0, class_validator_1.IsString)(),
     (0, swagger_1.ApiProperty)({
-        example: 'brandon@Loro.co.za',
+        example: 'brandon@loro.co.za',
         description: 'The email of the user',
     }),
     __metadata("design:type", String)

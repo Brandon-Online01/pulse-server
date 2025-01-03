@@ -7,6 +7,7 @@ export declare class AuthController {
     signIn(signInInput: SignInInput): Promise<import("../lib/types/auth").SignInResponse>;
     refreshToken(refreshToken: string): Promise<{
         accessToken: string;
+        profileData: import("../user/entities/user.entity").User;
         message: string;
     }>;
 }

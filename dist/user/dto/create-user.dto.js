@@ -60,7 +60,7 @@ __decorate([
     (0, class_validator_1.IsEmail)(),
     (0, swagger_1.ApiProperty)({
         description: 'The email of the user',
-        example: 'brandon@Loro.co.za',
+        example: 'brandon@loro.co.za',
     }),
     __metadata("design:type", String)
 ], CreateUserDto.prototype, "email", void 0);

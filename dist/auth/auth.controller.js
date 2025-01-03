@@ -53,6 +53,7 @@ __decorate([
 ], AuthController.prototype, "signIn", null);
 __decorate([
     (0, common_1.Post)('refresh'),
+    (0, public_decorator_1.isPublic)(),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     __param(0, (0, common_1.Body)('refreshToken')),
     __metadata("design:type", Function),

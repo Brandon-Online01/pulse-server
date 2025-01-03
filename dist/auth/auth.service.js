@@ -117,7 +117,7 @@ let AuthService = class AuthService {
             if (!payload) {
                 throw new common_1.BadRequestException('Invalid refresh token');
             }
-            const authProfile = await this.userService.findOne(payload.uid);
+            const authProfile = await this.userService.findOne(payload?.uid);
             if (!authProfile?.user) {
                 throw new common_1.BadRequestException('User not found');
             }
@@ -130,6 +130,7 @@ let AuthService = class AuthService {
             });
             return {
                 accessToken,
+                profileData: authProfile?.user,
                 message: 'Access token refreshed successfully'
             };
         }
