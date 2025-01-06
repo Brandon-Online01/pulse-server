@@ -95,32 +95,27 @@ export class AuthService {
 		try {
 			const { email } = signUpInput;
 
-			// Check if email exists in main users table
 			const existingUser = await this.userService.findOneByEmail(email);
 			if (existingUser?.user) {
 				throw new BadRequestException('Email already taken, please try another one.');
 			}
 
-			// Check if there's a pending signup
 			const existingPendingSignup = await this.pendingSignupService.findByEmail(email);
+
 			if (existingPendingSignup) {
 				if (!existingPendingSignup.isVerified && existingPendingSignup.tokenExpires > new Date()) {
 					return {
 						message: 'Please check your email for the verification link sent earlier.',
 					};
 				}
-				// Delete expired or verified signup
 				await this.pendingSignupService.delete(existingPendingSignup.uid);
 			}
 
-			// Generate new verification token and create pending signup
 			const verificationToken = await this.generateSecureToken();
 			const verificationUrl = `${process.env.SIGNUP_DOMAIN}/verify/${verificationToken}`;
 
-			// Create new pending signup
 			await this.pendingSignupService.create(email, verificationToken);
 
-			// Send verification email
 			this.eventEmitter.emit('send.email',
 				EmailType.VERIFICATION,
 				[email],
@@ -239,9 +234,8 @@ export class AuthService {
 		try {
 			const { email } = forgotPasswordInput;
 
-			const existingUser = await this.userService.findOne(email);
+			const existingUser = await this.userService.findOneByEmail(email);
 
-			// Return success even if email not found for security
 			if (!existingUser?.user) {
 				return {
 					message: 'If your email is registered, you will receive password reset instructions.',
@@ -263,9 +257,12 @@ export class AuthService {
 				}
 			);
 
-			return {
-				message: 'If your email is registered, you will receive password reset instructions.',
-			};
+			const response = {
+				status: 'success',
+				message: 'A password reset link has been sent to your email. Follow the instructions to reset your password.',
+			}
+
+			return response;
 		} catch (error) {
 			if (error instanceof HttpException) {
 				throw error;

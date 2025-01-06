@@ -184,7 +184,7 @@ let AuthService = class AuthService {
     async forgotPassword(forgotPasswordInput) {
         try {
             const { email } = forgotPasswordInput;
-            const existingUser = await this.userService.findOne(email);
+            const existingUser = await this.userService.findOneByEmail(email);
             if (!existingUser?.user) {
                 return {
                     message: 'If your email is registered, you will receive password reset instructions.',
@@ -198,9 +198,11 @@ let AuthService = class AuthService {
                 resetLink: resetUrl,
                 expiryMinutes: 30
             });
-            return {
-                message: 'If your email is registered, you will receive password reset instructions.',
+            const response = {
+                status: 'success',
+                message: 'A password reset link has been sent to your email. Follow the instructions to reset your password.',
             };
+            return response;
         }
         catch (error) {
             if (error instanceof common_1.HttpException) {

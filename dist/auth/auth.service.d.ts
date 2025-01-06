@@ -23,6 +23,9 @@ export declare class AuthService {
         message: string;
     }>;
     forgotPassword(forgotPasswordInput: ForgotPasswordInput): Promise<{
+        status: string;
+        message: string;
+    } | {
         message: string;
     }>;
     resetPassword(resetPasswordInput: ResetPasswordInput): Promise<{
