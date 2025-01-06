@@ -60,8 +60,8 @@ let AuthService = class AuthService {
             };
             const tokenRole = accessLevel?.toLowerCase();
             const payload = { uid: uid?.toString(), role: tokenRole };
-            const accessToken = await this.jwtService.signAsync(payload, { expiresIn: `${process.env.JWT_ACCESS_EXPIRES_IN}` });
-            const refreshToken = await this.jwtService.signAsync(payload, { expiresIn: `${process.env.JWT_REFRESH_EXPIRES_IN}` });
+            const accessToken = await this.jwtService.signAsync(payload, { expiresIn: `8h` });
+            const refreshToken = await this.jwtService.signAsync(payload, { expiresIn: `7d` });
             await this.rewardsService.awardXP({
                 owner: uid,
                 amount: constants_1.XP_VALUES.DAILY_LOGIN,
@@ -72,15 +72,23 @@ let AuthService = class AuthService {
                     details: 'Daily login reward'
                 }
             });
-            return {
+            const response = {
                 profileData,
                 accessToken,
                 refreshToken,
                 message: `Welcome ${profileData.name}!`,
             };
+            return response;
         }
         catch (error) {
-            throw new common_1.HttpException(error.message || 'Authentication failed', error.status || common_1.HttpStatus.BAD_REQUEST);
+            console.log(error);
+            const response = {
+                message: error?.message,
+                accessToken: null,
+                refreshToken: null,
+                profileData: null,
+            };
+            return response;
         }
     }
     async signUp(signUpInput) {
@@ -159,7 +167,7 @@ let AuthService = class AuthService {
                 throw new common_1.BadRequestException('Token has expired. Please sign up again.');
             }
             const username = pendingSignup.email.split('@')[0].toLowerCase();
-            const hashedPassword = await bcrypt.hash(password, Number(process.env.BCRYPT_SALT));
+            const hashedPassword = await bcrypt.hash(password, 10);
             await this.userService.create({
                 email: pendingSignup.email,
                 username,
@@ -175,9 +183,11 @@ let AuthService = class AuthService {
             this.eventEmitter.emit('send.email', email_enums_1.EmailType.SIGNUP, [pendingSignup.email], {
                 name: username,
             });
-            return {
+            const response = {
+                status: 'success',
                 message: 'Account created successfully. You can now sign in.',
             };
+            return response;
         }
         catch (error) {
             throw new common_1.HttpException(error.message || 'Failed to create account', error.status || common_1.HttpStatus.BAD_REQUEST);
@@ -239,7 +249,7 @@ let AuthService = class AuthService {
             if (!user?.user) {
                 throw new common_1.BadRequestException('User not found');
             }
-            const hashedPassword = await bcrypt.hash(password, Number(process.env.BCRYPT_SALT));
+            const hashedPassword = await bcrypt.hash(password, 10);
             await this.userService.resetPassword(user.user.uid, hashedPassword);
             await this.passwordResetService.markAsUsed(resetRequest.uid);
             this.eventEmitter.emit('send.email', email_enums_1.EmailType.PASSWORD_CHANGED, [user.user.email], {

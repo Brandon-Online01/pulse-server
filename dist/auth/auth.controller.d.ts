@@ -9,6 +9,7 @@ export declare class AuthController {
         email: string;
     }>;
     setPassword(setPasswordInput: SetPasswordInput): Promise<{
+        status: string;
         message: string;
     }>;
     forgotPassword(forgotPasswordInput: ForgotPasswordInput): Promise<{

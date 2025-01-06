@@ -65,8 +65,8 @@ export class AuthService {
 
 			const payload = { uid: uid?.toString(), role: tokenRole };
 
-			const accessToken = await this.jwtService.signAsync(payload, { expiresIn: `${process.env.JWT_ACCESS_EXPIRES_IN}` });
-			const refreshToken = await this.jwtService.signAsync(payload, { expiresIn: `${process.env.JWT_REFRESH_EXPIRES_IN}` });
+			const accessToken = await this.jwtService.signAsync(payload, { expiresIn: `8h` });
+			const refreshToken = await this.jwtService.signAsync(payload, { expiresIn: `7d` });
 
 			await this.rewardsService.awardXP({
 				owner: uid,
@@ -79,17 +79,24 @@ export class AuthService {
 				}
 			});
 
-			return {
+			const response = {
 				profileData,
 				accessToken,
 				refreshToken,
 				message: `Welcome ${profileData.name}!`,
-			};
+			}
+
+			return response;
 		} catch (error) {
-			throw new HttpException(
-				error.message || 'Authentication failed',
-				error.status || HttpStatus.BAD_REQUEST
-			);
+			console.log(error);
+			const response = {
+				message: error?.message,
+				accessToken: null,
+				refreshToken: null,
+				profileData: null,
+			}
+
+			return response;
 		}
 	}
 
@@ -195,7 +202,7 @@ export class AuthService {
 
 			// Create the actual user account
 			const username = pendingSignup.email.split('@')[0].toLowerCase();
-			const hashedPassword = await bcrypt.hash(password, Number(process.env.BCRYPT_SALT));
+			const hashedPassword = await bcrypt.hash(password, 10);
 
 			await this.userService.create({
 				email: pendingSignup.email,
@@ -221,9 +228,12 @@ export class AuthService {
 				}
 			);
 
-			return {
+			const response = {
+				status: 'success',
 				message: 'Account created successfully. You can now sign in.',
 			};
+
+			return response;
 		} catch (error) {
 			throw new HttpException(
 				error.message || 'Failed to create account',
@@ -310,7 +320,7 @@ export class AuthService {
 				throw new BadRequestException('User not found');
 			}
 
-			const hashedPassword = await bcrypt.hash(password, Number(process.env.BCRYPT_SALT));
+			const hashedPassword = await bcrypt.hash(password, 10);
 			await this.userService.resetPassword(user.user.uid, hashedPassword);
 
 			// Mark reset request as used

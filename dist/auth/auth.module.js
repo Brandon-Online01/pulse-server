@@ -27,8 +27,8 @@ exports.AuthModule = AuthModule = __decorate([
             typeorm_1.TypeOrmModule.forFeature([pending_signup_entity_1.PendingSignup, password_reset_entity_1.PasswordReset]),
             jwt_1.JwtModule.register({
                 global: true,
-                secret: process.env.JWT_SECRET,
-                signOptions: { expiresIn: process.env.JWT_ACCESS_EXPIRES_IN },
+                secret: 'nbc6a5WW7BW4iMApC1FUtRhJPZuk0WNm4qoF7Sg9q553sV601tx2scFGVpLUxW6QvdRrXRKgPiOFMuJ7qNJ7CJcTf7qapNarmsfe',
+                signOptions: { expiresIn: '8h' },
             }),
             user_module_1.UserModule,
             rewards_module_1.RewardsModule,
