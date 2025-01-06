@@ -87,7 +87,7 @@ export class ClaimsService {
 				amount: XP_VALUES.CLAIM,
 				action: XP_VALUES_TYPES.CLAIM,
 				source: {
-					id: createClaimDto.owner.uid.toString(),
+					id: String(createClaimDto?.owner?.uid),
 					type: XP_VALUES_TYPES.CLAIM,
 					details: 'Claim reward'
 				}
@@ -301,11 +301,11 @@ export class ClaimsService {
 			this.eventEmitter.emit('send.notification', notification, recipients);
 
 			await this.rewardsService.awardXP({
-				owner: updateClaimDto.owner.uid,
+				owner: updateClaimDto?.owner?.uid,
 				amount: XP_VALUES.CLAIM,
 				action: XP_VALUES_TYPES.CLAIM,
 				source: {
-					id: updateClaimDto.owner.uid.toString(),
+					id: String(updateClaimDto?.owner?.uid),
 					type: XP_VALUES_TYPES.CLAIM,
 					details: 'Claim reward'
 				}

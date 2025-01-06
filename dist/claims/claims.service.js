@@ -77,7 +77,7 @@ let ClaimsService = class ClaimsService {
                 amount: constants_2.XP_VALUES.CLAIM,
                 action: constants_1.XP_VALUES_TYPES.CLAIM,
                 source: {
-                    id: createClaimDto.owner.uid.toString(),
+                    id: String(createClaimDto?.owner?.uid),
                     type: constants_1.XP_VALUES_TYPES.CLAIM,
                     details: 'Claim reward'
                 }
@@ -244,11 +244,11 @@ let ClaimsService = class ClaimsService {
             const recipients = [user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.OWNER, user_enums_1.AccessLevel.SUPERVISOR, user_enums_1.AccessLevel.USER];
             this.eventEmitter.emit('send.notification', notification, recipients);
             await this.rewardsService.awardXP({
-                owner: updateClaimDto.owner.uid,
+                owner: updateClaimDto?.owner?.uid,
                 amount: constants_2.XP_VALUES.CLAIM,
                 action: constants_1.XP_VALUES_TYPES.CLAIM,
                 source: {
-                    id: updateClaimDto.owner.uid.toString(),
+                    id: String(updateClaimDto?.owner?.uid),
                     type: constants_1.XP_VALUES_TYPES.CLAIM,
                     details: 'Claim reward'
                 }
