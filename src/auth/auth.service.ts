@@ -1,7 +1,8 @@
 import { BadRequestException, HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { SignInInput, SignUpInput } from './dto/auth.dto';
+import { SignInInput, SignUpInput, VerifyEmailInput, SetPasswordInput, ForgotPasswordInput, ResetPasswordInput } from './dto/auth.dto';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 import { UserService } from '../user/user.service';
 import { SignInResponse, SignUpResponse } from '../lib/types/auth';
 import { ProfileData } from '../lib/types/auth';
@@ -10,6 +11,7 @@ import { XP_VALUES, XP_VALUES_TYPES } from 'src/lib/constants/constants';
 import { EmailType } from '../lib/enums/email.enums';
 import { AccessLevel } from '../lib/enums/user.enums';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { PendingSignupService } from './pending-signup.service';
 
 @Injectable()
 export class AuthService {
@@ -18,7 +20,12 @@ export class AuthService {
 		private userService: UserService,
 		private rewardsService: RewardsService,
 		private eventEmitter: EventEmitter2,
+		private pendingSignupService: PendingSignupService,
 	) { }
+
+	private async generateSecureToken(): Promise<string> {
+		return crypto.randomBytes(32).toString('hex');
+	}
 
 	async signIn(signInInput: SignInInput): Promise<SignInResponse> {
 		try {
@@ -88,52 +95,221 @@ export class AuthService {
 		try {
 			const { email } = signUpInput;
 
-			const isEmailTaken = await this.userService.findOne(email);
-
-			if (isEmailTaken) {
-				throw new HttpException('email already taken, please try another one.', HttpStatus.BAD_REQUEST);
+			// Check if email exists in main users table
+			const existingUser = await this.userService.findOneByEmail(email);
+			if (existingUser?.user) {
+				throw new BadRequestException('Email already taken, please try another one.');
 			}
 
-			const verificationToken = await this.generateShortToken();
+			// Check if there's a pending signup
+			const existingPendingSignup = await this.pendingSignupService.findByEmail(email);
+			if (existingPendingSignup) {
+				if (!existingPendingSignup.isVerified && existingPendingSignup.tokenExpires > new Date()) {
+					return {
+						message: 'Please check your email for the verification link sent earlier.',
+					};
+				}
+				// Delete expired or verified signup
+				await this.pendingSignupService.delete(existingPendingSignup.uid);
+			}
+
+			// Generate new verification token and create pending signup
+			const verificationToken = await this.generateSecureToken();
 			const verificationUrl = `${process.env.SIGNUP_DOMAIN}/verify/${verificationToken}`;
 
-			await this.userService.createPendingUser({
-				...signUpInput,
-				verificationToken,
-				status: 'pending',
-				tokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000)
-			});
+			// Create new pending signup
+			await this.pendingSignupService.create(email, verificationToken);
 
+			// Send verification email
 			this.eventEmitter.emit('send.email',
 				EmailType.VERIFICATION,
-				[AccessLevel.USER],
+				[email],
 				{
-					name: email?.split('@')[0],
+					name: email.split('@')[0],
 					verificationLink: verificationUrl,
 					expiryHours: 24
 				}
 			);
 
+			const response = {
+				status: 'success',
+				message: 'Please check your email and verify your account within the next 24 hours.',
+			}
+
+			return response;
+		} catch (error) {
+			const response = {
+				message: error?.message,
+			}
+
+			return response;
+		}
+	}
+
+	async verifyEmail(verifyEmailInput: VerifyEmailInput) {
+		try {
+			const { token } = verifyEmailInput;
+			const pendingSignup = await this.pendingSignupService.findByToken(token);
+
+			if (!pendingSignup) {
+				throw new BadRequestException('Invalid verification token');
+			}
+
+			if (pendingSignup.tokenExpires < new Date()) {
+				await this.pendingSignupService.delete(pendingSignup.uid);
+				throw new BadRequestException('Verification token has expired. Please sign up again.');
+			}
+
+			if (pendingSignup.isVerified) {
+				throw new BadRequestException('Email already verified. Please proceed to set your password.');
+			}
+
+			await this.pendingSignupService.markAsVerified(pendingSignup.uid);
+
 			return {
-				message: 'please check your email and verify your account within the next 24 hours.',
+				message: 'Email verified successfully. You can now set your password.',
+				email: pendingSignup.email
 			};
 		} catch (error) {
 			throw new HttpException(
-				error.message || 'Failed to create profile',
+				error.message || 'Email verification failed',
 				error.status || HttpStatus.BAD_REQUEST
 			);
 		}
 	}
 
-	private async generateShortToken(length: number = 8): Promise<string> {
-		const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-		let token = '';
+	async setPassword(setPasswordInput: SetPasswordInput) {
+		try {
+			const { token, password } = setPasswordInput;
+			const pendingSignup = await this.pendingSignupService.findByToken(token);
 
-		for (let i = 0; i < length; i++) {
-			token += chars.charAt(Math.floor(Math.random() * chars.length));
+			if (!pendingSignup) {
+				throw new BadRequestException('Invalid token');
+			}
+
+			if (!pendingSignup.isVerified) {
+				throw new BadRequestException('Email not verified. Please verify your email first.');
+			}
+
+			if (pendingSignup.tokenExpires < new Date()) {
+				await this.pendingSignupService.delete(pendingSignup.uid);
+				throw new BadRequestException('Token has expired. Please sign up again.');
+			}
+
+			// Create the actual user account
+			const username = pendingSignup.email.split('@')[0].toLowerCase();
+			const hashedPassword = await bcrypt.hash(password, Number(process.env.BCRYPT_SALT));
+
+			await this.userService.create({
+				email: pendingSignup.email,
+				username,
+				password: hashedPassword,
+				name: username,
+				surname: '',
+				phone: '',
+				photoURL: `https://ui-avatars.com/api/?name=${username}&background=805adc&color=fff`,
+				accessLevel: AccessLevel.USER,
+				userref: `USR${Date.now()}`
+			});
+
+			// Delete the pending signup
+			await this.pendingSignupService.delete(pendingSignup.uid);
+
+			// Send welcome email
+			this.eventEmitter.emit('send.email',
+				EmailType.SIGNUP,
+				[pendingSignup.email],
+				{
+					name: username,
+				}
+			);
+
+			return {
+				message: 'Account created successfully. You can now sign in.',
+			};
+		} catch (error) {
+			throw new HttpException(
+				error.message || 'Failed to create account',
+				error.status || HttpStatus.BAD_REQUEST
+			);
 		}
+	}
 
-		return token;
+	async forgotPassword(forgotPasswordInput: ForgotPasswordInput) {
+		try {
+			const { email } = forgotPasswordInput;
+
+			const existingUser = await this.userService.findOne(email);
+
+			// Return success even if email not found for security
+			if (!existingUser?.user) {
+				return {
+					message: 'If your email is registered, you will receive password reset instructions.',
+				};
+			}
+
+			const resetToken = await this.generateSecureToken();
+			const resetUrl = `${process.env.SIGNUP_DOMAIN}/reset-password/${resetToken}`;
+
+			await this.userService.setResetToken(existingUser.user.uid, resetToken);
+
+			this.eventEmitter.emit('send.email',
+				EmailType.PASSWORD_RESET,
+				[email],
+				{
+					name: existingUser.user.name,
+					resetLink: resetUrl,
+					expiryMinutes: 30
+				}
+			);
+
+			return {
+				message: 'If your email is registered, you will receive password reset instructions.',
+			};
+		} catch (error) {
+			if (error instanceof HttpException) {
+				throw error;
+			}
+			throw new HttpException(
+				error.message || 'Failed to process password reset request',
+				error.status || HttpStatus.BAD_REQUEST
+			);
+		}
+	}
+
+	async resetPassword(resetPasswordInput: ResetPasswordInput) {
+		try {
+			const { token, password } = resetPasswordInput;
+			const user = await this.userService.findByResetToken(token);
+
+			if (!user) {
+				throw new BadRequestException('Invalid or expired reset token');
+			}
+
+			if (user.tokenExpires < new Date()) {
+				throw new BadRequestException('Reset token has expired');
+			}
+
+			const hashedPassword = await bcrypt.hash(password, Number(process.env.BCRYPT_SALT));
+			await this.userService.resetPassword(user.uid, hashedPassword);
+
+			this.eventEmitter.emit('send.email',
+				EmailType.PASSWORD_CHANGED,
+				[user.email],
+				{
+					name: user.name,
+				}
+			);
+
+			return {
+				message: 'Password reset successfully. You can now sign in with your new password.',
+			};
+		} catch (error) {
+			throw new HttpException(
+				error.message || 'Failed to reset password',
+				error.status || HttpStatus.BAD_REQUEST
+			);
+		}
 	}
 
 	async refreshToken(token: string) {

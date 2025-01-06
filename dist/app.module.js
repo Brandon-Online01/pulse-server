@@ -67,6 +67,7 @@ const unlocked_item_entity_1 = require("./rewards/entities/unlocked-item.entity"
 const xp_transaction_entity_1 = require("./rewards/entities/xp-transaction.entity");
 const cache_manager_1 = require("@nestjs/cache-manager");
 const report_entity_1 = require("./reports/entities/report.entity");
+const pending_signup_entity_1 = require("./auth/entities/pending-signup.entity");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -120,6 +121,7 @@ exports.AppModule = AppModule = __decorate([
                     unlocked_item_entity_1.UnlockedItem,
                     xp_transaction_entity_1.XPTransaction,
                     report_entity_1.Report,
+                    pending_signup_entity_1.PendingSignup
                 ],
                 synchronize: true,
                 retryAttempts: 100,

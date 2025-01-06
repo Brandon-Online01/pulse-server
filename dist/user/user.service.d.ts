@@ -17,6 +17,10 @@ export declare class UserService {
         user: User | null;
         message: string;
     }>;
+    findOneByEmail(email: string): Promise<{
+        user: User | null;
+        message: string;
+    }>;
     findOneForAuth(searchParameter: string): Promise<{
         user: User | null;
         message: string;
@@ -36,4 +40,10 @@ export declare class UserService {
     restore(ref: number): Promise<{
         message: string;
     }>;
+    findByVerificationToken(token: string): Promise<User | null>;
+    findByResetToken(token: string): Promise<User | null>;
+    markEmailAsVerified(uid: number): Promise<void>;
+    setPassword(uid: number, hashedPassword: string): Promise<void>;
+    setResetToken(uid: number, token: string): Promise<void>;
+    resetPassword(uid: number, hashedPassword: string): Promise<void>;
 }

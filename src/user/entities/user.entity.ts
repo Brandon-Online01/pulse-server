@@ -77,6 +77,15 @@ export class User {
     @Column({ nullable: false })
     userref: string;
 
+    @Column({ nullable: true })
+    verificationToken: string;
+
+    @Column({ nullable: true })
+    resetToken: string;
+
+    @Column({ nullable: true })
+    tokenExpires: Date;
+
     //relationships
     @OneToOne(() => UserProfile, (userProfile) => userProfile?.owner)
     @JoinColumn()

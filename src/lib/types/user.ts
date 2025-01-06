@@ -24,9 +24,16 @@ export type SingularSearchResponse = {
 
 export interface NewSignUp {
   email: string;
+  name: string;
+  surname: string;
+  username: string;
   verificationToken: string;
   status: string;
   tokenExpires: Date;
   password?: string;
+  photoURL: string;
+  phone: string;
+  accessLevel: AccessLevel;
+  userref: string;
 }
 

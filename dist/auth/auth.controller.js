@@ -25,6 +25,18 @@ let AuthController = class AuthController {
     signUp(signUpInput) {
         return this.authService.signUp(signUpInput);
     }
+    verifyEmail(verifyEmailInput) {
+        return this.authService.verifyEmail(verifyEmailInput);
+    }
+    setPassword(setPasswordInput) {
+        return this.authService.setPassword(setPasswordInput);
+    }
+    forgotPassword(forgotPasswordInput) {
+        return this.authService.forgotPassword(forgotPasswordInput);
+    }
+    resetPassword(resetPasswordInput) {
+        return this.authService.resetPassword(resetPasswordInput);
+    }
     signIn(signInInput) {
         return this.authService.signIn(signInInput);
     }
@@ -36,16 +48,56 @@ exports.AuthController = AuthController;
 __decorate([
     (0, common_1.Post)('sign-up'),
     (0, public_decorator_1.isPublic)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Initiate the sign up process' }),
+    (0, swagger_1.ApiOperation)({ summary: 'initiate the sign up process' }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [auth_dto_1.SignUpInput]),
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "signUp", null);
 __decorate([
+    (0, common_1.Post)('verify-email'),
+    (0, public_decorator_1.isPublic)(),
+    (0, swagger_1.ApiOperation)({ summary: 'verify email using token from email' }),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [auth_dto_1.VerifyEmailInput]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "verifyEmail", null);
+__decorate([
+    (0, common_1.Post)('set-password'),
+    (0, public_decorator_1.isPublic)(),
+    (0, swagger_1.ApiOperation)({ summary: 'set password after email verification' }),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [auth_dto_1.SetPasswordInput]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "setPassword", null);
+__decorate([
+    (0, common_1.Post)('forgot-password'),
+    (0, public_decorator_1.isPublic)(),
+    (0, swagger_1.ApiOperation)({ summary: 'request password reset email' }),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [auth_dto_1.ForgotPasswordInput]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "forgotPassword", null);
+__decorate([
+    (0, common_1.Post)('reset-password'),
+    (0, public_decorator_1.isPublic)(),
+    (0, swagger_1.ApiOperation)({ summary: 'reset password using token from email' }),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [auth_dto_1.ResetPasswordInput]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "resetPassword", null);
+__decorate([
     (0, common_1.Post)('sign-in'),
     (0, public_decorator_1.isPublic)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Authenticate a user using existing credentials' }),
+    (0, swagger_1.ApiOperation)({ summary: 'authenticate a user using existing credentials' }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [auth_dto_1.SignInInput]),
@@ -55,6 +107,7 @@ __decorate([
     (0, common_1.Post)('refresh'),
     (0, public_decorator_1.isPublic)(),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: 'refresh token' }),
     __param(0, (0, common_1.Body)('refreshToken')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),

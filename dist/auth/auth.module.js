@@ -11,27 +11,29 @@ const common_1 = require("@nestjs/common");
 const auth_service_1 = require("./auth.service");
 const auth_controller_1 = require("./auth.controller");
 const jwt_1 = require("@nestjs/jwt");
-const config_1 = require("@nestjs/config");
 const user_module_1 = require("../user/user.module");
 const rewards_module_1 = require("../rewards/rewards.module");
+const typeorm_1 = require("@nestjs/typeorm");
+const pending_signup_entity_1 = require("./entities/pending-signup.entity");
+const pending_signup_service_1 = require("./pending-signup.service");
 let AuthModule = class AuthModule {
 };
 exports.AuthModule = AuthModule;
 exports.AuthModule = AuthModule = __decorate([
     (0, common_1.Module)({
         imports: [
+            typeorm_1.TypeOrmModule.forFeature([pending_signup_entity_1.PendingSignup]),
+            jwt_1.JwtModule.register({
+                global: true,
+                secret: process.env.JWT_SECRET,
+                signOptions: { expiresIn: process.env.JWT_ACCESS_EXPIRES_IN },
+            }),
             user_module_1.UserModule,
             rewards_module_1.RewardsModule,
-            jwt_1.JwtModule.registerAsync({
-                global: true,
-                inject: [config_1.ConfigService],
-                useFactory: (configService) => ({
-                    secret: configService.get('JWT_SECRET'),
-                }),
-            }),
         ],
         controllers: [auth_controller_1.AuthController],
-        providers: [auth_service_1.AuthService],
+        providers: [auth_service_1.AuthService, pending_signup_service_1.PendingSignupService],
+        exports: [auth_service_1.AuthService],
     })
 ], AuthModule);
 //# sourceMappingURL=auth.module.js.map

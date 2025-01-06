@@ -13,18 +13,24 @@ exports.AuthService = void 0;
 const common_1 = require("@nestjs/common");
 const jwt_1 = require("@nestjs/jwt");
 const bcrypt = require("bcrypt");
+const crypto = require("crypto");
 const user_service_1 = require("../user/user.service");
 const rewards_service_1 = require("../rewards/rewards.service");
 const constants_1 = require("../lib/constants/constants");
 const email_enums_1 = require("../lib/enums/email.enums");
 const user_enums_1 = require("../lib/enums/user.enums");
 const event_emitter_1 = require("@nestjs/event-emitter");
+const pending_signup_service_1 = require("./pending-signup.service");
 let AuthService = class AuthService {
-    constructor(jwtService, userService, rewardsService, eventEmitter) {
+    constructor(jwtService, userService, rewardsService, eventEmitter, pendingSignupService) {
         this.jwtService = jwtService;
         this.userService = userService;
         this.rewardsService = rewardsService;
         this.eventEmitter = eventEmitter;
+        this.pendingSignupService = pendingSignupService;
+    }
+    async generateSecureToken() {
+        return crypto.randomBytes(32).toString('hex');
     }
     async signIn(signInInput) {
         try {
@@ -78,38 +84,153 @@ let AuthService = class AuthService {
     async signUp(signUpInput) {
         try {
             const { email } = signUpInput;
-            const isEmailTaken = await this.userService.findOne(email);
-            if (isEmailTaken) {
-                throw new common_1.HttpException('email already taken, please try another one.', common_1.HttpStatus.BAD_REQUEST);
+            const existingUser = await this.userService.findOneByEmail(email);
+            if (existingUser?.user) {
+                throw new common_1.BadRequestException('Email already taken, please try another one.');
             }
-            const verificationToken = await this.generateShortToken();
+            const existingPendingSignup = await this.pendingSignupService.findByEmail(email);
+            if (existingPendingSignup) {
+                if (!existingPendingSignup.isVerified && existingPendingSignup.tokenExpires > new Date()) {
+                    return {
+                        message: 'Please check your email for the verification link sent earlier.',
+                    };
+                }
+                await this.pendingSignupService.delete(existingPendingSignup.uid);
+            }
+            const verificationToken = await this.generateSecureToken();
             const verificationUrl = `${process.env.SIGNUP_DOMAIN}/verify/${verificationToken}`;
-            await this.userService.createPendingUser({
-                ...signUpInput,
-                verificationToken,
-                status: 'pending',
-                tokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000)
-            });
-            this.eventEmitter.emit('send.email', email_enums_1.EmailType.VERIFICATION, [user_enums_1.AccessLevel.USER], {
-                name: email?.split('@')[0],
+            await this.pendingSignupService.create(email, verificationToken);
+            this.eventEmitter.emit('send.email', email_enums_1.EmailType.VERIFICATION, [email], {
+                name: email.split('@')[0],
                 verificationLink: verificationUrl,
                 expiryHours: 24
             });
+            const response = {
+                status: 'success',
+                message: 'Please check your email and verify your account within the next 24 hours.',
+            };
+            return response;
+        }
+        catch (error) {
+            const response = {
+                message: error?.message,
+            };
+            return response;
+        }
+    }
+    async verifyEmail(verifyEmailInput) {
+        try {
+            const { token } = verifyEmailInput;
+            const pendingSignup = await this.pendingSignupService.findByToken(token);
+            if (!pendingSignup) {
+                throw new common_1.BadRequestException('Invalid verification token');
+            }
+            if (pendingSignup.tokenExpires < new Date()) {
+                await this.pendingSignupService.delete(pendingSignup.uid);
+                throw new common_1.BadRequestException('Verification token has expired. Please sign up again.');
+            }
+            if (pendingSignup.isVerified) {
+                throw new common_1.BadRequestException('Email already verified. Please proceed to set your password.');
+            }
+            await this.pendingSignupService.markAsVerified(pendingSignup.uid);
             return {
-                message: 'please check your email and verify your account within the next 24 hours.',
+                message: 'Email verified successfully. You can now set your password.',
+                email: pendingSignup.email
             };
         }
         catch (error) {
-            throw new common_1.HttpException(error.message || 'Failed to create profile', error.status || common_1.HttpStatus.BAD_REQUEST);
+            throw new common_1.HttpException(error.message || 'Email verification failed', error.status || common_1.HttpStatus.BAD_REQUEST);
         }
     }
-    async generateShortToken(length = 8) {
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        let token = '';
-        for (let i = 0; i < length; i++) {
-            token += chars.charAt(Math.floor(Math.random() * chars.length));
+    async setPassword(setPasswordInput) {
+        try {
+            const { token, password } = setPasswordInput;
+            const pendingSignup = await this.pendingSignupService.findByToken(token);
+            if (!pendingSignup) {
+                throw new common_1.BadRequestException('Invalid token');
+            }
+            if (!pendingSignup.isVerified) {
+                throw new common_1.BadRequestException('Email not verified. Please verify your email first.');
+            }
+            if (pendingSignup.tokenExpires < new Date()) {
+                await this.pendingSignupService.delete(pendingSignup.uid);
+                throw new common_1.BadRequestException('Token has expired. Please sign up again.');
+            }
+            const username = pendingSignup.email.split('@')[0].toLowerCase();
+            const hashedPassword = await bcrypt.hash(password, Number(process.env.BCRYPT_SALT));
+            await this.userService.create({
+                email: pendingSignup.email,
+                username,
+                password: hashedPassword,
+                name: username,
+                surname: '',
+                phone: '',
+                photoURL: `https://ui-avatars.com/api/?name=${username}&background=805adc&color=fff`,
+                accessLevel: user_enums_1.AccessLevel.USER,
+                userref: `USR${Date.now()}`
+            });
+            await this.pendingSignupService.delete(pendingSignup.uid);
+            this.eventEmitter.emit('send.email', email_enums_1.EmailType.SIGNUP, [pendingSignup.email], {
+                name: username,
+            });
+            return {
+                message: 'Account created successfully. You can now sign in.',
+            };
         }
-        return token;
+        catch (error) {
+            throw new common_1.HttpException(error.message || 'Failed to create account', error.status || common_1.HttpStatus.BAD_REQUEST);
+        }
+    }
+    async forgotPassword(forgotPasswordInput) {
+        try {
+            const { email } = forgotPasswordInput;
+            const existingUser = await this.userService.findOne(email);
+            if (!existingUser?.user) {
+                return {
+                    message: 'If your email is registered, you will receive password reset instructions.',
+                };
+            }
+            const resetToken = await this.generateSecureToken();
+            const resetUrl = `${process.env.SIGNUP_DOMAIN}/reset-password/${resetToken}`;
+            await this.userService.setResetToken(existingUser.user.uid, resetToken);
+            this.eventEmitter.emit('send.email', email_enums_1.EmailType.PASSWORD_RESET, [email], {
+                name: existingUser.user.name,
+                resetLink: resetUrl,
+                expiryMinutes: 30
+            });
+            return {
+                message: 'If your email is registered, you will receive password reset instructions.',
+            };
+        }
+        catch (error) {
+            if (error instanceof common_1.HttpException) {
+                throw error;
+            }
+            throw new common_1.HttpException(error.message || 'Failed to process password reset request', error.status || common_1.HttpStatus.BAD_REQUEST);
+        }
+    }
+    async resetPassword(resetPasswordInput) {
+        try {
+            const { token, password } = resetPasswordInput;
+            const user = await this.userService.findByResetToken(token);
+            if (!user) {
+                throw new common_1.BadRequestException('Invalid or expired reset token');
+            }
+            if (user.tokenExpires < new Date()) {
+                throw new common_1.BadRequestException('Reset token has expired');
+            }
+            const hashedPassword = await bcrypt.hash(password, Number(process.env.BCRYPT_SALT));
+            await this.userService.resetPassword(user.uid, hashedPassword);
+            this.eventEmitter.emit('send.email', email_enums_1.EmailType.PASSWORD_CHANGED, [user.email], {
+                name: user.name,
+            });
+            return {
+                message: 'Password reset successfully. You can now sign in with your new password.',
+            };
+        }
+        catch (error) {
+            throw new common_1.HttpException(error.message || 'Failed to reset password', error.status || common_1.HttpStatus.BAD_REQUEST);
+        }
     }
     async refreshToken(token) {
         try {
@@ -148,6 +269,7 @@ exports.AuthService = AuthService = __decorate([
     __metadata("design:paramtypes", [jwt_1.JwtService,
         user_service_1.UserService,
         rewards_service_1.RewardsService,
-        event_emitter_1.EventEmitter2])
+        event_emitter_1.EventEmitter2,
+        pending_signup_service_1.PendingSignupService])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map

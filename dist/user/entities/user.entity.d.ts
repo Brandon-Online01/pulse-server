@@ -34,6 +34,9 @@ export declare class User {
     password: string;
     isDeleted: boolean;
     userref: string;
+    verificationToken: string;
+    resetToken: string;
+    tokenExpires: Date;
     userProfile: UserProfile;
     userEmployeementProfile: UserEmployeementProfile;
     userAttendances: Attendance[];

@@ -109,6 +109,30 @@ export class UserService {
 		}
 	}
 
+	async findOneByEmail(email: string): Promise<{ user: User | null, message: string }> {
+		try {
+			const user = await this.userRepository.findOne({ where: { email } });
+
+			if (!user) {
+				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
+			}
+
+			const response = {
+				user: user,
+				message: process.env.SUCCESS_MESSAGE,
+			};
+
+			return response;
+		} catch (error) {
+			const response = {
+				message: error?.message,
+				user: null
+			}
+
+			return response;
+		}
+	}
+
 	async findOneForAuth(searchParameter: string): Promise<{ user: User | null, message: string }> {
 		try {
 			const user = await this.userRepository.findOne({
@@ -277,5 +301,73 @@ export class UserService {
 
 			return response;
 		}
+	}
+
+	async findByVerificationToken(token: string): Promise<User | null> {
+		try {
+			const user = await this.userRepository.findOne({
+				where: { verificationToken: token, isDeleted: false }
+			});
+
+			return user;
+		} catch (error) {
+			return null;
+		}
+	}
+
+	async findByResetToken(token: string): Promise<User | null> {
+		try {
+			const user = await this.userRepository.findOne({
+				where: { resetToken: token, isDeleted: false }
+			});
+
+			return user;
+		} catch (error) {
+			return null;
+		}
+	}
+
+	async markEmailAsVerified(uid: number): Promise<void> {
+		await this.userRepository.update(
+			{ uid },
+			{
+				status: AccountStatus.ACTIVE,
+				verificationToken: null,
+				tokenExpires: null
+			}
+		);
+	}
+
+	async setPassword(uid: number, hashedPassword: string): Promise<void> {
+		await this.userRepository.update(
+			{ uid },
+			{
+				password: hashedPassword,
+				verificationToken: null,
+				tokenExpires: null,
+				status: AccountStatus.ACTIVE
+			}
+		);
+	}
+
+	async setResetToken(uid: number, token: string): Promise<void> {
+		await this.userRepository.update(
+			{ uid },
+			{
+				resetToken: token,
+				tokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+			}
+		);
+	}
+
+	async resetPassword(uid: number, hashedPassword: string): Promise<void> {
+		await this.userRepository.update(
+			{ uid },
+			{
+				password: hashedPassword,
+				resetToken: null,
+				tokenExpires: null
+			}
+		);
 	}
 }

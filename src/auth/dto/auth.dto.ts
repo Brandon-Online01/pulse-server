@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsString, IsEmail, MinLength, Matches, IsOptional } from 'class-validator';
 
 export class SignInInput {
   @IsNotEmpty()
@@ -21,7 +21,7 @@ export class SignInInput {
 
 export class SignUpInput {
   @IsNotEmpty()
-  @IsString()
+  @IsEmail()
   @ApiProperty({
     example: 'brandon@loro.co.za',
     description: 'The email of the user',
@@ -29,9 +29,41 @@ export class SignUpInput {
   email: string;
 }
 
-export class ForgotPasswordInput {
+export class VerifyEmailInput {
   @IsNotEmpty()
   @IsString()
+  @ApiProperty({
+    example: 'abc123',
+    description: 'The verification token sent via email',
+  })
+  token: string;
+}
+
+export class SetPasswordInput {
+  @IsNotEmpty()
+  @IsString()
+  @ApiProperty({
+    example: 'abc123',
+    description: 'The verification token sent via email',
+  })
+  token: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @MinLength(8)
+  @Matches(/((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/, {
+    message: 'Password must contain uppercase, lowercase, number/special character',
+  })
+  @ApiProperty({
+    example: 'StrongPass123!',
+    description: 'The new password for the account',
+  })
+  password: string;
+}
+
+export class ForgotPasswordInput {
+  @IsNotEmpty()
+  @IsEmail()
   @ApiProperty({
     example: 'brandon@loro.co.za',
     description: 'The email of the user',
@@ -43,8 +75,20 @@ export class ResetPasswordInput {
   @IsNotEmpty()
   @IsString()
   @ApiProperty({
-    example: 'brandon@loro.co.za',
-    description: 'The email of the user',
+    example: 'abc123',
+    description: 'The password reset token sent via email',
   })
-  email: string;
+  token: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @MinLength(8)
+  @Matches(/((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/, {
+    message: 'Password must contain uppercase, lowercase, number/special character',
+  })
+  @ApiProperty({
+    example: 'StrongPass123!',
+    description: 'The new password for the account',
+  })
+  password: string;
 }

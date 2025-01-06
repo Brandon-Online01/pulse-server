@@ -104,6 +104,26 @@ let UserService = class UserService {
             return response;
         }
     }
+    async findOneByEmail(email) {
+        try {
+            const user = await this.userRepository.findOne({ where: { email } });
+            if (!user) {
+                throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
+            }
+            const response = {
+                user: user,
+                message: process.env.SUCCESS_MESSAGE,
+            };
+            return response;
+        }
+        catch (error) {
+            const response = {
+                message: error?.message,
+                user: null
+            };
+            return response;
+        }
+    }
     async findOneForAuth(searchParameter) {
         try {
             const user = await this.userRepository.findOne({
@@ -240,6 +260,56 @@ let UserService = class UserService {
             };
             return response;
         }
+    }
+    async findByVerificationToken(token) {
+        try {
+            const user = await this.userRepository.findOne({
+                where: { verificationToken: token, isDeleted: false }
+            });
+            return user;
+        }
+        catch (error) {
+            return null;
+        }
+    }
+    async findByResetToken(token) {
+        try {
+            const user = await this.userRepository.findOne({
+                where: { resetToken: token, isDeleted: false }
+            });
+            return user;
+        }
+        catch (error) {
+            return null;
+        }
+    }
+    async markEmailAsVerified(uid) {
+        await this.userRepository.update({ uid }, {
+            status: status_enums_1.AccountStatus.ACTIVE,
+            verificationToken: null,
+            tokenExpires: null
+        });
+    }
+    async setPassword(uid, hashedPassword) {
+        await this.userRepository.update({ uid }, {
+            password: hashedPassword,
+            verificationToken: null,
+            tokenExpires: null,
+            status: status_enums_1.AccountStatus.ACTIVE
+        });
+    }
+    async setResetToken(uid, token) {
+        await this.userRepository.update({ uid }, {
+            resetToken: token,
+            tokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000)
+        });
+    }
+    async resetPassword(uid, hashedPassword) {
+        await this.userRepository.update({ uid }, {
+            password: hashedPassword,
+            resetToken: null,
+            tokenExpires: null
+        });
     }
 };
 exports.UserService = UserService;
