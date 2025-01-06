@@ -59,6 +59,7 @@ import { XPTransaction } from './rewards/entities/xp-transaction.entity';
 import { CacheModule } from '@nestjs/cache-manager';
 import { Report } from './reports/entities/report.entity';
 import { PendingSignup } from './auth/entities/pending-signup.entity';
+import { PasswordReset } from './auth/entities/password-reset.entity';
 
 @Module({
   imports: [
@@ -109,7 +110,8 @@ import { PendingSignup } from './auth/entities/pending-signup.entity';
         UnlockedItem,
         XPTransaction,
         Report,
-        PendingSignup
+        PendingSignup,
+        PasswordReset
       ],
       synchronize: true,
       retryAttempts: 100,

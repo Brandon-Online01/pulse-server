@@ -12,6 +12,7 @@ import { EmailType } from '../lib/enums/email.enums';
 import { AccessLevel } from '../lib/enums/user.enums';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PendingSignupService } from './pending-signup.service';
+import { PasswordResetService } from './password-reset.service';
 
 @Injectable()
 export class AuthService {
@@ -21,6 +22,7 @@ export class AuthService {
 		private rewardsService: RewardsService,
 		private eventEmitter: EventEmitter2,
 		private pendingSignupService: PendingSignupService,
+		private passwordResetService: PasswordResetService,
 	) { }
 
 	private async generateSecureToken(): Promise<string> {
@@ -242,10 +244,25 @@ export class AuthService {
 				};
 			}
 
+			const existingReset = await this.passwordResetService.findByEmail(email);
+
+			if (existingReset) {
+				if (existingReset.tokenExpires > new Date()) {
+					const response = {
+						status: 'success',
+						message: 'Please check your email for the password reset link sent earlier.',
+					};
+
+					return response;
+				}
+
+				await this.passwordResetService.delete(existingReset?.uid);
+			}
+
 			const resetToken = await this.generateSecureToken();
 			const resetUrl = `${process.env.SIGNUP_DOMAIN}/reset-password/${resetToken}`;
 
-			await this.userService.setResetToken(existingUser.user.uid, resetToken);
+			await this.passwordResetService.create(email, resetToken);
 
 			this.eventEmitter.emit('send.email',
 				EmailType.PASSWORD_RESET,
@@ -259,8 +276,8 @@ export class AuthService {
 
 			const response = {
 				status: 'success',
-				message: 'A password reset link has been sent to your email. Follow the instructions to reset your password.',
-			}
+				message: 'If your email is registered, you will receive password reset instructions.',
+			};
 
 			return response;
 		} catch (error) {
@@ -277,24 +294,39 @@ export class AuthService {
 	async resetPassword(resetPasswordInput: ResetPasswordInput) {
 		try {
 			const { token, password } = resetPasswordInput;
-			const user = await this.userService.findByResetToken(token);
+			const resetRequest = await this.passwordResetService.findByToken(token);
 
-			if (!user) {
+			if (!resetRequest) {
 				throw new BadRequestException('Invalid or expired reset token');
 			}
 
-			if (user.tokenExpires < new Date()) {
-				throw new BadRequestException('Reset token has expired');
+			if (resetRequest.tokenExpires < new Date()) {
+				await this.passwordResetService.delete(resetRequest.uid);
+				throw new BadRequestException('Reset token has expired. Please request a new one.');
+			}
+
+			const user = await this.userService.findOneByEmail(resetRequest.email);
+			if (!user?.user) {
+				throw new BadRequestException('User not found');
 			}
 
 			const hashedPassword = await bcrypt.hash(password, Number(process.env.BCRYPT_SALT));
-			await this.userService.resetPassword(user.uid, hashedPassword);
+			await this.userService.resetPassword(user.user.uid, hashedPassword);
+
+			// Mark reset request as used
+			await this.passwordResetService.markAsUsed(resetRequest.uid);
 
 			this.eventEmitter.emit('send.email',
 				EmailType.PASSWORD_CHANGED,
-				[user.email],
+				[user.user.email],
 				{
-					name: user.name,
+					name: user.user.name,
+					date: new Date(),
+					deviceInfo: {
+						browser: 'Web Browser',
+						os: 'Unknown',
+						location: 'Unknown'
+					}
 				}
 			);
 

@@ -7,10 +7,12 @@ import { RewardsModule } from '../rewards/rewards.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PendingSignup } from './entities/pending-signup.entity';
 import { PendingSignupService } from './pending-signup.service';
+import { PasswordReset } from './entities/password-reset.entity';
+import { PasswordResetService } from './password-reset.service';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([PendingSignup]),
+        TypeOrmModule.forFeature([PendingSignup, PasswordReset]),
         JwtModule.register({
             global: true,
             secret: process.env.JWT_SECRET,
@@ -20,7 +22,7 @@ import { PendingSignupService } from './pending-signup.service';
         RewardsModule,
     ],
     controllers: [AuthController],
-    providers: [AuthService, PendingSignupService],
+    providers: [AuthService, PendingSignupService, PasswordResetService],
     exports: [AuthService],
 })
 export class AuthModule { }

@@ -21,13 +21,15 @@ const email_enums_1 = require("../lib/enums/email.enums");
 const user_enums_1 = require("../lib/enums/user.enums");
 const event_emitter_1 = require("@nestjs/event-emitter");
 const pending_signup_service_1 = require("./pending-signup.service");
+const password_reset_service_1 = require("./password-reset.service");
 let AuthService = class AuthService {
-    constructor(jwtService, userService, rewardsService, eventEmitter, pendingSignupService) {
+    constructor(jwtService, userService, rewardsService, eventEmitter, pendingSignupService, passwordResetService) {
         this.jwtService = jwtService;
         this.userService = userService;
         this.rewardsService = rewardsService;
         this.eventEmitter = eventEmitter;
         this.pendingSignupService = pendingSignupService;
+        this.passwordResetService = passwordResetService;
     }
     async generateSecureToken() {
         return crypto.randomBytes(32).toString('hex');
@@ -190,9 +192,20 @@ let AuthService = class AuthService {
                     message: 'If your email is registered, you will receive password reset instructions.',
                 };
             }
+            const existingReset = await this.passwordResetService.findByEmail(email);
+            if (existingReset) {
+                if (existingReset.tokenExpires > new Date()) {
+                    const response = {
+                        status: 'success',
+                        message: 'Please check your email for the password reset link sent earlier.',
+                    };
+                    return response;
+                }
+                await this.passwordResetService.delete(existingReset?.uid);
+            }
             const resetToken = await this.generateSecureToken();
             const resetUrl = `${process.env.SIGNUP_DOMAIN}/reset-password/${resetToken}`;
-            await this.userService.setResetToken(existingUser.user.uid, resetToken);
+            await this.passwordResetService.create(email, resetToken);
             this.eventEmitter.emit('send.email', email_enums_1.EmailType.PASSWORD_RESET, [email], {
                 name: existingUser.user.name,
                 resetLink: resetUrl,
@@ -200,7 +213,7 @@ let AuthService = class AuthService {
             });
             const response = {
                 status: 'success',
-                message: 'A password reset link has been sent to your email. Follow the instructions to reset your password.',
+                message: 'If your email is registered, you will receive password reset instructions.',
             };
             return response;
         }
@@ -214,17 +227,29 @@ let AuthService = class AuthService {
     async resetPassword(resetPasswordInput) {
         try {
             const { token, password } = resetPasswordInput;
-            const user = await this.userService.findByResetToken(token);
-            if (!user) {
+            const resetRequest = await this.passwordResetService.findByToken(token);
+            if (!resetRequest) {
                 throw new common_1.BadRequestException('Invalid or expired reset token');
             }
-            if (user.tokenExpires < new Date()) {
-                throw new common_1.BadRequestException('Reset token has expired');
+            if (resetRequest.tokenExpires < new Date()) {
+                await this.passwordResetService.delete(resetRequest.uid);
+                throw new common_1.BadRequestException('Reset token has expired. Please request a new one.');
+            }
+            const user = await this.userService.findOneByEmail(resetRequest.email);
+            if (!user?.user) {
+                throw new common_1.BadRequestException('User not found');
             }
             const hashedPassword = await bcrypt.hash(password, Number(process.env.BCRYPT_SALT));
-            await this.userService.resetPassword(user.uid, hashedPassword);
-            this.eventEmitter.emit('send.email', email_enums_1.EmailType.PASSWORD_CHANGED, [user.email], {
-                name: user.name,
+            await this.userService.resetPassword(user.user.uid, hashedPassword);
+            await this.passwordResetService.markAsUsed(resetRequest.uid);
+            this.eventEmitter.emit('send.email', email_enums_1.EmailType.PASSWORD_CHANGED, [user.user.email], {
+                name: user.user.name,
+                date: new Date(),
+                deviceInfo: {
+                    browser: 'Web Browser',
+                    os: 'Unknown',
+                    location: 'Unknown'
+                }
             });
             return {
                 message: 'Password reset successfully. You can now sign in with your new password.',
@@ -272,6 +297,7 @@ exports.AuthService = AuthService = __decorate([
         user_service_1.UserService,
         rewards_service_1.RewardsService,
         event_emitter_1.EventEmitter2,
-        pending_signup_service_1.PendingSignupService])
+        pending_signup_service_1.PendingSignupService,
+        password_reset_service_1.PasswordResetService])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map
