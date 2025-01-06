@@ -81,7 +81,6 @@ let AuthService = class AuthService {
             return response;
         }
         catch (error) {
-            console.log(error);
             const response = {
                 message: error?.message,
                 accessToken: null,
@@ -199,7 +198,7 @@ let AuthService = class AuthService {
             const existingUser = await this.userService.findOneByEmail(email);
             if (!existingUser?.user) {
                 return {
-                    message: 'If your email is registered, you will receive password reset instructions.',
+                    message: 'sign up to get started',
                 };
             }
             const existingReset = await this.passwordResetService.findByEmail(email);
@@ -223,15 +222,15 @@ let AuthService = class AuthService {
             });
             const response = {
                 status: 'success',
-                message: 'If your email is registered, you will receive password reset instructions.',
+                message: 'A password reset link has been sent to your email. Please check your inbox.',
             };
             return response;
         }
         catch (error) {
-            if (error instanceof common_1.HttpException) {
-                throw error;
-            }
-            throw new common_1.HttpException(error.message || 'Failed to process password reset request', error.status || common_1.HttpStatus.BAD_REQUEST);
+            const response = {
+                message: error?.message,
+            };
+            return response;
         }
     }
     async resetPassword(resetPasswordInput) {

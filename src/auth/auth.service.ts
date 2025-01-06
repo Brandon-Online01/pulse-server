@@ -88,7 +88,6 @@ export class AuthService {
 
 			return response;
 		} catch (error) {
-			console.log(error);
 			const response = {
 				message: error?.message,
 				accessToken: null,
@@ -250,7 +249,7 @@ export class AuthService {
 
 			if (!existingUser?.user) {
 				return {
-					message: 'If your email is registered, you will receive password reset instructions.',
+					message: 'sign up to get started',
 				};
 			}
 
@@ -286,18 +285,16 @@ export class AuthService {
 
 			const response = {
 				status: 'success',
-				message: 'If your email is registered, you will receive password reset instructions.',
+				message: 'A password reset link has been sent to your email. Please check your inbox.',
 			};
 
 			return response;
 		} catch (error) {
-			if (error instanceof HttpException) {
-				throw error;
+			const response = {
+				message: error?.message,
 			}
-			throw new HttpException(
-				error.message || 'Failed to process password reset request',
-				error.status || HttpStatus.BAD_REQUEST
-			);
+
+			return response;
 		}
 	}
 
