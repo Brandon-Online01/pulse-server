@@ -190,17 +190,14 @@ export class TasksService {
 				attachments: updateTaskDto.attachments,
 			};
 
-			// Remove undefined properties
 			Object.keys(updateData).forEach(key =>
 				updateData[key] === undefined && delete updateData[key]
 			);
 
-			// Only perform the update if there are fields to update
 			if (Object.keys(updateData).length > 0) {
 				await this.taskRepository.update({ uid: ref }, updateData);
 			}
 
-			// If assignees are provided, handle the many-to-many relationship
 			if (updateTaskDto.assignees) {
 				const taskToUpdate = await this.taskRepository.manager.findOne(Task, {
 					where: { uid: ref },
@@ -210,12 +207,9 @@ export class TasksService {
 				await this.taskRepository.manager.save(taskToUpdate);
 			}
 
-			// Handle subtasks updates if provided
 			if (updateTaskDto.subtasks) {
-				// Delete existing subtasks
 				await this.subtaskRepository.delete({ task: { uid: ref } });
 
-				// Create new subtasks
 				if (updateTaskDto.subtasks.length > 0) {
 					const subtasks = updateTaskDto.subtasks.map(subtask => ({
 						...subtask,
@@ -225,7 +219,6 @@ export class TasksService {
 				}
 			}
 
-			// Emit notification
 			const notification = {
 				type: NotificationType.USER,
 				title: 'Task Updated',
