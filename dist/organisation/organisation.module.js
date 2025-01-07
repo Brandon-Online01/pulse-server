@@ -12,12 +12,16 @@ const organisation_service_1 = require("./organisation.service");
 const organisation_controller_1 = require("./organisation.controller");
 const typeorm_1 = require("@nestjs/typeorm");
 const organisation_entity_1 = require("./entities/organisation.entity");
+const licensing_module_1 = require("../licensing/licensing.module");
 let OrganisationModule = class OrganisationModule {
 };
 exports.OrganisationModule = OrganisationModule;
 exports.OrganisationModule = OrganisationModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([organisation_entity_1.Organisation])],
+        imports: [
+            licensing_module_1.LicensingModule,
+            typeorm_1.TypeOrmModule.forFeature([organisation_entity_1.Organisation])
+        ],
         controllers: [organisation_controller_1.OrganisationController],
         providers: [organisation_service_1.OrganisationService],
         exports: [organisation_service_1.OrganisationService],

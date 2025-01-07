@@ -395,7 +395,7 @@ export class AttendanceService {
 
   public async getAttendanceForMonth(ref: string): Promise<{ totalHours: number }> {
     try {
-      const user = await this.userService.findOne(ref);
+      const user = await this.userService.findOne(Number(ref));
       const userId = user.user.uid;
 
       // Get completed shifts for the month

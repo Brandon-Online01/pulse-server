@@ -1,81 +1,76 @@
-import { UserProfile } from './user.profile.entity';
-import { UserEmployeementProfile } from './user.employeement.profile.entity';
-import { Attendance } from '../../attendance/entities/attendance.entity';
-import { Claim } from '../../claims/entities/claim.entity';
-import { Doc } from '../../docs/entities/doc.entity';
-import { Lead } from '../../leads/entities/lead.entity';
-import { Journal } from '../../journal/entities/journal.entity';
-import { Task } from '../../tasks/entities/task.entity';
-import { News } from '../../news/entities/news.entity';
-import { Asset } from '../../assets/entities/asset.entity';
-import { Tracking } from '../../tracking/entities/tracking.entity';
-import { Order } from '../../shop/entities/order.entity';
-import { Notification } from '../../notifications/entities/notification.entity';
-import { Branch } from '../../branch/entities/branch.entity';
-import { Client } from '../../clients/entities/client.entity';
 import { AccessLevel } from '../../lib/enums/user.enums';
 import { AccountStatus } from '../../lib/enums/status.enums';
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { UserProfile } from './user.profile.entity';
+import { Branch } from '../../branch/entities/branch.entity';
+import { Claim } from '../../claims/entities/claim.entity';
+import { Lead } from '../../leads/entities/lead.entity';
+import { Doc } from '../../docs/entities/doc.entity';
+import { Journal } from '../../journal/entities/journal.entity';
+import { News } from '../../news/entities/news.entity';
+import { Task } from '../../tasks/entities/task.entity';
+import { Client } from '../../clients/entities/client.entity';
+import { Order } from '../../shop/entities/order.entity';
 import { CheckIn } from '../../check-ins/entities/check-in.entity';
-import { UserRewards } from '../../rewards/entities/user-rewards.entity';
+import { Tracking } from '../../tracking/entities/tracking.entity';
+import { Asset } from '../../assets/entities/asset.entity';
 import { Report } from '../../reports/entities/report.entity';
+import { UserRewards } from '../../rewards/entities/user-rewards.entity';
+import { Attendance } from '../../attendance/entities/attendance.entity';
+import { UserEmployeementProfile } from './user.employeement.profile.entity';
+import { Organisation } from '../../organisation/entities/organisation.entity';
+import { Notification } from '../../notifications/entities/notification.entity';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToOne, OneToMany } from 'typeorm';
 
-@Entity('user')
+@Entity('users')
 export class User {
     @PrimaryGeneratedColumn()
     uid: number;
 
-    @Column({ nullable: false })
-    name: string;
-
-    @Column({ nullable: false })
-    surname: string;
-
-    @Column({ unique: true, nullable: false })
-    email: string;
-
-    @Column({ nullable: false })
-    phone: string;
-
-    @Column({ nullable: false })
-    photoURL: string;
-
-    @Column({ nullable: false, default: AccessLevel.USER })
-    accessLevel: AccessLevel;
-
-    @Column({
-        nullable: false,
-        default: () => 'CURRENT_TIMESTAMP'
-    })
-    createdAt: Date;
-
-    @Column({
-        nullable: false,
-        default: () => 'CURRENT_TIMESTAMP',
-        onUpdate: 'CURRENT_TIMESTAMP'
-    })
-    updatedAt: Date;
-
-    @Column({
-        nullable: true,
-        default: null
-    })
-    deletedAt: Date;
-
-    @Column({ nullable: false, default: AccountStatus.ACTIVE })
-    status: AccountStatus;
-
-    @Column({ nullable: false })
+    @Column({ unique: true })
     username: string;
 
-    @Column({ nullable: false })
+    @Column()
     password: string;
 
-    @Column({ default: false })
+    @Column()
+    name: string;
+
+    @Column()
+    surname: string;
+
+    @Column({ unique: true })
+    email: string;
+
+    @Column()
+    phone: string;
+
+    @Column()
+    photoURL: string;
+
+    @Column({ type: 'enum', enum: AccessLevel })
+    accessLevel: AccessLevel;
+
+    @Column({ unique: true })
+    userref: string;
+
+    @ManyToOne(() => Organisation, { onDelete: 'SET NULL', nullable: true })
+    @JoinColumn({ name: 'organisationRef' })
+    organisation: Organisation;
+
+    @Column({ nullable: true })
+    organisationRef: string;
+
+    @CreateDateColumn()
+    createdAt: Date;
+
+    @UpdateDateColumn()
+    updatedAt: Date;
+
+    @Column({ type: 'boolean', default: false })
     isDeleted: boolean;
 
-    @Column({ nullable: false })
-    userref: string;
+    @Column({ type: 'enum', enum: AccountStatus, default: AccountStatus.PENDING })
+    status: AccountStatus;
 
     @Column({ nullable: true })
     verificationToken: string;
@@ -83,16 +78,13 @@ export class User {
     @Column({ nullable: true })
     resetToken: string;
 
-    @Column({ nullable: true })
+    @Column({ type: 'timestamp', nullable: true })
     tokenExpires: Date;
 
-    //relationships
     @OneToOne(() => UserProfile, (userProfile) => userProfile?.owner)
-    @JoinColumn()
     userProfile: UserProfile;
 
     @OneToOne(() => UserEmployeementProfile, (userEmployeementProfile) => userEmployeementProfile?.owner)
-    @JoinColumn()
     userEmployeementProfile: UserEmployeementProfile;
 
     @OneToMany(() => Attendance, (attendance) => attendance?.owner)

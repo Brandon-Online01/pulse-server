@@ -1,4 +1,4 @@
-import { BadRequestException, HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { BadRequestException, HttpException, HttpStatus, Injectable, UnauthorizedException } from '@nestjs/common';
 import { SignInInput, SignUpInput, VerifyEmailInput, SetPasswordInput, ForgotPasswordInput, ResetPasswordInput } from './dto/auth.dto';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -13,6 +13,7 @@ import { AccessLevel } from '../lib/enums/user.enums';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PendingSignupService } from './pending-signup.service';
 import { PasswordResetService } from './password-reset.service';
+import { LicensingService } from '../licensing/licensing.service';
 
 @Injectable()
 export class AuthService {
@@ -23,6 +24,7 @@ export class AuthService {
 		private eventEmitter: EventEmitter2,
 		private pendingSignupService: PendingSignupService,
 		private passwordResetService: PasswordResetService,
+		private licensingService: LicensingService,
 	) { }
 
 	private async generateSecureToken(): Promise<string> {
@@ -52,8 +54,67 @@ export class AuthService {
 				};
 			}
 
-			const { uid, accessLevel, name, ...restOfUser } = authProfile?.user;
+			const { uid, accessLevel, name, organisationRef, ...restOfUser } = authProfile?.user;
 
+			// Check organization license if user belongs to an organization
+			if (organisationRef) {
+				const licenses = await this.licensingService.findByOrganisation(organisationRef);
+				const activeLicense = licenses.find(license => this.licensingService.validateLicense(String(license?.uid)));
+
+				if (!activeLicense) {
+					throw new UnauthorizedException('Your organization\'s license has expired. Please contact your administrator.');
+				}
+
+				// Add license info to profile data
+				const profileData: ProfileData = {
+					uid: uid.toString(),
+					accessLevel,
+					name,
+					organisationRef,
+					licenseInfo: {
+						licenseId: String(activeLicense?.uid),
+						plan: activeLicense?.plan,
+						status: activeLicense?.status,
+						features: activeLicense?.features
+					},
+					...restOfUser
+				};
+
+				const tokenRole = accessLevel?.toLowerCase();
+
+				// Include license info in token payload
+				const payload = {
+					uid: uid?.toString(),
+					role: tokenRole,
+					organisationRef,
+					licenseId: String(activeLicense?.uid),
+					licensePlan: activeLicense?.plan,
+					features: activeLicense?.features
+				};
+
+				const accessToken = await this.jwtService.signAsync(payload, { expiresIn: `8h` });
+				const refreshToken = await this.jwtService.signAsync(payload, { expiresIn: `7d` });
+
+				await this.rewardsService.awardXP({
+					owner: Number(uid),
+					amount: XP_VALUES.DAILY_LOGIN,
+					action: 'DAILY_LOGIN',
+					source: {
+						id: uid.toString(),
+						type: XP_VALUES_TYPES.LOGIN,
+						details: 'Daily login reward'
+					}
+				});
+
+				return {
+					profileData,
+					accessToken,
+					refreshToken,
+					message: `Welcome ${profileData.name}!`,
+				};
+			}
+
+			// For users without organization (like system admins)
 			const profileData: ProfileData = {
 				uid: uid.toString(),
 				accessLevel,
@@ -62,32 +123,21 @@ export class AuthService {
 			};
 
 			const tokenRole = accessLevel?.toLowerCase();
-
 			const payload = { uid: uid?.toString(), role: tokenRole };
 
 			const accessToken = await this.jwtService.signAsync(payload, { expiresIn: `8h` });
 			const refreshToken = await this.jwtService.signAsync(payload, { expiresIn: `7d` });
 
-			await this.rewardsService.awardXP({
-				owner: uid,
-				amount: XP_VALUES.DAILY_LOGIN,
-				action: 'DAILY_LOGIN',
-				source: {
-					id: uid.toString(),
-					type: XP_VALUES_TYPES.LOGIN,
-					details: 'Daily login reward'
-				}
-			});
-
-			const response = {
+			return {
 				profileData,
 				accessToken,
 				refreshToken,
 				message: `Welcome ${profileData.name}!`,
-			}
+			};
 
-			return response;
 		} catch (error) {
+			console.log(error);
+
 			const response = {
 				message: error?.message,
 				accessToken: null,
@@ -362,6 +412,44 @@ export class AuthService {
 				throw new BadRequestException('User not found');
 			}
 
+			// Check organization license if user belongs to an organization
+			if (authProfile.user.organisationRef) {
+				const licenses = await this.licensingService.findByOrganisation(authProfile.user.organisationRef);
+				const activeLicense = licenses.find(license => this.licensingService.validateLicense(String(license?.uid)));
+
+				if (!activeLicense) {
+					throw new UnauthorizedException('Your organization\'s license has expired. Please contact your administrator.');
+				}
+
+				const newPayload = {
+					uid: payload?.uid,
+					role: authProfile?.user?.accessLevel?.toLowerCase(),
+					organisationRef: authProfile?.user?.organisationRef,
+					licenseId: String(activeLicense?.uid),
+					licensePlan: activeLicense?.plan,
+					features: activeLicense?.features
+				};
+
+				const accessToken = await this.jwtService.signAsync(newPayload, {
+					expiresIn: `${process.env.JWT_ACCESS_EXPIRES_IN}`
+				});
+
+				return {
+					accessToken,
+					profileData: {
+						...authProfile?.user,
+						licenseInfo: {
+							licenseId: String(activeLicense?.uid),
+							plan: activeLicense?.plan,
+							status: activeLicense?.status,
+							features: activeLicense?.features
+						}
+					},
+					message: 'Access token refreshed successfully'
+				};
+			}
+
+			// For users without organization
 			const newPayload = {
 				uid: payload.uid,
 				role: authProfile.user.accessLevel?.toLowerCase()

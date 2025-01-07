@@ -13,14 +13,18 @@ const user_controller_1 = require("./user.controller");
 const typeorm_1 = require("@nestjs/typeorm");
 const user_entity_1 = require("./entities/user.entity");
 const user_profile_entity_1 = require("./entities/user.profile.entity");
+const licensing_module_1 = require("../licensing/licensing.module");
 const user_employeement_profile_entity_1 = require("./entities/user.employeement.profile.entity");
+const rewards_module_1 = require("../rewards/rewards.module");
 let UserModule = class UserModule {
 };
 exports.UserModule = UserModule;
 exports.UserModule = UserModule = __decorate([
     (0, common_1.Module)({
         imports: [
+            licensing_module_1.LicensingModule,
             typeorm_1.TypeOrmModule.forFeature([user_entity_1.User, user_profile_entity_1.UserProfile, user_employeement_profile_entity_1.UserEmployeementProfile]),
+            rewards_module_1.RewardsModule
         ],
         controllers: [user_controller_1.UserController],
         providers: [user_service_1.UserService],

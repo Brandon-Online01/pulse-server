@@ -11,14 +11,14 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@n
 
 @ApiTags('user')
 @Controller('user')
-@UseGuards(AuthGuard, RoleGuard)
+// @UseGuards(AuthGuard, RoleGuard)
 export class UserController {
   constructor(private readonly userService: UserService) { }
 
   @Post()
   @isPublic()
-  @UseGuards(AuthGuard, RoleGuard)
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+  // @UseGuards(AuthGuard, RoleGuard)
+  // @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'Create a new user' })
   create(@Body() createUserDto: CreateUserDto) {
     return this.userService.create(createUserDto);
@@ -27,7 +27,7 @@ export class UserController {
   @Get()
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
-  @ApiOperation({ summary: 'Get all users' })
+  @ApiOperation({ summary: 'get all users' })
   findAll() {
     return this.userService.findAll();
   }
@@ -35,22 +35,22 @@ export class UserController {
   @Get(':ref')
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
-  @ApiOperation({ summary: 'Get a user by a search parameter i.e email, phone number, reference code' })
-  findOne(@Param('searchParameter') searchParameter: string) {
+  @ApiOperation({ summary: 'get a user by a search parameter i.e email, phone number, reference code' })
+  findOne(@Param('searchParameter') searchParameter: number) {
     return this.userService.findOne(searchParameter);
   }
 
   @Patch(':ref')
-  @ApiOperation({ summary: 'Update a user by reference code' })
+  @ApiOperation({ summary: 'update a user by reference code' })
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   update(
     @Param('ref') ref: number, @Body() updateUserDto: UpdateUserDto) {
-    return this.userService.update(ref, updateUserDto);
+    return this.userService.update(String(ref), updateUserDto);
   }
 
   @Patch('restore/:ref')
-  @ApiOperation({ summary: 'Restore a deleted user by reference code' })
+  @ApiOperation({ summary: 'restore a deleted user by reference code' })
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   restore(@Param('ref') ref: number) {
@@ -60,8 +60,8 @@ export class UserController {
   @Delete(':ref')
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
-  @ApiOperation({ summary: 'Soft delete a user by reference code' })
-  remove(@Param('ref') ref: number) {
+  @ApiOperation({ summary: 'soft delete a user by reference code' })
+  remove(@Param('ref') ref: string) {
     return this.userService.remove(ref);
   }
 }

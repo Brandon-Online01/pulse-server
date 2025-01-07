@@ -79,7 +79,6 @@ export class UserProfile {
     @Column({ nullable: true })
     coatSize: string;
 
-    //relationships
     @OneToOne(() => User, (user) => user?.userProfile)
     owner: User;
 }   

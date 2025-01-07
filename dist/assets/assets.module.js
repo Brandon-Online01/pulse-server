@@ -12,12 +12,16 @@ const assets_service_1 = require("./assets.service");
 const assets_controller_1 = require("./assets.controller");
 const asset_entity_1 = require("./entities/asset.entity");
 const typeorm_1 = require("@nestjs/typeorm");
+const licensing_module_1 = require("../licensing/licensing.module");
 let AssetsModule = class AssetsModule {
 };
 exports.AssetsModule = AssetsModule;
 exports.AssetsModule = AssetsModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([asset_entity_1.Asset])],
+        imports: [
+            licensing_module_1.LicensingModule,
+            typeorm_1.TypeOrmModule.forFeature([asset_entity_1.Asset])
+        ],
         controllers: [assets_controller_1.AssetsController],
         providers: [assets_service_1.AssetsService],
         exports: [assets_service_1.AssetsService]

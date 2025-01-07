@@ -13,9 +13,11 @@ import { NewsModule } from '../news/news.module';
 import { UserModule } from '../user/user.module';
 import { RewardsModule } from '../rewards/rewards.module';
 import { CheckInsModule } from '../check-ins/check-ins.module';
+import { LicensingModule } from '../licensing/licensing.module';
 
 @Module({
   imports: [
+    LicensingModule,
     TypeOrmModule.forFeature([Report]),
     LeadsModule,
     JournalModule,

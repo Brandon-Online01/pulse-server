@@ -12,7 +12,7 @@ import { UserProfile } from './user/entities/user.profile.entity';
 import { UserEmployeementProfile } from './user/entities/user.employeement.profile.entity';
 import { AttendanceModule } from './attendance/attendance.module';
 import { Attendance } from './attendance/entities/attendance.entity';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { RoleGuard } from './guards/role.guard';
 import { TrackingModule } from './tracking/tracking.module';
 import { DocsModule } from './docs/docs.module';
@@ -60,6 +60,11 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { Report } from './reports/entities/report.entity';
 import { PendingSignup } from './auth/entities/pending-signup.entity';
 import { PasswordReset } from './auth/entities/password-reset.entity';
+import { License } from './licensing/entities/license.entity';
+import { LicenseUsage } from './licensing/entities/license-usage.entity';
+import { LicenseEvent } from './licensing/entities/license-event.entity';
+import { LicensingModule } from './licensing/licensing.module';
+import { LicenseUsageInterceptor } from './licensing/license-usage.interceptor';
 
 @Module({
   imports: [
@@ -111,7 +116,10 @@ import { PasswordReset } from './auth/entities/password-reset.entity';
         XPTransaction,
         Report,
         PendingSignup,
-        PasswordReset
+        PasswordReset,
+        License,
+        LicenseUsage,
+        LicenseEvent,
       ],
       synchronize: true,
       retryAttempts: 100,
@@ -142,15 +150,20 @@ import { PasswordReset } from './auth/entities/password-reset.entity';
     UserModule,
     CheckInsModule,
     RewardsModule,
+    LicensingModule,
   ],
   controllers: [],
   providers: [
     AppService,
     AppController,
-    {
-      provide: APP_GUARD,
-      useClass: RoleGuard,
-    },
+    // {
+    //   provide: APP_GUARD,
+    //   useClass: RoleGuard,
+    // },
+    // {
+    //   provide: APP_INTERCEPTOR,
+    //   useClass: LicenseUsageInterceptor,
+    // },
   ],
 })
 export class AppModule { }

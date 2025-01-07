@@ -12,54 +12,42 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthGuard = void 0;
 const common_1 = require("@nestjs/common");
 const jwt_1 = require("@nestjs/jwt");
-const core_1 = require("@nestjs/core");
-const public_decorator_1 = require("../decorators/public.decorator");
+const licensing_service_1 = require("../licensing/licensing.service");
 let AuthGuard = class AuthGuard {
-    constructor(jwtService, reflector) {
+    constructor(jwtService, licensingService) {
         this.jwtService = jwtService;
-        this.reflector = reflector;
+        this.licensingService = licensingService;
     }
     async canActivate(context) {
-        const isPublic = this.reflector.getAllAndOverride(public_decorator_1.IS_PUBLIC_KEY, [
-            context.getHandler(),
-            context.getClass(),
-        ]);
-        if (isPublic) {
-            return true;
-        }
         const request = context.switchToHttp().getRequest();
         const token = this.extractTokenFromHeader(request);
         if (!token) {
-            throw new common_1.UnauthorizedException('you are not authorized to access this resource');
+            throw new common_1.UnauthorizedException('No token provided');
         }
         try {
-            const decodedToken = this.jwtService.decode(token);
-            if (!decodedToken) {
-                throw new common_1.UnauthorizedException('invalid token format');
+            const payload = await this.jwtService.verifyAsync(token);
+            if (payload.organisationRef && payload.licenseId) {
+                const isLicenseValid = await this.licensingService.validateLicense(payload.licenseId);
+                if (!isLicenseValid) {
+                    throw new common_1.UnauthorizedException('Your organization\'s license has expired');
+                }
             }
-            const { exp } = decodedToken;
-            if (this.isTokenExpired(exp)) {
-                throw new common_1.UnauthorizedException('your session has expired, login again.');
-            }
-            request.user = decodedToken;
+            request['user'] = payload;
             return true;
         }
         catch (error) {
-            throw new common_1.UnauthorizedException('you are not authorized to access this resource');
+            throw new common_1.UnauthorizedException(error.message || 'Invalid token');
         }
     }
     extractTokenFromHeader(request) {
-        return request.headers['token'];
-    }
-    isTokenExpired(expirationTime) {
-        const currentTimeInSeconds = Math.floor(Date.now() / 1000);
-        return currentTimeInSeconds > expirationTime;
+        const [type, token] = request.headers.authorization?.split(' ') ?? [];
+        return type === 'Bearer' ? token : undefined;
     }
 };
 exports.AuthGuard = AuthGuard;
 exports.AuthGuard = AuthGuard = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [jwt_1.JwtService,
-        core_1.Reflector])
+        licensing_service_1.LicensingService])
 ], AuthGuard);
 //# sourceMappingURL=auth.guard.js.map

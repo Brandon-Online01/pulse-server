@@ -16,12 +16,14 @@ const achievement_entity_1 = require("./entities/achievement.entity");
 const xp_transaction_entity_1 = require("./entities/xp-transaction.entity");
 const rewards_subscriber_1 = require("./rewards.subscriber");
 const unlocked_item_entity_1 = require("./entities/unlocked-item.entity");
+const licensing_module_1 = require("../licensing/licensing.module");
 let RewardsModule = class RewardsModule {
 };
 exports.RewardsModule = RewardsModule;
 exports.RewardsModule = RewardsModule = __decorate([
     (0, common_1.Module)({
         imports: [
+            licensing_module_1.LicensingModule,
             typeorm_1.TypeOrmModule.forFeature([
                 user_rewards_entity_1.UserRewards,
                 achievement_entity_1.Achievement,

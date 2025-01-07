@@ -22,12 +22,14 @@ const news_module_1 = require("../news/news.module");
 const user_module_1 = require("../user/user.module");
 const rewards_module_1 = require("../rewards/rewards.module");
 const check_ins_module_1 = require("../check-ins/check-ins.module");
+const licensing_module_1 = require("../licensing/licensing.module");
 let ReportsModule = class ReportsModule {
 };
 exports.ReportsModule = ReportsModule;
 exports.ReportsModule = ReportsModule = __decorate([
     (0, common_1.Module)({
         imports: [
+            licensing_module_1.LicensingModule,
             typeorm_1.TypeOrmModule.forFeature([report_entity_1.Report]),
             leads_module_1.LeadsModule,
             journal_module_1.JournalModule,

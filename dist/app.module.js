@@ -21,8 +21,6 @@ const user_profile_entity_1 = require("./user/entities/user.profile.entity");
 const user_employeement_profile_entity_1 = require("./user/entities/user.employeement.profile.entity");
 const attendance_module_1 = require("./attendance/attendance.module");
 const attendance_entity_1 = require("./attendance/entities/attendance.entity");
-const core_1 = require("@nestjs/core");
-const role_guard_1 = require("./guards/role.guard");
 const tracking_module_1 = require("./tracking/tracking.module");
 const docs_module_1 = require("./docs/docs.module");
 const claims_module_1 = require("./claims/claims.module");
@@ -69,6 +67,10 @@ const cache_manager_1 = require("@nestjs/cache-manager");
 const report_entity_1 = require("./reports/entities/report.entity");
 const pending_signup_entity_1 = require("./auth/entities/pending-signup.entity");
 const password_reset_entity_1 = require("./auth/entities/password-reset.entity");
+const license_entity_1 = require("./licensing/entities/license.entity");
+const license_usage_entity_1 = require("./licensing/entities/license-usage.entity");
+const license_event_entity_1 = require("./licensing/entities/license-event.entity");
+const licensing_module_1 = require("./licensing/licensing.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -123,7 +125,10 @@ exports.AppModule = AppModule = __decorate([
                     xp_transaction_entity_1.XPTransaction,
                     report_entity_1.Report,
                     pending_signup_entity_1.PendingSignup,
-                    password_reset_entity_1.PasswordReset
+                    password_reset_entity_1.PasswordReset,
+                    license_entity_1.License,
+                    license_usage_entity_1.LicenseUsage,
+                    license_event_entity_1.LicenseEvent,
                 ],
                 synchronize: true,
                 retryAttempts: 100,
@@ -154,15 +159,12 @@ exports.AppModule = AppModule = __decorate([
             user_module_1.UserModule,
             check_ins_module_1.CheckInsModule,
             rewards_module_1.RewardsModule,
+            licensing_module_1.LicensingModule,
         ],
         controllers: [],
         providers: [
             app_service_1.AppService,
             app_controller_1.AppController,
-            {
-                provide: core_1.APP_GUARD,
-                useClass: role_guard_1.RoleGuard,
-            },
         ],
     })
 ], AppModule);

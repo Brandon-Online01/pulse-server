@@ -17,12 +17,14 @@ const banners_entity_1 = require("./entities/banners.entity");
 const clients_module_1 = require("../clients/clients.module");
 const notifications_module_1 = require("../notifications/notifications.module");
 const communication_module_1 = require("../communication/communication.module");
+const licensing_module_1 = require("../licensing/licensing.module");
 let ShopModule = class ShopModule {
 };
 exports.ShopModule = ShopModule;
 exports.ShopModule = ShopModule = __decorate([
     (0, common_1.Module)({
         imports: [
+            licensing_module_1.LicensingModule,
             clients_module_1.ClientsModule,
             notifications_module_1.NotificationsModule,
             communication_module_1.CommunicationModule,

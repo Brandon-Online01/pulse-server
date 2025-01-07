@@ -13,12 +13,17 @@ const leads_controller_1 = require("./leads.controller");
 const lead_entity_1 = require("./entities/lead.entity");
 const typeorm_1 = require("@nestjs/typeorm");
 const rewards_module_1 = require("../rewards/rewards.module");
+const licensing_module_1 = require("../licensing/licensing.module");
 let LeadsModule = class LeadsModule {
 };
 exports.LeadsModule = LeadsModule;
 exports.LeadsModule = LeadsModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([lead_entity_1.Lead]), rewards_module_1.RewardsModule],
+        imports: [
+            licensing_module_1.LicensingModule,
+            typeorm_1.TypeOrmModule.forFeature([lead_entity_1.Lead]),
+            rewards_module_1.RewardsModule
+        ],
         controllers: [leads_controller_1.LeadsController],
         providers: [leads_service_1.LeadsService],
         exports: [leads_service_1.LeadsService],

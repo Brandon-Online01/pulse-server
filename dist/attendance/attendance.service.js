@@ -331,7 +331,7 @@ let AttendanceService = class AttendanceService {
     }
     async getAttendanceForMonth(ref) {
         try {
-            const user = await this.userService.findOne(ref);
+            const user = await this.userService.findOne(Number(ref));
             const userId = user.user.uid;
             const attendanceRecords = await this.attendanceRepository.find({
                 where: {

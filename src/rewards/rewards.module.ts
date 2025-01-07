@@ -7,9 +7,11 @@ import { Achievement } from './entities/achievement.entity';
 import { XPTransaction } from './entities/xp-transaction.entity';
 import { RewardsSubscriber } from './rewards.subscriber';
 import { UnlockedItem } from './entities/unlocked-item.entity';
+import { LicensingModule } from '../licensing/licensing.module';
 
 @Module({
   imports: [
+    LicensingModule,
     TypeOrmModule.forFeature([
       UserRewards,
       Achievement,

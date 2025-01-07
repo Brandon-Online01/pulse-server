@@ -5,9 +5,14 @@ import { Task } from './entities/task.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SubTask } from './entities/subtask.entity';
 import { RewardsModule } from '../rewards/rewards.module';
+import { LicensingModule } from '../licensing/licensing.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Task, SubTask]), RewardsModule],
+  imports: [
+    LicensingModule,
+    TypeOrmModule.forFeature([Task, SubTask]),
+    RewardsModule
+  ],
   controllers: [TasksController],
   providers: [TasksService],
   exports: [TasksService]

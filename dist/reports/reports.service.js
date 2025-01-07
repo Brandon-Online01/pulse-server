@@ -147,7 +147,7 @@ let ReportsService = class ReportsService {
                 this.attendanceService.getAttendanceForDate(date),
                 this.newsService.findAll(),
                 this.rewardsService.getUserRewards(Number(reference)),
-                reference ? this.userService.findOne(reference.toString()) : null
+                reference ? this.userService.findOne(Number(reference)) : null
             ]);
             const [{ leads: leadsStats }, { journals: journalsStats }, { claims: claimsStats }, { stats: ordersStats }, { total: tasksTotal }, { totalHours: attendanceHours, activeShifts, attendanceRecords }, { data: newsItems }, { rewards: userRewards }, userData] = allData;
             const report = this.reportRepository.create({

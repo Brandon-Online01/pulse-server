@@ -7,6 +7,7 @@ import { RoleGuard } from '../guards/role.guard';
 import { AuthGuard } from '../guards/auth.guard';
 import { AccessLevel } from '../lib/enums/user.enums';
 import { Roles } from '../decorators/role.decorator';
+import { isPublic } from '../decorators/public.decorator';
 
 @ApiTags('branch')
 @Controller('branch')
@@ -15,6 +16,7 @@ export class BranchController {
   constructor(private readonly branchService: BranchService) { }
 
   @Post()
+  @isPublic()
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
   @ApiOperation({ summary: 'create a new branch' })
   create(@Body() createBranchDto: CreateBranchDto) {

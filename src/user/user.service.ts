@@ -17,6 +17,10 @@ export class UserService {
 
 	async create(createUserDto: CreateUserDto): Promise<{ message: string }> {
 		try {
+			if (createUserDto.password) {
+				createUserDto.password = await bcrypt.hash(createUserDto.password, 10);
+			}
+
 			const user = await this.userRepository.save(createUserDto);
 
 			if (!user) {
@@ -62,11 +66,11 @@ export class UserService {
 		}
 	}
 
-	async findOne(searchParameter: string): Promise<{ user: User | null, message: string }> {
+	async findOne(searchParameter: number): Promise<{ user: User | null, message: string }> {
 		try {
 			const user = await this.userRepository.findOne({
 				where: [
-					{ uid: Number(searchParameter), isDeleted: false },
+					{ uid: searchParameter, isDeleted: false },
 				],
 				relations: [
 					'userProfile',
@@ -93,19 +97,15 @@ export class UserService {
 				};
 			}
 
-			const response = {
-				user: user,
+			return {
+				user,
 				message: process.env.SUCCESS_MESSAGE,
 			};
-
-			return response;
 		} catch (error) {
-			const response = {
+			return {
 				message: error?.message,
 				user: null
-			}
-
-			return response;
+			};
 		}
 	}
 
@@ -193,59 +193,50 @@ export class UserService {
 		}
 	}
 
-	async update(ref: number, updateUserDto: UpdateUserDto): Promise<{ message: string }> {
+	async update(ref: string, updateUserDto: UpdateUserDto): Promise<{ message: string }> {
 		try {
 			await this.userRepository.update(ref, updateUserDto);
 
 			const updatedUser = await this.userRepository.findOne({
-				where: { userref: ref.toString(), isDeleted: false }
+				where: { userref: ref, isDeleted: false }
 			});
 
 			if (!updatedUser) {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
-			const response = {
+			return {
 				message: process.env.SUCCESS_MESSAGE,
 			};
-
-			return response;
-
 		} catch (error) {
-			const response = {
+			return {
 				message: error?.message,
-			}
-
-			return response;
+			};
 		}
 	}
 
-	async remove(ref: number): Promise<{ message: string }> {
+	async remove(ref: string): Promise<{ message: string }> {
 		try {
 			const user = await this.userRepository.findOne({
-				where: { userref: ref.toString(), isDeleted: false }
+				where: { userref: ref, isDeleted: false }
 			});
 
 			if (!user) {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
-			};
+			}
 
 			await this.userRepository.update(
-				{ userref: ref.toString() },
+				{ userref: ref },
 				{ isDeleted: true }
 			);
 
-			const response = {
+			return {
 				message: process.env.SUCCESS_MESSAGE,
 			};
-
-			return response;
 		} catch (error) {
-			const response = {
+			return {
 				message: error?.message,
-			}
-
-			return response;
+			};
 		}
 	}
 
@@ -289,27 +280,21 @@ export class UserService {
 				}
 			);
 
-			const response = {
+			return {
 				message: process.env.SUCCESS_MESSAGE,
 			};
-
-			return response;
 		} catch (error) {
-			const response = {
+			return {
 				message: error?.message,
-			}
-
-			return response;
+			};
 		}
 	}
 
 	async findByVerificationToken(token: string): Promise<User | null> {
 		try {
-			const user = await this.userRepository.findOne({
+			return await this.userRepository.findOne({
 				where: { verificationToken: token, isDeleted: false }
 			});
-
-			return user;
 		} catch (error) {
 			return null;
 		}
@@ -317,11 +302,9 @@ export class UserService {
 
 	async findByResetToken(token: string): Promise<User | null> {
 		try {
-			const user = await this.userRepository.findOne({
+			return await this.userRepository.findOne({
 				where: { resetToken: token, isDeleted: false }
 			});
-
-			return user;
 		} catch (error) {
 			return null;
 		}

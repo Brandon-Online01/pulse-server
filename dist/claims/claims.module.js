@@ -13,12 +13,17 @@ const claims_controller_1 = require("./claims.controller");
 const typeorm_1 = require("@nestjs/typeorm");
 const claim_entity_1 = require("./entities/claim.entity");
 const rewards_module_1 = require("../rewards/rewards.module");
+const licensing_module_1 = require("../licensing/licensing.module");
 let ClaimsModule = class ClaimsModule {
 };
 exports.ClaimsModule = ClaimsModule;
 exports.ClaimsModule = ClaimsModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([claim_entity_1.Claim]), rewards_module_1.RewardsModule],
+        imports: [
+            licensing_module_1.LicensingModule,
+            typeorm_1.TypeOrmModule.forFeature([claim_entity_1.Claim]),
+            rewards_module_1.RewardsModule
+        ],
         controllers: [claims_controller_1.ClaimsController],
         providers: [claims_service_1.ClaimsService],
         exports: [claims_service_1.ClaimsService]

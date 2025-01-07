@@ -11,7 +11,7 @@ export declare class UserController {
         users: import("./entities/user.entity").User[] | null;
         message: string;
     }>;
-    findOne(searchParameter: string): Promise<{
+    findOne(searchParameter: number): Promise<{
         user: import("./entities/user.entity").User | null;
         message: string;
     }>;
@@ -21,7 +21,7 @@ export declare class UserController {
     restore(ref: number): Promise<{
         message: string;
     }>;
-    remove(ref: number): Promise<{
+    remove(ref: string): Promise<{
         message: string;
     }>;
 }

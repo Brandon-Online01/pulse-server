@@ -13,12 +13,17 @@ const journal_controller_1 = require("./journal.controller");
 const typeorm_1 = require("@nestjs/typeorm");
 const journal_entity_1 = require("./entities/journal.entity");
 const rewards_module_1 = require("../rewards/rewards.module");
+const licensing_module_1 = require("../licensing/licensing.module");
 let JournalModule = class JournalModule {
 };
 exports.JournalModule = JournalModule;
 exports.JournalModule = JournalModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([journal_entity_1.Journal]), rewards_module_1.RewardsModule],
+        imports: [
+            licensing_module_1.LicensingModule,
+            typeorm_1.TypeOrmModule.forFeature([journal_entity_1.Journal]),
+            rewards_module_1.RewardsModule
+        ],
         controllers: [journal_controller_1.JournalController],
         providers: [journal_service_1.JournalService],
         exports: [journal_service_1.JournalService]

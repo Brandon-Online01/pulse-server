@@ -22,14 +22,16 @@ const user_enums_1 = require("../lib/enums/user.enums");
 const event_emitter_1 = require("@nestjs/event-emitter");
 const pending_signup_service_1 = require("./pending-signup.service");
 const password_reset_service_1 = require("./password-reset.service");
+const licensing_service_1 = require("../licensing/licensing.service");
 let AuthService = class AuthService {
-    constructor(jwtService, userService, rewardsService, eventEmitter, pendingSignupService, passwordResetService) {
+    constructor(jwtService, userService, rewardsService, eventEmitter, pendingSignupService, passwordResetService, licensingService) {
         this.jwtService = jwtService;
         this.userService = userService;
         this.rewardsService = rewardsService;
         this.eventEmitter = eventEmitter;
         this.pendingSignupService = pendingSignupService;
         this.passwordResetService = passwordResetService;
+        this.licensingService = licensingService;
     }
     async generateSecureToken() {
         return crypto.randomBytes(32).toString('hex');
@@ -51,7 +53,54 @@ let AuthService = class AuthService {
                     profileData: null,
                 };
             }
-            const { uid, accessLevel, name, ...restOfUser } = authProfile?.user;
+            const { uid, accessLevel, name, organisationRef, ...restOfUser } = authProfile?.user;
+            if (organisationRef) {
+                const licenses = await this.licensingService.findByOrganisation(organisationRef);
+                const activeLicense = licenses.find(license => this.licensingService.validateLicense(String(license?.uid)));
+                if (!activeLicense) {
+                    throw new common_1.UnauthorizedException('Your organization\'s license has expired. Please contact your administrator.');
+                }
+                const profileData = {
+                    uid: uid.toString(),
+                    accessLevel,
+                    name,
+                    organisationRef,
+                    licenseInfo: {
+                        licenseId: String(activeLicense?.uid),
+                        plan: activeLicense?.plan,
+                        status: activeLicense?.status,
+                        features: activeLicense?.features
+                    },
+                    ...restOfUser
+                };
+                const tokenRole = accessLevel?.toLowerCase();
+                const payload = {
+                    uid: uid?.toString(),
+                    role: tokenRole,
+                    organisationRef,
+                    licenseId: String(activeLicense?.uid),
+                    licensePlan: activeLicense?.plan,
+                    features: activeLicense?.features
+                };
+                const accessToken = await this.jwtService.signAsync(payload, { expiresIn: `8h` });
+                const refreshToken = await this.jwtService.signAsync(payload, { expiresIn: `7d` });
+                await this.rewardsService.awardXP({
+                    owner: Number(uid),
+                    amount: constants_1.XP_VALUES.DAILY_LOGIN,
+                    action: 'DAILY_LOGIN',
+                    source: {
+                        id: uid.toString(),
+                        type: constants_1.XP_VALUES_TYPES.LOGIN,
+                        details: 'Daily login reward'
+                    }
+                });
+                return {
+                    profileData,
+                    accessToken,
+                    refreshToken,
+                    message: `Welcome ${profileData.name}!`,
+                };
+            }
             const profileData = {
                 uid: uid.toString(),
                 accessLevel,
@@ -62,25 +111,15 @@ let AuthService = class AuthService {
             const payload = { uid: uid?.toString(), role: tokenRole };
             const accessToken = await this.jwtService.signAsync(payload, { expiresIn: `8h` });
             const refreshToken = await this.jwtService.signAsync(payload, { expiresIn: `7d` });
-            await this.rewardsService.awardXP({
-                owner: uid,
-                amount: constants_1.XP_VALUES.DAILY_LOGIN,
-                action: 'DAILY_LOGIN',
-                source: {
-                    id: uid.toString(),
-                    type: constants_1.XP_VALUES_TYPES.LOGIN,
-                    details: 'Daily login reward'
-                }
-            });
-            const response = {
+            return {
                 profileData,
                 accessToken,
                 refreshToken,
                 message: `Welcome ${profileData.name}!`,
             };
-            return response;
         }
         catch (error) {
+            console.log(error);
             const response = {
                 message: error?.message,
                 accessToken: null,
@@ -278,6 +317,37 @@ let AuthService = class AuthService {
             if (!authProfile?.user) {
                 throw new common_1.BadRequestException('User not found');
             }
+            if (authProfile.user.organisationRef) {
+                const licenses = await this.licensingService.findByOrganisation(authProfile.user.organisationRef);
+                const activeLicense = licenses.find(license => this.licensingService.validateLicense(String(license?.uid)));
+                if (!activeLicense) {
+                    throw new common_1.UnauthorizedException('Your organization\'s license has expired. Please contact your administrator.');
+                }
+                const newPayload = {
+                    uid: payload?.uid,
+                    role: authProfile?.user?.accessLevel?.toLowerCase(),
+                    organisationRef: authProfile?.user?.organisationRef,
+                    licenseId: String(activeLicense?.uid),
+                    licensePlan: activeLicense?.plan,
+                    features: activeLicense?.features
+                };
+                const accessToken = await this.jwtService.signAsync(newPayload, {
+                    expiresIn: `${process.env.JWT_ACCESS_EXPIRES_IN}`
+                });
+                return {
+                    accessToken,
+                    profileData: {
+                        ...authProfile?.user,
+                        licenseInfo: {
+                            licenseId: String(activeLicense?.uid),
+                            plan: activeLicense?.plan,
+                            status: activeLicense?.status,
+                            features: activeLicense?.features
+                        }
+                    },
+                    message: 'Access token refreshed successfully'
+                };
+            }
             const newPayload = {
                 uid: payload.uid,
                 role: authProfile.user.accessLevel?.toLowerCase()
@@ -307,6 +377,7 @@ exports.AuthService = AuthService = __decorate([
         rewards_service_1.RewardsService,
         event_emitter_1.EventEmitter2,
         pending_signup_service_1.PendingSignupService,
-        password_reset_service_1.PasswordResetService])
+        password_reset_service_1.PasswordResetService,
+        licensing_service_1.LicensingService])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map

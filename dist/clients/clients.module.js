@@ -12,12 +12,16 @@ const clients_service_1 = require("./clients.service");
 const clients_controller_1 = require("./clients.controller");
 const typeorm_1 = require("@nestjs/typeorm");
 const client_entity_1 = require("./entities/client.entity");
+const licensing_module_1 = require("../licensing/licensing.module");
 let ClientsModule = class ClientsModule {
 };
 exports.ClientsModule = ClientsModule;
 exports.ClientsModule = ClientsModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([client_entity_1.Client])],
+        imports: [
+            licensing_module_1.LicensingModule,
+            typeorm_1.TypeOrmModule.forFeature([client_entity_1.Client])
+        ],
         controllers: [clients_controller_1.ClientsController],
         providers: [clients_service_1.ClientsService],
         exports: [clients_service_1.ClientsService]

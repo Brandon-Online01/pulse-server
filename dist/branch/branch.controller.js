@@ -22,6 +22,7 @@ const role_guard_1 = require("../guards/role.guard");
 const auth_guard_1 = require("../guards/auth.guard");
 const user_enums_1 = require("../lib/enums/user.enums");
 const role_decorator_1 = require("../decorators/role.decorator");
+const public_decorator_1 = require("../decorators/public.decorator");
 let BranchController = class BranchController {
     constructor(branchService) {
         this.branchService = branchService;
@@ -45,6 +46,7 @@ let BranchController = class BranchController {
 exports.BranchController = BranchController;
 __decorate([
     (0, common_1.Post)(),
+    (0, public_decorator_1.isPublic)(),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER),
     (0, swagger_1.ApiOperation)({ summary: 'create a new branch' }),
     __param(0, (0, common_1.Body)()),

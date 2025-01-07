@@ -3,10 +3,11 @@ import { DocsService } from './docs.service';
 import { DocsController } from './docs.controller';
 import { Doc } from './entities/doc.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { MulterModule } from '@nestjs/platform-express';
+import { LicensingModule } from '../licensing/licensing.module';
 
 @Module({
   imports: [
+    LicensingModule,
     TypeOrmModule.forFeature([Doc])
   ],
   controllers: [DocsController],

@@ -13,7 +13,7 @@ export declare class UserService {
         users: User[] | null;
         message: string;
     }>;
-    findOne(searchParameter: string): Promise<{
+    findOne(searchParameter: number): Promise<{
         user: User | null;
         message: string;
     }>;
@@ -29,10 +29,10 @@ export declare class UserService {
         users: User[] | null;
         message: string;
     }>;
-    update(ref: number, updateUserDto: UpdateUserDto): Promise<{
+    update(ref: string, updateUserDto: UpdateUserDto): Promise<{
         message: string;
     }>;
-    remove(ref: number): Promise<{
+    remove(ref: string): Promise<{
         message: string;
     }>;
     createPendingUser(userData: NewSignUp): Promise<void>;

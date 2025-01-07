@@ -5,9 +5,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Notification } from './entities/notification.entity';
 import { RewardsModule } from '../rewards/rewards.module';
 import { OrderNotificationsService } from './order-notifications.service';
+import { LicensingModule } from '../licensing/licensing.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Notification]), RewardsModule],
+  imports: [
+    LicensingModule,
+    TypeOrmModule.forFeature([Notification]),
+    RewardsModule
+  ],
   controllers: [NotificationsController],
   providers: [NotificationsService, OrderNotificationsService],
   exports: [NotificationsService, OrderNotificationsService]

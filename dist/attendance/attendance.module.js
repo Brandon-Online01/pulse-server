@@ -14,12 +14,18 @@ const typeorm_1 = require("@nestjs/typeorm");
 const attendance_entity_1 = require("./entities/attendance.entity");
 const user_module_1 = require("../user/user.module");
 const rewards_module_1 = require("../rewards/rewards.module");
+const licensing_module_1 = require("../licensing/licensing.module");
 let AttendanceModule = class AttendanceModule {
 };
 exports.AttendanceModule = AttendanceModule;
 exports.AttendanceModule = AttendanceModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([attendance_entity_1.Attendance]), user_module_1.UserModule, rewards_module_1.RewardsModule],
+        imports: [
+            licensing_module_1.LicensingModule,
+            typeorm_1.TypeOrmModule.forFeature([attendance_entity_1.Attendance]),
+            user_module_1.UserModule,
+            rewards_module_1.RewardsModule
+        ],
         controllers: [attendance_controller_1.AttendanceController],
         providers: [attendance_service_1.AttendanceService],
         exports: [attendance_service_1.AttendanceService]

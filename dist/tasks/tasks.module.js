@@ -14,12 +14,17 @@ const task_entity_1 = require("./entities/task.entity");
 const typeorm_1 = require("@nestjs/typeorm");
 const subtask_entity_1 = require("./entities/subtask.entity");
 const rewards_module_1 = require("../rewards/rewards.module");
+const licensing_module_1 = require("../licensing/licensing.module");
 let TasksModule = class TasksModule {
 };
 exports.TasksModule = TasksModule;
 exports.TasksModule = TasksModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([task_entity_1.Task, subtask_entity_1.SubTask]), rewards_module_1.RewardsModule],
+        imports: [
+            licensing_module_1.LicensingModule,
+            typeorm_1.TypeOrmModule.forFeature([task_entity_1.Task, subtask_entity_1.SubTask]),
+            rewards_module_1.RewardsModule
+        ],
         controllers: [tasks_controller_1.TasksController],
         providers: [tasks_service_1.TasksService],
         exports: [tasks_service_1.TasksService]

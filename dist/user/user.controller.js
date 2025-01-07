@@ -37,7 +37,7 @@ let UserController = class UserController {
         return this.userService.findOne(searchParameter);
     }
     update(ref, updateUserDto) {
-        return this.userService.update(ref, updateUserDto);
+        return this.userService.update(String(ref), updateUserDto);
     }
     restore(ref) {
         return this.userService.restore(ref);
@@ -50,8 +50,6 @@ exports.UserController = UserController;
 __decorate([
     (0, common_1.Post)(),
     (0, public_decorator_1.isPublic)(),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
-    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'Create a new user' }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -62,7 +60,7 @@ __decorate([
     (0, common_1.Get)(),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
-    (0, swagger_1.ApiOperation)({ summary: 'Get all users' }),
+    (0, swagger_1.ApiOperation)({ summary: 'get all users' }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
@@ -71,15 +69,15 @@ __decorate([
     (0, common_1.Get)(':ref'),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
-    (0, swagger_1.ApiOperation)({ summary: 'Get a user by a search parameter i.e email, phone number, reference code' }),
+    (0, swagger_1.ApiOperation)({ summary: 'get a user by a search parameter i.e email, phone number, reference code' }),
     __param(0, (0, common_1.Param)('searchParameter')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", void 0)
 ], UserController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Patch)(':ref'),
-    (0, swagger_1.ApiOperation)({ summary: 'Update a user by reference code' }),
+    (0, swagger_1.ApiOperation)({ summary: 'update a user by reference code' }),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     __param(0, (0, common_1.Param)('ref')),
@@ -90,7 +88,7 @@ __decorate([
 ], UserController.prototype, "update", null);
 __decorate([
     (0, common_1.Patch)('restore/:ref'),
-    (0, swagger_1.ApiOperation)({ summary: 'Restore a deleted user by reference code' }),
+    (0, swagger_1.ApiOperation)({ summary: 'restore a deleted user by reference code' }),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     __param(0, (0, common_1.Param)('ref')),
@@ -102,16 +100,15 @@ __decorate([
     (0, common_1.Delete)(':ref'),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
-    (0, swagger_1.ApiOperation)({ summary: 'Soft delete a user by reference code' }),
+    (0, swagger_1.ApiOperation)({ summary: 'soft delete a user by reference code' }),
     __param(0, (0, common_1.Param)('ref')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
+    __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], UserController.prototype, "remove", null);
 exports.UserController = UserController = __decorate([
     (0, swagger_1.ApiTags)('user'),
     (0, common_1.Controller)('user'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     __metadata("design:paramtypes", [user_service_1.UserService])
 ], UserController);
 //# sourceMappingURL=user.controller.js.map

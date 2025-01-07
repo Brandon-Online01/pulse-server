@@ -156,7 +156,7 @@ export class ReportsService {
 				this.attendanceService.getAttendanceForDate(date),
 				this.newsService.findAll(),
 				this.rewardsService.getUserRewards(Number(reference)),
-				reference ? this.userService.findOne(reference.toString()) : null
+				reference ? this.userService.findOne(Number(reference)) : null
 			]);
 
 			const [

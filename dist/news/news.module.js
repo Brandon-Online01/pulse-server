@@ -12,12 +12,16 @@ const news_service_1 = require("./news.service");
 const news_controller_1 = require("./news.controller");
 const typeorm_1 = require("@nestjs/typeorm");
 const news_entity_1 = require("./entities/news.entity");
+const licensing_module_1 = require("../licensing/licensing.module");
 let NewsModule = class NewsModule {
 };
 exports.NewsModule = NewsModule;
 exports.NewsModule = NewsModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([news_entity_1.News])],
+        imports: [
+            licensing_module_1.LicensingModule,
+            typeorm_1.TypeOrmModule.forFeature([news_entity_1.News])
+        ],
         controllers: [news_controller_1.NewsController],
         providers: [news_service_1.NewsService],
         exports: [news_service_1.NewsService],

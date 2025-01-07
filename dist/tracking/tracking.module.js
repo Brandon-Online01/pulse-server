@@ -12,12 +12,16 @@ const tracking_service_1 = require("./tracking.service");
 const tracking_controller_1 = require("./tracking.controller");
 const typeorm_1 = require("@nestjs/typeorm");
 const tracking_entity_1 = require("./entities/tracking.entity");
+const licensing_module_1 = require("../licensing/licensing.module");
 let TrackingModule = class TrackingModule {
 };
 exports.TrackingModule = TrackingModule;
 exports.TrackingModule = TrackingModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([tracking_entity_1.Tracking])],
+        imports: [
+            licensing_module_1.LicensingModule,
+            typeorm_1.TypeOrmModule.forFeature([tracking_entity_1.Tracking])
+        ],
         controllers: [tracking_controller_1.TrackingController],
         providers: [tracking_service_1.TrackingService],
         exports: [tracking_service_1.TrackingService]

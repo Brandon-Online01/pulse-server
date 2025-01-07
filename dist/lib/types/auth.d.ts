@@ -1,20 +1,27 @@
-import { User } from '../../user/entities/user.entity';
-export type SafeUser = Omit<User, 'password'>;
+import { AccessLevel } from '../enums/user.enums';
+import { SubscriptionPlan, LicenseStatus } from '../enums/license.enums';
 export interface ProfileData {
     uid: string;
-    accessLevel: string;
+    accessLevel: AccessLevel;
     name: string;
-}
-export interface SignInInput {
-    username: string;
-    password: string;
+    email?: string;
+    phone?: string;
+    photoURL?: string;
+    organisationRef?: string;
+    licenseInfo?: {
+        licenseId: string;
+        plan: SubscriptionPlan;
+        status: LicenseStatus;
+        features: Record<string, boolean>;
+    };
 }
 export interface SignInResponse {
-    profileData: ProfileData;
-    accessToken: string;
-    refreshToken: string;
     message: string;
+    accessToken: string | null;
+    refreshToken: string | null;
+    profileData: ProfileData | null;
 }
 export interface SignUpResponse {
     message: string;
+    status?: string;
 }
