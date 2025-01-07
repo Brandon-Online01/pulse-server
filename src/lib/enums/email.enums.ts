@@ -14,4 +14,11 @@ export enum EmailType {
     NEW_ORDER_CLIENT = 'new_order_client',
     NEW_ORDER_INTERNAL = 'new_order_internal',
     NEW_ORDER_RESELLER = 'new_order_reseller',
+    // License related emails
+    LICENSE_CREATED = 'license_created',
+    LICENSE_UPDATED = 'license_updated',
+    LICENSE_LIMIT_REACHED = 'license_limit_reached',
+    LICENSE_RENEWED = 'license_renewed',
+    LICENSE_SUSPENDED = 'license_suspended',
+    LICENSE_ACTIVATED = 'license_activated'
 } 

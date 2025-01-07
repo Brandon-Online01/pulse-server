@@ -13,7 +13,6 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.JournalController = void 0;
-const common_1 = require("@nestjs/common");
 const journal_service_1 = require("./journal.service");
 const create_journal_dto_1 = require("./dto/create-journal.dto");
 const swagger_1 = require("@nestjs/swagger");
@@ -22,6 +21,8 @@ const role_decorator_1 = require("../decorators/role.decorator");
 const user_enums_1 = require("../lib/enums/user.enums");
 const update_journal_dto_1 = require("./dto/update-journal.dto");
 const auth_guard_1 = require("../guards/auth.guard");
+const enterprise_only_decorator_1 = require("../decorators/enterprise-only.decorator");
+const common_1 = require("@nestjs/common");
 let JournalController = class JournalController {
     constructor(journalService) {
         this.journalService = journalService;
@@ -117,6 +118,7 @@ exports.JournalController = JournalController = __decorate([
     (0, swagger_1.ApiTags)('journal'),
     (0, common_1.Controller)('journal'),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
+    (0, enterprise_only_decorator_1.EnterpriseOnly)('journal'),
     __metadata("design:paramtypes", [journal_service_1.JournalService])
 ], JournalController);
 //# sourceMappingURL=journal.controller.js.map

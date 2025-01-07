@@ -10,7 +10,6 @@ import { AccessLevel } from '../lib/enums/user.enums';
 
 @ApiTags('gps')
 @Controller('gps')
-@UseGuards(AuthGuard, RoleGuard)
 export class TrackingController {
   constructor(private readonly trackingService: TrackingService) { }
 

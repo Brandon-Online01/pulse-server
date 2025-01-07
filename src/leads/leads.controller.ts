@@ -7,10 +7,12 @@ import { RoleGuard } from '../guards/role.guard';
 import { Roles } from '../decorators/role.decorator';
 import { AccessLevel } from '../lib/enums/user.enums';
 import { AuthGuard } from '../guards/auth.guard';
+import { EnterpriseOnly } from '../decorators/enterprise-only.decorator';
 
 @ApiTags('leads')
 @Controller('leads')
 @UseGuards(AuthGuard, RoleGuard)
+@EnterpriseOnly('leads')
 export class LeadsController {
   constructor(private readonly leadsService: LeadsService) { }
 

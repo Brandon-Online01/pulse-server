@@ -1,4 +1,3 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Patch, Delete } from '@nestjs/common';
 import { JournalService } from './journal.service';
 import { CreateJournalDto } from './dto/create-journal.dto';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -7,10 +6,13 @@ import { Roles } from '../decorators/role.decorator';
 import { AccessLevel } from '../lib/enums/user.enums';
 import { UpdateJournalDto } from './dto/update-journal.dto';
 import { AuthGuard } from '../guards/auth.guard';
+import { EnterpriseOnly } from '../decorators/enterprise-only.decorator';
+import { Controller, Get, Post, Body, Param, UseGuards, Patch, Delete } from '@nestjs/common';
 
 @ApiTags('journal')
 @Controller('journal')
 @UseGuards(AuthGuard, RoleGuard)
+@EnterpriseOnly('journal')
 export class JournalController {
   constructor(private readonly journalService: JournalService) { }
 

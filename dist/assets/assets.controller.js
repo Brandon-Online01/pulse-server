@@ -22,6 +22,7 @@ const role_guard_1 = require("../guards/role.guard");
 const auth_guard_1 = require("../guards/auth.guard");
 const user_enums_1 = require("../lib/enums/user.enums");
 const role_decorator_1 = require("../decorators/role.decorator");
+const enterprise_only_decorator_1 = require("../decorators/enterprise-only.decorator");
 let AssetsController = class AssetsController {
     constructor(assetsService) {
         this.assetsService = assetsService;
@@ -137,6 +138,7 @@ exports.AssetsController = AssetsController = __decorate([
     (0, swagger_1.ApiTags)('assets'),
     (0, common_1.Controller)('assets'),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
+    (0, enterprise_only_decorator_1.EnterpriseOnly)('assets'),
     __metadata("design:paramtypes", [assets_service_1.AssetsService])
 ], AssetsController);
 //# sourceMappingURL=assets.controller.js.map

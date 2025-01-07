@@ -25,6 +25,7 @@ const role_decorator_1 = require("../decorators/role.decorator");
 const user_enums_1 = require("../lib/enums/user.enums");
 const role_guard_1 = require("../guards/role.guard");
 const auth_guard_1 = require("../guards/auth.guard");
+const enterprise_only_decorator_1 = require("../decorators/enterprise-only.decorator");
 let DocsController = class DocsController {
     constructor(docsService) {
         this.docsService = docsService;
@@ -154,6 +155,7 @@ exports.DocsController = DocsController = __decorate([
     (0, swagger_1.ApiTags)('docs'),
     (0, common_1.Controller)('docs'),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
+    (0, enterprise_only_decorator_1.EnterpriseOnly)('claims'),
     __metadata("design:paramtypes", [docs_service_1.DocsService])
 ], DocsController);
 //# sourceMappingURL=docs.controller.js.map

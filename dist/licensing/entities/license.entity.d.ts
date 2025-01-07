@@ -1,5 +1,5 @@
-import { LicenseType, SubscriptionPlan, LicenseStatus, BillingCycle } from '../../lib/enums/license.enums';
 import { Organisation } from '../../organisation/entities/organisation.entity';
+import { LicenseType, SubscriptionPlan, LicenseStatus, BillingCycle } from '../../lib/enums/license.enums';
 export declare class License {
     uid: string;
     licenseKey: string;

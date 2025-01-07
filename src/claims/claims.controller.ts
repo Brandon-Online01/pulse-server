@@ -7,10 +7,12 @@ import { Roles } from '../decorators/role.decorator';
 import { AccessLevel } from '../lib/enums/user.enums';
 import { RoleGuard } from '../guards/role.guard';
 import { AuthGuard } from '../guards/auth.guard';
+import { EnterpriseOnly } from '../decorators/enterprise-only.decorator';
 
 @ApiTags('claims')
 @Controller('claims')
 @UseGuards(AuthGuard, RoleGuard)
+@EnterpriseOnly('claims')
 export class ClaimsController {
   constructor(private readonly claimsService: ClaimsService) { }
 

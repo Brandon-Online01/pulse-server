@@ -10,10 +10,11 @@ import { AuthGuard } from '../guards/auth.guard';
 import { Roles } from '../decorators/role.decorator';
 import { ApiTags } from '@nestjs/swagger';
 import { PaginationQuery } from '../lib/interfaces/product.interfaces';
-
+import { EnterpriseOnly } from '../decorators/enterprise-only.decorator';
 @ApiTags('products')
 @Controller('products')
 @UseGuards(AuthGuard, RoleGuard)
+@EnterpriseOnly('products')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) { }
 

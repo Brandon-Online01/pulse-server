@@ -7,10 +7,12 @@ import { RoleGuard } from '../guards/role.guard';
 import { AuthGuard } from '../guards/auth.guard';
 import { AccessLevel } from '../lib/enums/user.enums';
 import { Roles } from '../decorators/role.decorator';
+import { EnterpriseOnly } from '../decorators/enterprise-only.decorator';
 
 @ApiTags('news')
 @Controller('news')
 @UseGuards(AuthGuard, RoleGuard)
+@EnterpriseOnly('news')
 export class NewsController {
   constructor(private readonly newsService: NewsService) { }
 

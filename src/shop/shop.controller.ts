@@ -9,10 +9,12 @@ import { CheckoutDto } from './dto/checkout.dto';
 import { AccessLevel } from '../lib/enums/user.enums';
 import { CreateBannerDto } from './dto/create-banner.dto';
 import { UpdateBannerDto } from './dto/update-banner.dto';
+import { EnterpriseOnly } from '../decorators/enterprise-only.decorator';
 
 @ApiTags('shop')
 @Controller('shop')
 @UseGuards(AuthGuard, RoleGuard)
+@EnterpriseOnly('shop')
 export class ShopController {
   constructor(private readonly shopService: ShopService) { }
 

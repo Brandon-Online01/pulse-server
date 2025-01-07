@@ -13,6 +13,7 @@ exports.FeatureGuard = void 0;
 const common_1 = require("@nestjs/common");
 const core_1 = require("@nestjs/core");
 const require_feature_decorator_1 = require("../decorators/require-feature.decorator");
+const license_features_1 = require("../lib/constants/license-features");
 let FeatureGuard = class FeatureGuard {
     constructor(reflector) {
         this.reflector = reflector;
@@ -26,13 +27,17 @@ let FeatureGuard = class FeatureGuard {
             return true;
         }
         const request = context.switchToHttp().getRequest();
-        const license = request['license'];
-        if (!license || !license.features) {
-            throw new common_1.ForbiddenException('No license features found');
+        const user = request['user'];
+        if (!user?.licensePlan) {
+            throw new common_1.ForbiddenException('No license information found');
         }
-        const hasAccess = requiredFeatures.every(feature => license.features[feature] === true);
+        const planFeatures = license_features_1.PLAN_FEATURES[user.licensePlan];
+        if (!planFeatures) {
+            throw new common_1.ForbiddenException('Invalid license plan');
+        }
+        const hasAccess = requiredFeatures.every(feature => planFeatures[feature] === true);
         if (!hasAccess) {
-            throw new common_1.ForbiddenException('License does not include required features');
+            throw new common_1.ForbiddenException('Your current plan does not include access to this feature');
         }
         return true;
     }

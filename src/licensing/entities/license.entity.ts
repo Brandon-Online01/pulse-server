@@ -1,10 +1,10 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
-import { LicenseType, SubscriptionPlan, LicenseStatus, BillingCycle } from '../../lib/enums/license.enums';
 import { Organisation } from '../../organisation/entities/organisation.entity';
+import { LicenseType, SubscriptionPlan, LicenseStatus, BillingCycle } from '../../lib/enums/license.enums';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
 
 @Entity('licenses')
 export class License {
-    @PrimaryGeneratedColumn('uuid')
+    @PrimaryGeneratedColumn()
     uid: string;
 
     @Column({ type: 'varchar', unique: true })
@@ -29,7 +29,7 @@ export class License {
     maxBranches: number;
 
     @Column({ type: 'bigint' })
-    storageLimit: number; // in bytes
+    storageLimit: number;
 
     @Column({ type: 'int' })
     apiCallLimit: number;

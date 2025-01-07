@@ -22,6 +22,7 @@ const role_guard_1 = require("../guards/role.guard");
 const role_decorator_1 = require("../decorators/role.decorator");
 const user_enums_1 = require("../lib/enums/user.enums");
 const auth_guard_1 = require("../guards/auth.guard");
+const enterprise_only_decorator_1 = require("../decorators/enterprise-only.decorator");
 let LeadsController = class LeadsController {
     constructor(leadsService) {
         this.leadsService = leadsService;
@@ -122,6 +123,7 @@ exports.LeadsController = LeadsController = __decorate([
     (0, swagger_1.ApiTags)('leads'),
     (0, common_1.Controller)('leads'),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
+    (0, enterprise_only_decorator_1.EnterpriseOnly)('leads'),
     __metadata("design:paramtypes", [leads_service_1.LeadsService])
 ], LeadsController);
 //# sourceMappingURL=leads.controller.js.map

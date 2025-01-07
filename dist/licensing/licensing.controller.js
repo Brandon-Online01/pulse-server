@@ -19,10 +19,9 @@ const licensing_service_1 = require("./licensing.service");
 const create_license_dto_1 = require("./dto/create-license.dto");
 const update_license_dto_1 = require("./dto/update-license.dto");
 const license_entity_1 = require("./entities/license.entity");
-const auth_guard_1 = require("../guards/auth.guard");
-const role_guard_1 = require("../guards/role.guard");
 const user_enums_1 = require("../lib/enums/user.enums");
 const role_decorator_1 = require("../decorators/role.decorator");
+const public_decorator_1 = require("../decorators/public.decorator");
 let LicensingController = class LicensingController {
     constructor(licensingService) {
         this.licensingService = licensingService;
@@ -58,9 +57,8 @@ let LicensingController = class LicensingController {
 exports.LicensingController = LicensingController;
 __decorate([
     (0, common_1.Post)(),
-    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.DEVELOPER),
+    (0, public_decorator_1.isPublic)(),
     (0, swagger_1.ApiOperation)({ summary: 'create a new license' }),
-    (0, swagger_1.ApiResponse)({ status: 201, description: 'License created successfully', type: license_entity_1.License }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_license_dto_1.CreateLicenseDto]),
@@ -149,7 +147,6 @@ __decorate([
 exports.LicensingController = LicensingController = __decorate([
     (0, swagger_1.ApiTags)('licensing'),
     (0, common_1.Controller)('licensing'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     __metadata("design:paramtypes", [licensing_service_1.LicensingService])
 ], LicensingController);
 //# sourceMappingURL=licensing.controller.js.map

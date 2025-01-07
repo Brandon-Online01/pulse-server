@@ -7,11 +7,13 @@ import { RoleGuard } from '../guards/role.guard';
 import { AuthGuard } from '../guards/auth.guard';
 import { AccessLevel } from '../lib/enums/user.enums';
 import { Roles } from '../decorators/role.decorator';
+import { EnterpriseOnly } from '../decorators/enterprise-only.decorator';
 
 @ApiBearerAuth('JWT-auth')
 @ApiTags('assets')
 @Controller('assets')
 @UseGuards(AuthGuard, RoleGuard)
+@EnterpriseOnly('assets')
 export class AssetsController {
   constructor(
     private readonly assetsService: AssetsService

@@ -1,7 +1,7 @@
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { FEATURE_KEY } from '../decorators/require-feature.decorator';
-import { License } from '../licensing/entities/license.entity';
+import { PLAN_FEATURES } from '../lib/constants/license-features';
 
 @Injectable()
 export class FeatureGuard implements CanActivate {
@@ -18,16 +18,24 @@ export class FeatureGuard implements CanActivate {
         }
 
         const request = context.switchToHttp().getRequest();
-        const license: License = request['license'];
+        const user = request['user'];
 
-        if (!license || !license.features) {
-            throw new ForbiddenException('No license features found');
+        // Check if user has license info
+        if (!user?.licensePlan) {
+            throw new ForbiddenException('No license information found');
         }
 
-        const hasAccess = requiredFeatures.every(feature => license.features[feature] === true);
+        // Get features available for the user's plan
+        const planFeatures = PLAN_FEATURES[user.licensePlan];
+        if (!planFeatures) {
+            throw new ForbiddenException('Invalid license plan');
+        }
+
+        // Check if user has all required features
+        const hasAccess = requiredFeatures.every(feature => planFeatures[feature] === true);
 
         if (!hasAccess) {
-            throw new ForbiddenException('License does not include required features');
+            throw new ForbiddenException('Your current plan does not include access to this feature');
         }
 
         return true;

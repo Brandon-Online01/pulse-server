@@ -11,12 +11,9 @@ import { User } from '../user/entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CommunicationLog } from './entities/communication-log.entity';
-import { Signup, Verification, PasswordReset, NewOrder, Invoice, PasswordChanged, OrderOutForDelivery, OrderDelivered, DailyReport, NewOrderInternal } from '../lib/templates/emails';
-import { DailyReportData, InvoiceData, OrderData, OrderDeliveredData, OrderOutForDeliveryData, PasswordChangedData, PasswordResetData, VerificationEmailData } from '../lib/types/email-templates.types';
-import { SignupEmailData } from '../lib/types/email-templates.types';
-import { EmailTemplateData } from '../lib/types/email-templates.types';
-import { OrderResellerNotificationData, OrderInternalNotificationData, OrderWarehouseFulfillmentData } from '../lib/types/email-templates.types';
-import { OrderResellerNotification, OrderInternalNotification, OrderWarehouseFulfillment, NewOrderReseller } from '../lib/templates/emails';
+import { LicenseCreated, LicenseUpdated, LicenseLimitReached, LicenseRenewed, LicenseSuspended, LicenseActivated } from '../lib/templates/emails';
+import { Signup, Verification, PasswordReset, NewOrder, Invoice, PasswordChanged, OrderOutForDelivery, OrderDelivered, DailyReport, NewOrderInternal, OrderResellerNotification, OrderInternalNotification, OrderWarehouseFulfillment, NewOrderReseller } from '../lib/templates/emails';
+import { DailyReportData, InvoiceData, OrderData, OrderDeliveredData, OrderOutForDeliveryData, PasswordChangedData, PasswordResetData, VerificationEmailData, SignupEmailData, EmailTemplateData, OrderResellerNotificationData, OrderInternalNotificationData, OrderWarehouseFulfillmentData, LicenseEmailData, LicenseLimitData } from '../lib/types/email-templates.types';
 
 @Injectable()
 export class CommunicationService {
@@ -161,6 +158,36 @@ export class CommunicationService {
 				return {
 					subject: 'New Purchase from Your Products',
 					body: NewOrderReseller(data as OrderResellerNotificationData),
+				};
+			case EmailType.LICENSE_CREATED:
+				return {
+					subject: 'License Created Successfully',
+					body: LicenseCreated(data as LicenseEmailData),
+				};
+			case EmailType.LICENSE_UPDATED:
+				return {
+					subject: 'License Updated',
+					body: LicenseUpdated(data as LicenseEmailData),
+				};
+			case EmailType.LICENSE_LIMIT_REACHED:
+				return {
+					subject: 'License Limit Reached',
+					body: LicenseLimitReached(data as LicenseLimitData),
+				};
+			case EmailType.LICENSE_RENEWED:
+				return {
+					subject: 'License Renewed Successfully',
+					body: LicenseRenewed(data as LicenseEmailData),
+				};
+			case EmailType.LICENSE_SUSPENDED:
+				return {
+					subject: 'License Suspended',
+					body: LicenseSuspended(data as LicenseEmailData),
+				};
+			case EmailType.LICENSE_ACTIVATED:
+				return {
+					subject: 'License Activated Successfully',
+					body: LicenseActivated(data as LicenseEmailData),
 				};
 			default:
 				throw new NotFoundException(`Unknown email template type: ${type}`);

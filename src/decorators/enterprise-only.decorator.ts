@@ -1,0 +1,35 @@
+import { applyDecorators, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '../guards/auth.guard';
+import { FeatureGuard } from '../guards/feature.guard';
+import { RequireFeature } from './require-feature.decorator';
+
+type ModuleName =
+    | 'assets'
+    | 'claims'
+    | 'clients'
+    | 'communication'
+    | 'docs'
+    | 'journal'
+    | 'leads'
+    | 'licensing'
+    | 'news'
+    | 'notifications'
+    | 'organisation'
+    | 'products'
+    | 'reports'
+    | 'resellers'
+    | 'rewards'
+    | 'shop'
+    | 'tasks'
+    | 'tracking';
+
+/**
+ * Decorator to protect routes with enterprise-only access
+ * @param module The module name to protect (e.g., 'assets', 'claims', etc.)
+ */
+export function EnterpriseOnly(module: ModuleName) {
+    return applyDecorators(
+        UseGuards(AuthGuard, FeatureGuard),
+        RequireFeature(`${module}.access` as const)
+    );
+} 

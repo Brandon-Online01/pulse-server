@@ -10,8 +10,11 @@ import {
   OrderOutForDeliveryData,
   OrderResellerNotificationData,
   OrderInternalNotificationData,
-  OrderWarehouseFulfillmentData
+  OrderWarehouseFulfillmentData,
+  LicenseEmailData,
+  LicenseLimitData
 } from '../types/email-templates.types';
+import { formatDate } from '../utils/date.utils';
 
 const BASE_STYLES = {
   wrapper: '@media (max-width: 600px) { width: 100% !important; padding: 10px !important; } width: 100%; padding: 20px;',
@@ -783,4 +786,382 @@ export const OrderWarehouseFulfillment = (data: OrderWarehouseFulfillmentData): 
   `;
 };
 
+export const LicenseCreated = (data: LicenseEmailData): string => `
+    <div style="${BASE_STYLES.wrapper}">
+      <div style="${BASE_STYLES.container}">
+        <div style="${BASE_STYLES.header}">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="white">
+            <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>
+          </svg>
+          <h1 style="margin: 16px 0 8px; font-size: 24px;">License Created Successfully! 🎉</h1>
+          <p style="margin: 0; opacity: 0.9;">License Key: ${data.licenseKey}</p>
+        </div>
 
+        <div style="padding: 24px 20px;">
+          <div style="${BASE_STYLES.card}">
+            <h2 style="${BASE_STYLES.heading}">Welcome, ${data.name}! 💫</h2>
+            <p style="${BASE_STYLES.text}">Your new license has been created successfully. Here are your license details:</p>
+
+            <div style="${BASE_STYLES.highlight}">
+              <div style="display: grid; gap: 12px;">
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Plan</span>
+                  <span style="font-weight: 600">${data.plan}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Valid Until</span>
+                  <span style="font-weight: 600">${formatDate(data.validUntil)}</span>
+                </div>
+              </div>
+            </div>
+
+            ${createSection("📊 License Limits", `
+              <div style="display: grid; gap: 12px;">
+                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+                  <span>Max Users</span>
+                  <strong>${data.limits.maxUsers}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+                  <span>Max Branches</span>
+                  <strong>${data.limits.maxBranches}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+                  <span>Storage Limit</span>
+                  <strong>${Math.floor(data.limits.storageLimit / 1024)}GB</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+                  <span>API Call Limit</span>
+                  <strong>${data.limits.apiCallLimit.toLocaleString()}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                  <span>Integration Limit</span>
+                  <strong>${data.limits.integrationLimit}</strong>
+                </div>
+              </div>
+            `)}
+          </div>
+        </div>
+
+        <div style="${BASE_STYLES.footer}">
+          <p style="margin: 0 0 12px;">Need help getting started?</p>
+          <div style="display: flex; justify-content: center; gap: 16px;">
+            <a href="#" style="${BASE_STYLES.link}">Documentation</a>
+            <a href="#" style="${BASE_STYLES.link}">Support</a>
+            <a href="#" style="${BASE_STYLES.link}">API Guide</a>
+          </div>
+        </div>
+      </div>
+    </div>
+`;
+
+export const LicenseUpdated = (data: LicenseEmailData): string => `
+    <div style="${BASE_STYLES.wrapper}">
+      <div style="${BASE_STYLES.container}">
+        <div style="${BASE_STYLES.header}">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="white">
+            <path d="M21 10.12h-6.78l2.74-2.82c-2.73-2.7-7.15-2.8-9.88-.1-2.73 2.71-2.73 7.08 0 9.79s7.15 2.71 9.88 0C18.32 15.65 19 14.08 19 12.1h2c0 1.98-.88 4.55-2.64 6.29-3.51 3.48-9.21 3.48-12.72 0-3.5-3.47-3.53-9.11-.02-12.58s9.14-3.47 12.65 0L21 3v7.12zM12.5 8v4.25l3.5 2.08-.72 1.21L11 13V8h1.5z"/>
+          </svg>
+          <h1 style="margin: 16px 0 8px; font-size: 24px;">License Updated</h1>
+          <p style="margin: 0; opacity: 0.9;">License Key: ${data.licenseKey}</p>
+        </div>
+
+        <div style="padding: 24px 20px;">
+          <div style="${BASE_STYLES.card}">
+            <h2 style="${BASE_STYLES.heading}">Hi ${data.name},</h2>
+            <p style="${BASE_STYLES.text}">Your license has been updated successfully. Here are your current license details:</p>
+
+            <div style="${BASE_STYLES.highlight}">
+              <div style="display: grid; gap: 12px;">
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Plan</span>
+                  <span style="font-weight: 600">${data.plan}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Valid Until</span>
+                  <span style="font-weight: 600">${formatDate(data.validUntil)}</span>
+                </div>
+              </div>
+            </div>
+
+            ${createSection("📊 Updated License Limits", `
+              <div style="display: grid; gap: 12px;">
+                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+                  <span>Max Users</span>
+                  <strong>${data.limits.maxUsers}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+                  <span>Max Branches</span>
+                  <strong>${data.limits.maxBranches}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+                  <span>Storage Limit</span>
+                  <strong>${Math.floor(data.limits.storageLimit / 1024)}GB</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+                  <span>API Call Limit</span>
+                  <strong>${data.limits.apiCallLimit.toLocaleString()}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                  <span>Integration Limit</span>
+                  <strong>${data.limits.integrationLimit}</strong>
+                </div>
+              </div>
+            `)}
+          </div>
+        </div>
+
+        <div style="${BASE_STYLES.footer}">
+          <p>Review our documentation to learn about new features and capabilities.</p>
+        </div>
+      </div>
+    </div>
+`;
+
+export const LicenseLimitReached = (data: LicenseLimitData): string => `
+    <div style="${BASE_STYLES.wrapper}">
+      <div style="${BASE_STYLES.container}">
+        <div style="${BASE_STYLES.header}">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="white">
+            <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+          </svg>
+          <h1 style="margin: 16px 0 8px; font-size: 24px;">License Limit Reached ⚠️</h1>
+          <p style="margin: 0; opacity: 0.9;">Action Required</p>
+        </div>
+
+        <div style="padding: 24px 20px;">
+          <div style="${BASE_STYLES.card}">
+            <h2 style="${BASE_STYLES.heading}">Hi ${data.name},</h2>
+            <p style="${BASE_STYLES.text}">Your license has reached its limit for the following:</p>
+
+            <div style="${BASE_STYLES.alert}">
+              <div style="display: grid; gap: 12px;">
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Metric</span>
+                  <strong style="color: #dc3545">${data.metric}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Current Usage</span>
+                  <strong style="color: #dc3545">${data.currentValue}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span>License Limit</span>
+                  <strong>${data.limit}</strong>
+                </div>
+              </div>
+            </div>
+
+            ${createSection("📈 Next Steps", `
+              <ul style="list-style: none; padding: 0; margin: 0;">
+                <li style="margin-bottom: 12px; display: flex; align-items: center;">
+                  <span style="background: #dc3545; color: white; margin-right: 8px; padding: 4px 8px; border-radius: 4px;">1</span>
+                  Review your current usage
+                </li>
+                <li style="margin-bottom: 12px; display: flex; align-items: center;">
+                  <span style="background: #ffc107; color: white; margin-right: 8px; padding: 4px 8px; border-radius: 4px;">2</span>
+                  Consider upgrading your plan
+                </li>
+                <li style="display: flex; align-items: center;">
+                  <span style="background: #28a745; color: white; margin-right: 8px; padding: 4px 8px; border-radius: 4px;">3</span>
+                  Contact support for assistance
+                </li>
+              </ul>
+            `)}
+          </div>
+        </div>
+
+        <div style="${BASE_STYLES.footer}">
+          <p>Need immediate assistance? Our support team is ready to help!</p>
+        </div>
+      </div>
+    </div>
+`;
+
+export const LicenseRenewed = (data: LicenseEmailData): string => `
+    <div style="${BASE_STYLES.wrapper}">
+      <div style="${BASE_STYLES.container}">
+        <div style="${BASE_STYLES.header}">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="white">
+            <path d="M21 10.12h-6.78l2.74-2.82c-2.73-2.7-7.15-2.8-9.88-.1-2.73 2.71-2.73 7.08 0 9.79s7.15 2.71 9.88 0C18.32 15.65 19 14.08 19 12.1h2c0 1.98-.88 4.55-2.64 6.29-3.51 3.48-9.21 3.48-12.72 0-3.5-3.47-3.53-9.11-.02-12.58s9.14-3.47 12.65 0L21 3v7.12z"/>
+          </svg>
+          <h1 style="margin: 16px 0 8px; font-size: 24px;">License Renewed Successfully! 🎉</h1>
+          <p style="margin: 0; opacity: 0.9;">License Key: ${data.licenseKey}</p>
+        </div>
+
+        <div style="padding: 24px 20px;">
+          <div style="${BASE_STYLES.card}">
+            <h2 style="${BASE_STYLES.heading}">Thank you, ${data.name}! 💫</h2>
+            <p style="${BASE_STYLES.text}">Your license has been renewed successfully. Here are your updated license details:</p>
+
+            <div style="${BASE_STYLES.highlight}">
+              <div style="display: grid; gap: 12px;">
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Plan</span>
+                  <span style="font-weight: 600">${data.plan}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Valid Until</span>
+                  <span style="font-weight: 600">${formatDate(data.validUntil)}</span>
+                </div>
+              </div>
+            </div>
+
+            ${createSection("📊 License Limits", `
+              <div style="display: grid; gap: 12px;">
+                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+                  <span>Max Users</span>
+                  <strong>${data.limits.maxUsers}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+                  <span>Max Branches</span>
+                  <strong>${data.limits.maxBranches}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+                  <span>Storage Limit</span>
+                  <strong>${Math.floor(data.limits.storageLimit / 1024)}GB</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+                  <span>API Call Limit</span>
+                  <strong>${data.limits.apiCallLimit.toLocaleString()}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                  <span>Integration Limit</span>
+                  <strong>${data.limits.integrationLimit}</strong>
+                </div>
+              </div>
+            `)}
+          </div>
+        </div>
+
+        <div style="${BASE_STYLES.footer}">
+          <p>Thank you for your continued trust in our services! 🙏</p>
+        </div>
+      </div>
+    </div>
+`;
+
+export const LicenseSuspended = (data: LicenseEmailData): string => `
+    <div style="${BASE_STYLES.wrapper}">
+      <div style="${BASE_STYLES.container}">
+        <div style="${BASE_STYLES.header}">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="white">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+          </svg>
+          <h1 style="margin: 16px 0 8px; font-size: 24px;">License Suspended ⚠️</h1>
+          <p style="margin: 0; opacity: 0.9;">Immediate Action Required</p>
+        </div>
+
+        <div style="padding: 24px 20px;">
+          <div style="${BASE_STYLES.card}">
+            <h2 style="${BASE_STYLES.heading}">Hi ${data.name},</h2>
+            <p style="${BASE_STYLES.text}">Your license has been suspended. Please contact support immediately to resolve this issue.</p>
+
+            <div style="${BASE_STYLES.alert}">
+              <div style="display: grid; gap: 12px;">
+                <div style="display: flex; justify-content: space-between;">
+                  <span>License Key</span>
+                  <strong>${data.licenseKey}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Plan</span>
+                  <strong>${data.plan}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Valid Until</span>
+                  <strong>${formatDate(data.validUntil)}</strong>
+                </div>
+              </div>
+            </div>
+
+            ${createSection("⚡ Next Steps", `
+              <ul style="list-style: none; padding: 0; margin: 0;">
+                <li style="margin-bottom: 12px; display: flex; align-items: center;">
+                  <span style="background: #dc3545; color: white; margin-right: 8px; padding: 4px 8px; border-radius: 4px;">1</span>
+                  Contact support immediately
+                </li>
+                <li style="margin-bottom: 12px; display: flex; align-items: center;">
+                  <span style="background: #ffc107; color: white; margin-right: 8px; padding: 4px 8px; border-radius: 4px;">2</span>
+                  Review account status
+                </li>
+                <li style="display: flex; align-items: center;">
+                  <span style="background: #28a745; color: white; margin-right: 8px; padding: 4px 8px; border-radius: 4px;">3</span>
+                  Prepare necessary documentation
+                </li>
+              </ul>
+            `)}
+          </div>
+        </div>
+
+        <div style="${BASE_STYLES.footer}">
+          <p>Our support team is available 24/7 to assist you.</p>
+        </div>
+      </div>
+    </div>
+`;
+
+export const LicenseActivated = (data: LicenseEmailData): string => `
+    <div style="${BASE_STYLES.wrapper}">
+      <div style="${BASE_STYLES.container}">
+        <div style="${BASE_STYLES.header}">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="white">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+          </svg>
+          <h1 style="margin: 16px 0 8px; font-size: 24px;">License Activated! 🎉</h1>
+          <p style="margin: 0; opacity: 0.9;">License Key: ${data.licenseKey}</p>
+        </div>
+
+        <div style="padding: 24px 20px;">
+          <div style="${BASE_STYLES.card}">
+            <h2 style="${BASE_STYLES.heading}">Welcome back, ${data.name}! 🌟</h2>
+            <p style="${BASE_STYLES.text}">Your license has been activated successfully. You now have full access to all features and services according to your plan.</p>
+
+            <div style="${BASE_STYLES.highlight}">
+              <div style="display: grid; gap: 12px;">
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Plan</span>
+                  <span style="font-weight: 600">${data.plan}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Valid Until</span>
+                  <span style="font-weight: 600">${formatDate(data.validUntil)}</span>
+                </div>
+              </div>
+            </div>
+
+            ${createSection("📊 Available Resources", `
+              <div style="display: grid; gap: 12px;">
+                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+                  <span>Max Users</span>
+                  <strong>${data.limits.maxUsers}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+                  <span>Max Branches</span>
+                  <strong>${data.limits.maxBranches}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+                  <span>Storage Limit</span>
+                  <strong>${Math.floor(data.limits.storageLimit / 1024)}GB</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+                  <span>API Call Limit</span>
+                  <strong>${data.limits.apiCallLimit.toLocaleString()}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                  <span>Integration Limit</span>
+                  <strong>${data.limits.integrationLimit}</strong>
+                </div>
+              </div>
+            `)}
+          </div>
+        </div>
+
+        <div style="${BASE_STYLES.footer}">
+          <p style="margin: 0 0 12px;">Ready to get started?</p>
+          <div style="display: flex; justify-content: center; gap: 16px;">
+            <a href="#" style="${BASE_STYLES.link}">Documentation</a>
+            <a href="#" style="${BASE_STYLES.link}">API Guide</a>
+            <a href="#" style="${BASE_STYLES.link}">Support</a>
+          </div>
+        </div>
+      </div>
+    </div>
+`; 

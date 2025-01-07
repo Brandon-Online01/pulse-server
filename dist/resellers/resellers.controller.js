@@ -23,6 +23,7 @@ const auth_guard_1 = require("../guards/auth.guard");
 const user_enums_1 = require("../lib/enums/user.enums");
 const role_decorator_1 = require("../decorators/role.decorator");
 const swagger_2 = require("@nestjs/swagger");
+const enterprise_only_decorator_1 = require("../decorators/enterprise-only.decorator");
 let ResellersController = class ResellersController {
     constructor(resellersService) {
         this.resellersService = resellersService;
@@ -98,6 +99,7 @@ exports.ResellersController = ResellersController = __decorate([
     (0, swagger_1.ApiTags)('resellers'),
     (0, common_1.Controller)('resellers'),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
+    (0, enterprise_only_decorator_1.EnterpriseOnly)('resellers'),
     __metadata("design:paramtypes", [resellers_service_1.ResellersService])
 ], ResellersController);
 //# sourceMappingURL=resellers.controller.js.map

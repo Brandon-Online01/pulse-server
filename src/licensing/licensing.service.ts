@@ -5,6 +5,9 @@ import { License } from './entities/license.entity';
 import { CreateLicenseDto } from './dto/create-license.dto';
 import { UpdateLicenseDto } from './dto/update-license.dto';
 import { LicenseStatus, SubscriptionPlan, LicenseType } from '../lib/enums/license.enums';
+import { PLAN_FEATURES } from '../lib/constants/license-features';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { EmailType } from '../lib/enums/email.enums';
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -16,275 +19,378 @@ export class LicensingService {
     constructor(
         @InjectRepository(License)
         private readonly licenseRepository: Repository<License>,
+        private readonly eventEmitter: EventEmitter2
     ) { }
 
     private generateLicenseKey(): string {
-        const timestamp = Date.now().toString(36);
-        const random = crypto.randomBytes(8).toString('hex').toUpperCase();
-        return `${timestamp}-${random}`;
+        return crypto.randomBytes(16).toString('hex').toUpperCase();
     }
 
     private getPlanDefaults(plan: SubscriptionPlan): Partial<License> {
-        const defaults: Record<SubscriptionPlan, Partial<License>> = {
+        if (!plan) {
+            throw new BadRequestException('Subscription plan is required');
+        }
+
+        const defaults = {
             [SubscriptionPlan.STARTER]: {
                 maxUsers: 5,
                 maxBranches: 1,
-                storageLimit: 5 * 1024 * 1024 * 1024, // 5GB
+                storageLimit: 5120, // 5GB in MB
                 apiCallLimit: 10000,
-                integrationLimit: 3,
+                integrationLimit: 2,
                 price: 99,
-                features: {
-                    basicDocumentStorage: true,
-                    emailNotifications: true,
-                    mobileAccess: true,
-                    basicSupport: true,
-                },
+                features: PLAN_FEATURES[SubscriptionPlan.STARTER],
             },
             [SubscriptionPlan.PROFESSIONAL]: {
                 maxUsers: 20,
                 maxBranches: 3,
-                storageLimit: 20 * 1024 * 1024 * 1024, // 20GB
+                storageLimit: 20480, // 20GB in MB
                 apiCallLimit: 50000,
-                integrationLimit: 10,
-                price: 249,
-                features: {
-                    basicDocumentStorage: true,
-                    emailNotifications: true,
-                    mobileAccess: true,
-                    basicSupport: true,
-                    advancedDocumentManagement: true,
-                    customWorkflows: true,
-                    advancedReporting: true,
-                    prioritySupport: true,
-                },
+                integrationLimit: 5,
+                price: 199,
+                features: PLAN_FEATURES[SubscriptionPlan.PROFESSIONAL],
             },
             [SubscriptionPlan.BUSINESS]: {
                 maxUsers: 50,
                 maxBranches: 10,
-                storageLimit: 50 * 1024 * 1024 * 1024, // 50GB
-                apiCallLimit: 100000,
-                integrationLimit: 20,
+                storageLimit: 102400, // 100GB in MB
+                apiCallLimit: 200000,
+                integrationLimit: 15,
                 price: 499,
-                features: {
-                    basicDocumentStorage: true,
-                    emailNotifications: true,
-                    mobileAccess: true,
-                    basicSupport: true,
-                    advancedDocumentManagement: true,
-                    customWorkflows: true,
-                    advancedReporting: true,
-                    prioritySupport: true,
-                    whiteLabel: true,
-                    customIntegrations: true,
-                    advancedAnalytics: true,
-                    dedicatedSupport: true,
-                },
+                features: PLAN_FEATURES[SubscriptionPlan.BUSINESS],
             },
             [SubscriptionPlan.ENTERPRISE]: {
                 maxUsers: 999999,
                 maxBranches: 999999,
-                storageLimit: 1024 * 1024 * 1024 * 1024, // 1TB
+                storageLimit: 1024 * 1024, // 1TB in MB
                 apiCallLimit: 1000000,
                 integrationLimit: 999999,
                 price: 999,
-                features: {
-                    basicDocumentStorage: true,
-                    emailNotifications: true,
-                    mobileAccess: true,
-                    basicSupport: true,
-                    advancedDocumentManagement: true,
-                    customWorkflows: true,
-                    advancedReporting: true,
-                    prioritySupport: true,
-                    whiteLabel: true,
-                    customIntegrations: true,
-                    advancedAnalytics: true,
-                    dedicatedSupport: true,
-                    customDevelopment: true,
-                    onPremise: true,
-                    slaGuarantee: true,
-                    accountManager: true,
-                },
+                features: PLAN_FEATURES[SubscriptionPlan.ENTERPRISE],
             },
         };
 
-        return defaults[plan];
+        const planDefaults = defaults[plan];
+        if (!planDefaults) {
+            throw new BadRequestException(`Invalid subscription plan: ${plan}`);
+        }
+
+        return planDefaults;
     }
 
     async create(createLicenseDto: CreateLicenseDto): Promise<License> {
-        const planDefaults = this.getPlanDefaults(createLicenseDto.plan);
+        try {
+            if (!createLicenseDto?.plan) {
+                throw new BadRequestException('Subscription plan is required');
+            }
 
-        // For enterprise plans, allow custom limits
-        if (createLicenseDto.plan !== SubscriptionPlan.ENTERPRISE) {
-            createLicenseDto = {
+            const planDefaults = this.getPlanDefaults(createLicenseDto.plan);
+
+            if (createLicenseDto.plan !== SubscriptionPlan.ENTERPRISE) {
+                createLicenseDto = {
+                    ...createLicenseDto,
+                    maxUsers: planDefaults.maxUsers,
+                    maxBranches: planDefaults.maxBranches,
+                    storageLimit: planDefaults.storageLimit,
+                    apiCallLimit: planDefaults.apiCallLimit,
+                    integrationLimit: planDefaults.integrationLimit,
+                    price: planDefaults.price,
+                };
+            }
+
+            const license = this.licenseRepository.create({
                 ...createLicenseDto,
-                maxUsers: planDefaults.maxUsers,
-                maxBranches: planDefaults.maxBranches,
-                storageLimit: planDefaults.storageLimit,
-                apiCallLimit: planDefaults.apiCallLimit,
-                integrationLimit: planDefaults.integrationLimit,
-            };
+                features: planDefaults.features,
+                licenseKey: this.generateLicenseKey(),
+                status: createLicenseDto?.type === LicenseType.TRIAL ? LicenseStatus.TRIAL : LicenseStatus.ACTIVE,
+            });
+
+            const created = await this.licenseRepository.save(license);
+
+            // Send email notification
+            await this.eventEmitter.emit('send.email', EmailType.LICENSE_CREATED, [created.organisation.email], {
+                name: created.organisation.name,
+                licenseKey: created.licenseKey,
+                organisationName: created.organisation.name,
+                plan: created.plan,
+                validUntil: created.validUntil,
+                features: created.features,
+                limits: {
+                    maxUsers: created.maxUsers,
+                    maxBranches: created.maxBranches,
+                    storageLimit: created.storageLimit,
+                    apiCallLimit: created.apiCallLimit,
+                    integrationLimit: created.integrationLimit,
+                }
+            });
+
+            return created;
+        } catch (error) {
+            throw error;
         }
-
-        const license = this.licenseRepository.create({
-            ...createLicenseDto,
-            features: planDefaults.features,
-            licenseKey: this.generateLicenseKey(),
-            status: createLicenseDto.type === LicenseType.TRIAL ? LicenseStatus.TRIAL : LicenseStatus.ACTIVE,
-        });
-
-        const created = await this.licenseRepository.save(license);
-        this.logger.log(`Created new license: ${created.licenseKey} for organisation: ${created.organisationRef}`);
-        return created;
     }
 
     async findAll(): Promise<License[]> {
-        return this.licenseRepository.find({
-            relations: ['organisation'],
-            order: { createdAt: 'DESC' },
-        });
+        try {
+            return this.licenseRepository.find({
+                relations: ['organisation'],
+                order: { createdAt: 'DESC' },
+            });
+        } catch (error) {
+            console.log(error);
+        }
     }
 
     async findOne(ref: string): Promise<License> {
-        const license = await this.licenseRepository.findOne({
-            where: { uid: ref },
-            relations: ['organisation'],
-        });
+        try {
+            const license = await this.licenseRepository.findOne({
+                where: { uid: ref },
+                relations: ['organisation'],
+            });
 
-        if (!license) {
-            throw new NotFoundException(`License with ID ${ref} not found`);
+            if (!license) {
+                throw new NotFoundException(`License with ID ${ref} not found`);
+            }
+
+            return license;
+        } catch (error) {
+            console.log(error);
         }
-
-        return license;
     }
 
     async findByOrganisation(organisationRef: string): Promise<License[]> {
-        return this.licenseRepository.find({
-            where: { organisationRef },
-            relations: ['organisation'],
-            order: { validUntil: 'DESC' },
-        });
+        try {
+            return this.licenseRepository.find({
+                where: { organisationRef },
+                relations: ['organisation'],
+                order: { validUntil: 'DESC' },
+            });
+        } catch (error) {
+            console.log(error);
+        }
     }
 
     async update(ref: string, updateLicenseDto: UpdateLicenseDto): Promise<License> {
-        const license = await this.findOne(ref);
+        try {
+            const license = await this.findOne(ref);
 
-        // If plan is being updated, apply new plan defaults
-        if (updateLicenseDto.plan && updateLicenseDto.plan !== license.plan) {
-            const planDefaults = this.getPlanDefaults(updateLicenseDto.plan);
-            Object.assign(updateLicenseDto, {
-                features: planDefaults.features,
-                ...updateLicenseDto,
+            if (updateLicenseDto.plan && updateLicenseDto.plan !== license.plan) {
+                const planDefaults = this.getPlanDefaults(updateLicenseDto.plan);
+                Object.assign(updateLicenseDto, {
+                    features: planDefaults.features,
+                    ...updateLicenseDto,
+                });
+            }
+
+            Object.assign(license, updateLicenseDto);
+
+            const updated = await this.licenseRepository.save(license);
+
+            // Send email notification
+            await this.eventEmitter.emit('send.email', EmailType.LICENSE_UPDATED, [updated.organisation.email], {
+                name: updated.organisation.name,
+                licenseKey: updated.licenseKey,
+                organisationName: updated.organisation.name,
+                plan: updated.plan,
+                validUntil: updated.validUntil,
+                features: updated.features,
+                limits: {
+                    maxUsers: updated.maxUsers,
+                    maxBranches: updated.maxBranches,
+                    storageLimit: updated.storageLimit,
+                    apiCallLimit: updated.apiCallLimit,
+                    integrationLimit: updated.integrationLimit,
+                }
             });
+
+            return updated;
+        } catch (error) {
+            console.log(error);
         }
-
-        Object.assign(license, updateLicenseDto);
-
-        const updated = await this.licenseRepository.save(license);
-        this.logger.log(`Updated license: ${updated.licenseKey}`);
-        return updated;
     }
 
     async validateLicense(ref: string): Promise<boolean> {
-        const license = await this.findOne(ref);
-        const now = new Date();
+        try {
+            const license = await this.findOne(ref);
+            const now = new Date();
 
-        // Update last validation timestamp
-        license.lastValidated = now;
-        await this.licenseRepository.save(license);
+            license.lastValidated = now;
+            await this.licenseRepository.save(license);
 
-        // Check if license is suspended
-        if (license.status === LicenseStatus.SUSPENDED) {
-            return false;
-        }
-
-        // Check if license is expired
-        if (now > license.validUntil) {
-            // Check if within grace period
-            const gracePeriodEnd = new Date(license.validUntil.getTime() + this.GRACE_PERIOD_DAYS * 24 * 60 * 60 * 1000);
-
-            if (now <= gracePeriodEnd) {
-                license.status = LicenseStatus.GRACE_PERIOD;
-                await this.licenseRepository.save(license);
-                return true;
+            if (license.status === LicenseStatus.SUSPENDED) {
+                return false;
             }
 
-            license.status = LicenseStatus.EXPIRED;
-            await this.licenseRepository.save(license);
-            return false;
-        }
+            if (now > license.validUntil) {
+                const gracePeriodEnd = new Date(license.validUntil.getTime() + this.GRACE_PERIOD_DAYS * 24 * 60 * 60 * 1000);
 
-        // Check if license is in trial
-        if (license.status === LicenseStatus.TRIAL) {
-            return now <= license.validUntil;
-        }
+                if (now <= gracePeriodEnd) {
+                    license.status = LicenseStatus.GRACE_PERIOD;
+                    await this.licenseRepository.save(license);
+                    return true;
+                }
 
-        return license.status === LicenseStatus.ACTIVE;
+                license.status = LicenseStatus.EXPIRED;
+                await this.licenseRepository.save(license);
+                return false;
+            }
+
+            if (license.status === LicenseStatus.TRIAL) {
+                return now <= license.validUntil;
+            }
+
+            return license.status === LicenseStatus.ACTIVE;
+        } catch (error) {
+            console.log(error);
+        }
     }
 
     async checkLimits(ref: string, metric: keyof License, currentValue: number): Promise<boolean> {
-        const license = await this.findOne(ref);
-        const limit = license[metric];
+        try {
+            const license = await this.findOne(ref);
+            const limit = license?.[metric];
 
-        if (typeof limit !== 'number') {
-            throw new BadRequestException(`Invalid metric: ${metric}`);
+            if (typeof limit !== 'number') {
+                throw new BadRequestException(`Invalid metric: ${metric}`);
+            }
+
+            const isWithinLimit = currentValue <= limit;
+
+            if (!isWithinLimit) {
+                await this.eventEmitter.emit('send.email', EmailType.LICENSE_LIMIT_REACHED, [license?.organisation?.email], {
+                    name: license?.organisation?.name,
+                    licenseKey: license?.licenseKey,
+                    organisationName: license?.organisation?.name,
+                    plan: license?.plan,
+                    validUntil: license?.validUntil,
+                    features: license?.features,
+                    limits: {
+                        maxUsers: license?.maxUsers,
+                        maxBranches: license?.maxBranches,
+                        storageLimit: license?.storageLimit,
+                        apiCallLimit: license?.apiCallLimit,
+                        integrationLimit: license?.integrationLimit,
+                    },
+                    metric,
+                    currentValue,
+                    limit
+                });
+            }
+
+            return isWithinLimit;
+        } catch (error) {
+            console.log(error);
         }
-
-        const isWithinLimit = currentValue <= limit;
-
-        if (!isWithinLimit) {
-            this.logger.warn(`License ${license.licenseKey} exceeded ${metric} limit: ${currentValue}/${limit}`);
-        }
-
-        return isWithinLimit;
     }
 
     async renewLicense(ref: string): Promise<License> {
-        const license = await this.findOne(ref);
-        const now = new Date();
+        try {
+            const license = await this.findOne(ref);
+            const now = new Date();
 
-        // Only renew if within renewal window or expired
-        const renewalStart = new Date(license.validUntil.getTime() - this.RENEWAL_WINDOW_DAYS * 24 * 60 * 60 * 1000);
-        if (now < renewalStart) {
-            throw new BadRequestException(`License can only be renewed within ${this.RENEWAL_WINDOW_DAYS} days of expiration`);
+            const renewalStart = new Date(license.validUntil.getTime() - this.RENEWAL_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+            if (now < renewalStart) {
+                throw new BadRequestException(`License can only be renewed within ${this.RENEWAL_WINDOW_DAYS} days of expiration`);
+            }
+
+            const validFrom = license.validUntil < now ? now : license.validUntil;
+            const validUntil = new Date(validFrom.getTime() + 365 * 24 * 60 * 60 * 1000);
+
+            const renewed = await this.update(ref, {
+                validFrom,
+                validUntil,
+                status: LicenseStatus.ACTIVE,
+            });
+
+            this.eventEmitter.emit('send.email', EmailType.LICENSE_RENEWED, [renewed?.organisation?.email], {
+                name: renewed?.organisation?.name,
+                licenseKey: renewed?.licenseKey,
+                organisationName: renewed?.organisation?.name,
+                plan: renewed?.plan,
+                validUntil: renewed?.validUntil,
+                features: renewed?.features,
+                limits: {
+                    maxUsers: renewed?.maxUsers,
+                    maxBranches: renewed?.maxBranches,
+                    storageLimit: renewed?.storageLimit,
+                    apiCallLimit: renewed?.apiCallLimit,
+                    integrationLimit: renewed?.integrationLimit,
+                }
+            });
+
+            return renewed;
+        } catch (error) {
+            console.log(error);
         }
-
-        // Set new validity period
-        const validFrom = license.validUntil < now ? now : license.validUntil;
-        const validUntil = new Date(validFrom.getTime() + 365 * 24 * 60 * 60 * 1000); // 1 year
-
-        const renewed = await this.update(ref, {
-            validFrom,
-            validUntil,
-            status: LicenseStatus.ACTIVE,
-        });
-
-        this.logger.log(`Renewed license: ${renewed.licenseKey}`);
-        return renewed;
     }
 
     async suspendLicense(ref: string): Promise<License> {
-        const suspended = await this.update(ref, { status: LicenseStatus.SUSPENDED });
-        this.logger.warn(`Suspended license: ${suspended.licenseKey}`);
-        return suspended;
+        try {
+            const suspended = await this.update(ref, { status: LicenseStatus.SUSPENDED });
+
+            // Send email notification
+            await this.eventEmitter.emit('send.email', EmailType.LICENSE_SUSPENDED, [suspended.organisation.email], {
+                name: suspended.organisation.name,
+                licenseKey: suspended.licenseKey,
+                organisationName: suspended.organisation.name,
+                plan: suspended.plan,
+                validUntil: suspended.validUntil,
+                features: suspended.features,
+                limits: {
+                    maxUsers: suspended.maxUsers,
+                    maxBranches: suspended.maxBranches,
+                    storageLimit: suspended.storageLimit,
+                    apiCallLimit: suspended.apiCallLimit,
+                    integrationLimit: suspended.integrationLimit,
+                }
+            });
+
+            return suspended;
+        } catch (error) {
+            console.log(error);
+        }
     }
 
     async activateLicense(ref: string): Promise<License> {
-        const activated = await this.update(ref, { status: LicenseStatus.ACTIVE });
-        this.logger.log(`Activated license: ${activated.licenseKey}`);
-        return activated;
+        try {
+            const activated = await this.update(ref, { status: LicenseStatus.ACTIVE });
+
+            this.eventEmitter.emit('send.email', EmailType.LICENSE_ACTIVATED, [activated?.organisation?.email], {
+                name: activated?.organisation?.name,
+                licenseKey: activated?.licenseKey,
+                organisationName: activated?.organisation?.name,
+                plan: activated?.plan,
+                validUntil: activated?.validUntil,
+                features: activated?.features,
+                limits: {
+                    maxUsers: activated?.maxUsers,
+                    maxBranches: activated?.maxBranches,
+                    storageLimit: activated?.storageLimit,
+                    apiCallLimit: activated?.apiCallLimit,
+                    integrationLimit: activated?.integrationLimit,
+                }
+            });
+
+            return activated;
+        } catch (error) {
+            console.log(error);
+        }
     }
 
     async findExpiringLicenses(daysThreshold: number = 30): Promise<License[]> {
-        const thresholdDate = new Date();
-        thresholdDate.setDate(thresholdDate.getDate() + daysThreshold);
+        try {
+            const thresholdDate = new Date();
+            thresholdDate.setDate(thresholdDate.getDate() + daysThreshold);
 
-        return this.licenseRepository.find({
-            where: {
-                validUntil: LessThan(thresholdDate),
-                status: LicenseStatus.ACTIVE,
-            },
-            relations: ['organisation'],
-        });
+            return this.licenseRepository.find({
+                where: {
+                    validUntil: LessThan(thresholdDate),
+                    status: LicenseStatus.ACTIVE,
+                },
+                relations: ['organisation'],
+            });
+        } catch (error) {
+            console.log(error);
+        }
     }
 } 

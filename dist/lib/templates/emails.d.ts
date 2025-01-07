@@ -1,4 +1,4 @@
-import { SignupEmailData, VerificationEmailData, PasswordResetData, PasswordChangedData, InvoiceData, OrderData, DailyReportData, OrderDeliveredData, OrderOutForDeliveryData, OrderResellerNotificationData, OrderInternalNotificationData, OrderWarehouseFulfillmentData } from '../types/email-templates.types';
+import { SignupEmailData, VerificationEmailData, PasswordResetData, PasswordChangedData, InvoiceData, OrderData, DailyReportData, OrderDeliveredData, OrderOutForDeliveryData, OrderResellerNotificationData, OrderInternalNotificationData, OrderWarehouseFulfillmentData, LicenseEmailData, LicenseLimitData } from '../types/email-templates.types';
 export declare const Signup: (data: SignupEmailData) => string;
 export declare const Verification: (data: VerificationEmailData) => string;
 export declare const PasswordReset: (data: PasswordResetData) => string;
@@ -13,3 +13,9 @@ export declare const DailyReport: (data: DailyReportData) => string;
 export declare const OrderResellerNotification: (data: OrderResellerNotificationData) => string;
 export declare const OrderInternalNotification: (data: OrderInternalNotificationData) => string;
 export declare const OrderWarehouseFulfillment: (data: OrderWarehouseFulfillmentData) => string;
+export declare const LicenseCreated: (data: LicenseEmailData) => string;
+export declare const LicenseUpdated: (data: LicenseEmailData) => string;
+export declare const LicenseLimitReached: (data: LicenseLimitData) => string;
+export declare const LicenseRenewed: (data: LicenseEmailData) => string;
+export declare const LicenseSuspended: (data: LicenseEmailData) => string;
+export declare const LicenseActivated: (data: LicenseEmailData) => string;

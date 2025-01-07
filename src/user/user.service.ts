@@ -140,7 +140,8 @@ export class UserService {
 					{ username: searchParameter, isDeleted: false },
 				],
 				relations: [
-					'branch'
+					'branch',
+					'rewards',
 				]
 			});
 

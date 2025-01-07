@@ -137,6 +137,25 @@ export interface OrderWarehouseFulfillmentData extends OrderData {
         location?: string;
     }>;
 }
+export interface LicenseEmailData extends BaseEmailData {
+    licenseKey: string;
+    organisationName: string;
+    plan: string;
+    validUntil: Date;
+    features: Record<string, boolean>;
+    limits: {
+        maxUsers: number;
+        maxBranches: number;
+        storageLimit: number;
+        apiCallLimit: number;
+        integrationLimit: number;
+    };
+}
+export interface LicenseLimitData extends LicenseEmailData {
+    metric: string;
+    currentValue: number;
+    limit: number;
+}
 export type EmailDataMap = {
     [EmailType.SIGNUP]: SignupEmailData;
     [EmailType.VERIFICATION]: VerificationEmailData;
@@ -153,5 +172,11 @@ export type EmailDataMap = {
     [EmailType.NEW_ORDER_CLIENT]: OrderData;
     [EmailType.NEW_ORDER_INTERNAL]: OrderInternalNotificationData;
     [EmailType.NEW_ORDER_RESELLER]: OrderResellerNotificationData;
+    [EmailType.LICENSE_CREATED]: LicenseEmailData;
+    [EmailType.LICENSE_UPDATED]: LicenseEmailData;
+    [EmailType.LICENSE_LIMIT_REACHED]: LicenseLimitData;
+    [EmailType.LICENSE_RENEWED]: LicenseEmailData;
+    [EmailType.LICENSE_SUSPENDED]: LicenseEmailData;
+    [EmailType.LICENSE_ACTIVATED]: LicenseEmailData;
 };
 export type EmailTemplateData<T extends EmailType> = EmailDataMap[T];

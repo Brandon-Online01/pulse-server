@@ -6,10 +6,12 @@ import { RoleGuard } from '../guards/role.guard';
 import { Roles } from '../decorators/role.decorator';
 import { AccessLevel } from '../lib/enums/user.enums';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { EnterpriseOnly } from '../decorators/enterprise-only.decorator';
 
 @ApiTags('rewards')
 @Controller('rewards')
 @UseGuards(AuthGuard, RoleGuard)
+@EnterpriseOnly('rewards')
 export class RewardsController {
   constructor(private readonly rewardsService: RewardsService) { }
 

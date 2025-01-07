@@ -13,5 +13,11 @@ export declare enum EmailType {
     ORDER_WAREHOUSE_FULFILLMENT = "order_warehouse_fulfillment",
     NEW_ORDER_CLIENT = "new_order_client",
     NEW_ORDER_INTERNAL = "new_order_internal",
-    NEW_ORDER_RESELLER = "new_order_reseller"
+    NEW_ORDER_RESELLER = "new_order_reseller",
+    LICENSE_CREATED = "license_created",
+    LICENSE_UPDATED = "license_updated",
+    LICENSE_LIMIT_REACHED = "license_limit_reached",
+    LICENSE_RENEWED = "license_renewed",
+    LICENSE_SUSPENDED = "license_suspended",
+    LICENSE_ACTIVATED = "license_activated"
 }

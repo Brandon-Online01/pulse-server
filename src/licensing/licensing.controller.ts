@@ -8,17 +8,18 @@ import { AuthGuard } from '../guards/auth.guard';
 import { RoleGuard } from '../guards/role.guard';
 import { AccessLevel } from '../lib/enums/user.enums';
 import { Roles } from '../decorators/role.decorator';
+import { isPublic } from '../decorators/public.decorator';
 
 @ApiTags('licensing')
 @Controller('licensing')
-@UseGuards(AuthGuard, RoleGuard)
+// @UseGuards(AuthGuard, RoleGuard)
 export class LicensingController {
     constructor(private readonly licensingService: LicensingService) { }
 
     @Post()
-    @Roles(AccessLevel.ADMIN, AccessLevel.DEVELOPER)
+    @isPublic()
+    // @Roles(AccessLevel.ADMIN, AccessLevel.DEVELOPER)
     @ApiOperation({ summary: 'create a new license' })
-    @ApiResponse({ status: 201, description: 'License created successfully', type: License })
     create(@Body() createLicenseDto: CreateLicenseDto): Promise<License> {
         return this.licensingService.create(createLicenseDto);
     }

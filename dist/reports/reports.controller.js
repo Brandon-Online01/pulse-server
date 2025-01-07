@@ -20,6 +20,7 @@ const role_guard_1 = require("../guards/role.guard");
 const role_decorator_1 = require("../decorators/role.decorator");
 const common_1 = require("@nestjs/common");
 const user_enums_1 = require("../lib/enums/user.enums");
+const enterprise_only_decorator_1 = require("../decorators/enterprise-only.decorator");
 let ReportsController = class ReportsController {
     constructor(reportsService) {
         this.reportsService = reportsService;
@@ -53,6 +54,7 @@ exports.ReportsController = ReportsController = __decorate([
     (0, swagger_1.ApiTags)('reports'),
     (0, common_1.Controller)('reports'),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
+    (0, enterprise_only_decorator_1.EnterpriseOnly)('reports'),
     __metadata("design:paramtypes", [reports_service_1.ReportsService])
 ], ReportsController);
 //# sourceMappingURL=reports.controller.js.map

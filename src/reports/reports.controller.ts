@@ -5,10 +5,12 @@ import { RoleGuard } from '../guards/role.guard';
 import { Roles } from '../decorators/role.decorator';
 import { Controller, Get, UseGuards, Param } from '@nestjs/common';
 import { AccessLevel } from '../lib/enums/user.enums';
+import { EnterpriseOnly } from '../decorators/enterprise-only.decorator';
 
 @ApiTags('reports')
 @Controller('reports')
 @UseGuards(AuthGuard, RoleGuard)
+@EnterpriseOnly('reports')
 export class ReportsController {
   constructor(private readonly reportsService: ReportsService) { }
 

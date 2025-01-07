@@ -84,7 +84,7 @@ let AuthService = class AuthService {
                 };
                 const accessToken = await this.jwtService.signAsync(payload, { expiresIn: `8h` });
                 const refreshToken = await this.jwtService.signAsync(payload, { expiresIn: `7d` });
-                await this.rewardsService.awardXP({
+                const gainedXP = {
                     owner: Number(uid),
                     amount: constants_1.XP_VALUES.DAILY_LOGIN,
                     action: 'DAILY_LOGIN',
@@ -93,7 +93,9 @@ let AuthService = class AuthService {
                         type: constants_1.XP_VALUES_TYPES.LOGIN,
                         details: 'Daily login reward'
                     }
-                });
+                };
+                console.log(gainedXP);
+                await this.rewardsService.awardXP(gainedXP);
                 return {
                     profileData,
                     accessToken,

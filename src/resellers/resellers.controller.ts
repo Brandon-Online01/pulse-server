@@ -8,10 +8,12 @@ import { AuthGuard } from '../guards/auth.guard';
 import { AccessLevel } from '../lib/enums/user.enums';
 import { Roles } from '../decorators/role.decorator';
 import { ApiOperation } from '@nestjs/swagger';
+import { EnterpriseOnly } from '../decorators/enterprise-only.decorator';
 
 @ApiTags('resellers')
 @Controller('resellers')
 @UseGuards(AuthGuard, RoleGuard)
+@EnterpriseOnly('resellers')
 export class ResellersController {
   constructor(private readonly resellersService: ResellersService) { }
 

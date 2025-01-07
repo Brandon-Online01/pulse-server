@@ -18,5 +18,11 @@ var EmailType;
     EmailType["NEW_ORDER_CLIENT"] = "new_order_client";
     EmailType["NEW_ORDER_INTERNAL"] = "new_order_internal";
     EmailType["NEW_ORDER_RESELLER"] = "new_order_reseller";
+    EmailType["LICENSE_CREATED"] = "license_created";
+    EmailType["LICENSE_UPDATED"] = "license_updated";
+    EmailType["LICENSE_LIMIT_REACHED"] = "license_limit_reached";
+    EmailType["LICENSE_RENEWED"] = "license_renewed";
+    EmailType["LICENSE_SUSPENDED"] = "license_suspended";
+    EmailType["LICENSE_ACTIVATED"] = "license_activated";
 })(EmailType || (exports.EmailType = EmailType = {}));
 //# sourceMappingURL=email.enums.js.map

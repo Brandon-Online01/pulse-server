@@ -21,6 +21,7 @@ const role_guard_1 = require("../guards/role.guard");
 const role_decorator_1 = require("../decorators/role.decorator");
 const user_enums_1 = require("../lib/enums/user.enums");
 const swagger_1 = require("@nestjs/swagger");
+const enterprise_only_decorator_1 = require("../decorators/enterprise-only.decorator");
 let RewardsController = class RewardsController {
     constructor(rewardsService) {
         this.rewardsService = rewardsService;
@@ -66,6 +67,7 @@ exports.RewardsController = RewardsController = __decorate([
     (0, swagger_1.ApiTags)('rewards'),
     (0, common_1.Controller)('rewards'),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
+    (0, enterprise_only_decorator_1.EnterpriseOnly)('rewards'),
     __metadata("design:paramtypes", [rewards_service_1.RewardsService])
 ], RewardsController);
 //# sourceMappingURL=rewards.controller.js.map

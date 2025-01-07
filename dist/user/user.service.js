@@ -132,7 +132,8 @@ let UserService = class UserService {
                     { username: searchParameter, isDeleted: false },
                 ],
                 relations: [
-                    'branch'
+                    'branch',
+                    'rewards',
                 ]
             });
             if (!user) {

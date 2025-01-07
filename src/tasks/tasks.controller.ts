@@ -8,10 +8,12 @@ import { RoleGuard } from '../guards/role.guard';
 import { AuthGuard } from '../guards/auth.guard';
 import { AccessLevel } from '../lib/enums/user.enums';
 import { UpdateSubtaskDto } from './dto/update-subtask.dto';
+import { EnterpriseOnly } from '../decorators/enterprise-only.decorator';
 
 @ApiTags('tasks')
 @Controller('tasks')
 @UseGuards(AuthGuard, RoleGuard)
+@EnterpriseOnly('tasks')
 export class TasksController {
   constructor(private readonly tasksService: TasksService) { }
 

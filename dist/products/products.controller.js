@@ -24,6 +24,7 @@ const role_guard_1 = require("../guards/role.guard");
 const auth_guard_1 = require("../guards/auth.guard");
 const role_decorator_1 = require("../decorators/role.decorator");
 const swagger_2 = require("@nestjs/swagger");
+const enterprise_only_decorator_1 = require("../decorators/enterprise-only.decorator");
 let ProductsController = class ProductsController {
     constructor(productsService) {
         this.productsService = productsService;
@@ -126,6 +127,7 @@ exports.ProductsController = ProductsController = __decorate([
     (0, swagger_2.ApiTags)('products'),
     (0, common_1.Controller)('products'),
     (0, common_2.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
+    (0, enterprise_only_decorator_1.EnterpriseOnly)('products'),
     __metadata("design:paramtypes", [products_service_1.ProductsService])
 ], ProductsController);
 //# sourceMappingURL=products.controller.js.map

@@ -23,6 +23,7 @@ const role_guard_1 = require("../guards/role.guard");
 const auth_guard_1 = require("../guards/auth.guard");
 const user_enums_1 = require("../lib/enums/user.enums");
 const update_subtask_dto_1 = require("./dto/update-subtask.dto");
+const enterprise_only_decorator_1 = require("../decorators/enterprise-only.decorator");
 let TasksController = class TasksController {
     constructor(tasksService) {
         this.tasksService = tasksService;
@@ -164,6 +165,7 @@ exports.TasksController = TasksController = __decorate([
     (0, swagger_1.ApiTags)('tasks'),
     (0, common_1.Controller)('tasks'),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
+    (0, enterprise_only_decorator_1.EnterpriseOnly)('tasks'),
     __metadata("design:paramtypes", [tasks_service_1.TasksService])
 ], TasksController);
 //# sourceMappingURL=tasks.controller.js.map

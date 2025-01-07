@@ -23,6 +23,7 @@ const checkout_dto_1 = require("./dto/checkout.dto");
 const user_enums_1 = require("../lib/enums/user.enums");
 const create_banner_dto_1 = require("./dto/create-banner.dto");
 const update_banner_dto_1 = require("./dto/update-banner.dto");
+const enterprise_only_decorator_1 = require("../decorators/enterprise-only.decorator");
 let ShopController = class ShopController {
     constructor(shopService) {
         this.shopService = shopService;
@@ -220,6 +221,7 @@ exports.ShopController = ShopController = __decorate([
     (0, swagger_1.ApiTags)('shop'),
     (0, common_1.Controller)('shop'),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
+    (0, enterprise_only_decorator_1.EnterpriseOnly)('shop'),
     __metadata("design:paramtypes", [shop_service_1.ShopService])
 ], ShopController);
 //# sourceMappingURL=shop.controller.js.map

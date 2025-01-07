@@ -107,7 +107,6 @@ __decorate([
 exports.TrackingController = TrackingController = __decorate([
     (0, swagger_1.ApiTags)('gps'),
     (0, common_1.Controller)('gps'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     __metadata("design:paramtypes", [tracking_service_1.TrackingService])
 ], TrackingController);
 //# sourceMappingURL=tracking.controller.js.map

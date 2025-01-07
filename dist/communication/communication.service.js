@@ -81,47 +81,47 @@ let CommunicationService = class CommunicationService {
             case email_enums_1.EmailType.SIGNUP:
                 return {
                     subject: 'Welcome to Our Platform',
-                    body: (0, emails_1.Signup)(data),
+                    body: (0, emails_2.Signup)(data),
                 };
             case email_enums_1.EmailType.VERIFICATION:
                 return {
                     subject: 'Verify Your Email',
-                    body: (0, emails_1.Verification)(data),
+                    body: (0, emails_2.Verification)(data),
                 };
             case email_enums_1.EmailType.PASSWORD_RESET:
                 return {
                     subject: 'Password Reset Request',
-                    body: (0, emails_1.PasswordReset)(data),
+                    body: (0, emails_2.PasswordReset)(data),
                 };
             case email_enums_1.EmailType.ORDER_CONFIRMATION:
                 return {
                     subject: 'Order Confirmation',
-                    body: (0, emails_1.NewOrder)(data),
+                    body: (0, emails_2.NewOrder)(data),
                 };
             case email_enums_1.EmailType.INVOICE:
                 return {
                     subject: 'Invoice for Your Order',
-                    body: (0, emails_1.Invoice)(data),
+                    body: (0, emails_2.Invoice)(data),
                 };
             case email_enums_1.EmailType.PASSWORD_CHANGED:
                 return {
                     subject: 'Password Successfully Changed',
-                    body: (0, emails_1.PasswordChanged)(data),
+                    body: (0, emails_2.PasswordChanged)(data),
                 };
             case email_enums_1.EmailType.ORDER_OUT_FOR_DELIVERY:
                 return {
                     subject: 'Your Order is Out for Delivery',
-                    body: (0, emails_1.OrderOutForDelivery)(data),
+                    body: (0, emails_2.OrderOutForDelivery)(data),
                 };
             case email_enums_1.EmailType.ORDER_DELIVERED:
                 return {
                     subject: 'Your Order Has Been Delivered',
-                    body: (0, emails_1.OrderDelivered)(data),
+                    body: (0, emails_2.OrderDelivered)(data),
                 };
             case email_enums_1.EmailType.DAILY_REPORT:
                 return {
                     subject: 'Daily Report',
-                    body: (0, emails_1.DailyReport)(data),
+                    body: (0, emails_2.DailyReport)(data),
                 };
             case email_enums_1.EmailType.ORDER_RESELLER_NOTIFICATION:
                 return {
@@ -141,17 +141,47 @@ let CommunicationService = class CommunicationService {
             case email_enums_1.EmailType.NEW_ORDER_CLIENT:
                 return {
                     subject: 'Your Order Confirmation',
-                    body: (0, emails_1.NewOrder)(data),
+                    body: (0, emails_2.NewOrder)(data),
                 };
             case email_enums_1.EmailType.NEW_ORDER_INTERNAL:
                 return {
                     subject: 'New Order from a Valued Customer',
-                    body: (0, emails_1.NewOrderInternal)(data),
+                    body: (0, emails_2.NewOrderInternal)(data),
                 };
             case email_enums_1.EmailType.NEW_ORDER_RESELLER:
                 return {
                     subject: 'New Purchase from Your Products',
                     body: (0, emails_2.NewOrderReseller)(data),
+                };
+            case email_enums_1.EmailType.LICENSE_CREATED:
+                return {
+                    subject: 'License Created Successfully',
+                    body: (0, emails_1.LicenseCreated)(data),
+                };
+            case email_enums_1.EmailType.LICENSE_UPDATED:
+                return {
+                    subject: 'License Updated',
+                    body: (0, emails_1.LicenseUpdated)(data),
+                };
+            case email_enums_1.EmailType.LICENSE_LIMIT_REACHED:
+                return {
+                    subject: 'License Limit Reached',
+                    body: (0, emails_1.LicenseLimitReached)(data),
+                };
+            case email_enums_1.EmailType.LICENSE_RENEWED:
+                return {
+                    subject: 'License Renewed Successfully',
+                    body: (0, emails_1.LicenseRenewed)(data),
+                };
+            case email_enums_1.EmailType.LICENSE_SUSPENDED:
+                return {
+                    subject: 'License Suspended',
+                    body: (0, emails_1.LicenseSuspended)(data),
+                };
+            case email_enums_1.EmailType.LICENSE_ACTIVATED:
+                return {
+                    subject: 'License Activated Successfully',
+                    body: (0, emails_1.LicenseActivated)(data),
                 };
             default:
                 throw new common_1.NotFoundException(`Unknown email template type: ${type}`);
