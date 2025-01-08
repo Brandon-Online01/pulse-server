@@ -132,7 +132,6 @@ let UserService = class UserService {
     }
     async findOneForAuth(searchParameter) {
         try {
-            console.log(searchParameter, 'search for this user');
             const user = await this.userRepository.findOne({
                 where: [
                     { username: searchParameter, isDeleted: false },
