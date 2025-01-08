@@ -408,8 +408,6 @@ export class AuthService {
 
 			const authProfile = await this.userService.findOneByUid(Number(payload?.uid));
 
-			console.log(authProfile);
-
 			if (!authProfile?.user) {
 				throw new BadRequestException('User not found');
 			}
@@ -467,8 +465,6 @@ export class AuthService {
 				message: 'Access token refreshed successfully'
 			};
 		} catch (error) {
-
-			console.log(error);
 
 			if (error?.name === 'TokenExpiredError') {
 				throw new HttpException('Refresh token has expired', HttpStatus.UNAUTHORIZED);

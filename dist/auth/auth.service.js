@@ -315,7 +315,7 @@ let AuthService = class AuthService {
                 throw new common_1.BadRequestException('Invalid refresh token');
             }
             const authProfile = await this.userService.findOneByUid(Number(payload?.uid));
-            console.log(authProfile);
+
             if (!authProfile?.user) {
                 throw new common_1.BadRequestException('User not found');
             }
@@ -364,7 +364,6 @@ let AuthService = class AuthService {
             };
         }
         catch (error) {
-            console.log(error);
             if (error?.name === 'TokenExpiredError') {
                 throw new common_1.HttpException('Refresh token has expired', common_1.HttpStatus.UNAUTHORIZED);
             }

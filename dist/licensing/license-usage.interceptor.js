@@ -8,17 +8,21 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var LicenseUsageInterceptor_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LicenseUsageInterceptor = void 0;
 const common_1 = require("@nestjs/common");
 const operators_1 = require("rxjs/operators");
 const license_usage_service_1 = require("./license-usage.service");
 const license_usage_entity_1 = require("./entities/license-usage.entity");
-let LicenseUsageInterceptor = class LicenseUsageInterceptor {
-    constructor(licenseUsageService) {
+const licensing_service_1 = require("./licensing.service");
+let LicenseUsageInterceptor = LicenseUsageInterceptor_1 = class LicenseUsageInterceptor {
+    constructor(licenseUsageService, licensingService) {
         this.licenseUsageService = licenseUsageService;
+        this.licensingService = licensingService;
+        this.logger = new common_1.Logger(LicenseUsageInterceptor_1.name);
     }
-    intercept(context, next) {
+    async intercept(context, next) {
         const request = context.switchToHttp().getRequest();
         const user = request['user'];
         if (!user?.licenseId) {
@@ -27,41 +31,65 @@ let LicenseUsageInterceptor = class LicenseUsageInterceptor {
         const startTime = Date.now();
         const path = request.path;
         const method = request.method;
-        return next.handle().pipe((0, operators_1.tap)(async () => {
-            try {
-                await this.licenseUsageService.trackUsage(user.licenseId, license_usage_entity_1.MetricType.API_CALLS, 1, {
-                    path,
-                    method,
-                    duration: Date.now() - startTime,
-                    timestamp: new Date(),
-                });
-                if (request.file || request.files) {
-                    const totalSize = this.calculateUploadSize(request.file || request.files);
-                    await this.licenseUsageService.trackUsage(user.licenseId, license_usage_entity_1.MetricType.STORAGE, totalSize, {
+        try {
+            const license = await this.licensingService.findOne(user.licenseId);
+            if (!license) {
+                this.logger.warn(`No valid license found for user ${user.uid}`);
+                return next.handle();
+            }
+            return next.handle().pipe((0, operators_1.tap)(async () => {
+                try {
+                    await this.licenseUsageService.trackUsage(license, license_usage_entity_1.MetricType.API_CALLS, 1, {
                         path,
                         method,
-                        files: request.file || request.files,
-                        timestamp: new Date(),
+                        duration: Date.now() - startTime,
+                        timestamp: new Date().toISOString(),
+                        userId: user.uid
                     });
+                    if (request.file || request.files) {
+                        const totalSize = this.calculateUploadSize(request.file || request.files);
+                        if (totalSize > 0) {
+                            await this.licenseUsageService.trackUsage(license, license_usage_entity_1.MetricType.STORAGE, totalSize, {
+                                path,
+                                method,
+                                fileCount: Array.isArray(request.files) ? request.files.length : 1,
+                                timestamp: new Date().toISOString(),
+                                userId: user.uid
+                            });
+                        }
+                    }
                 }
-            }
-            catch (error) {
-                console.error('Failed to track license usage:', error);
-            }
-        }));
+                catch (error) {
+                    this.logger.error(`Failed to track license usage: ${error.message}`, error.stack);
+                }
+            }));
+        }
+        catch (error) {
+            this.logger.error(`Error in license interceptor: ${error.message}`, error.stack);
+            return next.handle();
+        }
     }
     calculateUploadSize(files) {
         if (!files)
             return 0;
-        if (Array.isArray(files)) {
-            return files.reduce((total, file) => total + file.size, 0);
+        try {
+            if (Array.isArray(files)) {
+                return files.reduce((total, file) => {
+                    return total + (file?.size || 0);
+                }, 0);
+            }
+            return files?.size || 0;
         }
-        return files.size || 0;
+        catch (error) {
+            this.logger.error(`Error calculating upload size: ${error.message}`);
+            return 0;
+        }
     }
 };
 exports.LicenseUsageInterceptor = LicenseUsageInterceptor;
-exports.LicenseUsageInterceptor = LicenseUsageInterceptor = __decorate([
+exports.LicenseUsageInterceptor = LicenseUsageInterceptor = LicenseUsageInterceptor_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [license_usage_service_1.LicenseUsageService])
+    __metadata("design:paramtypes", [license_usage_service_1.LicenseUsageService,
+        licensing_service_1.LicensingService])
 ], LicenseUsageInterceptor);
 //# sourceMappingURL=license-usage.interceptor.js.map

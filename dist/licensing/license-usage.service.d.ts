@@ -8,7 +8,7 @@ export declare class LicenseUsageService {
     private readonly logger;
     private readonly ALERT_THRESHOLD;
     constructor(usageRepository: Repository<LicenseUsage>, eventRepository: Repository<LicenseEvent>);
-    trackUsage(license: License, metricType: MetricType, currentValue: number, metadata?: Record<string, any>): Promise<LicenseUsage>;
+    trackUsage(license: License, metricType: MetricType, currentValue: number, metadata?: Record<string, any>): Promise<LicenseUsage | null>;
     private getLimitForMetric;
     private createLimitExceededEvent;
     getUsageHistory(licenseId: string, metricType: MetricType, startDate: Date, endDate: Date): Promise<LicenseUsage[]>;

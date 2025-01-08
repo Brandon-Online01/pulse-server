@@ -22,44 +22,72 @@ export class LicenseUsageService {
         metricType: MetricType,
         currentValue: number,
         metadata?: Record<string, any>
-    ): Promise<LicenseUsage> {
-        const limit = this.getLimitForMetric(license, metricType);
-        const utilizationPercentage = (currentValue / limit) * 100;
+    ): Promise<LicenseUsage | null> {
+        try {
+            if (!license?.uid) {
+                this.logger.error('Invalid license object provided to trackUsage');
+                return null;
+            }
 
-        const usage = this.usageRepository.create({
-            license,
-            licenseId: String(license?.uid),
-            metricType,
-            currentValue,
-            limit,
-            utilizationPercentage,
-            metadata,
-        });
+            const limit = this.getLimitForMetric(license, metricType);
+            if (typeof limit !== 'number' || isNaN(limit) || limit <= 0) {
+                this.logger.warn(`Invalid limit (${limit}) for metric ${metricType} in license ${license.uid}`);
+                return null;
+            }
 
-        const saved = await this.usageRepository.save(usage);
+            const utilizationPercentage = Number(((currentValue / limit) * 100).toFixed(2));
+            if (isNaN(utilizationPercentage)) {
+                this.logger.error(`Invalid utilization calculation: ${currentValue} / ${limit}`);
+                return null;
+            }
 
-        // Check if we need to create an event for limit exceeded
-        if (utilizationPercentage >= this.ALERT_THRESHOLD * 100) {
-            await this.createLimitExceededEvent(license, metricType, currentValue, limit);
+            const usage = this.usageRepository.create({
+                license,
+                licenseId: String(license.uid),
+                metricType,
+                currentValue,
+                limit,
+                utilizationPercentage,
+                metadata: metadata || {},
+            });
+
+            const saved = await this.usageRepository.save(usage);
+
+            // Check if we need to create an event for limit exceeded
+            if (utilizationPercentage >= this.ALERT_THRESHOLD * 100) {
+                await this.createLimitExceededEvent(license, metricType, currentValue, limit)
+                    .catch(error => this.logger.error(`Failed to create limit exceeded event: ${error.message}`));
+            }
+
+            return saved;
+        } catch (error) {
+            this.logger.error(`Failed to track usage: ${error.message}`, error.stack);
+            return null;
         }
-
-        return saved;
     }
 
     private getLimitForMetric(license: License, metricType: MetricType): number {
-        switch (metricType) {
-            case MetricType.USERS:
-                return license?.maxUsers;
-            case MetricType.BRANCHES:
-                return license?.maxBranches;
-            case MetricType.STORAGE:
-                return license?.storageLimit;
-            case MetricType.API_CALLS:
-                return license?.apiCallLimit;
-            case MetricType.INTEGRATIONS:
-                return license?.integrationLimit;
-            default:
-                throw new Error(`Unknown metric type: ${metricType}`);
+        if (!license) return 0;
+
+        try {
+            switch (metricType) {
+                case MetricType.USERS:
+                    return license.maxUsers || 0;
+                case MetricType.BRANCHES:
+                    return license.maxBranches || 0;
+                case MetricType.STORAGE:
+                    return license.storageLimit || 0;
+                case MetricType.API_CALLS:
+                    return license.apiCallLimit || 0;
+                case MetricType.INTEGRATIONS:
+                    return license.integrationLimit || 0;
+                default:
+                    this.logger.warn(`Unknown metric type: ${metricType}`);
+                    return 0;
+            }
+        } catch (error) {
+            this.logger.error(`Error getting limit for metric ${metricType}: ${error.message}`);
+            return 0;
         }
     }
 
@@ -69,20 +97,29 @@ export class LicenseUsageService {
         currentValue: number,
         limit: number
     ): Promise<void> {
-        const event = this.eventRepository.create({
-            license,
-            licenseId: String(license?.uid),
-            eventType: LicenseEventType.LIMIT_EXCEEDED,
-            details: {
-                metricType,
-                currentValue,
-                limit,
-                utilizationPercentage: (currentValue / limit) * 100,
-            },
-        });
+        try {
+            if (!license?.uid) {
+                throw new Error('Invalid license object');
+            }
 
-        await this.eventRepository.save(event);
-        this.logger.warn(`License ${license.licenseKey} exceeded ${metricType} limit: ${currentValue}/${limit}`);
+            const event = this.eventRepository.create({
+                license,
+                licenseId: String(license.uid),
+                eventType: LicenseEventType.LIMIT_EXCEEDED,
+                details: {
+                    metricType,
+                    currentValue,
+                    limit,
+                    utilizationPercentage: Number(((currentValue / limit) * 100).toFixed(2)),
+                    timestamp: new Date().toISOString()
+                },
+            });
+
+            await this.eventRepository.save(event);
+            this.logger.warn(`License ${license.licenseKey} exceeded ${metricType} limit: ${currentValue}/${limit}`);
+        } catch (error) {
+            throw new Error(`Failed to create limit exceeded event: ${error.message}`);
+        }
     }
 
     async getUsageHistory(

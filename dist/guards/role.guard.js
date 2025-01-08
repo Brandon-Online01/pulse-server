@@ -40,10 +40,6 @@ let RoleGuard = class RoleGuard extends base_guard_1.BaseGuard {
         const normalizedRole = role.toUpperCase();
         const hasRequiredRole = requiredRoles.some(requiredRole => requiredRole.toLowerCase() === normalizedRole.toLowerCase());
         if (!hasRequiredRole) {
-            console.log('Role check failed:', {
-                providedRole: normalizedRole,
-                requiredRoles: requiredRoles,
-            });
             throw new common_1.UnauthorizedException('access denied: insufficient privileges');
         }
         return true;

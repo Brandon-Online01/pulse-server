@@ -48,10 +48,6 @@ export class RoleGuard extends BaseGuard implements CanActivate {
         );
 
         if (!hasRequiredRole) {
-            console.log('Role check failed:', {
-                providedRole: normalizedRole,
-                requiredRoles: requiredRoles,
-            });
             throw new UnauthorizedException('access denied: insufficient privileges');
         }
 

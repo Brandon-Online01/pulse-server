@@ -140,8 +140,6 @@ export class UserService {
 
 	async findOneForAuth(searchParameter: string): Promise<{ user: User | null, message: string }> {
 		try {
-			console.log(searchParameter, 'search for this user');
-
 			const user = await this.userRepository.findOne({
 				where: [
 					{ username: searchParameter, isDeleted: false },
@@ -178,8 +176,6 @@ export class UserService {
 
 	async findOneByUid(searchParameter: number): Promise<{ user: User | null, message: string }> {
 		try {
-			console.log(searchParameter, 'search for this user');
-
 			const user = await this.userRepository.findOne({
 				where: [
 					{ uid: searchParameter, isDeleted: false },

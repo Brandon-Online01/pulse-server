@@ -1,15 +1,21 @@
-import { Injectable, NestInterceptor, ExecutionContext, CallHandler, UnauthorizedException } from '@nestjs/common';
+import { Injectable, NestInterceptor, ExecutionContext, CallHandler, Logger } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { LicenseUsageService } from './license-usage.service';
 import { MetricType } from './entities/license-usage.entity';
+import { LicensingService } from './licensing.service';
 import { Request } from 'express';
 
 @Injectable()
 export class LicenseUsageInterceptor implements NestInterceptor {
-    constructor(private readonly licenseUsageService: LicenseUsageService) { }
+    private readonly logger = new Logger(LicenseUsageInterceptor.name);
 
-    intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+    constructor(
+        private readonly licenseUsageService: LicenseUsageService,
+        private readonly licensingService: LicensingService
+    ) { }
+
+    async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<any>> {
         const request = context.switchToHttp().getRequest<Request>();
         const user = request['user'];
 
@@ -22,50 +28,73 @@ export class LicenseUsageInterceptor implements NestInterceptor {
         const path = request.path;
         const method = request.method;
 
-        return next.handle().pipe(
-            tap(async () => {
-                try {
-                    // Track API call usage
-                    await this.licenseUsageService.trackUsage(
-                        user.licenseId,
-                        MetricType.API_CALLS,
-                        1,
-                        {
-                            path,
-                            method,
-                            duration: Date.now() - startTime,
-                            timestamp: new Date(),
-                        }
-                    );
+        try {
+            // Get the actual license object
+            const license = await this.licensingService.findOne(user.licenseId);
+            if (!license) {
+                this.logger.warn(`No valid license found for user ${user.uid}`);
+                return next.handle();
+            }
 
-                    // Track storage usage for file uploads
-                    if (request.file || request.files) {
-                        const totalSize = this.calculateUploadSize(request.file || request.files);
+            return next.handle().pipe(
+                tap(async () => {
+                    try {
+                        // Track API call usage
                         await this.licenseUsageService.trackUsage(
-                            user.licenseId,
-                            MetricType.STORAGE,
-                            totalSize,
+                            license,
+                            MetricType.API_CALLS,
+                            1,
                             {
                                 path,
                                 method,
-                                files: request.file || request.files,
-                                timestamp: new Date(),
+                                duration: Date.now() - startTime,
+                                timestamp: new Date().toISOString(),
+                                userId: user.uid
                             }
                         );
+
+                        // Track storage usage for file uploads
+                        if (request.file || request.files) {
+                            const totalSize = this.calculateUploadSize(request.file || request.files);
+                            if (totalSize > 0) {
+                                await this.licenseUsageService.trackUsage(
+                                    license,
+                                    MetricType.STORAGE,
+                                    totalSize,
+                                    {
+                                        path,
+                                        method,
+                                        fileCount: Array.isArray(request.files) ? request.files.length : 1,
+                                        timestamp: new Date().toISOString(),
+                                        userId: user.uid
+                                    }
+                                );
+                            }
+                        }
+                    } catch (error) {
+                        this.logger.error(`Failed to track license usage: ${error.message}`, error.stack);
                     }
-                } catch (error) {
-                    // Log error but don't block the request
-                    console.error('Failed to track license usage:', error);
-                }
-            })
-        );
+                })
+            );
+        } catch (error) {
+            this.logger.error(`Error in license interceptor: ${error.message}`, error.stack);
+            return next.handle();
+        }
     }
 
     private calculateUploadSize(files: any): number {
         if (!files) return 0;
-        if (Array.isArray(files)) {
-            return files.reduce((total, file) => total + file.size, 0);
+
+        try {
+            if (Array.isArray(files)) {
+                return files.reduce((total, file) => {
+                    return total + (file?.size || 0);
+                }, 0);
+            }
+            return files?.size || 0;
+        } catch (error) {
+            this.logger.error(`Error calculating upload size: ${error.message}`);
+            return 0;
         }
-        return files.size || 0;
     }
 } 
