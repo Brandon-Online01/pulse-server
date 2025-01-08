@@ -51,7 +51,6 @@ let AttendanceController = class AttendanceController {
 exports.AttendanceController = AttendanceController;
 __decorate([
     (0, common_1.Post)('in'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'manage attendance, check in' }),
     __param(0, (0, common_1.Body)()),
@@ -61,7 +60,6 @@ __decorate([
 ], AttendanceController.prototype, "checkIn", null);
 __decorate([
     (0, common_1.Post)('out'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'manage attendance, check out' }),
     __param(0, (0, common_1.Body)()),
@@ -71,7 +69,6 @@ __decorate([
 ], AttendanceController.prototype, "checkOut", null);
 __decorate([
     (0, common_1.Get)(),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'get all check ins' }),
     __metadata("design:type", Function),
@@ -80,7 +77,6 @@ __decorate([
 ], AttendanceController.prototype, "allCheckIns", null);
 __decorate([
     (0, common_1.Get)('date/:date'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'get check ins by date' }),
     __param(0, (0, common_1.Param)('date')),
@@ -90,7 +86,6 @@ __decorate([
 ], AttendanceController.prototype, "checkInsByDate", null);
 __decorate([
     (0, common_1.Get)('user/:ref'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'get check ins by user reference code' }),
     __param(0, (0, common_1.Param)('ref')),
@@ -100,7 +95,6 @@ __decorate([
 ], AttendanceController.prototype, "checkInsByUser", null);
 __decorate([
     (0, common_1.Get)('status/:ref'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'get check ins by status' }),
     __param(0, (0, common_1.Param)('ref')),
@@ -110,7 +104,6 @@ __decorate([
 ], AttendanceController.prototype, "checkInsByStatus", null);
 __decorate([
     (0, common_1.Get)('branch/:ref'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'get check ins by branch reference code' }),
     __param(0, (0, common_1.Param)('ref')),

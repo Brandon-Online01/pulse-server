@@ -22,7 +22,6 @@ export class AttendanceController {
 	constructor(private readonly attendanceService: AttendanceService) { }
 
 	@Post('in')
-	@UseGuards(AuthGuard, RoleGuard)
 	@Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
 	@ApiOperation({ summary: 'manage attendance, check in' })
 	checkIn(@Body() createAttendanceDto: CreateCheckInDto) {
@@ -30,7 +29,6 @@ export class AttendanceController {
 	}
 
 	@Post('out')
-	@UseGuards(AuthGuard, RoleGuard)
 	@Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
 	@ApiOperation({ summary: 'manage attendance, check out' })
 	checkOut(@Body() createAttendanceDto: CreateCheckOutDto) {
@@ -38,7 +36,6 @@ export class AttendanceController {
 	}
 
 	@Get()
-	@UseGuards(AuthGuard, RoleGuard)
 	@Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
 	@ApiOperation({ summary: 'get all check ins' })
 	allCheckIns() {
@@ -46,7 +43,6 @@ export class AttendanceController {
 	}
 
 	@Get('date/:date')
-	@UseGuards(AuthGuard, RoleGuard)
 	@Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
 	@ApiOperation({ summary: 'get check ins by date' })
 	checkInsByDate(@Param('date') date: string) {
@@ -54,7 +50,6 @@ export class AttendanceController {
 	}
 
 	@Get('user/:ref')
-	@UseGuards(AuthGuard, RoleGuard)
 	@Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
 	@ApiOperation({ summary: 'get check ins by user reference code' })
 	checkInsByUser(@Param('ref') ref: number) {
@@ -62,7 +57,6 @@ export class AttendanceController {
 	}
 
 	@Get('status/:ref')
-	@UseGuards(AuthGuard, RoleGuard)
 	@Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
 	@ApiOperation({ summary: 'get check ins by status' })
 	checkInsByStatus(@Param('ref') ref: number) {
@@ -70,7 +64,6 @@ export class AttendanceController {
 	}
 
 	@Get('branch/:ref')
-	@UseGuards(AuthGuard, RoleGuard)
 	@Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
 	@ApiOperation({ summary: 'get check ins by branch reference code' })
 	checkInsByBranch(@Param('ref') ref: string) {

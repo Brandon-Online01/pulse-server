@@ -17,7 +17,6 @@ export class NewsController {
   constructor(private readonly newsService: NewsService) { }
 
   @Post()
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'create a new article' })
   create(@Body() createNewsDto: CreateNewsDto) {
@@ -25,7 +24,6 @@ export class NewsController {
   }
 
   @Get()
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get all articles' })
   findAll() {
@@ -33,7 +31,6 @@ export class NewsController {
   }
 
   @Get(':ref')
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get an article by reference code' })
   findOne(@Param('ref') ref: number) {
@@ -41,7 +38,6 @@ export class NewsController {
   }
 
   @Patch(':ref')
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'update an article by reference code' })
   update(@Param('ref') ref: number, @Body() updateNewsDto: UpdateNewsDto) {

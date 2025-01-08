@@ -27,6 +27,7 @@ export class RoleGuard extends BaseGuard implements CanActivate {
         const decodedToken = this.extractAndValidateToken(request);
 
         const { role } = decodedToken;
+
         if (!role) {
             throw new UnauthorizedException('access denied: no role found');
         }
@@ -40,8 +41,17 @@ export class RoleGuard extends BaseGuard implements CanActivate {
             return true; // No specific roles required
         }
 
-        const hasRequiredRole = requiredRoles.includes(role as AccessLevel);
+        // Convert role to uppercase to match enum
+        const normalizedRole = role.toUpperCase();
+        const hasRequiredRole = requiredRoles.some(requiredRole =>
+            requiredRole.toLowerCase() === normalizedRole.toLowerCase()
+        );
+
         if (!hasRequiredRole) {
+            console.log('Role check failed:', {
+                providedRole: normalizedRole,
+                requiredRoles: requiredRoles,
+            });
             throw new UnauthorizedException('access denied: insufficient privileges');
         }
 

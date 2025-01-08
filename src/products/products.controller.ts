@@ -9,26 +9,24 @@ import { AccessLevel } from '../lib/enums/user.enums';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { PaginationQuery } from '../lib/interfaces/product.interfaces';
-// import { EnterpriseOnly } from '../decorators/enterprise-only.decorator';
+import { EnterpriseOnly } from '../decorators/enterprise-only.decorator';
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 
 @ApiTags('products')
 @Controller('products')
-// @UseGuards(AuthGuard, RoleGuard)
-// @EnterpriseOnly('products')
+@UseGuards(AuthGuard, RoleGuard)
+@EnterpriseOnly('products')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) { }
 
   @Post()
-  // @UseGuards(AuthGuard, RoleGuard)
-  // @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'create a product' })
   createProduct(@Body() createProductDto: CreateProductDto) {
     return this.productsService.createProduct(createProductDto);
   }
 
   @Get()
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get a list of products i.e /products?page=1&limit=10' })
   products(@Query() query: PaginationQuery) {
@@ -36,7 +34,6 @@ export class ProductsController {
   }
 
   @Get(':ref')
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get a product by reference code' })
   getProductByref(@Param('ref') ref: number) {
@@ -44,7 +41,6 @@ export class ProductsController {
   }
 
   @Get('category/:category')
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get a list of products by category i.e products/category/specials?page=1&limit=10' })
   productsBySearchTerm(@Param('category') category: string) {
@@ -52,7 +48,6 @@ export class ProductsController {
   }
 
   @Patch(':ref')
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'update a product' })
   updateProduct(
@@ -63,14 +58,12 @@ export class ProductsController {
 
   @Patch('restore/:ref')
   @ApiOperation({ summary: 'Restore a deleted product by reference code' })
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   restoreProduct(@Param('ref') ref: number) {
     return this.productsService.restoreProduct(ref);
   }
 
   @Delete(':ref')
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'soft delete a product' })
   deleteProduct(@Param('ref') ref: number) {

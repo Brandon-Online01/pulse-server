@@ -22,6 +22,7 @@ const role_decorator_1 = require("../decorators/role.decorator");
 const user_enums_1 = require("../lib/enums/user.enums");
 const role_guard_1 = require("../guards/role.guard");
 const auth_guard_1 = require("../guards/auth.guard");
+const enterprise_only_decorator_1 = require("../decorators/enterprise-only.decorator");
 let ClaimsController = class ClaimsController {
     constructor(claimsService) {
         this.claimsService = claimsService;
@@ -51,7 +52,6 @@ let ClaimsController = class ClaimsController {
 exports.ClaimsController = ClaimsController;
 __decorate([
     (0, common_1.Post)(),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'create a new claim' }),
     __param(0, (0, common_1.Body)()),
@@ -61,7 +61,6 @@ __decorate([
 ], ClaimsController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)(),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'get all claims' }),
     __metadata("design:type", Function),
@@ -70,7 +69,6 @@ __decorate([
 ], ClaimsController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)(':ref'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'get a claim by reference code' }),
     __param(0, (0, common_1.Param)('ref')),
@@ -80,7 +78,6 @@ __decorate([
 ], ClaimsController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Patch)(':ref'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'update a claim' }),
     __param(0, (0, common_1.Param)('ref')),
@@ -91,7 +88,6 @@ __decorate([
 ], ClaimsController.prototype, "update", null);
 __decorate([
     (0, common_1.Patch)('restore/:ref'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'restore a deleted claim' }),
     __param(0, (0, common_1.Param)('ref')),
@@ -101,7 +97,6 @@ __decorate([
 ], ClaimsController.prototype, "restore", null);
 __decorate([
     (0, common_1.Get)('for/:ref'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'get claims by user reference code' }),
     __param(0, (0, common_1.Param)('ref')),
@@ -111,7 +106,6 @@ __decorate([
 ], ClaimsController.prototype, "claimsByUser", null);
 __decorate([
     (0, common_1.Delete)(':ref'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'soft delete a claim' }),
     __param(0, (0, common_1.Param)('ref')),
@@ -123,6 +117,7 @@ exports.ClaimsController = ClaimsController = __decorate([
     (0, swagger_1.ApiTags)('claims'),
     (0, common_1.Controller)('claims'),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
+    (0, enterprise_only_decorator_1.EnterpriseOnly)('claims'),
     __metadata("design:paramtypes", [claims_service_1.ClaimsService])
 ], ClaimsController);
 //# sourceMappingURL=claims.controller.js.map

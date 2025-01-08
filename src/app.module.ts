@@ -156,14 +156,14 @@ import { LicenseUsageInterceptor } from './licensing/license-usage.interceptor';
   providers: [
     AppService,
     AppController,
-    // {
-    //   provide: APP_GUARD,
-    //   useClass: RoleGuard,
-    // },
-    // {
-    //   provide: APP_INTERCEPTOR,
-    //   useClass: LicenseUsageInterceptor,
-    // },
+    {
+      provide: APP_GUARD,
+      useClass: RoleGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: LicenseUsageInterceptor,
+    },
   ],
 })
 export class AppModule { }

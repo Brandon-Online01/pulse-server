@@ -12,12 +12,11 @@ import { EnterpriseOnly } from '../decorators/enterprise-only.decorator';
 @ApiTags('claims')
 @Controller('claims')
 @UseGuards(AuthGuard, RoleGuard)
-// @EnterpriseOnly('claims')
+@EnterpriseOnly('claims')
 export class ClaimsController {
   constructor(private readonly claimsService: ClaimsService) { }
 
   @Post()
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'create a new claim' })
   create(@Body() createClaimDto: CreateClaimDto) {
@@ -25,7 +24,6 @@ export class ClaimsController {
   }
 
   @Get()
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get all claims' })
   findAll() {
@@ -33,7 +31,6 @@ export class ClaimsController {
   }
 
   @Get(':ref')
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get a claim by reference code' })
   findOne(@Param('ref') ref: number) {
@@ -41,7 +38,6 @@ export class ClaimsController {
   }
 
   @Patch(':ref')
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'update a claim' })
   update(@Param('ref') ref: number, @Body() updateClaimDto: UpdateClaimDto) {
@@ -49,7 +45,6 @@ export class ClaimsController {
   }
 
   @Patch('restore/:ref')
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'restore a deleted claim' })
   restore(@Param('ref') ref: number) {
@@ -57,7 +52,6 @@ export class ClaimsController {
   }
 
   @Get('for/:ref')
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get claims by user reference code' })
   claimsByUser(@Param('ref') ref: number) {
@@ -65,7 +59,6 @@ export class ClaimsController {
   }
 
   @Delete(':ref')
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'soft delete a claim' })
   remove(@Param('ref') ref: number) {

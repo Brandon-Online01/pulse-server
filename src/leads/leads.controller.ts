@@ -17,7 +17,6 @@ export class LeadsController {
   constructor(private readonly leadsService: LeadsService) { }
 
   @Post()
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'create a new lead' })
   create(@Body() createLeadDto: CreateLeadDto) {
@@ -25,7 +24,6 @@ export class LeadsController {
   }
 
   @Get()
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get all leads' })
   findAll() {
@@ -33,7 +31,6 @@ export class LeadsController {
   }
 
   @Get(':ref')
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get a lead by reference code' })
   findOne(@Param('ref') ref: number) {
@@ -41,7 +38,6 @@ export class LeadsController {
   }
 
   @Get('for/:ref')
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get leads by user reference code' })
   leadsByUser(@Param('ref') ref: number) {
@@ -49,7 +45,6 @@ export class LeadsController {
   }
 
   @Patch(':ref')
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'update a lead by reference code' })
   update(@Param('ref') ref: number, @Body() updateLeadDto: UpdateLeadDto) {
@@ -57,7 +52,6 @@ export class LeadsController {
   }
 
   @Patch('restore/:ref')
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'restore a lead by reference code' })
   restore(@Param('ref') ref: number) {

@@ -33,7 +33,7 @@ export class AuthService {
 
 	async signIn(signInInput: SignInInput): Promise<SignInResponse> {
 		try {
-			const { username, password } = signInInput;
+			const { username, password } = signInInput;;
 
 			const authProfile = await this.userService.findOneForAuth(username);
 
@@ -406,7 +406,9 @@ export class AuthService {
 				throw new BadRequestException('Invalid refresh token');
 			}
 
-			const authProfile = await this.userService.findOne(payload?.uid);
+			const authProfile = await this.userService.findOneByUid(Number(payload?.uid));
+
+			console.log(authProfile);
 
 			if (!authProfile?.user) {
 				throw new BadRequestException('User not found');
@@ -465,6 +467,9 @@ export class AuthService {
 				message: 'Access token refreshed successfully'
 			};
 		} catch (error) {
+
+			console.log(error);
+
 			if (error?.name === 'TokenExpiredError') {
 				throw new HttpException('Refresh token has expired', HttpStatus.UNAUTHORIZED);
 			}

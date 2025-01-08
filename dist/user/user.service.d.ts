@@ -25,6 +25,10 @@ export declare class UserService {
         user: User | null;
         message: string;
     }>;
+    findOneByUid(searchParameter: number): Promise<{
+        user: User | null;
+        message: string;
+    }>;
     getUsersByRole(recipients: string[]): Promise<{
         users: User[] | null;
         message: string;

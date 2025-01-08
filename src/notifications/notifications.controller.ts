@@ -15,7 +15,6 @@ export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) { }
 
   @Post()
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'create a new notification' })
   create(@Body() createNotificationDto: CreateNotificationDto) {
@@ -23,7 +22,6 @@ export class NotificationsController {
   }
 
   @Get()
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get all notifications' })
   findAll() {
@@ -31,7 +29,6 @@ export class NotificationsController {
   }
 
   @Get(':ref')
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get a notification by reference code' })
   findOne(@Param('ref') ref: number) {
@@ -39,7 +36,6 @@ export class NotificationsController {
   }
 
   @Get('/personal/:ref')
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get a notification by reference code for a user' })
   findForUser(@Param('ref') ref: number) {
@@ -47,7 +43,6 @@ export class NotificationsController {
   }
 
   @Patch(':ref')
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'update a notification by reference code' })
   update(@Param('ref') ref: number, @Body() updateNotificationDto: UpdateNotificationDto) {

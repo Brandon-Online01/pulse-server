@@ -23,6 +23,7 @@ const products_service_1 = require("./products.service");
 const user_enums_1 = require("../lib/enums/user.enums");
 const create_product_dto_1 = require("./dto/create-product.dto");
 const update_product_dto_1 = require("./dto/update-product.dto");
+const enterprise_only_decorator_1 = require("../decorators/enterprise-only.decorator");
 const common_2 = require("@nestjs/common");
 let ProductsController = class ProductsController {
     constructor(productsService) {
@@ -53,6 +54,7 @@ let ProductsController = class ProductsController {
 exports.ProductsController = ProductsController;
 __decorate([
     (0, common_2.Post)(),
+    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_2.ApiOperation)({ summary: 'create a product' }),
     __param(0, (0, common_2.Body)()),
     __metadata("design:type", Function),
@@ -61,7 +63,6 @@ __decorate([
 ], ProductsController.prototype, "createProduct", null);
 __decorate([
     (0, common_2.Get)(),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_2.ApiOperation)({ summary: 'get a list of products i.e /products?page=1&limit=10' }),
     __param(0, (0, common_2.Query)()),
@@ -71,7 +72,6 @@ __decorate([
 ], ProductsController.prototype, "products", null);
 __decorate([
     (0, common_2.Get)(':ref'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_2.ApiOperation)({ summary: 'get a product by reference code' }),
     __param(0, (0, common_2.Param)('ref')),
@@ -81,7 +81,6 @@ __decorate([
 ], ProductsController.prototype, "getProductByref", null);
 __decorate([
     (0, common_2.Get)('category/:category'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_2.ApiOperation)({ summary: 'get a list of products by category i.e products/category/specials?page=1&limit=10' }),
     __param(0, (0, common_2.Param)('category')),
@@ -91,7 +90,6 @@ __decorate([
 ], ProductsController.prototype, "productsBySearchTerm", null);
 __decorate([
     (0, common_2.Patch)(':ref'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_2.ApiOperation)({ summary: 'update a product' }),
     __param(0, (0, common_2.Param)('ref')),
@@ -103,7 +101,6 @@ __decorate([
 __decorate([
     (0, common_2.Patch)('restore/:ref'),
     (0, swagger_2.ApiOperation)({ summary: 'Restore a deleted product by reference code' }),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     __param(0, (0, common_2.Param)('ref')),
     __metadata("design:type", Function),
@@ -112,7 +109,6 @@ __decorate([
 ], ProductsController.prototype, "restoreProduct", null);
 __decorate([
     (0, common_2.Delete)(':ref'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_2.ApiOperation)({ summary: 'soft delete a product' }),
     __param(0, (0, common_2.Param)('ref')),
@@ -123,6 +119,8 @@ __decorate([
 exports.ProductsController = ProductsController = __decorate([
     (0, swagger_1.ApiTags)('products'),
     (0, common_2.Controller)('products'),
+    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
+    (0, enterprise_only_decorator_1.EnterpriseOnly)('products'),
     __metadata("design:paramtypes", [products_service_1.ProductsService])
 ], ProductsController);
 //# sourceMappingURL=products.controller.js.map

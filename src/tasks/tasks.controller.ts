@@ -18,7 +18,6 @@ export class TasksController {
   constructor(private readonly tasksService: TasksService) { }
 
   @Post()
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'create a new task' })
   create(@Body() createTaskDto: CreateTaskDto) {
@@ -26,7 +25,6 @@ export class TasksController {
   }
 
   @Get()
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get all tasks' })
   findAll() {
@@ -34,7 +32,6 @@ export class TasksController {
   }
 
   @Get(':ref')
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get a task by reference' })
   findOne(@Param('ref') ref: number) {
@@ -42,7 +39,6 @@ export class TasksController {
   }
 
   @Get('for/:ref')
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get tasks by user reference code' })
   tasksByUser(@Param('ref') ref: number) {
@@ -50,7 +46,6 @@ export class TasksController {
   }
 
   @Get('sub-task/:ref')
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get a subtask by reference' })
   findOneSubTask(@Param('ref') ref: number) {
@@ -58,7 +53,6 @@ export class TasksController {
   }
 
   @Patch(':ref')
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'update a task by reference' })
   update(@Param('ref') ref: number, @Body() updateTaskDto: UpdateTaskDto) {
@@ -66,7 +60,6 @@ export class TasksController {
   }
 
   @Patch('sub-task/:ref')
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'update a subtask by reference' })
   updateSubTask(@Param('ref') ref: number, @Body() updateSubTaskDto: UpdateSubtaskDto) {
@@ -74,7 +67,6 @@ export class TasksController {
   }
 
   @Patch('sub-task/complete/:ref')
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'complete a subtask by reference' })
   completeSubTask(@Param('ref') ref: number) {
@@ -82,7 +74,6 @@ export class TasksController {
   }
 
   @Delete('sub-task/:ref')
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'soft delete a subtask by reference' })
   deleteSubTask(@Param('ref') ref: number) {
@@ -90,7 +81,6 @@ export class TasksController {
   }
 
   @Delete(':ref')
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'soft delete a task by reference' })
   remove(@Param('ref') ref: number) {

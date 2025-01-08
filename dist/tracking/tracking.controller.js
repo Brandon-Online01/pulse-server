@@ -18,8 +18,6 @@ const tracking_service_1 = require("./tracking.service");
 const create_tracking_dto_1 = require("./dto/create-tracking.dto");
 const swagger_1 = require("@nestjs/swagger");
 const role_decorator_1 = require("../decorators/role.decorator");
-const auth_guard_1 = require("../guards/auth.guard");
-const role_guard_1 = require("../guards/role.guard");
 const public_decorator_1 = require("../decorators/public.decorator");
 const user_enums_1 = require("../lib/enums/user.enums");
 let TrackingController = class TrackingController {
@@ -57,7 +55,6 @@ __decorate([
 ], TrackingController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)(),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'get all tracking records' }),
     __metadata("design:type", Function),
@@ -66,7 +63,6 @@ __decorate([
 ], TrackingController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)(':ref'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'get a tracking record by reference code' }),
     __param(0, (0, common_1.Param)('ref')),
@@ -76,7 +72,6 @@ __decorate([
 ], TrackingController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Get)('for/:ref'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'get tracking by user reference code' }),
     __param(0, (0, common_1.Param)('ref')),
@@ -86,7 +81,6 @@ __decorate([
 ], TrackingController.prototype, "trackingByUser", null);
 __decorate([
     (0, common_1.Patch)('/restore/:ref'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'restore a deleted tracking record by reference code' }),
     __param(0, (0, common_1.Param)('ref')),
@@ -96,7 +90,6 @@ __decorate([
 ], TrackingController.prototype, "restore", null);
 __decorate([
     (0, common_1.Delete)(':ref'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'soft delete a tracking record by reference code' }),
     __param(0, (0, common_1.Param)('ref')),

@@ -21,6 +21,8 @@ const user_profile_entity_1 = require("./user/entities/user.profile.entity");
 const user_employeement_profile_entity_1 = require("./user/entities/user.employeement.profile.entity");
 const attendance_module_1 = require("./attendance/attendance.module");
 const attendance_entity_1 = require("./attendance/entities/attendance.entity");
+const core_1 = require("@nestjs/core");
+const role_guard_1 = require("./guards/role.guard");
 const tracking_module_1 = require("./tracking/tracking.module");
 const docs_module_1 = require("./docs/docs.module");
 const claims_module_1 = require("./claims/claims.module");
@@ -71,6 +73,7 @@ const license_entity_1 = require("./licensing/entities/license.entity");
 const license_usage_entity_1 = require("./licensing/entities/license-usage.entity");
 const license_event_entity_1 = require("./licensing/entities/license-event.entity");
 const licensing_module_1 = require("./licensing/licensing.module");
+const license_usage_interceptor_1 = require("./licensing/license-usage.interceptor");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -165,6 +168,14 @@ exports.AppModule = AppModule = __decorate([
         providers: [
             app_service_1.AppService,
             app_controller_1.AppController,
+            {
+                provide: core_1.APP_GUARD,
+                useClass: role_guard_1.RoleGuard,
+            },
+            {
+                provide: core_1.APP_INTERCEPTOR,
+                useClass: license_usage_interceptor_1.LicenseUsageInterceptor,
+            },
         ],
     })
 ], AppModule);

@@ -13,14 +13,14 @@ import { EnterpriseOnly } from '../decorators/enterprise-only.decorator';
 
 @ApiTags('shop')
 @Controller('shop')
-// @UseGuards(AuthGuard, RoleGuard)
-// @EnterpriseOnly('shop')
+@UseGuards(AuthGuard, RoleGuard)
+@EnterpriseOnly('shop')
 export class ShopController {
   constructor(private readonly shopService: ShopService) { }
 
   //shopping
   @Get('best-sellers')
-  // @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get a list of best selling products' })
   getBestSellers() {
     return this.shopService.getBestSellers();
@@ -85,7 +85,7 @@ export class ShopController {
 
   //shop banners
   @Get('banners')
-  // @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get a list of banners' })
   getBanner() {
     return this.shopService.getBanner();

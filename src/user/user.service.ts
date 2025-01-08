@@ -86,7 +86,12 @@ export class UserService {
 					'trackings',
 					'orders',
 					'notifications',
-					'branch'
+					'branch',
+					'clients',
+					'checkIns',
+					'reports',
+					'rewards',
+					'organisation'
 				]
 			});
 
@@ -135,9 +140,49 @@ export class UserService {
 
 	async findOneForAuth(searchParameter: string): Promise<{ user: User | null, message: string }> {
 		try {
+			console.log(searchParameter, 'search for this user');
+
 			const user = await this.userRepository.findOne({
 				where: [
 					{ username: searchParameter, isDeleted: false },
+				],
+				relations: [
+					'branch',
+					'rewards',
+				]
+			});
+
+			if (!user) {
+				return {
+					user: null,
+					message: process.env.NOT_FOUND_MESSAGE,
+				};
+			}
+
+			const response = {
+				user: user,
+				message: process.env.SUCCESS_MESSAGE,
+			};
+
+			return response;
+		} catch (error) {
+			const response = {
+				message: error?.message,
+				user: null
+			}
+
+			return response;
+		}
+	}
+
+
+	async findOneByUid(searchParameter: number): Promise<{ user: User | null, message: string }> {
+		try {
+			console.log(searchParameter, 'search for this user');
+
+			const user = await this.userRepository.findOne({
+				where: [
+					{ uid: searchParameter, isDeleted: false },
 				],
 				relations: [
 					'branch',

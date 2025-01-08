@@ -12,21 +12,19 @@ import { EnterpriseOnly } from '../decorators/enterprise-only.decorator';
 
 @ApiTags('resellers')
 @Controller('resellers')
-// @UseGuards(AuthGuard, RoleGuard)
-// @EnterpriseOnly('resellers')
+@UseGuards(AuthGuard, RoleGuard)
+@EnterpriseOnly('resellers')
 export class ResellersController {
   constructor(private readonly resellersService: ResellersService) { }
 
   @Post()
-  // @UseGuards(AuthGuard, RoleGuard)
-  // @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'create a new reseller' })
   create(@Body() createResellerDto: CreateResellerDto) {
     return this.resellersService.create(createResellerDto);
   }
 
   @Get()
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get all resellers' })
   findAll() {
@@ -34,7 +32,6 @@ export class ResellersController {
   }
 
   @Get(':ref')
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get a reseller by reference code' })
   findOne(@Param('ref') ref: number) {
@@ -42,7 +39,6 @@ export class ResellersController {
   }
 
   @Patch(':ref')
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'update a reseller' })
   update(@Param('ref') ref: number, @Body() updateResellerDto: UpdateResellerDto) {
@@ -50,7 +46,6 @@ export class ResellersController {
   }
 
   @Delete(':ref')
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'soft delete a reseller' })
   remove(@Param('ref') ref: number) {

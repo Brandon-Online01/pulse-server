@@ -55,7 +55,6 @@ let AssetsController = class AssetsController {
 exports.AssetsController = AssetsController;
 __decorate([
     (0, common_1.Post)(),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'create a new asset' }),
     __param(0, (0, common_1.Body)()),
@@ -65,7 +64,6 @@ __decorate([
 ], AssetsController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)(),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'get all assets' }),
     __metadata("design:type", Function),
@@ -74,7 +72,6 @@ __decorate([
 ], AssetsController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)(':ref'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'get an asset by reference code' }),
     __param(0, (0, common_1.Param)('ref')),
@@ -84,7 +81,6 @@ __decorate([
 ], AssetsController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Get)('/search/:query'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'get an asset by search term i.e brand, model number, serial number' }),
     __param(0, (0, common_1.Param)('query')),
@@ -94,7 +90,6 @@ __decorate([
 ], AssetsController.prototype, "findBySearchTerm", null);
 __decorate([
     (0, common_1.Get)('for/:ref'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'get assets by user reference code' }),
     __param(0, (0, common_1.Param)('ref')),
@@ -104,7 +99,6 @@ __decorate([
 ], AssetsController.prototype, "assetsByUser", null);
 __decorate([
     (0, common_1.Patch)(':ref'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'update an asset' }),
     __param(0, (0, common_1.Param)('ref')),
@@ -116,7 +110,6 @@ __decorate([
 __decorate([
     (0, common_1.Patch)('restore/:ref'),
     (0, swagger_1.ApiOperation)({ summary: 'Restore a deleted user by reference code' }),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     __param(0, (0, common_1.Param)('ref')),
     __metadata("design:type", Function),
@@ -125,7 +118,6 @@ __decorate([
 ], AssetsController.prototype, "restore", null);
 __decorate([
     (0, common_1.Delete)(':ref'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'soft delete asset' }),
     __param(0, (0, common_1.Param)('ref')),

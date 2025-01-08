@@ -81,10 +81,10 @@ export class User {
     @Column({ type: 'timestamp', nullable: true })
     tokenExpires: Date;
 
-    @OneToOne(() => UserProfile, (userProfile) => userProfile?.owner)
+    @OneToOne(() => UserProfile, (userProfile) => userProfile?.owner, { nullable: true })
     userProfile: UserProfile;
 
-    @OneToOne(() => UserEmployeementProfile, (userEmployeementProfile) => userEmployeementProfile?.owner)
+    @OneToOne(() => UserEmployeementProfile, (userEmployeementProfile) => userEmployeementProfile?.owner, { nullable: true })
     userEmployeementProfile: UserEmployeementProfile;
 
     @OneToMany(() => Attendance, (attendance) => attendance?.owner)

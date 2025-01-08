@@ -16,12 +16,14 @@ exports.ShopController = void 0;
 const common_1 = require("@nestjs/common");
 const shop_service_1 = require("./shop.service");
 const auth_guard_1 = require("../guards/auth.guard");
+const role_guard_1 = require("../guards/role.guard");
 const swagger_1 = require("@nestjs/swagger");
 const role_decorator_1 = require("../decorators/role.decorator");
 const checkout_dto_1 = require("./dto/checkout.dto");
 const user_enums_1 = require("../lib/enums/user.enums");
 const create_banner_dto_1 = require("./dto/create-banner.dto");
 const update_banner_dto_1 = require("./dto/update-banner.dto");
+const enterprise_only_decorator_1 = require("../decorators/enterprise-only.decorator");
 let ShopController = class ShopController {
     constructor(shopService) {
         this.shopService = shopService;
@@ -75,6 +77,7 @@ let ShopController = class ShopController {
 exports.ShopController = ShopController;
 __decorate([
     (0, common_1.Get)('best-sellers'),
+    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'get a list of best selling products' }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
@@ -149,6 +152,7 @@ __decorate([
 ], ShopController.prototype, "getOrdersByUser", null);
 __decorate([
     (0, common_1.Get)('banners'),
+    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'get a list of banners' }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
@@ -203,6 +207,8 @@ __decorate([
 exports.ShopController = ShopController = __decorate([
     (0, swagger_1.ApiTags)('shop'),
     (0, common_1.Controller)('shop'),
+    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
+    (0, enterprise_only_decorator_1.EnterpriseOnly)('shop'),
     __metadata("design:paramtypes", [shop_service_1.ShopService])
 ], ShopController);
 //# sourceMappingURL=shop.controller.js.map

@@ -21,6 +21,7 @@ export class BaseGuard {
             }
 
             const decodedToken = this.jwtService.decode(token) as Token;
+
             if (!decodedToken) {
                 throw new UnauthorizedException('Invalid token format');
             }

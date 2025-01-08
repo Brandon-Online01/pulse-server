@@ -1,10 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
 import { TrackingService } from './tracking.service';
 import { CreateTrackingDto } from './dto/create-tracking.dto';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { Roles } from '../decorators/role.decorator';
-import { AuthGuard } from '../guards/auth.guard';
-import { RoleGuard } from '../guards/role.guard';
 import { isPublic } from '../decorators/public.decorator';
 import { AccessLevel } from '../lib/enums/user.enums';
 
@@ -21,7 +19,6 @@ export class TrackingController {
   }
 
   @Get()
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get all tracking records' })
   findAll() {
@@ -29,7 +26,6 @@ export class TrackingController {
   }
 
   @Get(':ref')
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get a tracking record by reference code' })
   findOne(@Param('ref') ref: number) {
@@ -37,7 +33,6 @@ export class TrackingController {
   }
 
   @Get('for/:ref')
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get tracking by user reference code' })
   trackingByUser(@Param('ref') ref: number) {
@@ -45,7 +40,6 @@ export class TrackingController {
   }
 
   @Patch('/restore/:ref')
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'restore a deleted tracking record by reference code' })
   restore(@Param('ref') ref: number) {
@@ -53,7 +47,6 @@ export class TrackingController {
   }
 
   @Delete(':ref')
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'soft delete a tracking record by reference code' })
   remove(@Param('ref') ref: number) {
