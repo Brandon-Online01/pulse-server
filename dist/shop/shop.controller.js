@@ -16,14 +16,12 @@ exports.ShopController = void 0;
 const common_1 = require("@nestjs/common");
 const shop_service_1 = require("./shop.service");
 const auth_guard_1 = require("../guards/auth.guard");
-const role_guard_1 = require("../guards/role.guard");
 const swagger_1 = require("@nestjs/swagger");
 const role_decorator_1 = require("../decorators/role.decorator");
 const checkout_dto_1 = require("./dto/checkout.dto");
 const user_enums_1 = require("../lib/enums/user.enums");
 const create_banner_dto_1 = require("./dto/create-banner.dto");
 const update_banner_dto_1 = require("./dto/update-banner.dto");
-const enterprise_only_decorator_1 = require("../decorators/enterprise-only.decorator");
 let ShopController = class ShopController {
     constructor(shopService) {
         this.shopService = shopService;
@@ -77,8 +75,6 @@ let ShopController = class ShopController {
 exports.ShopController = ShopController;
 __decorate([
     (0, common_1.Get)('best-sellers'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
-    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'get a list of best selling products' }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
@@ -86,7 +82,6 @@ __decorate([
 ], ShopController.prototype, "getBestSellers", null);
 __decorate([
     (0, common_1.Get)('new-arrivals'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'get a list of newly arrived products' }),
     __metadata("design:type", Function),
@@ -95,7 +90,6 @@ __decorate([
 ], ShopController.prototype, "getNewArrivals", null);
 __decorate([
     (0, common_1.Get)('hot-deals'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'get a list of products with hot deals' }),
     __metadata("design:type", Function),
@@ -104,7 +98,6 @@ __decorate([
 ], ShopController.prototype, "getHotDeals", null);
 __decorate([
     (0, common_1.Get)('categories'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'get a list of categories' }),
     __metadata("design:type", Function),
@@ -113,7 +106,6 @@ __decorate([
 ], ShopController.prototype, "categories", null);
 __decorate([
     (0, common_1.Get)('specials'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'get a list of specials' }),
     __metadata("design:type", Function),
@@ -122,7 +114,6 @@ __decorate([
 ], ShopController.prototype, "specials", null);
 __decorate([
     (0, common_1.Post)('checkout'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'checkout a list of products' }),
     __param(0, (0, common_1.Body)()),
@@ -132,7 +123,6 @@ __decorate([
 ], ShopController.prototype, "checkout", null);
 __decorate([
     (0, common_1.Get)('orders'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'get a list of all orders' }),
     __metadata("design:type", Function),
@@ -141,7 +131,6 @@ __decorate([
 ], ShopController.prototype, "getOrders", null);
 __decorate([
     (0, common_1.Get)('order/:ref'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'get an order by reference' }),
     __param(0, (0, common_1.Param)('ref')),
@@ -151,7 +140,6 @@ __decorate([
 ], ShopController.prototype, "getOrderByRef", null);
 __decorate([
     (0, common_1.Get)('orders/by/:ref'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'get a list of orders owned by user' }),
     __param(0, (0, common_1.Param)('ref')),
@@ -161,8 +149,6 @@ __decorate([
 ], ShopController.prototype, "getOrdersByUser", null);
 __decorate([
     (0, common_1.Get)('banners'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
-    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'get a list of banners' }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
@@ -170,7 +156,6 @@ __decorate([
 ], ShopController.prototype, "getBanner", null);
 __decorate([
     (0, common_1.Post)('banners'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'create a banner' }),
     __param(0, (0, common_1.Body)()),
@@ -180,7 +165,6 @@ __decorate([
 ], ShopController.prototype, "createBanner", null);
 __decorate([
     (0, common_1.Patch)('banners/:ref'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'update a banner' }),
     __param(0, (0, common_1.Param)('ref')),
@@ -191,7 +175,6 @@ __decorate([
 ], ShopController.prototype, "updateBanner", null);
 __decorate([
     (0, common_1.Delete)('banners/:ref'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'delete a banner' }),
     __param(0, (0, common_1.Param)('ref')),
@@ -220,8 +203,6 @@ __decorate([
 exports.ShopController = ShopController = __decorate([
     (0, swagger_1.ApiTags)('shop'),
     (0, common_1.Controller)('shop'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
-    (0, enterprise_only_decorator_1.EnterpriseOnly)('shop'),
     __metadata("design:paramtypes", [shop_service_1.ShopService])
 ], ShopController);
 //# sourceMappingURL=shop.controller.js.map

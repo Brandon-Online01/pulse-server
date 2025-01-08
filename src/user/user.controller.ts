@@ -11,14 +11,14 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@n
 
 @ApiTags('user')
 @Controller('user')
-@UseGuards(AuthGuard, RoleGuard)
+// @UseGuards(AuthGuard, RoleGuard)
 export class UserController {
   constructor(private readonly userService: UserService) { }
 
   @Post()
   @isPublic()
-  @UseGuards(AuthGuard, RoleGuard)
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+  // @UseGuards(AuthGuard, RoleGuard)
+  // @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'Create a new user' })
   create(@Body() createUserDto: CreateUserDto) {
     return this.userService.create(createUserDto);

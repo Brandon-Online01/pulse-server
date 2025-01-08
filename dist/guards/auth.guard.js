@@ -13,35 +13,28 @@ exports.AuthGuard = void 0;
 const common_1 = require("@nestjs/common");
 const jwt_1 = require("@nestjs/jwt");
 const licensing_service_1 = require("../licensing/licensing.service");
-let AuthGuard = class AuthGuard {
+const base_guard_1 = require("./base.guard");
+let AuthGuard = class AuthGuard extends base_guard_1.BaseGuard {
     constructor(jwtService, licensingService) {
-        this.jwtService = jwtService;
+        super(jwtService);
         this.licensingService = licensingService;
     }
     async canActivate(context) {
         const request = context.switchToHttp().getRequest();
-        const token = this.extractTokenFromHeader(request);
-        if (!token) {
-            throw new common_1.UnauthorizedException('No token provided');
-        }
-        try {
-            const payload = await this.jwtService.verifyAsync(token);
-            if (payload.organisationRef && payload.licenseId) {
-                const isLicenseValid = await this.licensingService.validateLicense(payload.licenseId);
+        const decodedToken = this.extractAndValidateToken(request);
+        if (decodedToken.organisationRef && decodedToken.licenseId) {
+            if (!request['licenseValidated']) {
+                const isLicenseValid = await this.licensingService.validateLicense(decodedToken.licenseId);
                 if (!isLicenseValid) {
                     throw new common_1.UnauthorizedException('Your organization\'s license has expired');
                 }
+                request['licenseValidated'] = true;
             }
-            request['user'] = payload;
-            return true;
         }
-        catch (error) {
-            throw new common_1.UnauthorizedException(error.message || 'Invalid token');
+        if (!request['user']) {
+            request['user'] = decodedToken;
         }
-    }
-    extractTokenFromHeader(request) {
-        const [type, token] = request.headers.authorization?.split(' ') ?? [];
-        return type === 'Bearer' ? token : undefined;
+        return true;
     }
 };
 exports.AuthGuard = AuthGuard;

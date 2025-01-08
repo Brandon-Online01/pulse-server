@@ -13,22 +13,20 @@ import { EnterpriseOnly } from '../decorators/enterprise-only.decorator';
 
 @ApiTags('shop')
 @Controller('shop')
-@UseGuards(AuthGuard, RoleGuard)
-@EnterpriseOnly('shop')
+// @UseGuards(AuthGuard, RoleGuard)
+// @EnterpriseOnly('shop')
 export class ShopController {
   constructor(private readonly shopService: ShopService) { }
 
   //shopping
   @Get('best-sellers')
-  @UseGuards(AuthGuard, RoleGuard)
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+  // @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get a list of best selling products' })
   getBestSellers() {
     return this.shopService.getBestSellers();
   }
 
   @Get('new-arrivals')
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get a list of newly arrived products' })
   getNewArrivals() {
@@ -36,7 +34,6 @@ export class ShopController {
   }
 
   @Get('hot-deals')
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get a list of products with hot deals' })
   getHotDeals() {
@@ -44,7 +41,6 @@ export class ShopController {
   }
 
   @Get('categories')
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get a list of categories' })
   categories() {
@@ -52,7 +48,6 @@ export class ShopController {
   }
 
   @Get('specials')
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get a list of specials' })
   specials() {
@@ -61,7 +56,6 @@ export class ShopController {
 
   //ordering
   @Post('checkout')
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'checkout a list of products' })
   checkout(@Body() items: CheckoutDto) {
@@ -69,7 +63,6 @@ export class ShopController {
   }
 
   @Get('orders')
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get a list of all orders' })
   getOrders() {
@@ -77,7 +70,6 @@ export class ShopController {
   }
 
   @Get('order/:ref')
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get an order by reference' })
   getOrderByRef(@Param('ref') ref: number) {
@@ -85,7 +77,6 @@ export class ShopController {
   }
 
   @Get('orders/by/:ref')
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get a list of orders owned by user' })
   getOrdersByUser(@Param('ref') ref: number) {
@@ -94,15 +85,13 @@ export class ShopController {
 
   //shop banners
   @Get('banners')
-  @UseGuards(AuthGuard, RoleGuard)
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+  // @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get a list of banners' })
   getBanner() {
     return this.shopService.getBanner();
   }
 
   @Post('banners')
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'create a banner' })
   createBanner(@Body() bannerData: CreateBannerDto) {
@@ -110,7 +99,6 @@ export class ShopController {
   }
 
   @Patch('banners/:ref')
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'update a banner' })
   updateBanner(@Param('ref') ref: number, @Body() bannerData: UpdateBannerDto) {
@@ -118,7 +106,6 @@ export class ShopController {
   }
 
   @Delete('banners/:ref')
-  @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'delete a banner' })
   deleteBanner(@Param('ref') ref: number) {

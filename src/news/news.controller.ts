@@ -11,14 +11,14 @@ import { EnterpriseOnly } from '../decorators/enterprise-only.decorator';
 
 @ApiTags('news')
 @Controller('news')
-@UseGuards(AuthGuard, RoleGuard)
-@EnterpriseOnly('news')
+// @UseGuards(AuthGuard, RoleGuard)
+// @EnterpriseOnly('news')
 export class NewsController {
   constructor(private readonly newsService: NewsService) { }
 
   @Post()
-  @UseGuards(AuthGuard, RoleGuard)
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+  // @UseGuards(AuthGuard, RoleGuard)
+  // @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'create a new article' })
   create(@Body() createNewsDto: CreateNewsDto) {
     return this.newsService.create(createNewsDto);

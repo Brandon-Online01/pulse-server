@@ -35,7 +35,7 @@ let FeatureGuard = class FeatureGuard {
         if (!planFeatures) {
             throw new common_1.ForbiddenException('Invalid license plan');
         }
-        const hasAccess = requiredFeatures.every(feature => planFeatures[feature] === true);
+        const hasAccess = requiredFeatures?.every(feature => planFeatures[feature] === true);
         if (!hasAccess) {
             throw new common_1.ForbiddenException('Your current plan does not include access to this feature');
         }

@@ -300,7 +300,7 @@ let LicensingService = LicensingService_1 = class LicensingService {
     async suspendLicense(ref) {
         try {
             const suspended = await this.update(ref, { status: license_enums_1.LicenseStatus.SUSPENDED });
-            await this.eventEmitter.emit('send.email', email_enums_1.EmailType.LICENSE_SUSPENDED, [suspended.organisation.email], {
+            this.eventEmitter.emit('send.email', email_enums_1.EmailType.LICENSE_SUSPENDED, [suspended.organisation.email], {
                 name: suspended.organisation.name,
                 licenseKey: suspended.licenseKey,
                 organisationName: suspended.organisation.name,

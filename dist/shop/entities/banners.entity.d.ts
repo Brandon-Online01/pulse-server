@@ -1,4 +1,4 @@
-import { ProductStatus } from "../../lib/enums/product.enums";
+import { BannerCategory } from "src/lib/enums/category.enum";
 export declare class Banners {
     uid: number;
     title: string;
@@ -7,5 +7,5 @@ export declare class Banners {
     image: string;
     createdAt: Date;
     updatedAt: Date;
-    category: ProductStatus;
+    category: BannerCategory;
 }

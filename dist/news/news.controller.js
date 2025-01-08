@@ -22,7 +22,6 @@ const role_guard_1 = require("../guards/role.guard");
 const auth_guard_1 = require("../guards/auth.guard");
 const user_enums_1 = require("../lib/enums/user.enums");
 const role_decorator_1 = require("../decorators/role.decorator");
-const enterprise_only_decorator_1 = require("../decorators/enterprise-only.decorator");
 let NewsController = class NewsController {
     constructor(newsService) {
         this.newsService = newsService;
@@ -46,8 +45,6 @@ let NewsController = class NewsController {
 exports.NewsController = NewsController;
 __decorate([
     (0, common_1.Post)(),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
-    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'create a new article' }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -96,8 +93,6 @@ __decorate([
 exports.NewsController = NewsController = __decorate([
     (0, swagger_1.ApiTags)('news'),
     (0, common_1.Controller)('news'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
-    (0, enterprise_only_decorator_1.EnterpriseOnly)('news'),
     __metadata("design:paramtypes", [news_service_1.NewsService])
 ], NewsController);
 //# sourceMappingURL=news.controller.js.map

@@ -1,26 +1,27 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
-import { ProductsService } from './products.service';
-import { CreateProductDto } from './dto/create-product.dto';
-import { UpdateProductDto } from './dto/update-product.dto';
-import { AccessLevel } from '../lib/enums/user.enums';
-import { ApiOperation } from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
 import { UseGuards } from '@nestjs/common';
+import { ApiOperation } from '@nestjs/swagger';
 import { RoleGuard } from '../guards/role.guard';
 import { AuthGuard } from '../guards/auth.guard';
 import { Roles } from '../decorators/role.decorator';
-import { ApiTags } from '@nestjs/swagger';
+import { ProductsService } from './products.service';
+import { AccessLevel } from '../lib/enums/user.enums';
+import { CreateProductDto } from './dto/create-product.dto';
+import { UpdateProductDto } from './dto/update-product.dto';
 import { PaginationQuery } from '../lib/interfaces/product.interfaces';
-import { EnterpriseOnly } from '../decorators/enterprise-only.decorator';
+// import { EnterpriseOnly } from '../decorators/enterprise-only.decorator';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+
 @ApiTags('products')
 @Controller('products')
-@UseGuards(AuthGuard, RoleGuard)
-@EnterpriseOnly('products')
+// @UseGuards(AuthGuard, RoleGuard)
+// @EnterpriseOnly('products')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) { }
 
   @Post()
-  @UseGuards(AuthGuard, RoleGuard)
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+  // @UseGuards(AuthGuard, RoleGuard)
+  // @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'create a product' })
   createProduct(@Body() createProductDto: CreateProductDto) {
     return this.productsService.createProduct(createProductDto);

@@ -12,14 +12,14 @@ import { EnterpriseOnly } from '../decorators/enterprise-only.decorator';
 
 @ApiTags('resellers')
 @Controller('resellers')
-@UseGuards(AuthGuard, RoleGuard)
-@EnterpriseOnly('resellers')
+// @UseGuards(AuthGuard, RoleGuard)
+// @EnterpriseOnly('resellers')
 export class ResellersController {
   constructor(private readonly resellersService: ResellersService) { }
 
   @Post()
-  @UseGuards(AuthGuard, RoleGuard)
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+  // @UseGuards(AuthGuard, RoleGuard)
+  // @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'create a new reseller' })
   create(@Body() createResellerDto: CreateResellerDto) {
     return this.resellersService.create(createResellerDto);

@@ -106,8 +106,6 @@ export class AuthService {
 					}
 				}
 
-				console.log(gainedXP);
-
 				await this.rewardsService.awardXP(gainedXP);
 
 				return {
@@ -140,8 +138,6 @@ export class AuthService {
 			};
 
 		} catch (error) {
-			console.log(error);
-
 			const response = {
 				message: error?.message,
 				accessToken: null,

@@ -1,44 +1,39 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { Request } from 'express';
 import { LicensingService } from '../licensing/licensing.service';
+import { BaseGuard } from './base.guard';
 
 @Injectable()
-export class AuthGuard implements CanActivate {
+export class AuthGuard extends BaseGuard implements CanActivate {
     constructor(
-        private jwtService: JwtService,
-        private licensingService: LicensingService
-    ) { }
+        jwtService: JwtService,
+        private readonly licensingService: LicensingService
+    ) {
+        super(jwtService);
+    }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const request = context.switchToHttp().getRequest();
-        const token = this.extractTokenFromHeader(request);
+        const decodedToken = this.extractAndValidateToken(request);
 
-        if (!token) {
-            throw new UnauthorizedException('No token provided');
-        }
-
-        try {
-            const payload = await this.jwtService.verifyAsync(token);
-
-            // Check license if user belongs to an organization
-            if (payload.organisationRef && payload.licenseId) {
-                const isLicenseValid = await this.licensingService.validateLicense(payload.licenseId);
+        // Check license if user belongs to an organization
+        if (decodedToken.organisationRef && decodedToken.licenseId) {
+            // Check if license validation is cached
+            if (!request['licenseValidated']) {
+                const isLicenseValid = await this.licensingService.validateLicense(decodedToken.licenseId);
                 if (!isLicenseValid) {
                     throw new UnauthorizedException('Your organization\'s license has expired');
                 }
+                // Cache the license validation result
+                request['licenseValidated'] = true;
             }
-
-            // Attach user and license info to request
-            request['user'] = payload;
-            return true;
-        } catch (error) {
-            throw new UnauthorizedException(error.message || 'Invalid token');
         }
-    }
 
-    private extractTokenFromHeader(request: Request): string | undefined {
-        const [type, token] = request.headers.authorization?.split(' ') ?? [];
-        return type === 'Bearer' ? token : undefined;
+        // Attach user info to request if not already attached
+        if (!request['user']) {
+            request['user'] = decodedToken;
+        }
+
+        return true;
     }
 }

@@ -10,7 +10,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Banners = void 0;
-const product_enums_1 = require("../../lib/enums/product.enums");
+const category_enum_1 = require("../../lib/enums/category.enum");
 const typeorm_1 = require("typeorm");
 let Banners = class Banners {
 };
@@ -51,7 +51,7 @@ __decorate([
     __metadata("design:type", Date)
 ], Banners.prototype, "updatedAt", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ nullable: false, type: 'enum', enum: product_enums_1.ProductStatus, default: product_enums_1.ProductStatus.NEW }),
+    (0, typeorm_1.Column)({ nullable: false, type: 'enum', enum: category_enum_1.BannerCategory, default: category_enum_1.BannerCategory.NEWS }),
     __metadata("design:type", String)
 ], Banners.prototype, "category", void 0);
 exports.Banners = Banners = __decorate([

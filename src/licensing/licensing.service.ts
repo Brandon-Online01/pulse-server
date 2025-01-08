@@ -329,7 +329,7 @@ export class LicensingService {
             const suspended = await this.update(ref, { status: LicenseStatus.SUSPENDED });
 
             // Send email notification
-            await this.eventEmitter.emit('send.email', EmailType.LICENSE_SUSPENDED, [suspended.organisation.email], {
+            this.eventEmitter.emit('send.email', EmailType.LICENSE_SUSPENDED, [suspended.organisation.email], {
                 name: suspended.organisation.name,
                 licenseKey: suspended.licenseKey,
                 organisationName: suspended.organisation.name,

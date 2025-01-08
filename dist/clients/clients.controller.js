@@ -22,7 +22,6 @@ const auth_guard_1 = require("../guards/auth.guard");
 const role_guard_1 = require("../guards/role.guard");
 const user_enums_1 = require("../lib/enums/user.enums");
 const role_decorator_1 = require("../decorators/role.decorator");
-const enterprise_only_decorator_1 = require("../decorators/enterprise-only.decorator");
 let ClientsController = class ClientsController {
     constructor(clientsService) {
         this.clientsService = clientsService;
@@ -49,7 +48,6 @@ let ClientsController = class ClientsController {
 exports.ClientsController = ClientsController;
 __decorate([
     (0, common_1.Post)(),
-    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'create a new client' }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -105,8 +103,6 @@ __decorate([
 exports.ClientsController = ClientsController = __decorate([
     (0, swagger_1.ApiTags)('clients'),
     (0, common_1.Controller)('clients'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
-    (0, enterprise_only_decorator_1.EnterpriseOnly)('clients'),
     __metadata("design:paramtypes", [clients_service_1.ClientsService])
 ], ClientsController);
 //# sourceMappingURL=clients.controller.js.map

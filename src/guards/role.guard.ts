@@ -1,15 +1,17 @@
-import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
-import { Token } from '../lib/types/token';
-import { AccessLevel } from '../lib/enums/user.enums'
+import { BaseGuard } from './base.guard';
+import { AccessLevel } from '../lib/enums/user.enums';
+import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
 
 @Injectable()
-export class RoleGuard implements CanActivate {
+export class RoleGuard extends BaseGuard implements CanActivate {
     constructor(
-        private reflector: Reflector,
-        private jwtService: JwtService,
-    ) { }
+        private readonly reflector: Reflector,
+        jwtService: JwtService,
+    ) {
+        super(jwtService);
+    }
 
     canActivate(context: ExecutionContext): boolean {
         const isPublic = this.reflector.getAllAndOverride<boolean>(
@@ -22,43 +24,27 @@ export class RoleGuard implements CanActivate {
         }
 
         const request = context.switchToHttp().getRequest();
-        const token = this.extractTokenFromHeader(request);
+        const decodedToken = this.extractAndValidateToken(request);
 
-        if (!token) {
-            throw new UnauthorizedException('you are not authorized to access this resource');
+        const { role } = decodedToken;
+        if (!role) {
+            throw new UnauthorizedException('access denied: no role found');
         }
 
-        try {
-            const decodedToken = this.jwtService.decode(token) as Token;
+        const requiredRoles = this.reflector.getAllAndOverride<AccessLevel[]>('roles', [
+            context.getHandler(),
+            context.getClass(),
+        ]);
 
-            if (!decodedToken) {
-                throw new UnauthorizedException('invalid token format');
-            }
-
-            const { role } = decodedToken;
-
-            if (!role) {
-                throw new UnauthorizedException('access denied');
-            }
-
-            const requiredRoles = this.reflector.getAllAndOverride<AccessLevel[]>('roles', [
-                context.getHandler(),
-                context.getClass(),
-            ]);
-
-            const hasRequiredRole = requiredRoles.includes(role);
-
-            if (!hasRequiredRole) {
-                throw new UnauthorizedException('access denied');
-            }
-
-            return true;
-        } catch (error) {
-            throw new UnauthorizedException('you are not authorized to access this resource');
+        if (!requiredRoles) {
+            return true; // No specific roles required
         }
-    }
 
-    private extractTokenFromHeader(request: Request): string | undefined {
-        return request.headers['token'] as string;
+        const hasRequiredRole = requiredRoles.includes(role as AccessLevel);
+        if (!hasRequiredRole) {
+            throw new UnauthorizedException('access denied: insufficient privileges');
+        }
+
+        return true;
     }
 }

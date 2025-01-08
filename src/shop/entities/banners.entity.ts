@@ -1,4 +1,4 @@
-import { ProductStatus } from "../../lib/enums/product.enums";
+import { BannerCategory } from "src/lib/enums/category.enum";
 import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
 
 @Entity('banners')
@@ -31,6 +31,6 @@ export class Banners {
     })
     updatedAt: Date;
 
-    @Column({ nullable: false, type: 'enum', enum: ProductStatus, default: ProductStatus.NEW })
-    category: ProductStatus;
+    @Column({ nullable: false, type: 'enum', enum: BannerCategory, default: BannerCategory.NEWS })
+    category: BannerCategory;
 } 

@@ -11,13 +11,13 @@ import { EnterpriseOnly } from '../decorators/enterprise-only.decorator';
 
 @ApiTags('clients')
 @Controller('clients')
-@UseGuards(AuthGuard, RoleGuard)
-@EnterpriseOnly('clients')
+// @UseGuards(AuthGuard, RoleGuard)
+// @EnterpriseOnly('clients')
 export class ClientsController {
   constructor(private readonly clientsService: ClientsService) { }
 
   @Post()
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+  // @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'create a new client' })
   create(@Body() createClientDto: CreateClientDto) {
     return this.clientsService.create(createClientDto);

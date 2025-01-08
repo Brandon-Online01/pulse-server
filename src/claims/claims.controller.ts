@@ -12,7 +12,7 @@ import { EnterpriseOnly } from '../decorators/enterprise-only.decorator';
 @ApiTags('claims')
 @Controller('claims')
 @UseGuards(AuthGuard, RoleGuard)
-@EnterpriseOnly('claims')
+// @EnterpriseOnly('claims')
 export class ClaimsController {
   constructor(private readonly claimsService: ClaimsService) { }
 

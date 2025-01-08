@@ -94,7 +94,6 @@ let AuthService = class AuthService {
                         details: 'Daily login reward'
                     }
                 };
-                console.log(gainedXP);
                 await this.rewardsService.awardXP(gainedXP);
                 return {
                     profileData,
@@ -121,7 +120,6 @@ let AuthService = class AuthService {
             };
         }
         catch (error) {
-            console.log(error);
             const response = {
                 message: error?.message,
                 accessToken: null,

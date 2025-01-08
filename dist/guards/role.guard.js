@@ -10,13 +10,14 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RoleGuard = void 0;
-const common_1 = require("@nestjs/common");
 const core_1 = require("@nestjs/core");
 const jwt_1 = require("@nestjs/jwt");
-let RoleGuard = class RoleGuard {
+const base_guard_1 = require("./base.guard");
+const common_1 = require("@nestjs/common");
+let RoleGuard = class RoleGuard extends base_guard_1.BaseGuard {
     constructor(reflector, jwtService) {
+        super(jwtService);
         this.reflector = reflector;
-        this.jwtService = jwtService;
     }
     canActivate(context) {
         const isPublic = this.reflector.getAllAndOverride('isPublic', [context.getHandler(), context.getClass()]);
@@ -24,35 +25,23 @@ let RoleGuard = class RoleGuard {
             return true;
         }
         const request = context.switchToHttp().getRequest();
-        const token = this.extractTokenFromHeader(request);
-        if (!token) {
-            throw new common_1.UnauthorizedException('you are not authorized to access this resource');
+        const decodedToken = this.extractAndValidateToken(request);
+        const { role } = decodedToken;
+        if (!role) {
+            throw new common_1.UnauthorizedException('access denied: no role found');
         }
-        try {
-            const decodedToken = this.jwtService.decode(token);
-            if (!decodedToken) {
-                throw new common_1.UnauthorizedException('invalid token format');
-            }
-            const { role } = decodedToken;
-            if (!role) {
-                throw new common_1.UnauthorizedException('access denied');
-            }
-            const requiredRoles = this.reflector.getAllAndOverride('roles', [
-                context.getHandler(),
-                context.getClass(),
-            ]);
-            const hasRequiredRole = requiredRoles.includes(role);
-            if (!hasRequiredRole) {
-                throw new common_1.UnauthorizedException('access denied');
-            }
+        const requiredRoles = this.reflector.getAllAndOverride('roles', [
+            context.getHandler(),
+            context.getClass(),
+        ]);
+        if (!requiredRoles) {
             return true;
         }
-        catch (error) {
-            throw new common_1.UnauthorizedException('you are not authorized to access this resource');
+        const hasRequiredRole = requiredRoles.includes(role);
+        if (!hasRequiredRole) {
+            throw new common_1.UnauthorizedException('access denied: insufficient privileges');
         }
-    }
-    extractTokenFromHeader(request) {
-        return request.headers['token'];
+        return true;
     }
 };
 exports.RoleGuard = RoleGuard;

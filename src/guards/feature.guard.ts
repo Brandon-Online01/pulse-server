@@ -32,7 +32,7 @@ export class FeatureGuard implements CanActivate {
         }
 
         // Check if user has all required features
-        const hasAccess = requiredFeatures.every(feature => planFeatures[feature] === true);
+        const hasAccess = requiredFeatures?.every(feature => planFeatures[feature] === true);
 
         if (!hasAccess) {
             throw new ForbiddenException('Your current plan does not include access to this feature');

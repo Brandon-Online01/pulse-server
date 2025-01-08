@@ -22,7 +22,6 @@ const role_decorator_1 = require("../decorators/role.decorator");
 const user_enums_1 = require("../lib/enums/user.enums");
 const role_guard_1 = require("../guards/role.guard");
 const auth_guard_1 = require("../guards/auth.guard");
-const enterprise_only_decorator_1 = require("../decorators/enterprise-only.decorator");
 let ClaimsController = class ClaimsController {
     constructor(claimsService) {
         this.claimsService = claimsService;
@@ -124,7 +123,6 @@ exports.ClaimsController = ClaimsController = __decorate([
     (0, swagger_1.ApiTags)('claims'),
     (0, common_1.Controller)('claims'),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
-    (0, enterprise_only_decorator_1.EnterpriseOnly)('claims'),
     __metadata("design:paramtypes", [claims_service_1.ClaimsService])
 ], ClaimsController);
 //# sourceMappingURL=claims.controller.js.map

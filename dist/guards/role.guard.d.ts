@@ -1,10 +1,9 @@
-import { CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
-export declare class RoleGuard implements CanActivate {
-    private reflector;
-    private jwtService;
+import { BaseGuard } from './base.guard';
+import { CanActivate, ExecutionContext } from '@nestjs/common';
+export declare class RoleGuard extends BaseGuard implements CanActivate {
+    private readonly reflector;
     constructor(reflector: Reflector, jwtService: JwtService);
     canActivate(context: ExecutionContext): boolean;
-    private extractTokenFromHeader;
 }
