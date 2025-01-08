@@ -18,7 +18,7 @@ export class Product {
     @Column({ type: 'decimal', precision: 10, scale: 2 })
     price: number;
 
-    @Column()
+    @Column({ type: 'varchar', nullable: true })
     category: string;
 
     @Column({ type: 'enum', enum: ProductStatus, default: ProductStatus.NEW })

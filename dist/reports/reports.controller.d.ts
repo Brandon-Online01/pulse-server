@@ -52,8 +52,8 @@ export declare class ReportsController {
         message: any;
         statusCode: any;
     }>;
-    userDailyReport(reference?: string): Promise<{
+    userDailyReport(reference?: string): Promise<import("./entities/report.entity").Report | {
         message: any;
         statusCode: any;
-    } | import("./entities/report.entity").Report>;
+    }>;
 }
