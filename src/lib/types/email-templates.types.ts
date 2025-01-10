@@ -74,6 +74,7 @@ export interface DailyReportData {
             totalHours: number;
             duration: string;
             status: string;
+            afterHours?: number;
             checkInLocation?: {
                 latitude: number;
                 longitude: number;
@@ -87,6 +88,11 @@ export interface DailyReportData {
             verifiedAt?: string;
             verifiedBy?: string;
         };
+        checkIns?: Array<{
+            time: string;
+            location: string;
+            photo?: boolean;
+        }>;
         totalOrders: number;
         totalRevenue: string;
         newCustomers: number;
