@@ -33,8 +33,9 @@ const user_enums_1 = require("../lib/enums/user.enums");
 const email_enums_1 = require("../lib/enums/email.enums");
 const config_1 = require("@nestjs/config");
 const rewards_service_1 = require("../rewards/rewards.service");
+const tracking_service_1 = require("../tracking/tracking.service");
 let ReportsService = class ReportsService {
-    constructor(reportRepository, leadService, journalService, claimsService, tasksService, shopService, attendanceService, newsService, userService, eventEmitter, configService, rewardsService) {
+    constructor(reportRepository, leadService, journalService, claimsService, tasksService, shopService, attendanceService, newsService, userService, trackingService, eventEmitter, configService, rewardsService) {
         this.reportRepository = reportRepository;
         this.leadService = leadService;
         this.journalService = journalService;
@@ -44,6 +45,7 @@ let ReportsService = class ReportsService {
         this.attendanceService = attendanceService;
         this.newsService = newsService;
         this.userService = userService;
+        this.trackingService = trackingService;
         this.eventEmitter = eventEmitter;
         this.configService = configService;
         this.rewardsService = rewardsService;
@@ -147,9 +149,10 @@ let ReportsService = class ReportsService {
                 this.attendanceService.getAttendanceForDate(date),
                 this.newsService.findAll(),
                 this.rewardsService.getUserRewards(Number(reference)),
-                reference ? this.userService.findOne(Number(reference)) : null
+                reference ? this.userService.findOne(Number(reference)) : null,
+                this.trackingService.getDailyTracking(Number(reference), date)
             ]);
-            const [{ leads: leadsStats }, { journals: journalsStats }, { claims: claimsStats }, { stats: ordersStats }, { total: tasksTotal }, { totalHours: attendanceHours, activeShifts, attendanceRecords }, { data: newsItems }, { rewards: userRewards }, userData] = allData;
+            const [{ leads: leadsStats }, { journals: journalsStats }, { claims: claimsStats }, { stats: ordersStats }, { total: tasksTotal }, { totalHours: attendanceHours, activeShifts, attendanceRecords }, { data: newsItems }, { rewards: userRewards }, userData, { data: trackingData }] = allData;
             const report = this.reportRepository.create({
                 title: 'Daily Report',
                 description: `Daily report for the date ${new Date()}`,
@@ -162,7 +165,11 @@ let ReportsService = class ReportsService {
                     attendance: { totalHours: attendanceHours, activeShifts, attendanceRecords },
                     orders: ordersStats?.orders,
                     news: newsItems,
-                    rewards: userRewards
+                    rewards: userRewards,
+                    tracking: trackingData ? {
+                        totalDistance: trackingData.totalDistance,
+                        locationAnalysis: trackingData.locationAnalysis
+                    } : null
                 },
                 owner: userData?.user,
                 branch: userData?.user?.branch
@@ -224,6 +231,14 @@ let ReportsService = class ReportsService {
                             hoursWorked: attendanceHours,
                         },
                     },
+                    tracking: trackingData ? {
+                        totalDistance: trackingData?.totalDistance,
+                        locations: Object.entries(trackingData.locationAnalysis.timeSpentByLocation).map(([address, minutes]) => ({
+                            address,
+                            timeSpent: `${Math.round(Number(minutes))} minutes`
+                        })),
+                        averageTimePerLocation: `${Math.round(trackingData.locationAnalysis.averageTimePerLocation)} minutes`
+                    } : undefined
                 };
                 this.eventEmitter.emit('send.email', email_enums_1.EmailType.DAILY_REPORT, [userData.user.email], emailData);
             }
@@ -253,6 +268,7 @@ exports.ReportsService = ReportsService = __decorate([
         attendance_service_1.AttendanceService,
         news_service_1.NewsService,
         user_service_1.UserService,
+        tracking_service_1.TrackingService,
         event_emitter_2.EventEmitter2,
         config_1.ConfigService,
         rewards_service_1.RewardsService])

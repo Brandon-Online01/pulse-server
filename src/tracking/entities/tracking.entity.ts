@@ -1,50 +1,32 @@
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
-import { Branch } from '../../branch/entities/branch.entity';
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn, Point, DeleteDateColumn, ManyToOne } from 'typeorm';
 
-@Entity('tracking')
+@Entity()
 export class Tracking {
     @PrimaryGeneratedColumn()
     uid: number;
 
-    @Column('decimal', { precision: 10, scale: 2, nullable: true })
-    latitude?: number;
+    @Column({ type: 'float', nullable: false })
+    latitude: number;
 
-    @Column('decimal', { precision: 10, scale: 2, nullable: true })
-    longitude?: number;
+    @Column({ type: 'float', nullable: false })
+    longitude: number;
 
-    @Column('decimal', { precision: 5, scale: 2, nullable: true })
-    speed?: number;
+    @Column({ type: 'text', nullable: true })
+    address: string;
 
-    @Column('decimal', { precision: 5, scale: 2, nullable: true })
-    heading?: number;
+    @Column({ type: 'text', nullable: true })
+    notes: string;
 
-    @Column('decimal', { precision: 10, scale: 2, nullable: true })
-    altitude?: number;
+    @Column({ type: 'float', nullable: true })
+    distance: number;
 
-    @Column('decimal', { precision: 5, scale: 2, nullable: true })
-    accuracy?: number;
+    @Column({ type: 'float', nullable: true })
+    duration: number;
 
-    @Column({ nullable: true })
-    deviceId?: string;
-
-    @Column({ nullable: true })
-    deviceName?: string;
-
-    @Column({ nullable: true })
-    macAddress?: string;
-
-    @Column('decimal', { precision: 5, scale: 2, nullable: true })
-    batteryLevel?: number;
-
-    @Column({ nullable: true })
-    signalStrength?: number;
-
-    @Column({ default: true })
-    isActive: boolean;
-
-    @Column({ nullable: true })
-    status?: string;
+    @ManyToOne(() => User, { eager: true })
+    @JoinColumn({ name: 'owner_id' })
+    owner: User;
 
     @CreateDateColumn()
     createdAt: Date;
@@ -52,18 +34,9 @@ export class Tracking {
     @UpdateDateColumn()
     updatedAt: Date;
 
-    @Column('json', { nullable: true })
-    metadata?: Record<string, any>;
-
     @DeleteDateColumn()
     deletedAt: Date;
 
     @Column({ nullable: true })
-    deletedBy?: string;
-
-    @ManyToOne(() => Branch, (branch) => branch?.trackings)
-    branch: Branch;
-
-    @ManyToOne(() => User, (user) => user?.trackings)
-    owner: User;
+    deletedBy: string;
 }

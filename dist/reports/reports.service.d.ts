@@ -11,6 +11,7 @@ import { Report } from './entities/report.entity';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ConfigService } from '@nestjs/config';
 import { RewardsService } from 'src/rewards/rewards.service';
+import { TrackingService } from '../tracking/tracking.service';
 export declare class ReportsService {
     private readonly reportRepository;
     private readonly leadService;
@@ -21,20 +22,18 @@ export declare class ReportsService {
     private readonly attendanceService;
     private readonly newsService;
     private readonly userService;
+    private readonly trackingService;
     private readonly eventEmitter;
     private readonly configService;
     private readonly rewardsService;
     private readonly currencyLocale;
     private readonly currencyCode;
     private readonly currencySymbol;
-    constructor(reportRepository: Repository<Report>, leadService: LeadsService, journalService: JournalService, claimsService: ClaimsService, tasksService: TasksService, shopService: ShopService, attendanceService: AttendanceService, newsService: NewsService, userService: UserService, eventEmitter: EventEmitter2, configService: ConfigService, rewardsService: RewardsService);
+    constructor(reportRepository: Repository<Report>, leadService: LeadsService, journalService: JournalService, claimsService: ClaimsService, tasksService: TasksService, shopService: ShopService, attendanceService: AttendanceService, newsService: NewsService, userService: UserService, trackingService: TrackingService, eventEmitter: EventEmitter2, configService: ConfigService, rewardsService: RewardsService);
     private formatCurrency;
     private calculateGrowth;
     private handleError;
     managerDailyReport(): Promise<{
-        message: any;
-        statusCode: any;
-    } | {
         leads: {
             pending: number;
             approved: number;
@@ -80,9 +79,12 @@ export declare class ReportsService {
                 averageOrderValue: string | number;
             };
         };
-    }>;
-    userDailyReport(reference?: string): Promise<Report | {
+    } | {
         message: any;
         statusCode: any;
     }>;
+    userDailyReport(reference?: string): Promise<{
+        message: any;
+        statusCode: any;
+    } | Report>;
 }

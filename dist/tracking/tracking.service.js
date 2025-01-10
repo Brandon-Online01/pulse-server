@@ -17,27 +17,104 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const tracking_entity_1 = require("./entities/tracking.entity");
 const typeorm_2 = require("typeorm");
+const location_utils_1 = require("../lib/utils/location.utils");
+const date_fns_1 = require("date-fns");
+const axios_1 = require("axios");
 let TrackingService = class TrackingService {
     constructor(trackingRepository) {
         this.trackingRepository = trackingRepository;
+        this.geocodingApiKey = process.env.GOOGLE_MAPS_API_KEY;
     }
     async create(createTrackingDto) {
         try {
-            const tracking = this.trackingRepository.create(createTrackingDto);
+            const address = await this.getAddressFromCoordinates(createTrackingDto.latitude, createTrackingDto.longitude);
+            const tracking = this.trackingRepository.create({
+                ...createTrackingDto,
+                address,
+            });
             await this.trackingRepository.save(tracking);
-            const response = {
+            return {
                 message: process.env.SUCCESS_MESSAGE,
                 data: tracking
             };
-            return response;
         }
         catch (error) {
-            const response = {
+            return {
                 message: error.message,
                 tracking: null
             };
-            return response;
         }
+    }
+    async getAddressFromCoordinates(latitude, longitude) {
+        try {
+            const response = await axios_1.default.get(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${this.geocodingApiKey}`);
+            if (response.data.results && response.data.results.length > 0) {
+                return response.data.results[0].formatted_address;
+            }
+            return null;
+        }
+        catch (error) {
+            console.error('Geocoding error:', error);
+            return null;
+        }
+    }
+    async getDailyTracking(userId, date = new Date()) {
+        try {
+            const trackingPoints = await this.trackingRepository.find({
+                where: {
+                    owner: { uid: userId },
+                    createdAt: (0, typeorm_2.Between)((0, date_fns_1.startOfDay)(date), (0, date_fns_1.endOfDay)(date))
+                },
+                order: {
+                    createdAt: 'ASC'
+                }
+            });
+            if (!trackingPoints.length) {
+                return {
+                    message: 'No tracking data found for the specified date',
+                    data: null
+                };
+            }
+            const totalDistance = location_utils_1.LocationUtils.calculateTotalDistance(trackingPoints);
+            const formattedDistance = location_utils_1.LocationUtils.formatDistance(totalDistance);
+            const locationTimeSpent = this.calculateTimeSpentAtLocations(trackingPoints);
+            const averageTimePerLocation = this.calculateAverageTimePerLocation(locationTimeSpent);
+            return {
+                message: process.env.SUCCESS_MESSAGE,
+                data: {
+                    totalDistance: formattedDistance,
+                    trackingPoints,
+                    locationAnalysis: {
+                        timeSpentByLocation: locationTimeSpent,
+                        averageTimePerLocation: averageTimePerLocation
+                    }
+                }
+            };
+        }
+        catch (error) {
+            return {
+                message: error.message,
+                data: null
+            };
+        }
+    }
+    calculateTimeSpentAtLocations(trackingPoints) {
+        const locationMap = new Map();
+        for (let i = 0; i < trackingPoints.length - 1; i++) {
+            const currentPoint = trackingPoints[i];
+            const nextPoint = trackingPoints[i + 1];
+            const timeSpent = (new Date(nextPoint.createdAt).getTime() - new Date(currentPoint.createdAt).getTime()) / 1000 / 60;
+            if (currentPoint.address) {
+                locationMap.set(currentPoint.address, (locationMap.get(currentPoint.address) || 0) + timeSpent);
+            }
+        }
+        return Object.fromEntries(locationMap);
+    }
+    calculateAverageTimePerLocation(locationTimeSpent) {
+        const locations = Object.values(locationTimeSpent);
+        if (!locations.length)
+            return 0;
+        return locations.reduce((sum, time) => sum + time, 0) / locations.length;
     }
     async findAll() {
         try {

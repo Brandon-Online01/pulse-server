@@ -59,20 +59,21 @@ export interface OrderDeliveryData extends BaseEmailData {
     deliveryInstructions?: string;
 }
 
-export interface DailyReportData extends BaseEmailData {
+export interface DailyReportData {
+    name: string;
     date: Date;
     metrics: {
-        xp?: {
+        xp: {
             level: number;
             currentXP: number;
             todayXP: number;
         };
         attendance?: {
             startTime: string;
-            endTime?: string;
+            endTime: string;
             totalHours: number;
-            afterHours?: number;
-            duration?: string;
+            duration: string;
+            status: string;
             checkInLocation?: {
                 latitude: number;
                 longitude: number;
@@ -83,15 +84,9 @@ export interface DailyReportData extends BaseEmailData {
                 longitude: number;
                 notes?: string;
             };
-            status: string;
             verifiedAt?: string;
             verifiedBy?: string;
         };
-        checkIns?: Array<{
-            time: string;
-            location: string;
-            photo?: boolean;
-        }>;
         totalOrders: number;
         totalRevenue: string;
         newCustomers: number;
@@ -105,6 +100,14 @@ export interface DailyReportData extends BaseEmailData {
             todayOrders: number;
             hoursWorked: number;
         };
+    };
+    tracking?: {
+        totalDistance: string;
+        locations: Array<{
+            address: string;
+            timeSpent: string;
+        }>;
+        averageTimePerLocation: string;
     };
 }
 

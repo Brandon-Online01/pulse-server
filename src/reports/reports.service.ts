@@ -19,6 +19,7 @@ import { EmailType } from '../lib/enums/email.enums';
 import { ConfigService } from '@nestjs/config';
 import { RewardsService } from 'src/rewards/rewards.service';
 import { DailyReportData } from '../lib/types/email-templates.types';
+import { TrackingService } from '../tracking/tracking.service';
 
 @Injectable()
 export class ReportsService {
@@ -37,6 +38,7 @@ export class ReportsService {
 		private readonly attendanceService: AttendanceService,
 		private readonly newsService: NewsService,
 		private readonly userService: UserService,
+		private readonly trackingService: TrackingService,
 		private readonly eventEmitter: EventEmitter2,
 		private readonly configService: ConfigService,
 		private readonly rewardsService: RewardsService,
@@ -156,7 +158,8 @@ export class ReportsService {
 				this.attendanceService.getAttendanceForDate(date),
 				this.newsService.findAll(),
 				this.rewardsService.getUserRewards(Number(reference)),
-				reference ? this.userService.findOne(Number(reference)) : null
+				reference ? this.userService.findOne(Number(reference)) : null,
+				this.trackingService.getDailyTracking(Number(reference), date)
 			]);
 
 			const [
@@ -168,10 +171,11 @@ export class ReportsService {
 				{ totalHours: attendanceHours, activeShifts, attendanceRecords },
 				{ data: newsItems },
 				{ rewards: userRewards },
-				userData
+				userData,
+				{ data: trackingData }
 			] = allData;
 
-			// Create report record
+			// Create report record with tracking data
 			const report = this.reportRepository.create({
 				title: 'Daily Report',
 				description: `Daily report for the date ${new Date()}`,
@@ -184,7 +188,11 @@ export class ReportsService {
 					attendance: { totalHours: attendanceHours, activeShifts, attendanceRecords },
 					orders: ordersStats?.orders,
 					news: newsItems,
-					rewards: userRewards
+					rewards: userRewards,
+					tracking: trackingData ? {
+						totalDistance: trackingData.totalDistance,
+						locationAnalysis: trackingData.locationAnalysis
+					} : null
 				},
 				owner: userData?.user,
 				branch: userData?.user?.branch
@@ -260,6 +268,14 @@ export class ReportsService {
 							hoursWorked: attendanceHours,
 						},
 					},
+					tracking: trackingData ? {
+						totalDistance: trackingData?.totalDistance,
+						locations: Object.entries(trackingData.locationAnalysis.timeSpentByLocation).map(([address, minutes]) => ({
+							address,
+							timeSpent: `${Math.round(Number(minutes))} minutes`
+						})),
+						averageTimePerLocation: `${Math.round(trackingData.locationAnalysis.averageTimePerLocation)} minutes`
+					} : undefined
 				};
 
 				// Send email only to the user

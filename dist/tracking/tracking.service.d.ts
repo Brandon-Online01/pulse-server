@@ -4,14 +4,36 @@ import { Tracking } from './entities/tracking.entity';
 import { Repository } from 'typeorm';
 export declare class TrackingService {
     private trackingRepository;
+    private readonly geocodingApiKey;
     constructor(trackingRepository: Repository<Tracking>);
     create(createTrackingDto: CreateTrackingDto): Promise<{
         message: string;
         data: Tracking;
+        tracking?: undefined;
     } | {
         message: any;
         tracking: any;
+        data?: undefined;
     }>;
+    private getAddressFromCoordinates;
+    getDailyTracking(userId: number, date?: Date): Promise<{
+        message: string;
+        data: {
+            totalDistance: string;
+            trackingPoints: Tracking[];
+            locationAnalysis: {
+                timeSpentByLocation: {
+                    [k: string]: number;
+                };
+                averageTimePerLocation: number;
+            };
+        };
+    } | {
+        message: any;
+        data: any;
+    }>;
+    private calculateTimeSpentAtLocations;
+    private calculateAverageTimePerLocation;
     findAll(): Promise<{
         tracking: Tracking[] | null;
         message: string;
