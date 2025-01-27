@@ -9,7 +9,7 @@ import { Journal } from '../../journal/entities/journal.entity';
 import { News } from '../../news/entities/news.entity';
 import { Task } from '../../tasks/entities/task.entity';
 import { Client } from '../../clients/entities/client.entity';
-import { Order } from '../../shop/entities/order.entity';
+import { Quotation } from '../../shop/entities/quotation.entity';
 import { CheckIn } from '../../check-ins/entities/check-in.entity';
 import { Tracking } from '../../tracking/entities/tracking.entity';
 import { Asset } from '../../assets/entities/asset.entity';
@@ -50,7 +50,7 @@ export declare class User {
     articles: News[];
     assets: Asset[];
     trackings: Tracking[];
-    orders: Order[];
+    quotations: Quotation[];
     notifications: Notification[];
     branch: Branch;
     clients: Client[];

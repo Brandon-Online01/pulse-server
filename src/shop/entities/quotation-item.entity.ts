@@ -1,9 +1,9 @@
 import { Product } from "../../products/entities/product.entity";
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from "typeorm";
-import { Order } from "./order.entity";
+import { Quotation } from "./quotation.entity";
 
-@Entity('order_item')
-export class OrderItem {
+@Entity('quotation_item')
+export class QuotationItem {
     @PrimaryGeneratedColumn()
     uid: number;
 
@@ -13,11 +13,11 @@ export class OrderItem {
     @Column({ nullable: false, type: 'float' })
     totalPrice: number;
 
-    @ManyToOne(() => Product, product => product?.orderItems)
+    @ManyToOne(() => Product, product => product?.quotationItems)
     product: Product;
 
-    @ManyToOne(() => Order, order => order?.orderItems)
-    order: Order;
+    @ManyToOne(() => Quotation, quotation => quotation?.quotationItems)
+    quotation: Quotation;
 
     @Column({
         nullable: false,

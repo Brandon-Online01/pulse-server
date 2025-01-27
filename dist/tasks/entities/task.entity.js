@@ -10,13 +10,12 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Task = void 0;
+const subtask_entity_1 = require("./subtask.entity");
 const user_entity_1 = require("../../user/entities/user.entity");
 const branch_entity_1 = require("../../branch/entities/branch.entity");
-const typeorm_1 = require("typeorm");
 const client_entity_1 = require("../../clients/entities/client.entity");
 const task_enums_1 = require("../../lib/enums/task.enums");
-const status_enums_1 = require("../../lib/enums/status.enums");
-const subtask_entity_1 = require("./subtask.entity");
+const typeorm_1 = require("typeorm");
 let Task = class Task {
 };
 exports.Task = Task;
@@ -25,69 +24,65 @@ __decorate([
     __metadata("design:type", Number)
 ], Task.prototype, "uid", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ nullable: false }),
+    (0, typeorm_1.Column)({ type: 'varchar', length: 255 }),
     __metadata("design:type", String)
-], Task.prototype, "comment", void 0);
+], Task.prototype, "title", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ nullable: true, type: 'varchar', length: 5000 }),
-    __metadata("design:type", String)
-], Task.prototype, "notes", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ nullable: false, default: () => 'CURRENT_TIMESTAMP' }),
-    __metadata("design:type", Date)
-], Task.prototype, "createdAt", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ nullable: false, default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' }),
-    __metadata("design:type", Date)
-], Task.prototype, "updatedAt", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ nullable: false, default: status_enums_1.GeneralStatus.ACTIVE }),
-    __metadata("design:type", String)
-], Task.prototype, "status", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ nullable: false, default: task_enums_1.TaskType.OTHER }),
-    __metadata("design:type", String)
-], Task.prototype, "taskType", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
-    __metadata("design:type", Date)
-], Task.prototype, "deadline", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ nullable: false, default: false }),
-    __metadata("design:type", Boolean)
-], Task.prototype, "isDeleted", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ nullable: false, type: 'text' }),
+    (0, typeorm_1.Column)({ type: 'text' }),
     __metadata("design:type", String)
 ], Task.prototype, "description", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ nullable: false, default: task_enums_1.Priority.MEDIUM }),
+    (0, typeorm_1.Column)({ type: 'enum', enum: task_enums_1.TaskStatus, default: task_enums_1.TaskStatus.PENDING }),
+    __metadata("design:type", String)
+], Task.prototype, "status", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'enum', enum: task_enums_1.TaskType, default: task_enums_1.TaskType.OTHER }),
+    __metadata("design:type", String)
+], Task.prototype, "taskType", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'enum', enum: task_enums_1.TaskPriority, default: task_enums_1.TaskPriority.MEDIUM }),
     __metadata("design:type", String)
 ], Task.prototype, "priority", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ nullable: false, default: 0 }),
+    (0, typeorm_1.Column)({ type: 'int', default: 0 }),
     __metadata("design:type", Number)
 ], Task.prototype, "progress", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
+    (0, typeorm_1.Column)({ type: 'datetime', nullable: true }),
+    __metadata("design:type", Date)
+], Task.prototype, "deadline", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'enum', enum: task_enums_1.RepetitionType, default: task_enums_1.RepetitionType.NONE }),
     __metadata("design:type", String)
 ], Task.prototype, "repetitionType", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
+    (0, typeorm_1.Column)({ type: 'datetime', nullable: true }),
     __metadata("design:type", Date)
 ], Task.prototype, "repetitionEndDate", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
+    (0, typeorm_1.Column)({ type: 'datetime', nullable: true }),
     __metadata("design:type", Date)
 ], Task.prototype, "lastCompletedAt", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ nullable: true, type: 'varchar', length: 5000 }),
-    __metadata("design:type", String)
+    (0, typeorm_1.Column)({ type: 'json', nullable: true }),
+    __metadata("design:type", Array)
 ], Task.prototype, "attachments", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => user_entity_1.User, (user) => user?.tasks),
+    (0, typeorm_1.Column)({ type: 'boolean', default: false }),
+    __metadata("design:type", Boolean)
+], Task.prototype, "isDeleted", void 0);
+__decorate([
+    (0, typeorm_1.CreateDateColumn)(),
+    __metadata("design:type", Date)
+], Task.prototype, "createdAt", void 0);
+__decorate([
+    (0, typeorm_1.UpdateDateColumn)(),
+    __metadata("design:type", Date)
+], Task.prototype, "updatedAt", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => user_entity_1.User, { onDelete: 'SET NULL' }),
     __metadata("design:type", user_entity_1.User)
-], Task.prototype, "owner", void 0);
+], Task.prototype, "createdBy", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => branch_entity_1.Branch, (branch) => branch?.tasks),
     __metadata("design:type", branch_entity_1.Branch)
@@ -95,21 +90,26 @@ __decorate([
 __decorate([
     (0, typeorm_1.ManyToMany)(() => user_entity_1.User),
     (0, typeorm_1.JoinTable)({
-        name: 'task_assignees_user',
+        name: 'task_assignees',
         joinColumn: { name: 'taskUid', referencedColumnName: 'uid' },
         inverseJoinColumn: { name: 'userUid', referencedColumnName: 'uid' }
     }),
     __metadata("design:type", Array)
 ], Task.prototype, "assignees", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => client_entity_1.Client, (client) => client?.tasks),
-    __metadata("design:type", client_entity_1.Client)
-], Task.prototype, "client", void 0);
+    (0, typeorm_1.ManyToMany)(() => client_entity_1.Client),
+    (0, typeorm_1.JoinTable)({
+        name: 'task_clients',
+        joinColumn: { name: 'taskUid', referencedColumnName: 'uid' },
+        inverseJoinColumn: { name: 'clientUid', referencedColumnName: 'uid' }
+    }),
+    __metadata("design:type", Array)
+], Task.prototype, "clients", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => subtask_entity_1.SubTask, subtask => subtask?.task),
+    (0, typeorm_1.OneToMany)(() => subtask_entity_1.SubTask, subtask => subtask.task),
     __metadata("design:type", Array)
 ], Task.prototype, "subtasks", void 0);
 exports.Task = Task = __decorate([
-    (0, typeorm_1.Entity)('task')
+    (0, typeorm_1.Entity)('tasks')
 ], Task);
 //# sourceMappingURL=task.entity.js.map

@@ -36,7 +36,7 @@ import { Asset } from './assets/entities/asset.entity';
 import { Tracking } from './tracking/entities/tracking.entity';
 import { ShopModule } from './shop/shop.module';
 import { ResellersModule } from './resellers/resellers.module';
-import { Order } from './shop/entities/order.entity';
+import { Quotation } from './shop/entities/quotation.entity';
 import { NotificationsModule } from './notifications/notifications.module';
 import { Notification } from './notifications/entities/notification.entity';
 import { ClientsModule } from './clients/clients.module';
@@ -45,7 +45,7 @@ import { ProductsModule } from './products/products.module';
 import { Product } from './products/entities/product.entity';
 import { Reseller } from './resellers/entities/reseller.entity';
 import { ReportsModule } from './reports/reports.module';
-import { OrderItem } from './shop/entities/order-item.entity';
+import { QuotationItem } from './shop/entities/quotation-item.entity';
 import { Banners } from './shop/entities/banners.entity';
 import { SubTask } from './tasks/entities/subtask.entity';
 import { CommunicationLog } from './communication/entities/communication-log.entity';
@@ -104,8 +104,8 @@ import { LicenseUsageInterceptor } from './licensing/license-usage.interceptor';
         Client,
         Product,
         Reseller,
-        Order,
-        OrderItem,
+        Quotation,
+        QuotationItem,
         Banners,
         SubTask,
         CommunicationLog,

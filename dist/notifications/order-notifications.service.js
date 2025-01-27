@@ -80,7 +80,7 @@ let OrderNotificationsService = class OrderNotificationsService {
             fulfillmentPriority: this.getFulfillmentPriority(order),
             shippingInstructions: order.shippingInstructions,
             packagingRequirements: order.packagingRequirements,
-            items: order.orderItems.map(item => ({
+            items: order.quotationItems.map(item => ({
                 sku: item.product.sku,
                 quantity: item.quantity,
                 location: item.product.warehouseLocation

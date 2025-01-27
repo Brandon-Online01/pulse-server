@@ -1,12 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Between } from 'typeorm';
 import { NotificationType } from '../lib/enums/notification.enums';
-import { AccessLevel } from '../lib/enums/user.enums';
 import { NotificationStatus } from '../lib/enums/notification.enums';
 import { SubTaskStatus, TaskStatus } from '../lib/enums/status.enums';
 import { Task } from './entities/task.entity';
@@ -15,6 +13,7 @@ import { UpdateSubtaskDto } from './dto/update-subtask.dto';
 import { RewardsService } from '../rewards/rewards.service';
 import { XP_VALUES } from '../lib/constants/constants';
 import { XP_VALUES_TYPES } from '../lib/constants/constants';
+import { CreateTaskDto } from './dto/create-task.dto';
 
 @Injectable()
 export class TasksService {
@@ -29,11 +28,13 @@ export class TasksService {
 
 	async create(createTaskDto: CreateTaskDto): Promise<{ message: string }> {
 		try {
-			const assignees = createTaskDto?.assignees?.map(assignee => ({ uid: assignee?.uid }));
+			const assignees = createTaskDto?.assigneeIds?.map(assignee => ({ uid: assignee }));
+			const clients = createTaskDto?.clientIds?.map(clientId => ({ uid: clientId }));
 
 			const task = await this.taskRepository.save({
 				...createTaskDto,
-				assignees: assignees
+				assignees: assignees,
+				clients: clients
 			});
 
 			if (!task) {
@@ -41,7 +42,6 @@ export class TasksService {
 			}
 
 			if (createTaskDto?.subtasks && createTaskDto?.subtasks?.length > 0) {
-
 				const subtasks = createTaskDto?.subtasks?.map(subtask => ({
 					...subtask,
 					task: { uid: task?.uid }
@@ -50,16 +50,24 @@ export class TasksService {
 				await this.subtaskRepository.save(subtasks);
 			}
 
-			const notification = {
-				type: NotificationType.USER,
-				title: 'Task Created',
-				message: `A task has been created`,
-				status: NotificationStatus.UNREAD,
-				owner: task?.owner
-			}
+			// Send notification to assignees
+			if (assignees?.length > 0) {
+				const notification = {
+					type: NotificationType.USER,
+					title: 'New Task Assigned',
+					message: `You have been assigned to a new task: ${task?.title}`,
+					status: NotificationStatus.UNREAD,
+					owner: null
+				};
 
-			const recipients = [AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.OWNER, AccessLevel.SUPERVISOR, AccessLevel.USER]
-			this.eventEmitter.emit('send.notification', notification, recipients);
+				// Send to each assignee
+				assignees?.forEach(assignee => {
+					this.eventEmitter.emit('send.notification', {
+						...notification,
+						owner: assignee
+					}, [assignee.uid]);
+				});
+			}
 
 			return {
 				message: process.env.SUCCESS_MESSAGE,
@@ -76,10 +84,11 @@ export class TasksService {
 			const tasks = await this.taskRepository.find({
 				where: { isDeleted: false },
 				relations: [
-					'owner',
+					'createdBy',
 					'branch',
-					'client',
-					'subtasks'
+					'clients',
+					'subtasks',
+					'assignees'
 				]
 			});
 
@@ -104,10 +113,11 @@ export class TasksService {
 			const task = await this.taskRepository.findOne({
 				where: { uid: ref, isDeleted: false },
 				relations: [
-					'owner',
+					'createdBy',
 					'branch',
-					'client',
-					'subtasks'
+					'clients',
+					'subtasks',
+					'assignees'
 				]
 			});
 
@@ -133,12 +143,13 @@ export class TasksService {
 	public async tasksByUser(ref: number): Promise<{ message: string, tasks: Task[] }> {
 		try {
 			const tasks = await this.taskRepository.find({
-				where: { owner: { uid: ref }, isDeleted: false },
+				where: { createdBy: { uid: ref }, isDeleted: false },
 				relations: [
-					'owner',
+					'createdBy',
 					'branch',
-					'client',
-					'subtasks'
+					'clients',
+					'subtasks',
+					'assignees'
 				]
 			});
 
@@ -166,7 +177,7 @@ export class TasksService {
 		try {
 			const task = await this.taskRepository.findOne({
 				where: { uid: ref, isDeleted: false },
-				relations: ['assignees', 'subtasks']
+				relations: ['assignees', 'subtasks', 'createdBy']
 			});
 
 			if (!task) {
@@ -175,11 +186,9 @@ export class TasksService {
 
 			// Create an object with all possible updateable fields except assignees and subtasks
 			const updateData = {
-				comment: updateTaskDto.comment,
-				notes: updateTaskDto.notes,
+				title: updateTaskDto.title,
 				description: updateTaskDto.description,
 				status: updateTaskDto.status,
-				owner: updateTaskDto.owner,
 				taskType: updateTaskDto.taskType,
 				deadline: updateTaskDto.deadline,
 				branch: updateTaskDto.branch,
@@ -219,19 +228,34 @@ export class TasksService {
 				}
 			}
 
+			// Send notification to task creator and assignees
 			const notification = {
 				type: NotificationType.USER,
 				title: 'Task Updated',
-				message: `A task has been updated`,
+				message: `Task "${task.title}" has been updated`,
 				status: NotificationStatus.UNREAD,
-				owner: task.owner
-			}
+				owner: null
+			};
 
-			const recipients = [AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.OWNER, AccessLevel.SUPERVISOR, AccessLevel.USER]
-			this.eventEmitter.emit('send.notification', notification, recipients);
+			// Get all users who should receive the notification
+			const recipientIds = [
+				task.createdBy.uid,
+				...(task.assignees?.map(assignee => assignee.uid) || [])
+			];
+
+			// Remove duplicates
+			const uniqueRecipientIds = [...new Set(recipientIds)];
+
+			// Send to each recipient
+			uniqueRecipientIds.forEach(recipientId => {
+				this.eventEmitter.emit('send.notification', {
+					...notification,
+					owner: { uid: recipientId }
+				}, [recipientId]);
+			});
 
 			await this.rewardsService.awardXP({
-				owner: task.owner.uid,
+				owner: task.createdBy.uid,
 				amount: XP_VALUES.TASK,
 				action: XP_VALUES_TYPES.TASK,
 				source: {

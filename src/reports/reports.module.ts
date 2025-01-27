@@ -15,7 +15,6 @@ import { RewardsModule } from '../rewards/rewards.module';
 import { CheckInsModule } from '../check-ins/check-ins.module';
 import { LicensingModule } from '../licensing/licensing.module';
 import { TrackingModule } from 'src/tracking/tracking.module';
-import { BranchModule } from 'src/branch/branch.module';
 
 @Module({
   imports: [

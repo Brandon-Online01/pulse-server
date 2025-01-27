@@ -16,7 +16,7 @@ exports.ShopService = void 0;
 const typeorm_1 = require("typeorm");
 const common_1 = require("@nestjs/common");
 const typeorm_2 = require("@nestjs/typeorm");
-const order_entity_1 = require("./entities/order.entity");
+const quotation_entity_1 = require("./entities/quotation.entity");
 const banners_entity_1 = require("./entities/banners.entity");
 const product_enums_1 = require("../lib/enums/product.enums");
 const product_entity_1 = require("../products/entities/product.entity");
@@ -28,9 +28,9 @@ const clients_service_1 = require("../clients/clients.service");
 const email_enums_1 = require("../lib/enums/email.enums");
 const event_emitter_1 = require("@nestjs/event-emitter");
 let ShopService = class ShopService {
-    constructor(productRepository, orderRepository, bannersRepository, configService, clientsService, eventEmitter) {
+    constructor(productRepository, quotationRepository, bannersRepository, configService, clientsService, eventEmitter) {
         this.productRepository = productRepository;
-        this.orderRepository = orderRepository;
+        this.quotationRepository = quotationRepository;
         this.bannersRepository = bannersRepository;
         this.configService = configService;
         this.clientsService = clientsService;
@@ -154,7 +154,7 @@ let ShopService = class ShopService {
                     totalPrice: Number(item?.totalPrice),
                 }))
             };
-            await this.orderRepository.save(newOrder);
+            await this.quotationRepository.save(newOrder);
             const baseConfig = {
                 name: clientName,
                 orderId: newOrder?.orderNumber,
@@ -276,8 +276,8 @@ let ShopService = class ShopService {
     }
     async getAllOrders() {
         try {
-            const orders = await this.orderRepository.find({
-                relations: ['placedBy', 'client', 'orderItems']
+            const orders = await this.quotationRepository.find({
+                relations: ['placedBy', 'client', 'quotationItems']
             });
             if (!orders) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
@@ -298,13 +298,13 @@ let ShopService = class ShopService {
     }
     async getOrdersByUser(ref) {
         try {
-            const orders = await this.orderRepository.find({
+            const orders = await this.quotationRepository.find({
                 where: {
                     placedBy: {
                         uid: ref
                     }
                 },
-                relations: ['placedBy', 'client', 'orderItems']
+                relations: ['placedBy', 'client', 'quotationItems']
             });
             if (!orders) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
@@ -327,11 +327,11 @@ let ShopService = class ShopService {
     }
     async getOrderByRef(ref) {
         try {
-            const order = await this.orderRepository.findOne({
+            const order = await this.quotationRepository.findOne({
                 where: {
                     uid: ref
                 },
-                relations: ['placedBy', 'client', 'orderItems', 'orderItems.product']
+                relations: ['placedBy', 'client', 'quotationItems', 'quotationItems.product']
             });
             if (!order) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
@@ -354,11 +354,11 @@ let ShopService = class ShopService {
     }
     async getOrdersForDate(date) {
         try {
-            const orders = await this.orderRepository.find({
+            const orders = await this.quotationRepository.find({
                 where: {
                     orderDate: (0, typeorm_3.Between)((0, date_fns_1.startOfDay)(date), (0, date_fns_1.endOfDay)(date))
                 },
-                relations: ['orderItems']
+                relations: ['quotationItems']
             });
             if (!orders) {
                 throw new Error(process.env.NOT_FOUND_MESSAGE);
@@ -469,7 +469,7 @@ exports.ShopService = ShopService;
 exports.ShopService = ShopService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_2.InjectRepository)(product_entity_1.Product)),
-    __param(1, (0, typeorm_2.InjectRepository)(order_entity_1.Order)),
+    __param(1, (0, typeorm_2.InjectRepository)(quotation_entity_1.Quotation)),
     __param(2, (0, typeorm_2.InjectRepository)(banners_entity_1.Banners)),
     __metadata("design:paramtypes", [typeorm_1.Repository,
         typeorm_1.Repository,

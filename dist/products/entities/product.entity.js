@@ -13,7 +13,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Product = void 0;
 const typeorm_1 = require("typeorm");
 const product_enums_1 = require("../../lib/enums/product.enums");
-const order_item_entity_1 = require("../../shop/entities/order-item.entity");
+const quotation_item_entity_1 = require("../../shop/entities/quotation-item.entity");
 const reseller_entity_1 = require("../../resellers/entities/reseller.entity");
 const typeorm_2 = require("typeorm");
 let Product = Product_1 = class Product {
@@ -49,7 +49,7 @@ __decorate([
     __metadata("design:type", String)
 ], Product.prototype, "description", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'decimal', precision: 10, scale: 2 }),
+    (0, typeorm_1.Column)({ type: 'decimal', precision: 10, scale: 2, nullable: true }),
     __metadata("design:type", Number)
 ], Product.prototype, "price", void 0);
 __decorate([
@@ -89,9 +89,9 @@ __decorate([
     __metadata("design:type", Date)
 ], Product.prototype, "updatedAt", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => order_item_entity_1.OrderItem, orderItem => orderItem?.product),
+    (0, typeorm_1.OneToMany)(() => quotation_item_entity_1.QuotationItem, quotationItem => quotationItem?.product),
     __metadata("design:type", Array)
-], Product.prototype, "orderItems", void 0);
+], Product.prototype, "quotationItems", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => reseller_entity_1.Reseller, reseller => reseller?.products),
     __metadata("design:type", reseller_entity_1.Reseller)

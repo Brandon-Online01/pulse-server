@@ -21,7 +21,7 @@ const journal_entity_1 = require("../../journal/entities/journal.entity");
 const news_entity_1 = require("../../news/entities/news.entity");
 const task_entity_1 = require("../../tasks/entities/task.entity");
 const client_entity_1 = require("../../clients/entities/client.entity");
-const order_entity_1 = require("../../shop/entities/order.entity");
+const quotation_entity_1 = require("../../shop/entities/quotation.entity");
 const check_in_entity_1 = require("../../check-ins/entities/check-in.entity");
 const tracking_entity_1 = require("../../tracking/entities/tracking.entity");
 const asset_entity_1 = require("../../assets/entities/asset.entity");
@@ -72,7 +72,7 @@ __decorate([
     __metadata("design:type", String)
 ], User.prototype, "accessLevel", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ unique: true }),
+    (0, typeorm_1.Column)({ unique: true, nullable: true }),
     __metadata("design:type", String)
 ], User.prototype, "userref", void 0);
 __decorate([
@@ -141,7 +141,7 @@ __decorate([
     __metadata("design:type", Array)
 ], User.prototype, "journals", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => task_entity_1.Task, (task) => task?.owner),
+    (0, typeorm_1.OneToMany)(() => task_entity_1.Task, (task) => task?.createdBy),
     __metadata("design:type", Array)
 ], User.prototype, "tasks", void 0);
 __decorate([
@@ -157,9 +157,9 @@ __decorate([
     __metadata("design:type", Array)
 ], User.prototype, "trackings", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => order_entity_1.Order, (order) => order?.placedBy),
+    (0, typeorm_1.OneToMany)(() => quotation_entity_1.Quotation, (quotation) => quotation?.placedBy),
     __metadata("design:type", Array)
-], User.prototype, "orders", void 0);
+], User.prototype, "quotations", void 0);
 __decorate([
     (0, typeorm_1.OneToMany)(() => notification_entity_1.Notification, (notification) => notification?.owner),
     __metadata("design:type", Array)

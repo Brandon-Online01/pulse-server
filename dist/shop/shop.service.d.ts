@@ -1,6 +1,6 @@
 import { Repository } from 'typeorm';
 import { CheckoutDto } from './dto/checkout.dto';
-import { Order } from './entities/order.entity';
+import { Quotation } from './entities/quotation.entity';
 import { Banners } from './entities/banners.entity';
 import { CreateBannerDto } from './dto/create-banner.dto';
 import { UpdateBannerDto } from './dto/update-banner.dto';
@@ -11,7 +11,7 @@ import { CreateProductDto } from '../products/dto/create-product.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 export declare class ShopService {
     private productRepository;
-    private orderRepository;
+    private quotationRepository;
     private bannersRepository;
     private readonly configService;
     private readonly clientsService;
@@ -19,7 +19,7 @@ export declare class ShopService {
     private readonly currencyLocale;
     private readonly currencyCode;
     private readonly currencySymbol;
-    constructor(productRepository: Repository<Product>, orderRepository: Repository<Order>, bannersRepository: Repository<Banners>, configService: ConfigService, clientsService: ClientsService, eventEmitter: EventEmitter2);
+    constructor(productRepository: Repository<Product>, quotationRepository: Repository<Quotation>, bannersRepository: Repository<Banners>, configService: ConfigService, clientsService: ClientsService, eventEmitter: EventEmitter2);
     private formatCurrency;
     categories(): Promise<{
         categories: string[] | null;
@@ -61,30 +61,30 @@ export declare class ShopService {
         message: string;
     }>;
     getAllOrders(): Promise<{
-        orders: Order[];
+        orders: Quotation[];
         message: string;
     }>;
     getOrdersByUser(ref: number): Promise<{
-        orders: Order[];
+        orders: Quotation[];
         message: string;
     }>;
     getOrderByRef(ref: number): Promise<{
-        orders: Order;
+        orders: Quotation;
         message: string;
     }>;
     getOrdersForDate(date: Date): Promise<{
         message: string;
         stats: {
             orders: {
-                pending: Order[];
-                processing: Order[];
-                completed: Order[];
-                cancelled: Order[];
-                postponed: Order[];
-                outForDelivery: Order[];
-                delivered: Order[];
-                rejected: Order[];
-                approved: Order[];
+                pending: Quotation[];
+                processing: Quotation[];
+                completed: Quotation[];
+                cancelled: Quotation[];
+                postponed: Quotation[];
+                outForDelivery: Quotation[];
+                delivered: Quotation[];
+                rejected: Quotation[];
+                approved: Quotation[];
                 metrics: {
                     totalOrders: number;
                     grossOrderValue: string;

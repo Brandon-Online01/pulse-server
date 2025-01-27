@@ -134,7 +134,11 @@ let UserService = class UserService {
         try {
             const user = await this.userRepository.findOne({
                 where: [
-                    { username: searchParameter, isDeleted: false },
+                    {
+                        username: searchParameter,
+                        isDeleted: false,
+                        status: status_enums_1.AccountStatus.ACTIVE
+                    },
                 ],
                 relations: [
                     'branch',
@@ -241,7 +245,10 @@ let UserService = class UserService {
             if (!user) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
-            await this.userRepository.update({ userref: ref }, { isDeleted: true });
+            await this.userRepository.update({ userref: ref }, {
+                isDeleted: true,
+                status: status_enums_1.AccountStatus.INACTIVE
+            });
             return {
                 message: process.env.SUCCESS_MESSAGE,
             };

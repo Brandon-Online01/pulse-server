@@ -1,5 +1,5 @@
 import { ProductStatus } from '../../lib/enums/product.enums';
-import { OrderItem } from '../../shop/entities/order-item.entity';
+import { QuotationItem } from '../../shop/entities/quotation-item.entity';
 import { Reseller } from '../../resellers/entities/reseller.entity';
 export declare class Product {
     uid: number;
@@ -15,7 +15,7 @@ export declare class Product {
     reorderPoint: number;
     createdAt: Date;
     updatedAt: Date;
-    orderItems: OrderItem[];
+    quotationItems: QuotationItem[];
     reseller: Reseller;
     isDeleted: boolean;
     static generateSKU(category: string, name: string, uid: number, reseller: Reseller): string;

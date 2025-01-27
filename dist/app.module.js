@@ -45,7 +45,7 @@ const asset_entity_1 = require("./assets/entities/asset.entity");
 const tracking_entity_1 = require("./tracking/entities/tracking.entity");
 const shop_module_1 = require("./shop/shop.module");
 const resellers_module_1 = require("./resellers/resellers.module");
-const order_entity_1 = require("./shop/entities/order.entity");
+const quotation_entity_1 = require("./shop/entities/quotation.entity");
 const notifications_module_1 = require("./notifications/notifications.module");
 const notification_entity_1 = require("./notifications/entities/notification.entity");
 const clients_module_1 = require("./clients/clients.module");
@@ -54,7 +54,7 @@ const products_module_1 = require("./products/products.module");
 const product_entity_1 = require("./products/entities/product.entity");
 const reseller_entity_1 = require("./resellers/entities/reseller.entity");
 const reports_module_1 = require("./reports/reports.module");
-const order_item_entity_1 = require("./shop/entities/order-item.entity");
+const quotation_item_entity_1 = require("./shop/entities/quotation-item.entity");
 const banners_entity_1 = require("./shop/entities/banners.entity");
 const subtask_entity_1 = require("./tasks/entities/subtask.entity");
 const communication_log_entity_1 = require("./communication/entities/communication-log.entity");
@@ -116,8 +116,8 @@ exports.AppModule = AppModule = __decorate([
                     client_entity_1.Client,
                     product_entity_1.Product,
                     reseller_entity_1.Reseller,
-                    order_entity_1.Order,
-                    order_item_entity_1.OrderItem,
+                    quotation_entity_1.Quotation,
+                    quotation_item_entity_1.QuotationItem,
                     banners_entity_1.Banners,
                     subtask_entity_1.SubTask,
                     communication_log_entity_1.CommunicationLog,

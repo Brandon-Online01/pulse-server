@@ -1,7 +1,7 @@
 import { GeneralStatus } from '../../lib/enums/status.enums';
 import { Lead } from '../../leads/entities/lead.entity';
 import { User } from '../../user/entities/user.entity';
-import { Order } from '../../shop/entities/order.entity';
+import { Quotation } from '../../shop/entities/quotation.entity';
 import { Task } from '../../tasks/entities/task.entity';
 import { Column, Entity, OneToMany, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { CheckIn } from '../../check-ins/entities/check-in.entity';
@@ -23,6 +23,9 @@ export class Client {
 
     @Column({ nullable: false })
     contactPerson: string;
+
+    @Column({ nullable: false, default: 'contract' })
+    category: string;
 
     @Column({ nullable: false, unique: true })
     email: string;
@@ -82,10 +85,10 @@ export class Client {
     @OneToMany(() => Lead, (lead) => lead?.client, { nullable: true })
     leads: Lead[];
 
-    @OneToMany(() => Order, (order) => order?.client, { nullable: true })
-    orders: Order[];
+    @OneToMany(() => Quotation, (quotation) => quotation?.client, { nullable: true })
+    quotations: Quotation[];
 
-    @OneToMany(() => Task, (task) => task?.client, { nullable: true })
+    @OneToMany(() => Task, (task) => task?.clients, { nullable: true })
     tasks: Task[];
 
     @OneToMany(() => CheckIn, (checkIn) => checkIn?.client, { nullable: true })

@@ -1,35 +1,37 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RepetitionType = exports.Priority = exports.TaskType = exports.TaskStatus = void 0;
+exports.TaskType = exports.RepetitionType = exports.TaskPriority = exports.TaskStatus = void 0;
 var TaskStatus;
 (function (TaskStatus) {
-    TaskStatus["PENDING"] = "pending";
-    TaskStatus["INPROGRESS"] = "inprogress";
-    TaskStatus["COMPLETED"] = "completed";
-    TaskStatus["CANCELLED"] = "cancelled";
-    TaskStatus["REVIEW"] = "review";
+    TaskStatus["PENDING"] = "PENDING";
+    TaskStatus["IN_PROGRESS"] = "IN_PROGRESS";
+    TaskStatus["COMPLETED"] = "COMPLETED";
+    TaskStatus["CANCELLED"] = "CANCELLED";
+    TaskStatus["OVERDUE"] = "OVERDUE";
 })(TaskStatus || (exports.TaskStatus = TaskStatus = {}));
-var TaskType;
-(function (TaskType) {
-    TaskType["CALL"] = "call";
-    TaskType["MEETING"] = "meeting";
-    TaskType["INPERSON"] = "inperson";
-    TaskType["ONLINE"] = "online";
-    TaskType["SUPPORT"] = "support";
-    TaskType["OTHER"] = "other";
-})(TaskType || (exports.TaskType = TaskType = {}));
-var Priority;
-(function (Priority) {
-    Priority["LOW"] = "low";
-    Priority["MEDIUM"] = "medium";
-    Priority["HIGH"] = "high";
-    Priority["URGENT"] = "urgent";
-})(Priority || (exports.Priority = Priority = {}));
+var TaskPriority;
+(function (TaskPriority) {
+    TaskPriority["LOW"] = "LOW";
+    TaskPriority["MEDIUM"] = "MEDIUM";
+    TaskPriority["HIGH"] = "HIGH";
+    TaskPriority["URGENT"] = "URGENT";
+})(TaskPriority || (exports.TaskPriority = TaskPriority = {}));
 var RepetitionType;
 (function (RepetitionType) {
-    RepetitionType["DAILY"] = "daily";
-    RepetitionType["WEEKLY"] = "weekly";
-    RepetitionType["MONTHLY"] = "monthly";
-    RepetitionType["YEARLY"] = "yearly";
+    RepetitionType["NONE"] = "NONE";
+    RepetitionType["DAILY"] = "DAILY";
+    RepetitionType["WEEKLY"] = "WEEKLY";
+    RepetitionType["MONTHLY"] = "MONTHLY";
+    RepetitionType["YEARLY"] = "YEARLY";
 })(RepetitionType || (exports.RepetitionType = RepetitionType = {}));
+var TaskType;
+(function (TaskType) {
+    TaskType["MEETING"] = "MEETING";
+    TaskType["CALL"] = "CALL";
+    TaskType["EMAIL"] = "EMAIL";
+    TaskType["FOLLOW_UP"] = "FOLLOW_UP";
+    TaskType["PROPOSAL"] = "PROPOSAL";
+    TaskType["REPORT"] = "REPORT";
+    TaskType["OTHER"] = "OTHER";
+})(TaskType || (exports.TaskType = TaskType = {}));
 //# sourceMappingURL=task.enums.js.map

@@ -1,47 +1,64 @@
-import { ApiProperty, PartialType } from '@nestjs/swagger';
-import { CreateTaskDto } from './create-task.dto';
-import { IsDate, IsEnum, IsNotEmpty, IsObject, IsArray, IsOptional, ValidateNested } from 'class-validator';
-import { TaskType } from '../../lib/enums/task.enums';
+import { IsString, IsOptional, IsEnum, IsNumber, IsArray, IsDate } from 'class-validator';
+import { TaskStatus, TaskPriority, RepetitionType, TaskType } from '../../lib/enums/task.enums';
+import { Type } from 'class-transformer';
 import { CreateSubtaskDto } from './create-subtask.dto';
 
-export class UpdateTaskDto extends PartialType(CreateTaskDto) {
-    @IsNotEmpty()
-    @IsObject()
-    @ApiProperty({
-        example: { uid: 1 },
-        description: 'The owner of the task'
-    })
-    owner: { uid: number };
+export class UpdateTaskDto {
+    @IsString()
+    @IsOptional()
+    title?: string;
+
+    @IsString()
+    @IsOptional()
+    description?: string;
+
+    @IsEnum(TaskStatus)
+    @IsOptional()
+    status?: TaskStatus;
 
     @IsEnum(TaskType)
-    @ApiProperty({
-        example: TaskType.OTHER,
-        description: 'The type of the task'
-    })
-    taskType: TaskType;
+    @IsOptional()
+    taskType?: TaskType;
 
+    @IsEnum(TaskPriority)
+    @IsOptional()
+    priority?: TaskPriority;
+
+    @IsNumber()
+    @IsOptional()
+    progress?: number;
+
+    @Type(() => Date)
     @IsDate()
-    @ApiProperty({
-        example: `${new Date()}`,
-        description: 'The deadline of the task'
-    })
-    deadline: Date;
+    @IsOptional()
+    deadline?: Date;
 
-    @IsNotEmpty()
-    @IsObject()
-    @ApiProperty({
-        example: { uid: 1 },
-        description: 'The branch reference code of the task'
-    })
-    branch: { uid: number };
+    @IsEnum(RepetitionType)
+    @IsOptional()
+    repetitionType?: RepetitionType;
+
+    @Type(() => Date)
+    @IsDate()
+    @IsOptional()
+    repetitionEndDate?: Date;
 
     @IsArray()
     @IsOptional()
-    @ValidateNested({ each: true })
-    @ApiProperty({
-        example: CreateSubtaskDto,
-        description: 'Subtasks of the task',
-        type: [CreateSubtaskDto]
-    })
+    attachments?: string[];
+
+    @IsNumber()
+    @IsOptional()
+    branch?: any;
+
+    @IsArray()
+    @IsOptional()
+    assignees?: any[];
+
+    @IsNumber()
+    @IsOptional()
+    client?: any;
+
+    @IsArray()
+    @IsOptional()
     subtasks?: CreateSubtaskDto[];
 }

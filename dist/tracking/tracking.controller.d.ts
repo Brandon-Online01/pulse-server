@@ -6,10 +6,15 @@ export declare class TrackingController {
     create(createTrackingDto: CreateTrackingDto): Promise<{
         message: string;
         data: import("./entities/tracking.entity").Tracking;
+        warnings: {
+            type: string;
+            message: string;
+        }[];
         tracking?: undefined;
     } | {
         message: any;
         tracking: any;
+        warnings: any[];
         data?: undefined;
     }>;
     findAll(): Promise<{

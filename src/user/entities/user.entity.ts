@@ -9,7 +9,7 @@ import { Journal } from '../../journal/entities/journal.entity';
 import { News } from '../../news/entities/news.entity';
 import { Task } from '../../tasks/entities/task.entity';
 import { Client } from '../../clients/entities/client.entity';
-import { Order } from '../../shop/entities/order.entity';
+import { Quotation } from '../../shop/entities/quotation.entity';
 import { CheckIn } from '../../check-ins/entities/check-in.entity';
 import { Tracking } from '../../tracking/entities/tracking.entity';
 import { Asset } from '../../assets/entities/asset.entity';
@@ -50,7 +50,7 @@ export class User {
     @Column({ type: 'enum', enum: AccessLevel })
     accessLevel: AccessLevel;
 
-    @Column({ unique: true })
+    @Column({ unique: true, nullable: true })
     userref: string;
 
     @ManyToOne(() => Organisation, { onDelete: 'SET NULL', nullable: true })
@@ -102,7 +102,7 @@ export class User {
     @OneToMany(() => Journal, (journal) => journal?.owner)
     journals: Journal[];
 
-    @OneToMany(() => Task, (task) => task?.owner)
+    @OneToMany(() => Task, (task) => task?.createdBy)
     tasks: Task[];
 
     @OneToMany(() => News, (news) => news?.author)
@@ -114,8 +114,8 @@ export class User {
     @OneToMany(() => Tracking, (tracking) => tracking?.owner)
     trackings: Tracking[];
 
-    @OneToMany(() => Order, (order) => order?.placedBy)
-    orders: Order[];
+    @OneToMany(() => Quotation, (quotation) => quotation?.placedBy)
+    quotations: Quotation[];
 
     @OneToMany(() => Notification, (notification) => notification?.owner)
     notifications: Notification[];

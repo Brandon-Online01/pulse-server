@@ -30,15 +30,15 @@ export declare class ShopController {
         message: string;
     }>;
     getOrders(): Promise<{
-        orders: import("./entities/order.entity").Order[];
+        orders: import("./entities/quotation.entity").Quotation[];
         message: string;
     }>;
     getOrderByRef(ref: number): Promise<{
-        orders: import("./entities/order.entity").Order;
+        orders: import("./entities/quotation.entity").Quotation;
         message: string;
     }>;
     getOrdersByUser(ref: number): Promise<{
-        orders: import("./entities/order.entity").Order[];
+        orders: import("./entities/quotation.entity").Quotation[];
         message: string;
     }>;
     getBanner(): Promise<{

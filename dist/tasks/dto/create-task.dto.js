@@ -12,109 +12,83 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateTaskDto = void 0;
 const class_validator_1 = require("class-validator");
 const task_enums_1 = require("../../lib/enums/task.enums");
-const swagger_1 = require("@nestjs/swagger");
-const status_enums_1 = require("../../lib/enums/status.enums");
-const create_subtask_dto_1 = require("./create-subtask.dto");
+const class_transformer_1 = require("class-transformer");
 class CreateTaskDto {
 }
 exports.CreateTaskDto = CreateTaskDto;
 __decorate([
     (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsNotEmpty)(),
-    (0, swagger_1.ApiProperty)({ example: 'Task comment', description: 'Comment of the task' }),
     __metadata("design:type", String)
-], CreateTaskDto.prototype, "comment", void 0);
+], CreateTaskDto.prototype, "title", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsOptional)(),
-    (0, swagger_1.ApiProperty)({ example: 'Task notes', description: 'Notes of the task' }),
-    __metadata("design:type", String)
-], CreateTaskDto.prototype, "notes", void 0);
-__decorate([
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsNotEmpty)(),
-    (0, swagger_1.ApiProperty)({ example: 'Task description', description: 'Description of the task' }),
     __metadata("design:type", String)
 ], CreateTaskDto.prototype, "description", void 0);
 __decorate([
-    (0, class_validator_1.IsEnum)(status_enums_1.GeneralStatus),
-    (0, swagger_1.ApiProperty)({ example: status_enums_1.GeneralStatus.ACTIVE, description: 'Status of the task' }),
+    (0, class_validator_1.IsEnum)(task_enums_1.TaskStatus),
+    (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], CreateTaskDto.prototype, "status", void 0);
 __decorate([
-    (0, class_validator_1.IsObject)(),
-    (0, class_validator_1.IsNotEmpty)(),
-    (0, swagger_1.ApiProperty)({ example: { uid: 1 }, description: 'Owner of the task' }),
-    __metadata("design:type", Object)
-], CreateTaskDto.prototype, "owner", void 0);
-__decorate([
     (0, class_validator_1.IsEnum)(task_enums_1.TaskType),
-    (0, swagger_1.ApiProperty)({ example: task_enums_1.TaskType.OTHER, description: 'Type of the task' }),
+    (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], CreateTaskDto.prototype, "taskType", void 0);
 __decorate([
-    (0, class_validator_1.IsDate)(),
+    (0, class_validator_1.IsEnum)(task_enums_1.TaskPriority),
     (0, class_validator_1.IsOptional)(),
-    (0, swagger_1.ApiProperty)({ example: new Date(), description: 'Deadline of the task' }),
-    __metadata("design:type", Date)
-], CreateTaskDto.prototype, "deadline", void 0);
-__decorate([
-    (0, class_validator_1.IsObject)(),
-    (0, class_validator_1.IsNotEmpty)(),
-    (0, swagger_1.ApiProperty)({ example: { uid: 1 }, description: 'Branch of the task' }),
-    __metadata("design:type", Object)
-], CreateTaskDto.prototype, "branch", void 0);
-__decorate([
-    (0, class_validator_1.IsEnum)(task_enums_1.Priority),
-    (0, swagger_1.ApiProperty)({ example: task_enums_1.Priority.MEDIUM, description: 'Priority of the task' }),
     __metadata("design:type", String)
 ], CreateTaskDto.prototype, "priority", void 0);
 __decorate([
     (0, class_validator_1.IsNumber)(),
-    (0, swagger_1.ApiProperty)({ example: 0, description: 'Progress of the task' }),
+    (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Number)
 ], CreateTaskDto.prototype, "progress", void 0);
 __decorate([
-    (0, class_validator_1.IsArray)(),
-    (0, swagger_1.ApiProperty)({ example: [{ uid: 1 }, { uid: 2 }] }),
-    __metadata("design:type", Array)
-], CreateTaskDto.prototype, "assignees", void 0);
+    (0, class_transformer_1.Type)(() => Date),
+    (0, class_validator_1.IsDate)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Date)
+], CreateTaskDto.prototype, "deadline", void 0);
 __decorate([
     (0, class_validator_1.IsEnum)(task_enums_1.RepetitionType),
     (0, class_validator_1.IsOptional)(),
-    (0, swagger_1.ApiProperty)({
-        example: task_enums_1.RepetitionType.DAILY,
-        description: 'Type of repetition'
-    }),
     __metadata("design:type", String)
 ], CreateTaskDto.prototype, "repetitionType", void 0);
 __decorate([
+    (0, class_transformer_1.Type)(() => Date),
     (0, class_validator_1.IsDate)(),
     (0, class_validator_1.IsOptional)(),
-    (0, swagger_1.ApiProperty)({
-        example: `${new Date()}`,
-        description: 'Date of the last repetition'
-    }),
     __metadata("design:type", Date)
 ], CreateTaskDto.prototype, "repetitionEndDate", void 0);
 __decorate([
-    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsArray)(),
     (0, class_validator_1.IsOptional)(),
-    (0, swagger_1.ApiProperty)({
-        example: 'tasklist.pdf',
-        description: 'Attachments of the task'
-    }),
-    __metadata("design:type", String)
+    __metadata("design:type", Array)
 ], CreateTaskDto.prototype, "attachments", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], CreateTaskDto.prototype, "branchId", void 0);
 __decorate([
     (0, class_validator_1.IsArray)(),
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.ValidateNested)({ each: true }),
-    (0, swagger_1.ApiProperty)({
-        example: create_subtask_dto_1.CreateSubtaskDto,
-        description: 'Subtasks of the task',
-        type: [create_subtask_dto_1.CreateSubtaskDto]
-    }),
+    __metadata("design:type", Array)
+], CreateTaskDto.prototype, "assigneeIds", void 0);
+__decorate([
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Array)
+], CreateTaskDto.prototype, "clientIds", void 0);
+__decorate([
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Array)
 ], CreateTaskDto.prototype, "subtasks", void 0);
+__decorate([
+    (0, class_validator_1.IsBoolean)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Boolean)
+], CreateTaskDto.prototype, "isDeleted", void 0);
 //# sourceMappingURL=create-task.dto.js.map

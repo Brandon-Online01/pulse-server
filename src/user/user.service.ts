@@ -142,7 +142,11 @@ export class UserService {
 		try {
 			const user = await this.userRepository.findOne({
 				where: [
-					{ username: searchParameter, isDeleted: false },
+					{
+						username: searchParameter,
+						isDeleted: false,
+						status: AccountStatus.ACTIVE
+					},
 				],
 				relations: [
 					'branch',
@@ -269,7 +273,10 @@ export class UserService {
 
 			await this.userRepository.update(
 				{ userref: ref },
-				{ isDeleted: true }
+				{
+					isDeleted: true,
+					status: AccountStatus.INACTIVE
+				}
 			);
 
 			return {

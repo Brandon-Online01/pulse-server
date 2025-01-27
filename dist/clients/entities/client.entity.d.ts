@@ -1,7 +1,7 @@
 import { GeneralStatus } from '../../lib/enums/status.enums';
 import { Lead } from '../../leads/entities/lead.entity';
 import { User } from '../../user/entities/user.entity';
-import { Order } from '../../shop/entities/order.entity';
+import { Quotation } from '../../shop/entities/quotation.entity';
 import { Task } from '../../tasks/entities/task.entity';
 import { CheckIn } from '../../check-ins/entities/check-in.entity';
 export declare enum CustomerType {
@@ -14,6 +14,7 @@ export declare class Client {
     uid: number;
     name: string;
     contactPerson: string;
+    category: string;
     email: string;
     phone: string;
     alternativePhone: string;
@@ -31,7 +32,7 @@ export declare class Client {
     ref: string;
     assignedSalesRep: User;
     leads: Lead[];
-    orders: Order[];
+    quotations: Quotation[];
     tasks: Task[];
     checkIns: CheckIn[];
     type: CustomerType;

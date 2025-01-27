@@ -58,7 +58,7 @@ export declare class AuthController {
             articles: import("../news/entities/news.entity").News[];
             assets: import("../assets/entities/asset.entity").Asset[];
             trackings: import("../tracking/entities/tracking.entity").Tracking[];
-            orders: import("../shop/entities/order.entity").Order[];
+            quotations: import("../shop/entities/quotation.entity").Quotation[];
             notifications: import("../notifications/entities/notification.entity").Notification[];
             branch: import("../branch/entities/branch.entity").Branch;
             clients: import("../clients/entities/client.entity").Client[];

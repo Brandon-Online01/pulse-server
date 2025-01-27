@@ -9,10 +9,15 @@ export declare class TrackingService {
     create(createTrackingDto: CreateTrackingDto): Promise<{
         message: string;
         data: Tracking;
+        warnings: {
+            type: string;
+            message: string;
+        }[];
         tracking?: undefined;
     } | {
         message: any;
         tracking: any;
+        warnings: any[];
         data?: undefined;
     }>;
     private getAddressFromCoordinates;

@@ -2,7 +2,7 @@ import { Repository } from 'typeorm';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CheckoutDto } from './dto/checkout.dto';
-import { Order } from './entities/order.entity';
+import { Quotation } from './entities/quotation.entity';
 import { Banners } from './entities/banners.entity';
 import { CreateBannerDto } from './dto/create-banner.dto';
 import { UpdateBannerDto } from './dto/update-banner.dto';
@@ -26,8 +26,8 @@ export class ShopService {
     constructor(
         @InjectRepository(Product)
         private productRepository: Repository<Product>,
-        @InjectRepository(Order)
-        private orderRepository: Repository<Order>,
+        @InjectRepository(Quotation)
+        private quotationRepository: Repository<Quotation>,
         @InjectRepository(Banners)
         private bannersRepository: Repository<Banners>,
         private readonly configService: ConfigService,
@@ -186,7 +186,7 @@ export class ShopService {
                 }))
             } as const;
 
-            await this.orderRepository.save(newOrder);
+            await this.quotationRepository.save(newOrder);
 
             const baseConfig = {
                 name: clientName,
@@ -328,11 +328,11 @@ export class ShopService {
         }
     }
 
-    async getAllOrders(): Promise<{ orders: Order[], message: string }> {
+    async getAllOrders(): Promise<{ orders: Quotation[], message: string }> {
         try {
-            const orders = await this.orderRepository.find({
-                relations: ['placedBy', 'client', 'orderItems']
-            });
+            const orders = await this.quotationRepository.find({
+                relations: ['placedBy', 'client', 'quotationItems']
+            }); 
 
             if (!orders) {
                 throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
@@ -354,15 +354,15 @@ export class ShopService {
         }
     }
 
-    async getOrdersByUser(ref: number): Promise<{ orders: Order[], message: string }> {
+    async getOrdersByUser(ref: number): Promise<{ orders: Quotation[], message: string }> {
         try {
-            const orders = await this.orderRepository.find({
+            const orders = await this.quotationRepository.find({
                 where: {
                     placedBy: {
                         uid: ref
                     }
                 },
-                relations: ['placedBy', 'client', 'orderItems']
+                relations: ['placedBy', 'client', 'quotationItems']
             });
 
             if (!orders) {
@@ -386,13 +386,13 @@ export class ShopService {
         }
     }
 
-    async getOrderByRef(ref: number): Promise<{ orders: Order, message: string }> {
+    async getOrderByRef(ref: number): Promise<{ orders: Quotation, message: string }> {
         try {
-            const order = await this.orderRepository.findOne({
+            const order = await this.quotationRepository.findOne({
                 where: {
                     uid: ref
                 },
-                relations: ['placedBy', 'client', 'orderItems', 'orderItems.product']
+                relations: ['placedBy', 'client', 'quotationItems', 'quotationItems.product']
             });
 
             if (!order) {
@@ -420,15 +420,15 @@ export class ShopService {
         message: string,
         stats: {
             orders: {
-                pending: Order[],
-                processing: Order[],
-                completed: Order[],
-                cancelled: Order[],
-                postponed: Order[],
-                outForDelivery: Order[],
-                delivered: Order[],
-                rejected: Order[],
-                approved: Order[],
+                pending: Quotation[],
+                processing: Quotation[],
+                completed: Quotation[],
+                cancelled: Quotation[],
+                postponed: Quotation[],
+                outForDelivery: Quotation[],
+                delivered: Quotation[],
+                rejected: Quotation[],
+                approved: Quotation[],
                 metrics: {
                     totalOrders: number,
                     grossOrderValue: string,
@@ -438,11 +438,11 @@ export class ShopService {
         }
     }> {
         try {
-            const orders = await this.orderRepository.find({
+            const orders = await this.quotationRepository.find({
                 where: {
                     orderDate: Between(startOfDay(date), endOfDay(date))
                 },
-                relations: ['orderItems']
+                relations: ['quotationItems']
             });
 
             if (!orders) {

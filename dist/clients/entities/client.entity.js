@@ -13,7 +13,7 @@ exports.Client = exports.CustomerType = void 0;
 const status_enums_1 = require("../../lib/enums/status.enums");
 const lead_entity_1 = require("../../leads/entities/lead.entity");
 const user_entity_1 = require("../../user/entities/user.entity");
-const order_entity_1 = require("../../shop/entities/order.entity");
+const quotation_entity_1 = require("../../shop/entities/quotation.entity");
 const task_entity_1 = require("../../tasks/entities/task.entity");
 const typeorm_1 = require("typeorm");
 const check_in_entity_1 = require("../../check-ins/entities/check-in.entity");
@@ -39,6 +39,10 @@ __decorate([
     (0, typeorm_1.Column)({ nullable: false }),
     __metadata("design:type", String)
 ], Client.prototype, "contactPerson", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: false, default: 'contract' }),
+    __metadata("design:type", String)
+], Client.prototype, "category", void 0);
 __decorate([
     (0, typeorm_1.Column)({ nullable: false, unique: true }),
     __metadata("design:type", String)
@@ -115,11 +119,11 @@ __decorate([
     __metadata("design:type", Array)
 ], Client.prototype, "leads", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => order_entity_1.Order, (order) => order?.client, { nullable: true }),
+    (0, typeorm_1.OneToMany)(() => quotation_entity_1.Quotation, (quotation) => quotation?.client, { nullable: true }),
     __metadata("design:type", Array)
-], Client.prototype, "orders", void 0);
+], Client.prototype, "quotations", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => task_entity_1.Task, (task) => task?.client, { nullable: true }),
+    (0, typeorm_1.OneToMany)(() => task_entity_1.Task, (task) => task?.clients, { nullable: true }),
     __metadata("design:type", Array)
 ], Client.prototype, "tasks", void 0);
 __decorate([

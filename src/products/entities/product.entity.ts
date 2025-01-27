@@ -1,6 +1,6 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany, ManyToOne, BeforeInsert, AfterInsert } from 'typeorm';
 import { ProductStatus } from '../../lib/enums/product.enums';
-import { OrderItem } from '../../shop/entities/order-item.entity';
+import { QuotationItem } from '../../shop/entities/quotation-item.entity';
 import { Reseller } from '../../resellers/entities/reseller.entity';
 import { getRepository } from 'typeorm';
 
@@ -15,7 +15,7 @@ export class Product {
     @Column({ type: 'text', nullable: true })
     description: string;
 
-    @Column({ type: 'decimal', precision: 10, scale: 2 })
+    @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
     price: number;
 
     @Column({ type: 'varchar', nullable: true })
@@ -45,8 +45,8 @@ export class Product {
     @UpdateDateColumn()
     updatedAt: Date;
 
-    @OneToMany(() => OrderItem, orderItem => orderItem?.product)
-    orderItems: OrderItem[];
+    @OneToMany(() => QuotationItem, quotationItem => quotationItem?.product)
+    quotationItems: QuotationItem[];
 
     @ManyToOne(() => Reseller, reseller => reseller?.products)
     reseller: Reseller;

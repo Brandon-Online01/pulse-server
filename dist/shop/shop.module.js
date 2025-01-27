@@ -11,7 +11,7 @@ const common_1 = require("@nestjs/common");
 const shop_service_1 = require("./shop.service");
 const shop_controller_1 = require("./shop.controller");
 const typeorm_1 = require("@nestjs/typeorm");
-const order_entity_1 = require("./entities/order.entity");
+const quotation_entity_1 = require("./entities/quotation.entity");
 const product_entity_1 = require("../products/entities/product.entity");
 const banners_entity_1 = require("./entities/banners.entity");
 const clients_module_1 = require("../clients/clients.module");
@@ -28,7 +28,7 @@ exports.ShopModule = ShopModule = __decorate([
             clients_module_1.ClientsModule,
             notifications_module_1.NotificationsModule,
             communication_module_1.CommunicationModule,
-            typeorm_1.TypeOrmModule.forFeature([order_entity_1.Order, product_entity_1.Product, banners_entity_1.Banners])
+            typeorm_1.TypeOrmModule.forFeature([quotation_entity_1.Quotation, product_entity_1.Product, banners_entity_1.Banners])
         ],
         controllers: [shop_controller_1.ShopController],
         providers: [shop_service_1.ShopService],

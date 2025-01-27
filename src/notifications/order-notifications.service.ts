@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { EmailType } from '../lib/enums/email.enums';
-import { Order } from '../shop/entities/order.entity';
+import { Quotation } from '../shop/entities/quotation.entity';
 import { ConfigService } from '@nestjs/config';
 import {
     OrderData,
@@ -31,7 +31,7 @@ export class OrderNotificationsService {
         });
     }
 
-    private getCustomerPriority(order: Order): 'low' | 'medium' | 'high' {
+    private getCustomerPriority(order: Quotation): 'low' | 'medium' | 'high' {
         const orderValue = Number(order.totalAmount) || 0;
         const highPriorityThreshold = this.configService.get<number>('HIGH_PRIORITY_ORDER_THRESHOLD') || 1000;
         const mediumPriorityThreshold = this.configService.get<number>('MEDIUM_PRIORITY_ORDER_THRESHOLD') || 500;
@@ -41,7 +41,7 @@ export class OrderNotificationsService {
         return 'low';
     }
 
-    private getFulfillmentPriority(order: Order): 'standard' | 'express' | 'rush' {
+    private getFulfillmentPriority(order: Quotation): 'standard' | 'express' | 'rush' {
         const priority = this.getCustomerPriority(order);
         switch (priority) {
             case 'high': return 'rush';
@@ -50,7 +50,7 @@ export class OrderNotificationsService {
         }
     }
 
-    async sendOrderNotifications(order: Order): Promise<void> {
+    async sendOrderNotifications(order: Quotation): Promise<void> {
         const currency = this.configService.get<string>('CURRENCY_CODE') || 'USD';
         const baseOrderData: OrderData = {
             name: order.client?.name || 'Valued Customer',
@@ -89,7 +89,7 @@ export class OrderNotificationsService {
             fulfillmentPriority: this.getFulfillmentPriority(order),
             shippingInstructions: order.shippingInstructions,
             packagingRequirements: order.packagingRequirements,
-            items: order.orderItems.map(item => ({
+            items: order.quotationItems.map(item => ({
                 sku: item.product.sku,
                 quantity: item.quantity,
                 location: item.product.warehouseLocation

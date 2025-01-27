@@ -39,7 +39,6 @@ let AuthService = class AuthService {
     async signIn(signInInput) {
         try {
             const { username, password } = signInInput;
-            ;
             const authProfile = await this.userService.findOneForAuth(username);
             if (!authProfile?.user) {
                 throw new common_1.BadRequestException('Invalid credentials provided');

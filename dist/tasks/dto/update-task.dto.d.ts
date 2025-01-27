@@ -1,16 +1,18 @@
-import { CreateTaskDto } from './create-task.dto';
-import { TaskType } from '../../lib/enums/task.enums';
+import { TaskStatus, TaskPriority, RepetitionType, TaskType } from '../../lib/enums/task.enums';
 import { CreateSubtaskDto } from './create-subtask.dto';
-declare const UpdateTaskDto_base: import("@nestjs/common").Type<Partial<CreateTaskDto>>;
-export declare class UpdateTaskDto extends UpdateTaskDto_base {
-    owner: {
-        uid: number;
-    };
-    taskType: TaskType;
-    deadline: Date;
-    branch: {
-        uid: number;
-    };
+export declare class UpdateTaskDto {
+    title?: string;
+    description?: string;
+    status?: TaskStatus;
+    taskType?: TaskType;
+    priority?: TaskPriority;
+    progress?: number;
+    deadline?: Date;
+    repetitionType?: RepetitionType;
+    repetitionEndDate?: Date;
+    attachments?: string[];
+    branch?: any;
+    assignees?: any[];
+    client?: any;
     subtasks?: CreateSubtaskDto[];
 }
-export {};

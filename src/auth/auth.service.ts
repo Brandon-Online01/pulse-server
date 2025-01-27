@@ -33,7 +33,7 @@ export class AuthService {
 
 	async signIn(signInInput: SignInInput): Promise<SignInResponse> {
 		try {
-			const { username, password } = signInInput;;
+			const { username, password } = signInInput;
 
 			const authProfile = await this.userService.findOneForAuth(username);
 

@@ -19,7 +19,6 @@ const typeorm_2 = require("@nestjs/typeorm");
 const event_emitter_1 = require("@nestjs/event-emitter");
 const typeorm_3 = require("typeorm");
 const notification_enums_1 = require("../lib/enums/notification.enums");
-const user_enums_1 = require("../lib/enums/user.enums");
 const notification_enums_2 = require("../lib/enums/notification.enums");
 const status_enums_1 = require("../lib/enums/status.enums");
 const task_entity_1 = require("./entities/task.entity");
@@ -36,10 +35,12 @@ let TasksService = class TasksService {
     }
     async create(createTaskDto) {
         try {
-            const assignees = createTaskDto?.assignees?.map(assignee => ({ uid: assignee?.uid }));
+            const assignees = createTaskDto?.assigneeIds?.map(assignee => ({ uid: assignee }));
+            const clients = createTaskDto?.clientIds?.map(clientId => ({ uid: clientId }));
             const task = await this.taskRepository.save({
                 ...createTaskDto,
-                assignees: assignees
+                assignees: assignees,
+                clients: clients
             });
             if (!task) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
@@ -51,15 +52,21 @@ let TasksService = class TasksService {
                 }));
                 await this.subtaskRepository.save(subtasks);
             }
-            const notification = {
-                type: notification_enums_1.NotificationType.USER,
-                title: 'Task Created',
-                message: `A task has been created`,
-                status: notification_enums_2.NotificationStatus.UNREAD,
-                owner: task?.owner
-            };
-            const recipients = [user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.OWNER, user_enums_1.AccessLevel.SUPERVISOR, user_enums_1.AccessLevel.USER];
-            this.eventEmitter.emit('send.notification', notification, recipients);
+            if (assignees?.length > 0) {
+                const notification = {
+                    type: notification_enums_1.NotificationType.USER,
+                    title: 'New Task Assigned',
+                    message: `You have been assigned to a new task: ${task?.title}`,
+                    status: notification_enums_2.NotificationStatus.UNREAD,
+                    owner: null
+                };
+                assignees?.forEach(assignee => {
+                    this.eventEmitter.emit('send.notification', {
+                        ...notification,
+                        owner: assignee
+                    }, [assignee.uid]);
+                });
+            }
             return {
                 message: process.env.SUCCESS_MESSAGE,
             };
@@ -75,10 +82,11 @@ let TasksService = class TasksService {
             const tasks = await this.taskRepository.find({
                 where: { isDeleted: false },
                 relations: [
-                    'owner',
+                    'createdBy',
                     'branch',
-                    'client',
-                    'subtasks'
+                    'clients',
+                    'subtasks',
+                    'assignees'
                 ]
             });
             if (!tasks) {
@@ -101,10 +109,11 @@ let TasksService = class TasksService {
             const task = await this.taskRepository.findOne({
                 where: { uid: ref, isDeleted: false },
                 relations: [
-                    'owner',
+                    'createdBy',
                     'branch',
-                    'client',
-                    'subtasks'
+                    'clients',
+                    'subtasks',
+                    'assignees'
                 ]
             });
             if (!task) {
@@ -128,12 +137,13 @@ let TasksService = class TasksService {
     async tasksByUser(ref) {
         try {
             const tasks = await this.taskRepository.find({
-                where: { owner: { uid: ref }, isDeleted: false },
+                where: { createdBy: { uid: ref }, isDeleted: false },
                 relations: [
-                    'owner',
+                    'createdBy',
                     'branch',
-                    'client',
-                    'subtasks'
+                    'clients',
+                    'subtasks',
+                    'assignees'
                 ]
             });
             if (!tasks) {
@@ -157,17 +167,15 @@ let TasksService = class TasksService {
         try {
             const task = await this.taskRepository.findOne({
                 where: { uid: ref, isDeleted: false },
-                relations: ['assignees', 'subtasks']
+                relations: ['assignees', 'subtasks', 'createdBy']
             });
             if (!task) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
             const updateData = {
-                comment: updateTaskDto.comment,
-                notes: updateTaskDto.notes,
+                title: updateTaskDto.title,
                 description: updateTaskDto.description,
                 status: updateTaskDto.status,
-                owner: updateTaskDto.owner,
                 taskType: updateTaskDto.taskType,
                 deadline: updateTaskDto.deadline,
                 branch: updateTaskDto.branch,
@@ -202,14 +210,23 @@ let TasksService = class TasksService {
             const notification = {
                 type: notification_enums_1.NotificationType.USER,
                 title: 'Task Updated',
-                message: `A task has been updated`,
+                message: `Task "${task.title}" has been updated`,
                 status: notification_enums_2.NotificationStatus.UNREAD,
-                owner: task.owner
+                owner: null
             };
-            const recipients = [user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.OWNER, user_enums_1.AccessLevel.SUPERVISOR, user_enums_1.AccessLevel.USER];
-            this.eventEmitter.emit('send.notification', notification, recipients);
+            const recipientIds = [
+                task.createdBy.uid,
+                ...(task.assignees?.map(assignee => assignee.uid) || [])
+            ];
+            const uniqueRecipientIds = [...new Set(recipientIds)];
+            uniqueRecipientIds.forEach(recipientId => {
+                this.eventEmitter.emit('send.notification', {
+                    ...notification,
+                    owner: { uid: recipientId }
+                }, [recipientId]);
+            });
             await this.rewardsService.awardXP({
-                owner: task.owner.uid,
+                owner: task.createdBy.uid,
                 amount: constants_1.XP_VALUES.TASK,
                 action: constants_2.XP_VALUES_TYPES.TASK,
                 source: {

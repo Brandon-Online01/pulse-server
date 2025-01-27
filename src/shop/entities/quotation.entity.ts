@@ -1,11 +1,11 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany } from 'typeorm';
 import { Client } from '../../clients/entities/client.entity';
-import { OrderItem } from './order-item.entity';
+import { QuotationItem } from './quotation-item.entity';
 import { OrderStatus } from '../../lib/enums/status.enums';
 import { User } from '../../user/entities/user.entity';
 
-@Entity()
-export class Order {
+@Entity('quotation')
+export class Quotation {
     @PrimaryGeneratedColumn()
     uid: number;
 
@@ -30,8 +30,8 @@ export class Order {
     @ManyToOne(() => Client, { eager: true })
     client: Client;
 
-    @OneToMany(() => OrderItem, orderItem => orderItem.order, { eager: true, cascade: true })
-    orderItems: OrderItem[];
+    @OneToMany(() => QuotationItem, quotationItem => quotationItem.quotation, { eager: true, cascade: true })
+    quotationItems: QuotationItem[];
 
     @Column({ nullable: true })
     shippingMethod: string;

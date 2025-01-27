@@ -1,78 +1,79 @@
+import { SubTask } from './subtask.entity';
 import { User } from '../../user/entities/user.entity';
 import { Branch } from '../../branch/entities/branch.entity';
-import { Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { Client } from '../../clients/entities/client.entity';
-import { Priority, RepetitionType, TaskType } from '../../lib/enums/task.enums';
-import { GeneralStatus } from '../../lib/enums/status.enums';
-import { SubTask } from './subtask.entity';
+import { TaskStatus, TaskPriority, RepetitionType, TaskType } from '../../lib/enums/task.enums';
+import { Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, JoinColumn } from 'typeorm';
 
-@Entity('task')
+@Entity('tasks')
 export class Task {
     @PrimaryGeneratedColumn()
     uid: number;
 
-    @Column({ nullable: false })
-    comment: string;
+    @Column({ type: 'varchar', length: 255 })
+    title: string;
 
-    @Column({ nullable: true, type: 'varchar', length: 5000 })
-    notes: string;
-
-    @Column({ nullable: false, default: () => 'CURRENT_TIMESTAMP' })
-    createdAt: Date;
-
-    @Column({ nullable: false, default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
-    updatedAt: Date;
-
-    @Column({ nullable: false, default: GeneralStatus.ACTIVE })
-    status: GeneralStatus;
-
-    @Column({ nullable: false, default: TaskType.OTHER })
-    taskType: TaskType;
-
-    @Column({ nullable: true })
-    deadline: Date;
-
-    @Column({ nullable: false, default: false })
-    isDeleted: boolean;
-
-    @Column({ nullable: false, type: 'text' })
+    @Column({ type: 'text' })
     description: string;
 
-    @Column({ nullable: false, default: Priority.MEDIUM })
-    priority: Priority;
+    @Column({ type: 'enum', enum: TaskStatus, default: TaskStatus.PENDING })
+    status: TaskStatus;
 
-    @Column({ nullable: false, default: 0 })
+    @Column({ type: 'enum', enum: TaskType, default: TaskType.OTHER })
+    taskType: TaskType;
+
+    @Column({ type: 'enum', enum: TaskPriority, default: TaskPriority.MEDIUM })
+    priority: TaskPriority;
+
+    @Column({ type: 'int', default: 0 })
     progress: number;
 
-    @Column({ nullable: true })
+    @Column({ type: 'datetime', nullable: true })
+    deadline: Date;
+
+    @Column({ type: 'enum', enum: RepetitionType, default: RepetitionType.NONE })
     repetitionType: RepetitionType;
 
-    @Column({ nullable: true })
+    @Column({ type: 'datetime', nullable: true })
     repetitionEndDate: Date;
 
-    @Column({ nullable: true })
+    @Column({ type: 'datetime', nullable: true })
     lastCompletedAt: Date;
 
-    @Column({ nullable: true, type: 'varchar', length: 5000 })
-    attachments: string;
+    @Column({ type: 'json', nullable: true })
+    attachments: string[];
 
-    @ManyToOne(() => User, (user) => user?.tasks)
-    owner: User;
+    @Column({ type: 'boolean', default: false })
+    isDeleted: boolean;
+
+    @CreateDateColumn()
+    createdAt: Date;
+
+    @UpdateDateColumn()
+    updatedAt: Date;
+
+    @ManyToOne(() => User, { onDelete: 'SET NULL' })
+    createdBy: User;
 
     @ManyToOne(() => Branch, (branch) => branch?.tasks)
     branch: Branch;
 
     @ManyToMany(() => User)
     @JoinTable({
-        name: 'task_assignees_user',
+        name: 'task_assignees',
         joinColumn: { name: 'taskUid', referencedColumnName: 'uid' },
         inverseJoinColumn: { name: 'userUid', referencedColumnName: 'uid' }
     })
     assignees: User[];
 
-    @ManyToOne(() => Client, (client) => client?.tasks)
-    client: Client;
+    @ManyToMany(() => Client)
+    @JoinTable({
+        name: 'task_clients',
+        joinColumn: { name: 'taskUid', referencedColumnName: 'uid' },
+        inverseJoinColumn: { name: 'clientUid', referencedColumnName: 'uid' }
+    })
+    clients: Client[];
 
-    @OneToMany(() => SubTask, subtask => subtask?.task)
+    @OneToMany(() => SubTask, subtask => subtask.task)
     subtasks: SubTask[];
 }

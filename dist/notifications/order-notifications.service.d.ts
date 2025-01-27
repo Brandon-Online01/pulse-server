@@ -1,5 +1,5 @@
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { Order } from '../shop/entities/order.entity';
+import { Quotation } from '../shop/entities/quotation.entity';
 import { ConfigService } from '@nestjs/config';
 export declare class OrderNotificationsService {
     private readonly eventEmitter;
@@ -9,5 +9,5 @@ export declare class OrderNotificationsService {
     private sendEmail;
     private getCustomerPriority;
     private getFulfillmentPriority;
-    sendOrderNotifications(order: Order): Promise<void>;
+    sendOrderNotifications(order: Quotation): Promise<void>;
 }

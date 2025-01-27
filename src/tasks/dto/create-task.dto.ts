@@ -1,92 +1,66 @@
-import { IsString, IsNotEmpty, IsEnum, IsDate, IsObject, IsOptional, IsNumber, IsArray, ValidateNested } from "class-validator";
-import { TaskType, RepetitionType, Priority } from "../../lib/enums/task.enums";
-import { ApiProperty } from "@nestjs/swagger";
-import { GeneralStatus } from "../../lib/enums/status.enums";
-import { CreateSubtaskDto } from "./create-subtask.dto";
-import { SubTask } from "../entities/subtask.entity";
+import { IsString, IsOptional, IsEnum, IsNumber, IsArray, IsDate, IsBoolean } from 'class-validator';
+import { TaskStatus, TaskPriority, RepetitionType, TaskType } from '../../lib/enums/task.enums';
+import { Type } from 'class-transformer';
+import { CreateSubtaskDto } from './create-subtask.dto';
 
 export class CreateTaskDto {
     @IsString()
-    @IsNotEmpty()
-    @ApiProperty({ example: 'Task comment', description: 'Comment of the task' })
-    comment: string;
+    title: string;
 
     @IsString()
-    @IsOptional()
-    @ApiProperty({ example: 'Task notes', description: 'Notes of the task' })
-    notes?: string;
-
-    @IsString()
-    @IsNotEmpty()
-    @ApiProperty({ example: 'Task description', description: 'Description of the task' })
     description: string;
 
-    @IsEnum(GeneralStatus)
-    @ApiProperty({ example: GeneralStatus.ACTIVE, description: 'Status of the task' })
-    status: GeneralStatus;
-
-    @IsObject()
-    @IsNotEmpty()
-    @ApiProperty({ example: { uid: 1 }, description: 'Owner of the task' })
-    owner: { uid: number };
+    @IsEnum(TaskStatus)
+    @IsOptional()
+    status?: TaskStatus;
 
     @IsEnum(TaskType)
-    @ApiProperty({ example: TaskType.OTHER, description: 'Type of the task' })
-    taskType: TaskType;
-
-    @IsDate()
     @IsOptional()
-    @ApiProperty({ example: new Date(), description: 'Deadline of the task' })
-    deadline?: Date;
+    taskType?: TaskType;
 
-    @IsObject()
-    @IsNotEmpty()
-    @ApiProperty({ example: { uid: 1 }, description: 'Branch of the task' })
-    branch: { uid: number };
-
-    @IsEnum(Priority)
-    @ApiProperty({ example: Priority.MEDIUM, description: 'Priority of the task' })
-    priority: Priority;
+    @IsEnum(TaskPriority)
+    @IsOptional()
+    priority?: TaskPriority;
 
     @IsNumber()
-    @ApiProperty({ example: 0, description: 'Progress of the task' })
-    progress: number;
+    @IsOptional()
+    progress?: number;
 
-    @IsArray()
-    @ApiProperty({ example: [{ uid: 1 }, { uid: 2 }] })
-    assignees: { uid: number }[];
+    @Type(() => Date)
+    @IsDate()
+    @IsOptional()
+    deadline?: Date;
 
     @IsEnum(RepetitionType)
     @IsOptional()
-    @ApiProperty({
-        example: RepetitionType.DAILY,
-        description: 'Type of repetition'
-    })
     repetitionType?: RepetitionType;
 
+    @Type(() => Date)
     @IsDate()
     @IsOptional()
-    @ApiProperty({
-        example: `${new Date()}`,
-        description: 'Date of the last repetition'
-    })
     repetitionEndDate?: Date;
-
-    @IsString()
-    @IsOptional()
-    @ApiProperty({
-        example: 'tasklist.pdf',
-        description: 'Attachments of the task'
-    })
-    attachments?: string;
 
     @IsArray()
     @IsOptional()
-    @ValidateNested({ each: true })
-    @ApiProperty({
-        example: CreateSubtaskDto,
-        description: 'Subtasks of the task',
-        type: [CreateSubtaskDto]
-    })
+    attachments?: string[];
+
+    @IsNumber()
+    @IsOptional()
+    branchId?: number;
+
+    @IsArray()
+    @IsOptional()
+    assigneeIds?: number[];
+
+    @IsArray()
+    @IsOptional()
+    clientIds?: number[];
+
+    @IsArray()
+    @IsOptional()
     subtasks?: CreateSubtaskDto[];
+
+    @IsBoolean()
+    @IsOptional()
+    isDeleted?: boolean;
 }

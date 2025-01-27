@@ -21,42 +21,117 @@ export class TrackingService {
 
   async create(createTrackingDto: CreateTrackingDto) {
     try {
-      // Get address from coordinates
-      const address = await this.getAddressFromCoordinates(createTrackingDto.latitude, createTrackingDto.longitude);
+      // Get address from coordinates with retries and fallback
+      const { address, error: geocodingError } = await this.getAddressFromCoordinates(
+        createTrackingDto.latitude,
+        createTrackingDto.longitude
+      );
 
       const tracking = this.trackingRepository.create({
         ...createTrackingDto,
         address,
+        addressDecodingError: geocodingError || null,
+        // Store raw coordinates as fallback
+        rawLocation: `${createTrackingDto.latitude},${createTrackingDto.longitude}`,
       } as DeepPartial<Tracking>);
 
       await this.trackingRepository.save(tracking);
 
       return {
         message: process.env.SUCCESS_MESSAGE,
-        data: tracking
+        data: tracking,
+        warnings: geocodingError ? [{ type: 'GEOCODING_ERROR', message: geocodingError }] : []
       };
     } catch (error) {
       return {
         message: error.message,
-        tracking: null
+        tracking: null,
+        warnings: []
       };
     }
   }
 
-  private async getAddressFromCoordinates(latitude: number, longitude: number): Promise<string> {
-    try {
-      const response = await axios.get(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${this.geocodingApiKey}`
-      );
+  private async getAddressFromCoordinates(
+    latitude: number,
+    longitude: number
+  ): Promise<{ address: string | null; error?: string }> {
+    const MAX_RETRIES = 3;
+    const RETRY_DELAY = 1000; // 1 second
 
-      if (response.data.results && response.data.results.length > 0) {
-        return response.data.results[0].formatted_address;
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        if (!this.geocodingApiKey) {
+          return {
+            address: null,
+            error: 'Geocoding API key not configured'
+          };
+        }
+
+        const response = await axios.get(
+          `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${this.geocodingApiKey}`,
+          { timeout: 5000 } // 5 second timeout
+        );
+
+        if (response.data.status === 'ZERO_RESULTS') {
+          return {
+            address: null,
+            error: 'No address found for these coordinates'
+          };
+        }
+
+        if (response.data.status !== 'OK') {
+          return {
+            address: null,
+            error: `Geocoding API error: ${response.data.status}`
+          };
+        }
+
+        if (response.data.results && response.data.results.length > 0) {
+          return {
+            address: response.data.results[0].formatted_address
+          };
+        }
+
+        return {
+          address: null,
+          error: 'No results in geocoding response'
+        };
+
+      } catch (error) {
+        const isLastAttempt = attempt === MAX_RETRIES;
+
+        if (error.response?.status === 429) { // Rate limit error
+          if (!isLastAttempt) {
+            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * attempt));
+            continue;
+          }
+          return {
+            address: null,
+            error: 'Geocoding API rate limit exceeded'
+          };
+        }
+
+        if (isLastAttempt) {
+          console.error('Geocoding error after max retries:', {
+            error: error.message,
+            coordinates: { latitude, longitude },
+            attempts: attempt
+          });
+
+          return {
+            address: null,
+            error: `Geocoding failed: ${error.message}`
+          };
+        }
+
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * attempt));
       }
-      return null;
-    } catch (error) {
-      console.error('Geocoding error:', error);
-      return null;
     }
+
+    return {
+      address: null,
+      error: 'Max retries exceeded for geocoding request'
+    };
   }
 
   async getDailyTracking(userId: number, date: Date = new Date()) {
