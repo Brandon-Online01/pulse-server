@@ -6,7 +6,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Between } from 'typeorm';
 import { NotificationType } from '../lib/enums/notification.enums';
 import { NotificationStatus } from '../lib/enums/notification.enums';
-import { SubTaskStatus, TaskStatus } from '../lib/enums/status.enums';
+import { SubTaskStatus } from '../lib/enums/status.enums';
 import { Task } from './entities/task.entity';
 import { SubTask } from './entities/subtask.entity';
 import { UpdateSubtaskDto } from './dto/update-subtask.dto';
@@ -14,6 +14,8 @@ import { RewardsService } from '../rewards/rewards.service';
 import { XP_VALUES } from '../lib/constants/constants';
 import { XP_VALUES_TYPES } from '../lib/constants/constants';
 import { CreateTaskDto } from './dto/create-task.dto';
+import { TaskStatus, RepetitionType, TaskType } from '../lib/enums/task.enums';
+import { addDays, addWeeks, addMonths, addYears } from 'date-fns';
 
 @Injectable()
 export class TasksService {
@@ -25,6 +27,64 @@ export class TasksService {
 		private readonly eventEmitter: EventEmitter2,
 		private readonly rewardsService: RewardsService
 	) { }
+
+	private async createRepeatingTasks(baseTask: Task, createTaskDto: CreateTaskDto): Promise<void> {
+		if (!createTaskDto.repetitionType || createTaskDto.repetitionType === RepetitionType.NONE || !createTaskDto.deadline || !createTaskDto.repetitionEndDate) {
+			return;
+		}
+
+		let currentDate = new Date(createTaskDto.deadline);
+		const endDate = new Date(createTaskDto.repetitionEndDate);
+		let tasksCreated = 0;
+
+		while (currentDate < endDate) {
+			let nextDate: Date;
+			switch (createTaskDto.repetitionType) {
+				case RepetitionType.DAILY:
+					nextDate = addDays(currentDate, 1);
+					break;
+				case RepetitionType.WEEKLY:
+					nextDate = addWeeks(currentDate, 1);
+					break;
+				case RepetitionType.MONTHLY:
+					nextDate = addMonths(currentDate, 1);
+					break;
+				case RepetitionType.YEARLY:
+					nextDate = addYears(currentDate, 1);
+					break;
+				default:
+					return;
+			}
+
+			// Skip if we've somehow gone past the end date
+			if (nextDate > endDate) {
+				break;
+			}
+
+			const repeatedTask = new Task();
+			repeatedTask.title = `${createTaskDto.title} (${tasksCreated + 1} of ${createTaskDto.repetitionType})`;
+			repeatedTask.description = createTaskDto.description;
+			repeatedTask.deadline = nextDate;
+			repeatedTask.assignees = baseTask.assignees;
+			repeatedTask.clients = baseTask.clients;
+			repeatedTask.status = TaskStatus.PENDING;
+			repeatedTask.taskType = createTaskDto.taskType || TaskType.OTHER;
+			repeatedTask.priority = createTaskDto.priority;
+			repeatedTask.progress = 0;
+			repeatedTask.attachments = createTaskDto.attachments;
+			repeatedTask.branch = baseTask.branch;
+			repeatedTask.lastCompletedAt = null;
+			repeatedTask.repetitionType = RepetitionType.NONE;
+			repeatedTask.repetitionEndDate = null;
+			repeatedTask.createdBy = baseTask.createdBy;
+
+			await this.taskRepository.save(repeatedTask);
+			console.log(`Created repeating task for ${nextDate}`);
+
+			currentDate = nextDate;
+			tasksCreated++;
+		}
+	}
 
 	async create(createTaskDto: CreateTaskDto): Promise<{ message: string }> {
 		try {
@@ -40,6 +100,9 @@ export class TasksService {
 			if (!task) {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
+
+			// Create future instances if task is repeating
+			await this.createRepeatingTasks(task, createTaskDto);
 
 			if (createTaskDto?.subtasks && createTaskDto?.subtasks?.length > 0) {
 				const subtasks = createTaskDto?.subtasks?.map(subtask => ({
@@ -317,12 +380,13 @@ export class TasksService {
 			});
 
 			const byStatus: Record<TaskStatus, number> = {
-				[TaskStatus.POSTPONED]: 0,
-				[TaskStatus.MISSED]: 0,
+				[TaskStatus.PENDING]: 0,
+				[TaskStatus.IN_PROGRESS]: 0,
 				[TaskStatus.COMPLETED]: 0,
 				[TaskStatus.CANCELLED]: 0,
-				[TaskStatus.PENDING]: 0,
-				[TaskStatus.INPROGRESS]: 0
+				[TaskStatus.OVERDUE]: 0,
+				[TaskStatus.POSTPONED]: 0,
+				[TaskStatus.MISSED]: 0
 			};
 
 			tasks.forEach(task => {

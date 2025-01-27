@@ -46,14 +46,14 @@ let ShopController = class ShopController {
     checkout(items) {
         return this.shopService.checkout(items);
     }
-    getOrders() {
-        return this.shopService.getAllOrders();
+    getQuotations() {
+        return this.shopService.getAllQuotations();
     }
-    getOrderByRef(ref) {
-        return this.shopService.getOrderByRef(ref);
+    getQuotationByRef(ref) {
+        return this.shopService.getQuotationByRef(ref);
     }
-    getOrdersByUser(ref) {
-        return this.shopService.getOrdersByUser(ref);
+    getQuotationsByUser(ref) {
+        return this.shopService.getQuotationsByUser(ref);
     }
     getBanner() {
         return this.shopService.getBanner();
@@ -125,31 +125,31 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], ShopController.prototype, "checkout", null);
 __decorate([
-    (0, common_1.Get)('orders'),
+    (0, common_1.Get)('quotations'),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
-    (0, swagger_1.ApiOperation)({ summary: 'get a list of all orders' }),
+    (0, swagger_1.ApiOperation)({ summary: 'get a list of all quotations' }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
-], ShopController.prototype, "getOrders", null);
+], ShopController.prototype, "getQuotations", null);
 __decorate([
-    (0, common_1.Get)('order/:ref'),
+    (0, common_1.Get)('quotations/:ref'),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
-    (0, swagger_1.ApiOperation)({ summary: 'get an order by reference' }),
+    (0, swagger_1.ApiOperation)({ summary: 'get an quotations by reference' }),
     __param(0, (0, common_1.Param)('ref')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", void 0)
-], ShopController.prototype, "getOrderByRef", null);
+], ShopController.prototype, "getQuotationByRef", null);
 __decorate([
-    (0, common_1.Get)('orders/by/:ref'),
+    (0, common_1.Get)('quotations/by/:ref'),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
-    (0, swagger_1.ApiOperation)({ summary: 'get a list of orders owned by user' }),
+    (0, swagger_1.ApiOperation)({ summary: 'get a list of quotations owned by user' }),
     __param(0, (0, common_1.Param)('ref')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", void 0)
-], ShopController.prototype, "getOrdersByUser", null);
+], ShopController.prototype, "getQuotationsByUser", null);
 __decorate([
     (0, common_1.Get)('banners'),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),

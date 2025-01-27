@@ -3,7 +3,9 @@ export enum TaskStatus {
     IN_PROGRESS = 'IN_PROGRESS',
     COMPLETED = 'COMPLETED',
     CANCELLED = 'CANCELLED',
-    OVERDUE = 'OVERDUE'
+    OVERDUE = 'OVERDUE',
+    POSTPONED = 'POSTPONED',
+    MISSED = 'MISSED'
 }
 
 export enum TaskPriority {

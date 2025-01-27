@@ -328,18 +328,18 @@ export class ShopService {
         }
     }
 
-    async getAllOrders(): Promise<{ orders: Quotation[], message: string }> {
+    async getAllQuotations(): Promise<{ quotations: Quotation[], message: string }> {
         try {
-            const orders = await this.quotationRepository.find({
+            const quotations = await this.quotationRepository.find({
                 relations: ['placedBy', 'client', 'quotationItems']
-            }); 
+            });
 
-            if (!orders) {
+            if (!quotations) {
                 throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
 
             const response = {
-                orders,
+                quotations,
                 message: process.env.SUCCESS_MESSAGE,
             };
 
@@ -347,16 +347,16 @@ export class ShopService {
         } catch (error) {
             const response = {
                 message: error?.message,
-                orders: []
+                quotations: []
             }
 
             return response;
         }
     }
 
-    async getOrdersByUser(ref: number): Promise<{ orders: Quotation[], message: string }> {
+    async getQuotationsByUser(ref: number): Promise<{ quotations: Quotation[], message: string }> {
         try {
-            const orders = await this.quotationRepository.find({
+            const quotations = await this.quotationRepository.find({
                 where: {
                     placedBy: {
                         uid: ref
@@ -365,53 +365,53 @@ export class ShopService {
                 relations: ['placedBy', 'client', 'quotationItems']
             });
 
-            if (!orders) {
+            if (!quotations) {
                 throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
 
-            const formattedOrders = orders.map(order => ({
-                ...order,
-                totalAmount: Number(order.totalAmount)
+            const formattedQuotations = quotations.map(quotation => ({
+                ...quotation,
+                totalAmount: Number(quotation.totalAmount)
             }));
 
             return {
-                orders: formattedOrders,
+                quotations: formattedQuotations,
                 message: process.env.SUCCESS_MESSAGE,
             };
         } catch (error) {
             return {
                 message: error?.message,
-                orders: []
+                quotations: []
             }
         }
     }
 
-    async getOrderByRef(ref: number): Promise<{ orders: Quotation, message: string }> {
+    async getQuotationByRef(ref: number): Promise<{ quotation: Quotation, message: string }> {
         try {
-            const order = await this.quotationRepository.findOne({
+            const quotation = await this.quotationRepository.findOne({
                 where: {
                     uid: ref
                 },
                 relations: ['placedBy', 'client', 'quotationItems', 'quotationItems.product']
             });
 
-            if (!order) {
+            if (!quotation) {
                 throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
 
-            const formattedOrder = {
-                ...order,
-                totalAmount: Number(order.totalAmount)
+            const formattedQuotation = {
+                ...quotation,
+                totalAmount: Number(quotation.totalAmount)
             };
 
             return {
-                orders: formattedOrder,
+                quotation: formattedQuotation,
                 message: process.env.SUCCESS_MESSAGE,
             };
         } catch (error) {
             return {
                 message: error?.message,
-                orders: null
+                quotation: null
             }
         }
     }

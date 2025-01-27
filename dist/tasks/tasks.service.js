@@ -26,12 +26,64 @@ const subtask_entity_1 = require("./entities/subtask.entity");
 const rewards_service_1 = require("../rewards/rewards.service");
 const constants_1 = require("../lib/constants/constants");
 const constants_2 = require("../lib/constants/constants");
+const task_enums_1 = require("../lib/enums/task.enums");
+const date_fns_1 = require("date-fns");
 let TasksService = class TasksService {
     constructor(taskRepository, subtaskRepository, eventEmitter, rewardsService) {
         this.taskRepository = taskRepository;
         this.subtaskRepository = subtaskRepository;
         this.eventEmitter = eventEmitter;
         this.rewardsService = rewardsService;
+    }
+    async createRepeatingTasks(baseTask, createTaskDto) {
+        if (!createTaskDto.repetitionType || createTaskDto.repetitionType === task_enums_1.RepetitionType.NONE || !createTaskDto.deadline || !createTaskDto.repetitionEndDate) {
+            return;
+        }
+        let currentDate = new Date(createTaskDto.deadline);
+        const endDate = new Date(createTaskDto.repetitionEndDate);
+        let tasksCreated = 0;
+        while (currentDate < endDate) {
+            let nextDate;
+            switch (createTaskDto.repetitionType) {
+                case task_enums_1.RepetitionType.DAILY:
+                    nextDate = (0, date_fns_1.addDays)(currentDate, 1);
+                    break;
+                case task_enums_1.RepetitionType.WEEKLY:
+                    nextDate = (0, date_fns_1.addWeeks)(currentDate, 1);
+                    break;
+                case task_enums_1.RepetitionType.MONTHLY:
+                    nextDate = (0, date_fns_1.addMonths)(currentDate, 1);
+                    break;
+                case task_enums_1.RepetitionType.YEARLY:
+                    nextDate = (0, date_fns_1.addYears)(currentDate, 1);
+                    break;
+                default:
+                    return;
+            }
+            if (nextDate > endDate) {
+                break;
+            }
+            const repeatedTask = new task_entity_1.Task();
+            repeatedTask.title = `${createTaskDto.title} (${tasksCreated + 1} of ${createTaskDto.repetitionType})`;
+            repeatedTask.description = createTaskDto.description;
+            repeatedTask.deadline = nextDate;
+            repeatedTask.assignees = baseTask.assignees;
+            repeatedTask.clients = baseTask.clients;
+            repeatedTask.status = task_enums_1.TaskStatus.PENDING;
+            repeatedTask.taskType = createTaskDto.taskType || task_enums_1.TaskType.OTHER;
+            repeatedTask.priority = createTaskDto.priority;
+            repeatedTask.progress = 0;
+            repeatedTask.attachments = createTaskDto.attachments;
+            repeatedTask.branch = baseTask.branch;
+            repeatedTask.lastCompletedAt = null;
+            repeatedTask.repetitionType = task_enums_1.RepetitionType.NONE;
+            repeatedTask.repetitionEndDate = null;
+            repeatedTask.createdBy = baseTask.createdBy;
+            await this.taskRepository.save(repeatedTask);
+            console.log(`Created repeating task for ${nextDate}`);
+            currentDate = nextDate;
+            tasksCreated++;
+        }
     }
     async create(createTaskDto) {
         try {
@@ -45,6 +97,7 @@ let TasksService = class TasksService {
             if (!task) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
+            await this.createRepeatingTasks(task, createTaskDto);
             if (createTaskDto?.subtasks && createTaskDto?.subtasks?.length > 0) {
                 const subtasks = createTaskDto?.subtasks?.map(subtask => ({
                     ...subtask,
@@ -276,12 +329,13 @@ let TasksService = class TasksService {
                 },
             });
             const byStatus = {
-                [status_enums_1.TaskStatus.POSTPONED]: 0,
-                [status_enums_1.TaskStatus.MISSED]: 0,
-                [status_enums_1.TaskStatus.COMPLETED]: 0,
-                [status_enums_1.TaskStatus.CANCELLED]: 0,
-                [status_enums_1.TaskStatus.PENDING]: 0,
-                [status_enums_1.TaskStatus.INPROGRESS]: 0
+                [task_enums_1.TaskStatus.PENDING]: 0,
+                [task_enums_1.TaskStatus.IN_PROGRESS]: 0,
+                [task_enums_1.TaskStatus.COMPLETED]: 0,
+                [task_enums_1.TaskStatus.CANCELLED]: 0,
+                [task_enums_1.TaskStatus.OVERDUE]: 0,
+                [task_enums_1.TaskStatus.POSTPONED]: 0,
+                [task_enums_1.TaskStatus.MISSED]: 0
             };
             tasks.forEach(task => {
                 if (task.status)
@@ -294,7 +348,7 @@ let TasksService = class TasksService {
         }
         catch (error) {
             return {
-                byStatus: Object.values(status_enums_1.TaskStatus).reduce((acc, status) => ({ ...acc, [status]: 0 }), {}),
+                byStatus: Object.values(task_enums_1.TaskStatus).reduce((acc, status) => ({ ...acc, [status]: 0 }), {}),
                 total: 0
             };
         }

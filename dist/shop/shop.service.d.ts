@@ -60,16 +60,16 @@ export declare class ShopService {
     deleteBanner(uid: number): Promise<{
         message: string;
     }>;
-    getAllOrders(): Promise<{
-        orders: Quotation[];
+    getAllQuotations(): Promise<{
+        quotations: Quotation[];
         message: string;
     }>;
-    getOrdersByUser(ref: number): Promise<{
-        orders: Quotation[];
+    getQuotationsByUser(ref: number): Promise<{
+        quotations: Quotation[];
         message: string;
     }>;
-    getOrderByRef(ref: number): Promise<{
-        orders: Quotation;
+    getQuotationByRef(ref: number): Promise<{
+        quotation: Quotation;
         message: string;
     }>;
     getOrdersForDate(date: Date): Promise<{

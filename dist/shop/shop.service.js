@@ -274,16 +274,16 @@ let ShopService = class ShopService {
             };
         }
     }
-    async getAllOrders() {
+    async getAllQuotations() {
         try {
-            const orders = await this.quotationRepository.find({
+            const quotations = await this.quotationRepository.find({
                 relations: ['placedBy', 'client', 'quotationItems']
             });
-            if (!orders) {
+            if (!quotations) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
             const response = {
-                orders,
+                quotations,
                 message: process.env.SUCCESS_MESSAGE,
             };
             return response;
@@ -291,14 +291,14 @@ let ShopService = class ShopService {
         catch (error) {
             const response = {
                 message: error?.message,
-                orders: []
+                quotations: []
             };
             return response;
         }
     }
-    async getOrdersByUser(ref) {
+    async getQuotationsByUser(ref) {
         try {
-            const orders = await this.quotationRepository.find({
+            const quotations = await this.quotationRepository.find({
                 where: {
                     placedBy: {
                         uid: ref
@@ -306,49 +306,49 @@ let ShopService = class ShopService {
                 },
                 relations: ['placedBy', 'client', 'quotationItems']
             });
-            if (!orders) {
+            if (!quotations) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
-            const formattedOrders = orders.map(order => ({
-                ...order,
-                totalAmount: Number(order.totalAmount)
+            const formattedQuotations = quotations.map(quotation => ({
+                ...quotation,
+                totalAmount: Number(quotation.totalAmount)
             }));
             return {
-                orders: formattedOrders,
+                quotations: formattedQuotations,
                 message: process.env.SUCCESS_MESSAGE,
             };
         }
         catch (error) {
             return {
                 message: error?.message,
-                orders: []
+                quotations: []
             };
         }
     }
-    async getOrderByRef(ref) {
+    async getQuotationByRef(ref) {
         try {
-            const order = await this.quotationRepository.findOne({
+            const quotation = await this.quotationRepository.findOne({
                 where: {
                     uid: ref
                 },
                 relations: ['placedBy', 'client', 'quotationItems', 'quotationItems.product']
             });
-            if (!order) {
+            if (!quotation) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
-            const formattedOrder = {
-                ...order,
-                totalAmount: Number(order.totalAmount)
+            const formattedQuotation = {
+                ...quotation,
+                totalAmount: Number(quotation.totalAmount)
             };
             return {
-                orders: formattedOrder,
+                quotation: formattedQuotation,
                 message: process.env.SUCCESS_MESSAGE,
             };
         }
         catch (error) {
             return {
                 message: error?.message,
-                orders: null
+                quotation: null
             };
         }
     }

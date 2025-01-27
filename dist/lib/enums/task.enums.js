@@ -8,6 +8,8 @@ var TaskStatus;
     TaskStatus["COMPLETED"] = "COMPLETED";
     TaskStatus["CANCELLED"] = "CANCELLED";
     TaskStatus["OVERDUE"] = "OVERDUE";
+    TaskStatus["POSTPONED"] = "POSTPONED";
+    TaskStatus["MISSED"] = "MISSED";
 })(TaskStatus || (exports.TaskStatus = TaskStatus = {}));
 var TaskPriority;
 (function (TaskPriority) {

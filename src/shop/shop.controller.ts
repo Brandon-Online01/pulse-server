@@ -62,25 +62,25 @@ export class ShopController {
     return this.shopService.checkout(items);
   }
 
-  @Get('orders')
+  @Get('quotations')
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
-  @ApiOperation({ summary: 'get a list of all orders' })
-  getOrders() {
-    return this.shopService.getAllOrders();
+  @ApiOperation({ summary: 'get a list of all quotations' })
+  getQuotations() {
+    return this.shopService.getAllQuotations();
   }
 
-  @Get('order/:ref')
+  @Get('quotations/:ref')
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
-  @ApiOperation({ summary: 'get an order by reference' })
-  getOrderByRef(@Param('ref') ref: number) {
-    return this.shopService.getOrderByRef(ref);
+  @ApiOperation({ summary: 'get an quotations by reference' })
+  getQuotationByRef(@Param('ref') ref: number) {
+    return this.shopService.getQuotationByRef(ref);
   }
 
-  @Get('orders/by/:ref')
+  @Get('quotations/by/:ref')
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
-  @ApiOperation({ summary: 'get a list of orders owned by user' })
-  getOrdersByUser(@Param('ref') ref: number) {
-    return this.shopService.getOrdersByUser(ref);
+  @ApiOperation({ summary: 'get a list of quotations owned by user' })
+  getQuotationsByUser(@Param('ref') ref: number) {
+    return this.shopService.getQuotationsByUser(ref);
   }
 
   //shop banners

@@ -29,16 +29,16 @@ export declare class ShopController {
     checkout(items: CheckoutDto): Promise<{
         message: string;
     }>;
-    getOrders(): Promise<{
-        orders: import("./entities/quotation.entity").Quotation[];
+    getQuotations(): Promise<{
+        quotations: import("./entities/quotation.entity").Quotation[];
         message: string;
     }>;
-    getOrderByRef(ref: number): Promise<{
-        orders: import("./entities/quotation.entity").Quotation;
+    getQuotationByRef(ref: number): Promise<{
+        quotation: import("./entities/quotation.entity").Quotation;
         message: string;
     }>;
-    getOrdersByUser(ref: number): Promise<{
-        orders: import("./entities/quotation.entity").Quotation[];
+    getQuotationsByUser(ref: number): Promise<{
+        quotations: import("./entities/quotation.entity").Quotation[];
         message: string;
     }>;
     getBanner(): Promise<{

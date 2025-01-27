@@ -103,10 +103,10 @@ let ReportsService = class ReportsService {
                     totalValue: claimsStats?.totalValue || 0
                 },
                 tasks: {
-                    pending: tasksStats?.pending,
-                    completed: tasksStats?.completed,
-                    missed: tasksStats?.missed,
-                    postponed: tasksStats?.postponed,
+                    pending: tasksStats?.PENDING,
+                    completed: tasksStats?.COMPLETED,
+                    missed: tasksStats?.MISSED,
+                    postponed: tasksStats?.POSTPONED,
                     total: Object?.values(tasksStats)?.reduce((acc, curr) => acc + curr, 0)
                 },
                 attendance: {
