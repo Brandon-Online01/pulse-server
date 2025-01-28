@@ -1,25 +1,22 @@
-import { Organisation } from '../../organisation/entities/organisation.entity';
+import { BaseEntity } from '../../lib/entities/base.entity';
 import { LicenseType, SubscriptionPlan, LicenseStatus, BillingCycle } from '../../lib/enums/license.enums';
-export declare class License {
-    uid: string;
+import { Organisation } from '../../organisation/entities/organisation.entity';
+export declare class License extends BaseEntity {
     licenseKey: string;
     type: LicenseType;
     plan: SubscriptionPlan;
     status: LicenseStatus;
     billingCycle: BillingCycle;
+    validUntil: Date;
+    lastValidated?: Date;
     maxUsers: number;
     maxBranches: number;
     storageLimit: number;
     apiCallLimit: number;
     integrationLimit: number;
-    validFrom: Date;
-    validUntil: Date;
-    lastValidated: Date;
-    isAutoRenew: boolean;
-    price: number;
     features: Record<string, boolean>;
+    price: number;
+    organisationRef: number;
+    hasPendingPayments: boolean;
     organisation: Organisation;
-    organisationRef: string;
-    createdAt: Date;
-    updatedAt: Date;
 }

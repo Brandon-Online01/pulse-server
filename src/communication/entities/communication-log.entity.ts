@@ -38,6 +38,6 @@ export class CommunicationLog {
 		to: string[];
 	};
 
-	@CreateDateColumn()
+	@Column({ type: 'timestamp', nullable: false, default: () => 'CURRENT_TIMESTAMP' })
 	createdAt: Date;
 } 

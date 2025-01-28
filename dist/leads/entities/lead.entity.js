@@ -39,18 +39,11 @@ __decorate([
     __metadata("design:type", String)
 ], Lead.prototype, "notes", void 0);
 __decorate([
-    (0, typeorm_1.Column)({
-        nullable: false,
-        default: () => 'CURRENT_TIMESTAMP'
-    }),
+    (0, typeorm_1.Column)({ type: 'timestamp', nullable: false, default: () => 'CURRENT_TIMESTAMP' }),
     __metadata("design:type", Date)
 ], Lead.prototype, "createdAt", void 0);
 __decorate([
-    (0, typeorm_1.Column)({
-        nullable: false,
-        default: () => 'CURRENT_TIMESTAMP',
-        onUpdate: 'CURRENT_TIMESTAMP'
-    }),
+    (0, typeorm_1.Column)({ type: 'timestamp', nullable: false, onUpdate: 'CURRENT_TIMESTAMP', default: () => 'CURRENT_TIMESTAMP' }),
     __metadata("design:type", Date)
 ], Lead.prototype, "updatedAt", void 0);
 __decorate([

@@ -17,6 +17,7 @@ export declare class AuthService {
     private passwordResetService;
     private licensingService;
     constructor(jwtService: JwtService, userService: UserService, rewardsService: RewardsService, eventEmitter: EventEmitter2, pendingSignupService: PendingSignupService, passwordResetService: PasswordResetService, licensingService: LicensingService);
+    private excludePassword;
     private generateSecureToken;
     signIn(signInInput: SignInInput): Promise<SignInResponse>;
     signUp(signUpInput: SignUpInput): Promise<SignUpResponse>;
@@ -44,9 +45,20 @@ export declare class AuthService {
                 features: Record<string, boolean>;
             };
             uid: number;
-            username: string;
-            password: string;
+            createdAt: Date;
+            updatedAt: Date;
+            isDeleted: boolean;
+            status: import("../lib/enums/status.enums").AccountStatus;
+            branch: import("../branch/entities/branch.entity").Branch;
             name: string;
+            username: string;
+            assets: import("../assets/entities/asset.entity").Asset[];
+            clients: import("../clients/entities/client.entity").Client[];
+            leads: import("../leads/entities/lead.entity").Lead[];
+            notifications: import("../notifications/entities/notification.entity").Notification[];
+            reports: import("../reports/entities/report.entity").Report[];
+            rewards: import("../rewards/entities/user-rewards.entity").UserRewards;
+            tasks: import("../tasks/entities/task.entity").Task[];
             surname: string;
             email: string;
             phone: string;
@@ -55,10 +67,6 @@ export declare class AuthService {
             userref: string;
             organisation: import("../organisation/entities/organisation.entity").Organisation;
             organisationRef: string;
-            createdAt: Date;
-            updatedAt: Date;
-            isDeleted: boolean;
-            status: import("../lib/enums/status.enums").AccountStatus;
             verificationToken: string;
             resetToken: string;
             tokenExpires: Date;
@@ -67,24 +75,16 @@ export declare class AuthService {
             userAttendances: import("../attendance/entities/attendance.entity").Attendance[];
             userClaims: import("../claims/entities/claim.entity").Claim[];
             userDocs: import("../docs/entities/doc.entity").Doc[];
-            leads: import("../leads/entities/lead.entity").Lead[];
             journals: import("../journal/entities/journal.entity").Journal[];
-            tasks: import("../tasks/entities/task.entity").Task[];
             articles: import("../news/entities/news.entity").News[];
-            assets: import("../assets/entities/asset.entity").Asset[];
             trackings: import("../tracking/entities/tracking.entity").Tracking[];
             quotations: import("../shop/entities/quotation.entity").Quotation[];
-            notifications: import("../notifications/entities/notification.entity").Notification[];
-            branch: import("../branch/entities/branch.entity").Branch;
-            clients: import("../clients/entities/client.entity").Client[];
             checkIns: import("../check-ins/entities/check-in.entity").CheckIn[];
-            rewards: import("../rewards/entities/user-rewards.entity").UserRewards;
-            reports: import("../reports/entities/report.entity").Report[];
         };
         message: string;
     } | {
         accessToken: string;
-        profileData: import("../user/entities/user.entity").User;
+        profileData: Omit<import("../user/entities/user.entity").User, "password">;
         message: string;
     }>;
 }

@@ -28,7 +28,7 @@ __decorate([
 __decorate([
     (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
     __metadata("design:type", String)
-], Claim.prototype, "fileUrl", void 0);
+], Claim.prototype, "documentUrl", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'int', nullable: true }),
     __metadata("design:type", Number)

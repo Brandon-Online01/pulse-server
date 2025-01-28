@@ -20,56 +20,100 @@ exports.UpdateBranchDto = UpdateBranchDto;
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
+    (0, swagger_1.ApiProperty)({
+        description: 'The name of the branch',
+        example: 'Branch 1'
+    }),
     __metadata("design:type", String)
 ], UpdateBranchDto.prototype, "name", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
+    (0, swagger_1.ApiProperty)({
+        description: 'The email of the branch',
+        example: 'branch@example.com'
+    }),
     __metadata("design:type", String)
 ], UpdateBranchDto.prototype, "email", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
+    (0, swagger_1.ApiProperty)({
+        description: 'The phone number of the branch',
+        example: '08033333333'
+    }),
     __metadata("design:type", String)
 ], UpdateBranchDto.prototype, "phone", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
+    (0, swagger_1.ApiProperty)({
+        description: 'The contact person of the branch',
+        example: 'John Doe'
+    }),
     __metadata("design:type", String)
 ], UpdateBranchDto.prototype, "contactPerson", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
+    (0, swagger_1.ApiProperty)({
+        description: 'The address of the branch',
+        example: '123 Main St, City, Country'
+    }),
     __metadata("design:type", String)
 ], UpdateBranchDto.prototype, "address", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
+    (0, swagger_1.ApiProperty)({
+        description: 'The website of the branch',
+        example: 'https://www.branch.com'
+    }),
     __metadata("design:type", String)
 ], UpdateBranchDto.prototype, "website", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsEnum)(status_enums_1.GeneralStatus),
+    (0, swagger_1.ApiProperty)({
+        description: 'The status of the branch',
+        example: 'ACTIVE'
+    }),
     __metadata("design:type", String)
 ], UpdateBranchDto.prototype, "status", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsBoolean)(),
+    (0, swagger_1.ApiProperty)({
+        description: 'The deleted status of the branch',
+        example: false
+    }),
     __metadata("design:type", Boolean)
 ], UpdateBranchDto.prototype, "isDeleted", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsDate)(),
+    (0, swagger_1.ApiProperty)({
+        description: 'The created date of the branch',
+        example: `${new Date()}`
+    }),
     __metadata("design:type", Date)
 ], UpdateBranchDto.prototype, "createdAt", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsDate)(),
+    (0, swagger_1.ApiProperty)({
+        description: 'The updated date of the branch',
+        example: `${new Date()}`
+    }),
     __metadata("design:type", Date)
 ], UpdateBranchDto.prototype, "updatedAt", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsObject)(),
+    (0, swagger_1.ApiProperty)({
+        description: 'The organisation of the branch',
+        example: { uid: 1 }
+    }),
     __metadata("design:type", Object)
 ], UpdateBranchDto.prototype, "organisation", void 0);
 //# sourceMappingURL=update-branch.dto.js.map

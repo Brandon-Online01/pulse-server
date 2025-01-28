@@ -19,12 +19,16 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const license_usage_entity_1 = require("./entities/license-usage.entity");
 const license_event_entity_1 = require("./entities/license-event.entity");
+const licenses_1 = require("../lib/enums/licenses");
 let LicenseUsageService = LicenseUsageService_1 = class LicenseUsageService {
     constructor(usageRepository, eventRepository) {
         this.usageRepository = usageRepository;
         this.eventRepository = eventRepository;
         this.logger = new common_1.Logger(LicenseUsageService_1.name);
         this.ALERT_THRESHOLD = 0.8;
+        this.AGGREGATION_INTERVAL = 1000 * 60 * 5;
+        this.usageBuffer = new Map();
+        setInterval(() => this.processBufferedUsage(), this.AGGREGATION_INTERVAL);
     }
     async trackUsage(license, metricType, currentValue, metadata) {
         try {
@@ -36,6 +40,9 @@ let LicenseUsageService = LicenseUsageService_1 = class LicenseUsageService {
             if (typeof limit !== 'number' || isNaN(limit) || limit <= 0) {
                 this.logger.warn(`Invalid limit (${limit}) for metric ${metricType} in license ${license.uid}`);
                 return null;
+            }
+            if (metricType === licenses_1.MetricType.API_CALLS) {
+                return this.handleAPIUsage(license, currentValue, metadata);
             }
             const utilizationPercentage = Number(((currentValue / limit) * 100).toFixed(2));
             if (isNaN(utilizationPercentage)) {
@@ -53,8 +60,7 @@ let LicenseUsageService = LicenseUsageService_1 = class LicenseUsageService {
             });
             const saved = await this.usageRepository.save(usage);
             if (utilizationPercentage >= this.ALERT_THRESHOLD * 100) {
-                await this.createLimitExceededEvent(license, metricType, currentValue, limit)
-                    .catch(error => this.logger.error(`Failed to create limit exceeded event: ${error.message}`));
+                await this.createLimitExceededEvent(license, metricType, currentValue, limit);
             }
             return saved;
         }
@@ -63,20 +69,142 @@ let LicenseUsageService = LicenseUsageService_1 = class LicenseUsageService {
             return null;
         }
     }
+    async handleAPIUsage(license, callCount, metadata) {
+        const bufferKey = `${license.uid}_${licenses_1.MetricType.API_CALLS}`;
+        let buffer = this.usageBuffer.get(bufferKey) || [];
+        buffer.push({
+            timestamp: new Date(),
+            endpoint: metadata.endpoint,
+            method: metadata.method,
+            duration: metadata.duration,
+            statusCode: metadata.statusCode,
+            userAgent: metadata.userAgent,
+            ip: metadata.ip,
+            geoLocation: metadata.geoLocation
+        });
+        this.usageBuffer.set(bufferKey, buffer);
+        if (buffer.length >= 100) {
+            return this.processBufferedUsage(license);
+        }
+        return null;
+    }
+    async processBufferedUsage(specificLicense) {
+        try {
+            for (const [key, buffer] of this.usageBuffer.entries()) {
+                if (specificLicense && !key.startsWith(String(specificLicense?.uid)))
+                    continue;
+                const [licenseId] = key.split('_');
+                if (!buffer.length)
+                    continue;
+                const latestUsage = await this.usageRepository.findOne({
+                    where: {
+                        licenseId,
+                        metricType: licenses_1.MetricType.API_CALLS
+                    },
+                    order: { timestamp: 'DESC' }
+                });
+                const aggregatedMetadata = this.aggregateAPIUsage(buffer, latestUsage?.metadata);
+                const totalCalls = (latestUsage?.currentValue || 0) + buffer.length;
+                const license = specificLicense || latestUsage?.license;
+                const limit = this.getLimitForMetric(license, licenses_1.MetricType.API_CALLS);
+                const utilizationPercentage = Number(((totalCalls / limit) * 100).toFixed(2));
+                const usage = this.usageRepository.create({
+                    license,
+                    licenseId: licenseId,
+                    metricType: licenses_1.MetricType.API_CALLS,
+                    currentValue: totalCalls,
+                    limit,
+                    utilizationPercentage,
+                    metadata: aggregatedMetadata
+                });
+                const saved = await this.usageRepository.save(usage);
+                this.usageBuffer.set(key, []);
+                if (utilizationPercentage >= this.ALERT_THRESHOLD * 100) {
+                    await this.createLimitExceededEvent(license, licenses_1.MetricType.API_CALLS, totalCalls, limit);
+                }
+                return saved;
+            }
+        }
+        catch (error) {
+            this.logger.error(`Failed to process buffered usage: ${error.message}`, error.stack);
+        }
+        return null;
+    }
+    aggregateAPIUsage(buffer, existingMetadata = {}) {
+        const metadata = {
+            endpoints: existingMetadata?.endpoints || {},
+            methods: existingMetadata?.methods || {},
+            statusCodes: existingMetadata?.statusCodes || {},
+            performance: {
+                averageResponseTime: 0,
+                maxResponseTime: 0,
+                minResponseTime: Number.MAX_VALUE,
+                p95ResponseTime: 0,
+                errorRate: 0
+            },
+            clients: {
+                browsers: existingMetadata?.clients?.browsers || {},
+                os: existingMetadata?.clients?.os || {},
+                devices: existingMetadata?.clients?.devices || {},
+                locations: existingMetadata?.clients?.locations || {}
+            },
+            timeDistribution: {
+                hourly: new Array(24).fill(0),
+                daily: new Array(7).fill(0),
+                monthly: new Array(12).fill(0)
+            }
+        };
+        let totalDuration = 0;
+        let errorCount = 0;
+        const durations = [];
+        buffer.forEach(call => {
+            metadata.endpoints[call.endpoint] = (metadata.endpoints[call.endpoint] || 0) + 1;
+            metadata.methods[call.method] = (metadata.methods[call.method] || 0) + 1;
+            metadata.statusCodes[call.statusCode] = (metadata.statusCodes[call.statusCode] || 0) + 1;
+            totalDuration += call.duration;
+            durations.push(call.duration);
+            metadata.performance.maxResponseTime = Math.max(metadata.performance.maxResponseTime, call.duration);
+            metadata.performance.minResponseTime = Math.min(metadata.performance.minResponseTime, call.duration);
+            if (call.statusCode >= 400)
+                errorCount++;
+            if (call.userAgent) {
+                metadata.clients.browsers[call.userAgent.browser] =
+                    (metadata.clients.browsers[call.userAgent.browser] || 0) + 1;
+                metadata.clients.os[call.userAgent.os] =
+                    (metadata.clients.os[call.userAgent.os] || 0) + 1;
+                metadata.clients.devices[call.userAgent.device] =
+                    (metadata.clients.devices[call.userAgent.device] || 0) + 1;
+            }
+            if (call.geoLocation?.country) {
+                metadata.clients.locations[call.geoLocation.country] =
+                    (metadata.clients.locations[call.geoLocation.country] || 0) + 1;
+            }
+            const date = new Date(call.timestamp);
+            metadata.timeDistribution.hourly[date.getHours()]++;
+            metadata.timeDistribution.daily[date.getDay()]++;
+            metadata.timeDistribution.monthly[date.getMonth()]++;
+        });
+        metadata.performance.averageResponseTime = totalDuration / buffer.length;
+        metadata.performance.errorRate = (errorCount / buffer.length) * 100;
+        durations.sort((a, b) => a - b);
+        const p95Index = Math.floor(durations.length * 0.95);
+        metadata.performance.p95ResponseTime = durations[p95Index] || 0;
+        return metadata;
+    }
     getLimitForMetric(license, metricType) {
         if (!license)
             return 0;
         try {
             switch (metricType) {
-                case license_usage_entity_1.MetricType.USERS:
+                case licenses_1.MetricType.USERS:
                     return license.maxUsers || 0;
-                case license_usage_entity_1.MetricType.BRANCHES:
+                case licenses_1.MetricType.BRANCHES:
                     return license.maxBranches || 0;
-                case license_usage_entity_1.MetricType.STORAGE:
+                case licenses_1.MetricType.STORAGE:
                     return license.storageLimit || 0;
-                case license_usage_entity_1.MetricType.API_CALLS:
+                case licenses_1.MetricType.API_CALLS:
                     return license.apiCallLimit || 0;
-                case license_usage_entity_1.MetricType.INTEGRATIONS:
+                case licenses_1.MetricType.INTEGRATIONS:
                     return license.integrationLimit || 0;
                 default:
                     this.logger.warn(`Unknown metric type: ${metricType}`);
@@ -95,7 +223,7 @@ let LicenseUsageService = LicenseUsageService_1 = class LicenseUsageService {
             }
             const event = this.eventRepository.create({
                 license,
-                licenseId: String(license.uid),
+                licenseId: license.uid.toString(),
                 eventType: license_event_entity_1.LicenseEventType.LIMIT_EXCEEDED,
                 details: {
                     metricType,
@@ -128,7 +256,7 @@ let LicenseUsageService = LicenseUsageService_1 = class LicenseUsageService {
             order: { timestamp: 'DESC' },
         });
         const analytics = {};
-        Object.values(license_usage_entity_1.MetricType).forEach(metricType => {
+        Object.values(licenses_1.MetricType).forEach(metricType => {
             const latestUsage = usage?.find(u => u?.metricType === metricType);
             analytics[metricType] = latestUsage ? latestUsage?.utilizationPercentage : 0;
         });

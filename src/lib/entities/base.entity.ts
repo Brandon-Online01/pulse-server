@@ -1,6 +1,4 @@
 import {
-    CreateDateColumn,
-    UpdateDateColumn,
     DeleteDateColumn,
     PrimaryGeneratedColumn,
     Index,
@@ -14,17 +12,10 @@ export abstract class BaseEntity {
     @PrimaryGeneratedColumn()
     uid: number;
 
-    @CreateDateColumn({
-        type: 'timestamp',
-        default: () => 'CURRENT_TIMESTAMP',
-    })
+    @Column({ type: 'timestamp', nullable: false, default: () => 'CURRENT_TIMESTAMP' })
     createdAt: Date;
 
-    @UpdateDateColumn({
-        type: 'timestamp',
-        default: () => 'CURRENT_TIMESTAMP',
-        onUpdate: 'CURRENT_TIMESTAMP',
-    })
+    @Column({ type: 'timestamp', nullable: false, onUpdate: 'CURRENT_TIMESTAMP', default: () => 'CURRENT_TIMESTAMP' })
     updatedAt: Date;
 
     @DeleteDateColumn({

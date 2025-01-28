@@ -54,7 +54,7 @@ let LicensingNotificationsService = LicensingNotificationsService_1 = class Lice
         for (const license of gracePeriodLicenses) {
             const daysRemaining = Math.ceil((license.validUntil.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
             if (daysRemaining <= 0) {
-                await this.licensingService.update(license.uid, { status: license_enums_1.LicenseStatus.EXPIRED });
+                await this.licensingService.update(String(license.uid), { status: license_enums_1.LicenseStatus.EXPIRED });
                 await this.sendExpirationNotification(license, 0);
             }
         }

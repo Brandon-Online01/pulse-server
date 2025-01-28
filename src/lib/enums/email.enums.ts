@@ -18,5 +18,7 @@ export enum EmailType {
     LICENSE_LIMIT_REACHED = 'license_limit_reached',
     LICENSE_RENEWED = 'license_renewed',
     LICENSE_SUSPENDED = 'license_suspended',
-    LICENSE_ACTIVATED = 'license_activated'
+    LICENSE_ACTIVATED = 'license_activated',
+    LICENSE_TRANSFERRED_FROM = 'license.transferred.from',
+    LICENSE_TRANSFERRED_TO = 'license.transferred.to',
 } 

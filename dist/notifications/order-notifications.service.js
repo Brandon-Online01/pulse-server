@@ -48,14 +48,12 @@ let OrderNotificationsService = class OrderNotificationsService {
         const baseOrderData = {
             name: quotation.client?.name || 'Valued Customer',
             quotationId: quotation.quotationNumber,
-            expectedDelivery: quotation?.validUntil,
+            validUntil: quotation?.validUntil,
             total: Number(quotation.totalAmount) || 0,
             currency,
-            shippingMethod: quotation.shippingMethod || 'Standard Shipping',
-            validUntil: quotation?.validUntil,
             quotationItems: quotation.quotationItems.map(item => ({
                 quantity: item.quantity,
-                product: { uid: String(item.product.uid) },
+                product: { uid: Number(item.product.uid) },
                 totalPrice: Number(item.totalPrice) || 0
             }))
         };

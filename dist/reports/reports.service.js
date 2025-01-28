@@ -189,7 +189,7 @@ let ReportsService = class ReportsService {
                 const currentQuotations = quotationsStats?.quotations?.metrics?.totalQuotations || 0;
                 const emailData = {
                     name: userData.user.username,
-                    date: new Date(),
+                    date: `${new Date()}`,
                     metrics: {
                         xp: {
                             level: userRewards?.rewards?.rank || 1,

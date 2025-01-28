@@ -12,7 +12,7 @@ export class Claim {
     amount: string;
 
     @Column({ type: 'varchar', nullable: true })
-    fileUrl: string;
+    documentUrl: string;
 
     @Column({ type: 'int', nullable: true })
     verifiedBy: number;

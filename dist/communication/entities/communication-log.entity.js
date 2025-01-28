@@ -59,7 +59,7 @@ __decorate([
     __metadata("design:type", Object)
 ], CommunicationLog.prototype, "envelope", void 0);
 __decorate([
-    (0, typeorm_1.CreateDateColumn)(),
+    (0, typeorm_1.Column)({ type: 'timestamp', nullable: false, default: () => 'CURRENT_TIMESTAMP' }),
     __metadata("design:type", Date)
 ], CommunicationLog.prototype, "createdAt", void 0);
 exports.CommunicationLog = CommunicationLog = __decorate([

@@ -2,7 +2,7 @@ import { Injectable, NestInterceptor, ExecutionContext, CallHandler, Logger } fr
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { LicenseUsageService } from './license-usage.service';
-import { MetricType } from './entities/license-usage.entity';
+import { MetricType } from '../lib/enums/licenses';
 import { LicensingService } from './licensing.service';
 import { Request } from 'express';
 

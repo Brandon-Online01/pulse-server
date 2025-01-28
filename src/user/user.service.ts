@@ -15,6 +15,11 @@ export class UserService {
 		private userRepository: Repository<User>,
 	) { }
 
+	private excludePassword(user: User): Omit<User, 'password'> {
+		const { password, ...userWithoutPassword } = user;
+		return userWithoutPassword;
+	}
+
 	async create(createUserDto: CreateUserDto): Promise<{ message: string }> {
 		try {
 			if (createUserDto.password) {
@@ -41,7 +46,7 @@ export class UserService {
 		}
 	}
 
-	async findAll(): Promise<{ users: User[] | null, message: string }> {
+	async findAll(): Promise<{ users: Omit<User, 'password'>[] | null, message: string }> {
 		try {
 			const users = await this.userRepository.find({ where: { isDeleted: false } });
 
@@ -50,7 +55,7 @@ export class UserService {
 			}
 
 			const response = {
-				users: users,
+				users: users.map(user => this.excludePassword(user)),
 				message: process.env.SUCCESS_MESSAGE,
 			};
 
@@ -66,7 +71,7 @@ export class UserService {
 		}
 	}
 
-	async findOne(searchParameter: number): Promise<{ user: User | null, message: string }> {
+	async findOne(searchParameter: number): Promise<{ user: Omit<User, 'password'> | null, message: string }> {
 		try {
 			const user = await this.userRepository.findOne({
 				where: [
@@ -103,7 +108,7 @@ export class UserService {
 			}
 
 			return {
-				user,
+				user: this.excludePassword(user),
 				message: process.env.SUCCESS_MESSAGE,
 			};
 		} catch (error) {
@@ -114,7 +119,7 @@ export class UserService {
 		}
 	}
 
-	async findOneByEmail(email: string): Promise<{ user: User | null, message: string }> {
+	async findOneByEmail(email: string): Promise<{ user: Omit<User, 'password'> | null, message: string }> {
 		try {
 			const user = await this.userRepository.findOne({ where: { email } });
 
@@ -123,7 +128,7 @@ export class UserService {
 			}
 
 			const response = {
-				user: user,
+				user: this.excludePassword(user),
 				message: process.env.SUCCESS_MESSAGE,
 			};
 
@@ -161,12 +166,10 @@ export class UserService {
 				};
 			}
 
-			const response = {
-				user: user,
+			return {
+				user,
 				message: process.env.SUCCESS_MESSAGE,
 			};
-
-			return response;
 		} catch (error) {
 			const response = {
 				message: error?.message,
@@ -177,8 +180,7 @@ export class UserService {
 		}
 	}
 
-
-	async findOneByUid(searchParameter: number): Promise<{ user: User | null, message: string }> {
+	async findOneByUid(searchParameter: number): Promise<{ user: Omit<User, 'password'> | null, message: string }> {
 		try {
 			const user = await this.userRepository.findOne({
 				where: [
@@ -197,12 +199,10 @@ export class UserService {
 				};
 			}
 
-			const response = {
-				user: user,
+			return {
+				user: this.excludePassword(user),
 				message: process.env.SUCCESS_MESSAGE,
 			};
-
-			return response;
 		} catch (error) {
 			const response = {
 				message: error?.message,

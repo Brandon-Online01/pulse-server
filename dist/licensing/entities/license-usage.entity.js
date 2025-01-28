@@ -9,17 +9,10 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.LicenseUsage = exports.MetricType = void 0;
+exports.LicenseUsage = void 0;
 const typeorm_1 = require("typeorm");
 const license_entity_1 = require("./license.entity");
-var MetricType;
-(function (MetricType) {
-    MetricType["USERS"] = "users";
-    MetricType["BRANCHES"] = "branches";
-    MetricType["STORAGE"] = "storage";
-    MetricType["API_CALLS"] = "api_calls";
-    MetricType["INTEGRATIONS"] = "integrations";
-})(MetricType || (exports.MetricType = MetricType = {}));
+const licenses_1 = require("../../lib/enums/licenses");
 let LicenseUsage = class LicenseUsage {
 };
 exports.LicenseUsage = LicenseUsage;
@@ -37,7 +30,7 @@ __decorate([
     __metadata("design:type", String)
 ], LicenseUsage.prototype, "licenseId", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'enum', enum: MetricType }),
+    (0, typeorm_1.Column)({ type: 'enum', enum: licenses_1.MetricType }),
     __metadata("design:type", String)
 ], LicenseUsage.prototype, "metricType", void 0);
 __decorate([
@@ -57,7 +50,7 @@ __decorate([
     __metadata("design:type", Object)
 ], LicenseUsage.prototype, "metadata", void 0);
 __decorate([
-    (0, typeorm_1.CreateDateColumn)(),
+    (0, typeorm_1.Column)({ type: 'timestamp', nullable: false, default: () => 'CURRENT_TIMESTAMP' }),
     __metadata("design:type", Date)
 ], LicenseUsage.prototype, "timestamp", void 0);
 exports.LicenseUsage = LicenseUsage = __decorate([

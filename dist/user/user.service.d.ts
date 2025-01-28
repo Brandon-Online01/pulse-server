@@ -6,19 +6,20 @@ import { NewSignUp } from '../lib/types/user';
 export declare class UserService {
     private userRepository;
     constructor(userRepository: Repository<User>);
+    private excludePassword;
     create(createUserDto: CreateUserDto): Promise<{
         message: string;
     }>;
     findAll(): Promise<{
-        users: User[] | null;
+        users: Omit<User, 'password'>[] | null;
         message: string;
     }>;
     findOne(searchParameter: number): Promise<{
-        user: User | null;
+        user: Omit<User, 'password'> | null;
         message: string;
     }>;
     findOneByEmail(email: string): Promise<{
-        user: User | null;
+        user: Omit<User, 'password'> | null;
         message: string;
     }>;
     findOneForAuth(searchParameter: string): Promise<{
@@ -26,7 +27,7 @@ export declare class UserService {
         message: string;
     }>;
     findOneByUid(searchParameter: number): Promise<{
-        user: User | null;
+        user: Omit<User, 'password'> | null;
         message: string;
     }>;
     getUsersByRole(recipients: string[]): Promise<{

@@ -20,6 +20,7 @@ import { ConfigService } from '@nestjs/config';
 import { RewardsService } from 'src/rewards/rewards.service';
 import { DailyReportData } from '../lib/types/email-templates.types';
 import { TrackingService } from '../tracking/tracking.service';
+import { formatDate } from 'src/lib/utils/date.utils';
 
 @Injectable()
 export class ReportsService {
@@ -223,7 +224,7 @@ export class ReportsService {
 				// Format metrics for email
 				const emailData: DailyReportData = {
 					name: userData.user.username,
-					date: new Date(),
+					date: `${new Date()}`,
 					metrics: {
 						xp: {
 							level: userRewards?.rewards?.rank || 1,

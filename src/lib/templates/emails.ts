@@ -9,7 +9,7 @@ import {
   LicenseLimitData,
   QuotationData,
   QuotationInternalData,
-  QuotationResellerData
+  QuotationResellerData,
 } from '../types/email-templates.types';
 import { formatDate } from '../utils/date.utils';
 
@@ -29,7 +29,6 @@ const BASE_STYLES = {
   badge: 'display: inline-block; padding: 4px 12px; border-radius: 16px; font-size: 14px; font-weight: 500;',
 };
 
-// Helper function for common sections
 const createSection = (title: string, content: string) => `
   <div style="${BASE_STYLES?.card}">
     <h3 style="${BASE_STYLES?.heading}">${title}</h3>
@@ -121,17 +120,13 @@ export const Verification = (data: VerificationEmailData): string => {
         <div style="padding: 24px 20px;">
           <div style="${BASE_STYLES.card}">
             <h2 style="${BASE_STYLES.heading}">Hi ${data.name},</h2>
-            <p style="${BASE_STYLES.text}">Your account is almost ready! Just one click to get started.</p>
+            <p style="${BASE_STYLES.text}">Your verification code is:</p>
             
             <div style="text-align: center; margin: 24px 0;">
-              <a href="${data.verificationLink}" style="${BASE_STYLES.button}">
-                Verify My Email
-              </a>
+              <div style="font-size: 24px; font-weight: bold; letter-spacing: 4px; padding: 16px; background: #f7fafc; border-radius: 8px;">
+                ${data.verificationCode}
+              </div>
             </div>
-
-            <p style="color: #718096; font-size: 14px;">
-              This link expires in ${data.expiryHours} hours
-            </p>
           </div>
 
           ${createSection("🔐 Security First", `
@@ -474,16 +469,16 @@ export const Invoice = (data: InvoiceData): string => {
 
 export const PasswordChanged = (data: PasswordChangedData): string => {
   return `
-    <div style="${BASE_STYLES?.container}">
-      <div style="${BASE_STYLES?.header}">
+    <div style="${BASE_STYLES.container}">
+      <div style="${BASE_STYLES.header}">
         <h1>Password Successfully Changed 🔒</h1>
       </div>
 
       <div style="padding: 20px;">
-        <h2>Dear ${data?.name},</h2>
-        <p>Your password was successfully changed on ${data?.date} from ${data?.deviceInfo}.</p>
+        <h2>Dear ${data.name},</h2>
+        <p>Your password was successfully changed on ${data.changeTime}.</p>
 
-        <div style="${BASE_STYLES?.alert}">
+        <div style="${BASE_STYLES.alert}">
           <p><strong>Important Security Notice:</strong></p>
           <ul>
             <li>Contact our security team immediately if unauthorized</li>
@@ -495,12 +490,12 @@ export const PasswordChanged = (data: PasswordChangedData): string => {
         <p>We take your account security seriously. Stay safe!</p>
       </div>
 
-      <div style="${BASE_STYLES?.footer}">
+      <div style="${BASE_STYLES.footer}">
         <p>Best regards,<br>Your Security Team</p>
       </div>
     </div>
-    `;
-}
+  `;
+};
 
 export const DailyReport = (data: DailyReportData): string => {
   const {
@@ -626,7 +621,7 @@ export const DailyReport = (data: DailyReportData): string => {
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f7fafc; border-radius: 8px;">
           <span>Average Time per Location</span>
           <strong>${tracking.averageTimePerLocation}</strong>
-                  </div>
+                </div>
         ${tracking.locations.map(location => `
           <div style="padding: 12px; background: #f7fafc; border-radius: 8px;">
             <div style="font-weight: 500; margin-bottom: 4px;">${location.address}</div>

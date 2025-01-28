@@ -3,12 +3,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { EmailType } from '../lib/enums/email.enums';
 import { Quotation } from '../shop/entities/quotation.entity';
 import { ConfigService } from '@nestjs/config';
-import {
-    QuotationData,
-    QuotationResellerNotificationData,
-    QuotationInternalNotificationData,
-    QuotationWarehouseFulfillmentData
-} from '../lib/types/email-templates.types';
+import { QuotationData, QuotationInternalData, QuotationResellerData, QuotationWarehouseData } from '../lib/types/email-templates.types';
 
 @Injectable()
 export class OrderNotificationsService {
@@ -48,14 +43,12 @@ export class OrderNotificationsService {
         const baseOrderData: QuotationData = {
             name: quotation.client?.name || 'Valued Customer',
             quotationId: quotation.quotationNumber,
-            expectedDelivery: quotation?.validUntil,
+            validUntil: quotation?.validUntil,
             total: Number(quotation.totalAmount) || 0,
             currency,
-            shippingMethod: quotation.shippingMethod || 'Standard Shipping',
-            validUntil: quotation?.validUntil,
             quotationItems: quotation.quotationItems.map(item => ({
                 quantity: item.quantity,
-                product: { uid: String(item.product.uid) },
+                product: { uid: Number(item.product.uid) },
                 totalPrice: Number(item.totalPrice) || 0
             }))
         };
@@ -65,7 +58,7 @@ export class OrderNotificationsService {
 
         // 2. Send reseller notification if applicable
         if (quotation.reseller) {
-            const resellerData: QuotationResellerNotificationData = {
+            const resellerData: QuotationResellerData = {
                 ...baseOrderData,
                 resellerCommission: Number(quotation.resellerCommission) || 0,
                 resellerCode: String(quotation.reseller?.uid),
@@ -74,7 +67,7 @@ export class OrderNotificationsService {
         }
 
         // 3. Send internal team notification
-        const internalData: QuotationInternalNotificationData = {
+        const internalData: QuotationInternalData = {
             ...baseOrderData,
             customerType: quotation.client?.type || 'Standard',
             priority: this.getCustomerPriority(quotation),
@@ -83,7 +76,7 @@ export class OrderNotificationsService {
         await this.sendEmail(EmailType.NEW_QUOTATION_INTERNAL, internalData);
 
         // 4. Send warehouse fulfillment request
-        const warehouseData: QuotationWarehouseFulfillmentData = {
+        const warehouseData: QuotationWarehouseData = {
             ...baseOrderData,
             fulfillmentPriority: this.getFulfillmentPriority(quotation),
             shippingInstructions: quotation.shippingInstructions,

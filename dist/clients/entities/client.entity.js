@@ -84,18 +84,11 @@ __decorate([
     __metadata("design:type", String)
 ], Client.prototype, "postalCode", void 0);
 __decorate([
-    (0, typeorm_1.Column)({
-        nullable: false,
-        default: () => 'CURRENT_TIMESTAMP'
-    }),
+    (0, typeorm_1.Column)({ type: 'timestamp', nullable: false, default: () => 'CURRENT_TIMESTAMP' }),
     __metadata("design:type", Date)
 ], Client.prototype, "createdAt", void 0);
 __decorate([
-    (0, typeorm_1.Column)({
-        nullable: false,
-        default: () => 'CURRENT_TIMESTAMP',
-        onUpdate: 'CURRENT_TIMESTAMP'
-    }),
+    (0, typeorm_1.Column)({ type: 'timestamp', nullable: false, default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' }),
     __metadata("design:type", Date)
 ], Client.prototype, "updatedAt", void 0);
 __decorate([

@@ -12,88 +12,54 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateClaimDto = void 0;
 const class_validator_1 = require("class-validator");
 const swagger_1 = require("@nestjs/swagger");
-const status_enums_1 = require("../../lib/enums/status.enums");
+const class_transformer_1 = require("class-transformer");
 const finance_enums_1 = require("../../lib/enums/finance.enums");
+const user_entity_1 = require("../../user/entities/user.entity");
 class CreateClaimDto {
+    constructor() {
+        this.status = finance_enums_1.ClaimStatus.PENDING;
+    }
 }
 exports.CreateClaimDto = CreateClaimDto;
 __decorate([
-    (0, class_validator_1.IsNumber)(),
+    (0, swagger_1.ApiProperty)({ description: 'Title of the claim' }),
     (0, class_validator_1.IsNotEmpty)(),
-    (0, swagger_1.ApiProperty)({
-        description: 'The amount of the claim',
-        example: 1000,
-    }),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateClaimDto.prototype, "title", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ description: 'Description of the claim' }),
+    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateClaimDto.prototype, "description", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ description: 'Amount being claimed' }),
+    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.IsNumber)(),
     __metadata("design:type", Number)
 ], CreateClaimDto.prototype, "amount", void 0);
 __decorate([
+    (0, swagger_1.ApiProperty)({ description: 'URL reference to the uploaded document', required: false }),
+    (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsNotEmpty)(),
-    (0, swagger_1.ApiProperty)({
-        description: 'The file url of the claim',
-        example: 'https://example.com/file.pdf',
-    }),
     __metadata("design:type", String)
-], CreateClaimDto.prototype, "fileUrl", void 0);
+], CreateClaimDto.prototype, "documentUrl", void 0);
 __decorate([
+    (0, swagger_1.ApiProperty)({ enum: finance_enums_1.ClaimCategory, description: 'Category of the claim' }),
     (0, class_validator_1.IsNotEmpty)(),
-    (0, class_validator_1.IsObject)(),
-    (0, swagger_1.ApiProperty)({
-        description: 'The user reference code of the person who verified the claim',
-        example: { uid: 1 },
-    }),
-    __metadata("design:type", Object)
-], CreateClaimDto.prototype, "verifiedBy", void 0);
+    (0, class_validator_1.IsEnum)(finance_enums_1.ClaimCategory),
+    __metadata("design:type", String)
+], CreateClaimDto.prototype, "category", void 0);
 __decorate([
-    (0, class_validator_1.IsNotEmpty)(),
-    (0, swagger_1.ApiProperty)({
-        description: 'The boolean value to check if the claim is deleted',
-        example: false,
-    }),
-    __metadata("design:type", Boolean)
-], CreateClaimDto.prototype, "isDeleted", void 0);
-__decorate([
-    (0, class_validator_1.IsEnum)(status_enums_1.ClaimStatus),
-    (0, swagger_1.ApiProperty)({
-        description: 'The status of the claim',
-        example: status_enums_1.ClaimStatus.PENDING,
-    }),
+    (0, swagger_1.ApiProperty)({ enum: finance_enums_1.ClaimStatus, description: 'Status of the claim' }),
+    (0, class_validator_1.IsEnum)(finance_enums_1.ClaimStatus),
     __metadata("design:type", String)
 ], CreateClaimDto.prototype, "status", void 0);
 __decorate([
-    (0, class_validator_1.IsNotEmpty)(),
-    (0, class_validator_1.IsObject)(),
-    (0, swagger_1.ApiProperty)({
-        description: 'The owner reference code of the claim',
-        example: { uid: 1 },
-    }),
-    __metadata("design:type", Object)
+    (0, swagger_1.ApiProperty)({ type: () => user_entity_1.User }),
+    (0, class_validator_1.ValidateNested)(),
+    (0, class_transformer_1.Type)(() => user_entity_1.User),
+    __metadata("design:type", user_entity_1.User)
 ], CreateClaimDto.prototype, "owner", void 0);
-__decorate([
-    (0, class_validator_1.IsNotEmpty)(),
-    (0, class_validator_1.IsObject)(),
-    (0, swagger_1.ApiProperty)({
-        description: 'The branch reference code of the claim',
-        example: { uid: 1 },
-    }),
-    __metadata("design:type", Object)
-], CreateClaimDto.prototype, "branch", void 0);
-__decorate([
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsOptional)(),
-    (0, swagger_1.ApiProperty)({
-        description: 'The comments of the claim',
-        example: 'This is a comment',
-    }),
-    __metadata("design:type", String)
-], CreateClaimDto.prototype, "comments", void 0);
-__decorate([
-    (0, class_validator_1.IsEnum)(finance_enums_1.ClaimCategory),
-    (0, class_validator_1.IsOptional)(),
-    (0, swagger_1.ApiProperty)({
-        description: 'The category of the claim',
-        example: finance_enums_1.ClaimCategory.GENERAL,
-    }),
-    __metadata("design:type", String)
-], CreateClaimDto.prototype, "category", void 0);
 //# sourceMappingURL=create-claim.dto.js.map

@@ -1,76 +1,41 @@
-import { IsEnum, IsNumber, IsString, IsNotEmpty, IsObject, IsOptional } from "class-validator";
-import { ApiProperty } from "@nestjs/swagger";
-import { ClaimStatus } from "../../lib/enums/status.enums";
-import { ClaimCategory } from "../../lib/enums/finance.enums";
+import { IsNotEmpty, IsNumber, IsString, IsEnum, ValidateNested, IsOptional } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import { ClaimCategory, ClaimStatus } from '../../lib/enums/finance.enums';
+import { User } from '../../user/entities/user.entity';
 
 export class CreateClaimDto {
-    @IsNumber()
+    @ApiProperty({ description: 'Title of the claim' })
     @IsNotEmpty()
-    @ApiProperty({
-        description: 'The amount of the claim',
-        example: 1000,
-    })
+    @IsString()
+    title: string;
+
+    @ApiProperty({ description: 'Description of the claim' })
+    @IsNotEmpty()
+    @IsString()
+    description: string;
+
+    @ApiProperty({ description: 'Amount being claimed' })
+    @IsNotEmpty()
+    @IsNumber()
     amount: number;
 
-    @IsString()
-    @IsNotEmpty()
-    @ApiProperty({
-        description: 'The file url of the claim',
-        example: 'https://example.com/file.pdf',
-    })
-    fileUrl: string;
-
-    @IsNotEmpty()
-    @IsObject()
-    @ApiProperty({
-        description: 'The user reference code of the person who verified the claim',
-        example: { uid: 1 },
-    })
-    verifiedBy: { uid: number };
-
-    @IsNotEmpty()
-    @ApiProperty({
-        description: 'The boolean value to check if the claim is deleted',
-        example: false,
-    })
-    isDeleted: boolean;
-
-    @IsEnum(ClaimStatus)
-    @ApiProperty({
-        description: 'The status of the claim',
-        example: ClaimStatus.PENDING,
-    })
-    status: ClaimStatus;
-
-    @IsNotEmpty()
-    @IsObject()
-    @ApiProperty({
-        description: 'The owner reference code of the claim',
-        example: { uid: 1 },
-    })
-    owner: { uid: number } | null;
-
-    @IsNotEmpty()
-    @IsObject()
-    @ApiProperty({
-        description: 'The branch reference code of the claim',
-        example: { uid: 1 },
-    })
-    branch: { uid: number };
-
-    @IsString()
+    @ApiProperty({ description: 'URL reference to the uploaded document', required: false })
     @IsOptional()
-    @ApiProperty({
-        description: 'The comments of the claim',
-        example: 'This is a comment',
-    })
-    comments: string;
+    @IsString()
+    documentUrl?: string;
 
+    @ApiProperty({ enum: ClaimCategory, description: 'Category of the claim' })
+    @IsNotEmpty()
     @IsEnum(ClaimCategory)
-    @IsOptional()
-    @ApiProperty({
-        description: 'The category of the claim',
-        example: ClaimCategory.GENERAL,
-    })
-    category: string;
+    category: ClaimCategory;
+
+    @ApiProperty({ enum: ClaimStatus, description: 'Status of the claim' })
+    @IsEnum(ClaimStatus)
+    status: ClaimStatus = ClaimStatus.PENDING;
+
+    @ApiProperty({ type: () => User })
+    @ValidateNested()
+    @Type(() => User)
+    owner: User;
 }

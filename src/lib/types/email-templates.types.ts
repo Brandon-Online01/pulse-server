@@ -10,21 +10,15 @@ export interface SignupEmailData extends BaseEmailData {
 }
 
 export interface VerificationEmailData extends BaseEmailData {
-    verificationLink: string;
-    expiryHours: number;
+    verificationCode: string;
 }
 
 export interface PasswordResetData extends BaseEmailData {
     resetLink: string;
-    expiryMinutes: number;
 }
 
-export interface QuotationData extends BaseEmailData {
-    quotationId: string;
-    expectedDelivery: Date;
-    total: number;
-    currency: string;
-    shippingMethod: string;
+export interface PasswordChangedData extends BaseEmailData {
+    changeTime: string;
 }
 
 export interface InvoiceData extends BaseEmailData {
@@ -41,58 +35,33 @@ export interface InvoiceData extends BaseEmailData {
     }>;
 }
 
-export interface PasswordChangedData extends BaseEmailData {
-    date: Date;
-    deviceInfo: {
-        browser: string;
-        os: string;
-        location: string;
-    };
-}
-
-export interface OrderDeliveryData extends BaseEmailData {
-    orderId: string;
-    estimatedDeliveryTime: Date;
-    deliveryAddress: string;
-    carrier: string;
-    trackingNumber: string;
-    deliveryInstructions?: string;
-}
-
-export interface DailyReportData {
-    name: string;
-    date: Date;
+export interface DailyReportData extends BaseEmailData {
+    date: string;
     metrics: {
-        xp: {
+        xp?: {
             level: number;
             currentXP: number;
             todayXP: number;
         };
         attendance?: {
-            startTime: string;
-            endTime: string;
-            totalHours: number;
-            duration: string;
             status: string;
-            afterHours?: number;
+            startTime: string;
+            endTime?: string;
+            totalHours: number;
+            duration?: string;
             checkInLocation?: {
                 latitude: number;
                 longitude: number;
-                notes?: string;
+                notes: string;
             };
             checkOutLocation?: {
                 latitude: number;
                 longitude: number;
-                notes?: string;
+                notes: string;
             };
             verifiedAt?: string;
             verifiedBy?: string;
         };
-        checkIns?: Array<{
-            time: string;
-            location: string;
-            photo?: boolean;
-        }>;
         totalQuotations: number;
         totalRevenue: string;
         newCustomers: number;
@@ -117,68 +86,6 @@ export interface DailyReportData {
     };
 }
 
-export interface OrderOutForDeliveryData extends BaseEmailData {
-    orderId: string;
-    estimatedDeliveryTime: Date;
-    deliveryAddress: string;
-    carrier: string;
-    trackingNumber: string;
-}
-
-export interface OrderDeliveredData extends BaseEmailData {
-    orderId: string;
-    deliveryDate: Date;
-    deliveryStatus: string;
-}
-
-export interface QuotationResellerNotificationData extends QuotationData {
-    resellerCommission: number;
-    resellerCode: string;
-}
-
-export interface QuotationInternalNotificationData extends QuotationData {
-    customerType: string;
-    priority: 'low' | 'medium' | 'high';
-    notes?: string;
-    orderItems?: Array<{
-        quantity: number;
-        product: { uid: string, name: string };
-        totalPrice: number;
-    }>;
-}
-
-export interface QuotationWarehouseFulfillmentData extends QuotationData {
-    fulfillmentPriority: 'standard' | 'express' | 'rush';
-    shippingInstructions?: string;
-    packagingRequirements?: string;
-    items: Array<{
-        sku: string;
-        quantity: number;
-        location?: string;
-    }>;
-}
-
-export interface LicenseEmailData extends BaseEmailData {
-    licenseKey: string;
-    organisationName: string;
-    plan: string;
-    validUntil: Date;
-    features: Record<string, boolean>;
-    limits: {
-        maxUsers: number;
-        maxBranches: number;
-        storageLimit: number;
-        apiCallLimit: number;
-        integrationLimit: number;
-    };
-}
-
-export interface LicenseLimitData extends LicenseEmailData {
-    metric: string;
-    currentValue: number;
-    limit: number;
-}
-
 export interface QuotationData extends BaseEmailData {
     quotationId: string;
     validUntil: Date;
@@ -186,7 +93,7 @@ export interface QuotationData extends BaseEmailData {
     currency: string;
     quotationItems: Array<{
         quantity: number;
-        product: { uid: string };
+        product: { uid: number };
         totalPrice: number;
     }>;
 }
@@ -202,17 +109,58 @@ export interface QuotationResellerData extends QuotationData {
     resellerCode: string;
 }
 
-export type EmailDataMap = {
+export interface QuotationWarehouseData extends QuotationData {
+    fulfillmentPriority: 'standard' | 'express' | 'rush';
+    shippingInstructions?: string;
+    packagingRequirements?: string;
+    items: Array<{
+        sku: string;
+        quantity: number;
+        location?: string;
+    }>;
+}
+
+export interface LicenseEmailData extends BaseEmailData {
+    licenseKey: string;
+    organisationName: string;
+    plan: string;
+    validUntil: Date;
+    features: string[];
+    limits: {
+        maxUsers: number;
+        maxBranches: number;
+        storageLimit: number;
+        apiCallLimit: number;
+        integrationLimit: number;
+    };
+}
+
+export interface LicenseLimitData extends LicenseEmailData {
+    metric: string;
+    currentValue: number;
+    limit: number;
+}
+
+export interface LicenseTransferEmailData extends BaseEmailData {
+    licenseKey: string;
+    transferredBy: string;
+    transferDate: string;
+    organizationName: string;
+    newOrganizationName?: string;
+    oldOrganizationName?: string;
+}
+
+export interface EmailDataMap {
     [EmailType.SIGNUP]: SignupEmailData;
     [EmailType.VERIFICATION]: VerificationEmailData;
     [EmailType.PASSWORD_RESET]: PasswordResetData;
-    [EmailType.INVOICE]: InvoiceData;
     [EmailType.PASSWORD_CHANGED]: PasswordChangedData;
+    [EmailType.INVOICE]: InvoiceData;
     [EmailType.DAILY_REPORT]: DailyReportData;
     [EmailType.NEW_QUOTATION_CLIENT]: QuotationData;
     [EmailType.NEW_QUOTATION_INTERNAL]: QuotationInternalData;
     [EmailType.NEW_QUOTATION_RESELLER]: QuotationResellerData;
-    [EmailType.NEW_QUOTATION_WAREHOUSE_FULFILLMENT]: QuotationData;
+    [EmailType.NEW_QUOTATION_WAREHOUSE_FULFILLMENT]: QuotationWarehouseData;
     [EmailType.QUOTATION_APPROVED]: QuotationData;
     [EmailType.QUOTATION_REJECTED]: QuotationData;
     [EmailType.LICENSE_CREATED]: LicenseEmailData;
@@ -221,6 +169,10 @@ export type EmailDataMap = {
     [EmailType.LICENSE_RENEWED]: LicenseEmailData;
     [EmailType.LICENSE_SUSPENDED]: LicenseEmailData;
     [EmailType.LICENSE_ACTIVATED]: LicenseEmailData;
-};
+    [EmailType.LICENSE_TRANSFERRED_FROM]: LicenseTransferEmailData;
+    [EmailType.LICENSE_TRANSFERRED_TO]: LicenseTransferEmailData;
+}
 
-export type EmailTemplateData<T extends EmailType> = EmailDataMap[T];
+export type EmailTemplateData<T extends EmailType> = T extends keyof EmailDataMap
+    ? EmailDataMap[T]
+    : never;

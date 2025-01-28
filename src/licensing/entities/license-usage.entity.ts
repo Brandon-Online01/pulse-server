@@ -1,13 +1,6 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { License } from './license.entity';
-
-export enum MetricType {
-    USERS = 'users',
-    BRANCHES = 'branches',
-    STORAGE = 'storage',
-    API_CALLS = 'api_calls',
-    INTEGRATIONS = 'integrations'
-}
+import { MetricType } from '../../lib/enums/licenses';
 
 @Entity('license_usage')
 export class LicenseUsage {
@@ -36,6 +29,6 @@ export class LicenseUsage {
     @Column({ type: 'json', nullable: true })
     metadata: Record<string, any>;
 
-    @CreateDateColumn()
+    @Column({ type: 'timestamp', nullable: false, default: () => 'CURRENT_TIMESTAMP' })
     timestamp: Date;
 } 

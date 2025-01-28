@@ -104,12 +104,18 @@ let LicensingService = LicensingService_1 = class LicensingService {
                 features: planDefaults.features,
                 licenseKey: this.generateLicenseKey(),
                 status: createLicenseDto?.type === license_enums_1.LicenseType.TRIAL ? license_enums_1.LicenseStatus.TRIAL : license_enums_1.LicenseStatus.ACTIVE,
+                organisationRef: Number(createLicenseDto.organisationRef)
             });
-            const created = await this.licenseRepository.save(license);
-            await this.eventEmitter.emit('send.email', email_enums_1.EmailType.LICENSE_CREATED, [created.organisation.email], {
-                name: created.organisation.name,
+            const created = await this.licenseRepository.save(license).then(result => {
+                if (Array.isArray(result)) {
+                    return result[0];
+                }
+                return result;
+            });
+            await this.eventEmitter.emit('send.email', email_enums_1.EmailType.LICENSE_CREATED, [created.organisation?.email], {
+                name: created.organisation?.name,
                 licenseKey: created.licenseKey,
-                organisationName: created.organisation.name,
+                organisationName: created.organisation?.name,
                 plan: created.plan,
                 validUntil: created.validUntil,
                 features: created.features,
@@ -141,7 +147,7 @@ let LicensingService = LicensingService_1 = class LicensingService {
     async findOne(ref) {
         try {
             const license = await this.licenseRepository.findOne({
-                where: { uid: ref },
+                where: { uid: Number(ref) },
                 relations: ['organisation'],
             });
             if (!license) {
@@ -156,7 +162,7 @@ let LicensingService = LicensingService_1 = class LicensingService {
     async findByOrganisation(organisationRef) {
         try {
             return this.licenseRepository.find({
-                where: { organisationRef },
+                where: { organisationRef: Number(organisationRef) },
                 relations: ['organisation'],
                 order: { validUntil: 'DESC' },
             });
@@ -177,19 +183,19 @@ let LicensingService = LicensingService_1 = class LicensingService {
             }
             Object.assign(license, updateLicenseDto);
             const updated = await this.licenseRepository.save(license);
-            await this.eventEmitter.emit('send.email', email_enums_1.EmailType.LICENSE_UPDATED, [updated.organisation.email], {
-                name: updated.organisation.name,
-                licenseKey: updated.licenseKey,
-                organisationName: updated.organisation.name,
-                plan: updated.plan,
-                validUntil: updated.validUntil,
-                features: updated.features,
+            await this.eventEmitter.emit('send.email', email_enums_1.EmailType.LICENSE_UPDATED, [updated?.organisation?.email], {
+                name: updated?.organisation?.name,
+                licenseKey: updated?.licenseKey,
+                organisationName: updated?.organisation?.name,
+                plan: updated?.plan,
+                validUntil: updated?.validUntil,
+                features: updated?.features,
                 limits: {
-                    maxUsers: updated.maxUsers,
-                    maxBranches: updated.maxBranches,
-                    storageLimit: updated.storageLimit,
-                    apiCallLimit: updated.apiCallLimit,
-                    integrationLimit: updated.integrationLimit,
+                    maxUsers: updated?.maxUsers,
+                    maxBranches: updated?.maxBranches,
+                    storageLimit: updated?.storageLimit,
+                    apiCallLimit: updated?.apiCallLimit,
+                    integrationLimit: updated?.integrationLimit,
                 }
             });
             return updated;

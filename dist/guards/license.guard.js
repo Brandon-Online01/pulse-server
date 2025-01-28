@@ -18,22 +18,17 @@ let LicenseGuard = class LicenseGuard {
     }
     async canActivate(context) {
         const request = context.switchToHttp().getRequest();
-        const organisationRef = request.headers['x-organisation-ref'];
-        if (!organisationRef) {
-            throw new common_1.UnauthorizedException('Organization reference not provided');
+        const user = request['user'];
+        if (!user) {
+            return false;
         }
-        const licenses = await this.licensingService.findByOrganisation(organisationRef);
-        if (!licenses || licenses.length === 0) {
-            throw new common_1.UnauthorizedException('No valid license found for organization');
+        const licenses = user.licenses || [];
+        if (!licenses.length) {
+            return false;
         }
-        const activeLicense = licenses
-            .sort((a, b) => b.validUntil.getTime() - a.validUntil.getTime())
-            .find(license => this.licensingService.validateLicense(license.uid));
-        if (!activeLicense) {
-            throw new common_1.UnauthorizedException('No active license found for organization');
-        }
-        request['license'] = activeLicense;
-        return true;
+        const validLicense = await licenses
+            .find(async (license) => await this.licensingService.validateLicense(String(license.uid)));
+        return !!validLicense;
     }
 };
 exports.LicenseGuard = LicenseGuard;

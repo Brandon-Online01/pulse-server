@@ -1,18 +1,11 @@
-import { ClaimStatus } from "../../lib/enums/status.enums";
+import { ClaimCategory, ClaimStatus } from '../../lib/enums/finance.enums';
+import { User } from '../../user/entities/user.entity';
 export declare class CreateClaimDto {
+    title: string;
+    description: string;
     amount: number;
-    fileUrl: string;
-    verifiedBy: {
-        uid: number;
-    };
-    isDeleted: boolean;
+    documentUrl?: string;
+    category: ClaimCategory;
     status: ClaimStatus;
-    owner: {
-        uid: number;
-    } | null;
-    branch: {
-        uid: number;
-    };
-    comments: string;
-    category: string;
+    owner: User;
 }

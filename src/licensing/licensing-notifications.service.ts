@@ -67,7 +67,7 @@ export class LicensingNotificationsService {
         for (const license of gracePeriodLicenses) {
             const daysRemaining = Math.ceil((license.validUntil.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
             if (daysRemaining <= 0) {
-                await this.licensingService.update(license.uid, { status: LicenseStatus.EXPIRED });
+                await this.licensingService.update(String(license.uid), { status: LicenseStatus.EXPIRED });
                 await this.sendExpirationNotification(license, 0);
             }
         }

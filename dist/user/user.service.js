@@ -23,6 +23,10 @@ let UserService = class UserService {
     constructor(userRepository) {
         this.userRepository = userRepository;
     }
+    excludePassword(user) {
+        const { password, ...userWithoutPassword } = user;
+        return userWithoutPassword;
+    }
     async create(createUserDto) {
         try {
             if (createUserDto.password) {
@@ -51,7 +55,7 @@ let UserService = class UserService {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
             const response = {
-                users: users,
+                users: users.map(user => this.excludePassword(user)),
                 message: process.env.SUCCESS_MESSAGE,
             };
             return response;
@@ -99,7 +103,7 @@ let UserService = class UserService {
                 };
             }
             return {
-                user,
+                user: this.excludePassword(user),
                 message: process.env.SUCCESS_MESSAGE,
             };
         }
@@ -117,7 +121,7 @@ let UserService = class UserService {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
             const response = {
-                user: user,
+                user: this.excludePassword(user),
                 message: process.env.SUCCESS_MESSAGE,
             };
             return response;
@@ -151,11 +155,10 @@ let UserService = class UserService {
                     message: process.env.NOT_FOUND_MESSAGE,
                 };
             }
-            const response = {
-                user: user,
+            return {
+                user,
                 message: process.env.SUCCESS_MESSAGE,
             };
-            return response;
         }
         catch (error) {
             const response = {
@@ -182,11 +185,10 @@ let UserService = class UserService {
                     message: process.env.NOT_FOUND_MESSAGE,
                 };
             }
-            const response = {
-                user: user,
+            return {
+                user: this.excludePassword(user),
                 message: process.env.SUCCESS_MESSAGE,
             };
-            return response;
         }
         catch (error) {
             const response = {

@@ -8,11 +8,11 @@ export declare class UserController {
         message: string;
     }>;
     findAll(): Promise<{
-        users: import("./entities/user.entity").User[] | null;
+        users: Omit<import("./entities/user.entity").User, "password">[] | null;
         message: string;
     }>;
     findOne(searchParameter: number): Promise<{
-        user: import("./entities/user.entity").User | null;
+        user: Omit<import("./entities/user.entity").User, "password"> | null;
         message: string;
     }>;
     update(ref: number, updateUserDto: UpdateUserDto): Promise<{

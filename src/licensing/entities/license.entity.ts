@@ -1,70 +1,75 @@
-import { Organisation } from '../../organisation/entities/organisation.entity';
+import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { BaseEntity } from '../../lib/entities/base.entity';
 import { LicenseType, SubscriptionPlan, LicenseStatus, BillingCycle } from '../../lib/enums/license.enums';
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Organisation } from '../../organisation/entities/organisation.entity';
 
 @Entity('licenses')
-export class License {
-    @PrimaryGeneratedColumn()
-    uid: string;
-
-    @Column({ type: 'varchar', unique: true })
+export class License extends BaseEntity {
+    @Column({ unique: true })
     licenseKey: string;
 
-    @Column({ type: 'enum', enum: LicenseType })
+    @Column({
+        type: 'enum',
+        enum: LicenseType,
+        default: LicenseType.PERPETUAL,
+    })
     type: LicenseType;
 
-    @Column({ type: 'enum', enum: SubscriptionPlan })
+    @Column({
+        type: 'enum',
+        enum: SubscriptionPlan,
+        default: SubscriptionPlan.STARTER,
+    })
     plan: SubscriptionPlan;
 
-    @Column({ type: 'enum', enum: LicenseStatus })
+    @Column({
+        type: 'enum',
+        enum: LicenseStatus,
+        default: LicenseStatus.ACTIVE,
+    })
     status: LicenseStatus;
 
-    @Column({ type: 'enum', enum: BillingCycle })
+    @Column({
+        type: 'enum',
+        enum: BillingCycle,
+        default: BillingCycle.MONTHLY,
+    })
     billingCycle: BillingCycle;
-
-    @Column({ type: 'int' })
-    maxUsers: number;
-
-    @Column({ type: 'int' })
-    maxBranches: number;
-
-    @Column({ type: 'bigint' })
-    storageLimit: number;
-
-    @Column({ type: 'int' })
-    apiCallLimit: number;
-
-    @Column({ type: 'int' })
-    integrationLimit: number;
-
-    @Column({ type: 'timestamp' })
-    validFrom: Date;
 
     @Column({ type: 'timestamp' })
     validUntil: Date;
 
     @Column({ type: 'timestamp', nullable: true })
-    lastValidated: Date;
+    lastValidated?: Date;
 
-    @Column({ type: 'boolean', default: false })
-    isAutoRenew: boolean;
+    @Column()
+    maxUsers: number;
+
+    @Column()
+    maxBranches: number;
+
+    @Column()
+    storageLimit: number;
+
+    @Column()
+    apiCallLimit: number;
+
+    @Column()
+    integrationLimit: number;
+
+    @Column('json')
+    features: Record<string, boolean>;
 
     @Column({ type: 'decimal', precision: 10, scale: 2 })
     price: number;
 
-    @Column({ type: 'json', nullable: true })
-    features: Record<string, boolean>;
+    @Column({ type: 'int' })
+    organisationRef: number;
 
-    @ManyToOne(() => Organisation, { onDelete: 'CASCADE' })
+    @Column({ default: false })
+    hasPendingPayments: boolean;
+
+    @ManyToOne(() => Organisation)
     @JoinColumn({ name: 'organisationRef' })
     organisation: Organisation;
-
-    @Column()
-    organisationRef: string;
-
-    @CreateDateColumn()
-    createdAt: Date;
-
-    @UpdateDateColumn()
-    updatedAt: Date;
 } 

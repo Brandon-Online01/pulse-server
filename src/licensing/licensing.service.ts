@@ -103,15 +103,21 @@ export class LicensingService {
                 features: planDefaults.features,
                 licenseKey: this.generateLicenseKey(),
                 status: createLicenseDto?.type === LicenseType.TRIAL ? LicenseStatus.TRIAL : LicenseStatus.ACTIVE,
+                organisationRef: Number(createLicenseDto.organisationRef)
             });
 
-            const created = await this.licenseRepository.save(license);
+            const created = await this.licenseRepository.save(license).then(result => {
+                if (Array.isArray(result)) {
+                    return result[0];
+                }
+                return result;
+            });
 
             // Send email notification
-            await this.eventEmitter.emit('send.email', EmailType.LICENSE_CREATED, [created.organisation.email], {
-                name: created.organisation.name,
+            await this.eventEmitter.emit('send.email', EmailType.LICENSE_CREATED, [created.organisation?.email], {
+                name: created.organisation?.name,
                 licenseKey: created.licenseKey,
-                organisationName: created.organisation.name,
+                organisationName: created.organisation?.name,
                 plan: created.plan,
                 validUntil: created.validUntil,
                 features: created.features,
@@ -144,7 +150,7 @@ export class LicensingService {
     async findOne(ref: string): Promise<License> {
         try {
             const license = await this.licenseRepository.findOne({
-                where: { uid: ref },
+                where: { uid: Number(ref) },
                 relations: ['organisation'],
             });
 
@@ -161,7 +167,7 @@ export class LicensingService {
     async findByOrganisation(organisationRef: string): Promise<License[]> {
         try {
             return this.licenseRepository.find({
-                where: { organisationRef },
+                where: { organisationRef: Number(organisationRef) },
                 relations: ['organisation'],
                 order: { validUntil: 'DESC' },
             });
@@ -187,19 +193,19 @@ export class LicensingService {
             const updated = await this.licenseRepository.save(license);
 
             // Send email notification
-            await this.eventEmitter.emit('send.email', EmailType.LICENSE_UPDATED, [updated.organisation.email], {
-                name: updated.organisation.name,
-                licenseKey: updated.licenseKey,
-                organisationName: updated.organisation.name,
-                plan: updated.plan,
-                validUntil: updated.validUntil,
-                features: updated.features,
+            await this.eventEmitter.emit('send.email', EmailType.LICENSE_UPDATED, [updated?.organisation?.email], {
+                name: updated?.organisation?.name,
+                licenseKey: updated?.licenseKey,
+                organisationName: updated?.organisation?.name,
+                plan: updated?.plan,
+                validUntil: updated?.validUntil,
+                features: updated?.features,
                 limits: {
-                    maxUsers: updated.maxUsers,
-                    maxBranches: updated.maxBranches,
-                    storageLimit: updated.storageLimit,
-                    apiCallLimit: updated.apiCallLimit,
-                    integrationLimit: updated.integrationLimit,
+                    maxUsers: updated?.maxUsers,
+                    maxBranches: updated?.maxBranches,
+                    storageLimit: updated?.storageLimit,
+                    apiCallLimit: updated?.apiCallLimit,
+                    integrationLimit: updated?.integrationLimit,
                 }
             });
 

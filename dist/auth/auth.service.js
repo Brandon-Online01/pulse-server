@@ -33,6 +33,10 @@ let AuthService = class AuthService {
         this.passwordResetService = passwordResetService;
         this.licensingService = licensingService;
     }
+    excludePassword(user) {
+        const { password, ...userWithoutPassword } = user;
+        return userWithoutPassword;
+    }
     async generateSecureToken() {
         return crypto.randomBytes(32).toString('hex');
     }
@@ -53,7 +57,8 @@ let AuthService = class AuthService {
                     profileData: null,
                 };
             }
-            const { uid, accessLevel, name, organisationRef, ...restOfUser } = authProfile?.user;
+            const userWithoutPassword = this.excludePassword(authProfile.user);
+            const { uid, accessLevel, name, organisationRef, ...restOfUser } = userWithoutPassword;
             if (organisationRef) {
                 const licenses = await this.licensingService.findByOrganisation(organisationRef);
                 const activeLicense = licenses.find(license => this.licensingService.validateLicense(String(license?.uid)));

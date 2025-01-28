@@ -57,17 +57,10 @@ export class Client {
     @Column({ nullable: true })
     postalCode: string;
 
-    @Column({
-        nullable: false,
-        default: () => 'CURRENT_TIMESTAMP'
-    })
+    @Column({ type: 'timestamp', nullable: false, default: () => 'CURRENT_TIMESTAMP' })
     createdAt: Date;
 
-    @Column({
-        nullable: false,
-        default: () => 'CURRENT_TIMESTAMP',
-        onUpdate: 'CURRENT_TIMESTAMP'
-    })
+    @Column({ type: 'timestamp', nullable: false, default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
     updatedAt: Date;
 
     @Column({ nullable: false, default: GeneralStatus.ACTIVE })

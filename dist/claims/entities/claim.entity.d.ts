@@ -4,7 +4,7 @@ import { ClaimCategory, ClaimStatus } from "../../lib/enums/finance.enums";
 export declare class Claim {
     uid: number;
     amount: string;
-    fileUrl: string;
+    documentUrl: string;
     verifiedBy: number;
     verifiedAt: Date;
     createdAt: Date;

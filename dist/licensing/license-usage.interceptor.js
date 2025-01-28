@@ -14,7 +14,7 @@ exports.LicenseUsageInterceptor = void 0;
 const common_1 = require("@nestjs/common");
 const operators_1 = require("rxjs/operators");
 const license_usage_service_1 = require("./license-usage.service");
-const license_usage_entity_1 = require("./entities/license-usage.entity");
+const licenses_1 = require("../lib/enums/licenses");
 const licensing_service_1 = require("./licensing.service");
 let LicenseUsageInterceptor = LicenseUsageInterceptor_1 = class LicenseUsageInterceptor {
     constructor(licenseUsageService, licensingService) {
@@ -39,7 +39,7 @@ let LicenseUsageInterceptor = LicenseUsageInterceptor_1 = class LicenseUsageInte
             }
             return next.handle().pipe((0, operators_1.tap)(async () => {
                 try {
-                    await this.licenseUsageService.trackUsage(license, license_usage_entity_1.MetricType.API_CALLS, 1, {
+                    await this.licenseUsageService.trackUsage(license, licenses_1.MetricType.API_CALLS, 1, {
                         path,
                         method,
                         duration: Date.now() - startTime,
@@ -49,7 +49,7 @@ let LicenseUsageInterceptor = LicenseUsageInterceptor_1 = class LicenseUsageInte
                     if (request.file || request.files) {
                         const totalSize = this.calculateUploadSize(request.file || request.files);
                         if (totalSize > 0) {
-                            await this.licenseUsageService.trackUsage(license, license_usage_entity_1.MetricType.STORAGE, totalSize, {
+                            await this.licenseUsageService.trackUsage(license, licenses_1.MetricType.STORAGE, totalSize, {
                                 path,
                                 method,
                                 fileCount: Array.isArray(request.files) ? request.files.length : 1,

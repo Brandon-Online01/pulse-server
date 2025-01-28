@@ -1,4 +1,4 @@
-import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { LicensingService } from '../licensing/licensing.service';
 import { Request } from 'express';
 
@@ -8,29 +8,21 @@ export class LicenseGuard implements CanActivate {
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const request = context.switchToHttp().getRequest<Request>();
-        const organisationRef = request.headers['x-organisation-ref'] as string;
+        const user = request['user'];
 
-        if (!organisationRef) {
-            throw new UnauthorizedException('Organization reference not provided');
+        if (!user) {
+            return false;
         }
 
-        const licenses = await this.licensingService.findByOrganisation(organisationRef);
-
-        if (!licenses || licenses.length === 0) {
-            throw new UnauthorizedException('No valid license found for organization');
+        const licenses = user.licenses || [];
+        if (!licenses.length) {
+            return false;
         }
 
-        // Get the most recent active license
-        const activeLicense = licenses
-            .sort((a, b) => b.validUntil.getTime() - a.validUntil.getTime())
-            .find(license => this.licensingService.validateLicense(license.uid));
+        // Find any valid license
+        const validLicense = await licenses
+            .find(async (license) => await this.licensingService.validateLicense(String(license.uid)));
 
-        if (!activeLicense) {
-            throw new UnauthorizedException('No active license found for organization');
-        }
-
-        // Attach license to request for use in controllers
-        request['license'] = activeLicense;
-        return true;
+        return !!validLicense;
     }
 } 

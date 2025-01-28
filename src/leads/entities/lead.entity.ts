@@ -21,17 +21,10 @@ export class Lead {
     @Column({ nullable: true, type: 'text' })
     notes: string;
 
-    @Column({
-        nullable: false,
-        default: () => 'CURRENT_TIMESTAMP'
-    })
+    @Column({ type: 'timestamp', nullable: false, default: () => 'CURRENT_TIMESTAMP' })
     createdAt: Date;
 
-    @Column({
-        nullable: false,
-        default: () => 'CURRENT_TIMESTAMP',
-        onUpdate: 'CURRENT_TIMESTAMP'
-    })
+    @Column({ type: 'timestamp', nullable: false, onUpdate: 'CURRENT_TIMESTAMP', default: () => 'CURRENT_TIMESTAMP' })
     updatedAt: Date;
 
     @Column({ nullable: false, default: LeadStatus.PENDING })

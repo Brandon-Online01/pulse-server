@@ -27,6 +27,11 @@ export class AuthService {
 		private licensingService: LicensingService,
 	) { }
 
+	private excludePassword(user: any): Omit<typeof user, 'password'> {
+		const { password, ...userWithoutPassword } = user;
+		return userWithoutPassword;
+	}
+
 	private async generateSecureToken(): Promise<string> {
 		return crypto.randomBytes(32).toString('hex');
 	}
@@ -54,7 +59,8 @@ export class AuthService {
 				};
 			}
 
-			const { uid, accessLevel, name, organisationRef, ...restOfUser } = authProfile?.user;
+			const userWithoutPassword = this.excludePassword(authProfile.user);
+			const { uid, accessLevel, name, organisationRef, ...restOfUser } = userWithoutPassword;
 
 			// Check organization license if user belongs to an organization
 			if (organisationRef) {
