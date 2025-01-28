@@ -34,6 +34,9 @@ export declare class ReportsService {
     private calculateGrowth;
     private handleError;
     managerDailyReport(): Promise<{
+        message: any;
+        statusCode: any;
+    } | {
         leads: {
             pending: number;
             approved: number;
@@ -69,22 +72,17 @@ export declare class ReportsService {
             completed: number;
             cancelled: number;
             postponed: number;
-            outForDelivery: number;
-            delivered: number;
             rejected: number;
             approved: number;
             metrics: {
-                totalOrders: number;
-                grossOrderValue: string | number;
-                averageOrderValue: string | number;
+                totalQuotations: number;
+                grossQuotationValue: string | number;
+                averageQuotationValue: string | number;
             };
         };
-    } | {
+    }>;
+    userDailyReport(reference?: string): Promise<Report | {
         message: any;
         statusCode: any;
     }>;
-    userDailyReport(reference?: string): Promise<{
-        message: any;
-        statusCode: any;
-    } | Report>;
 }

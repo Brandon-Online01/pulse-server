@@ -3,6 +3,9 @@ export declare class ReportsController {
     private readonly reportsService;
     constructor(reportsService: ReportsService);
     managerDailyReport(): Promise<{
+        message: any;
+        statusCode: any;
+    } | {
         leads: {
             pending: number;
             approved: number;
@@ -38,19 +41,14 @@ export declare class ReportsController {
             completed: number;
             cancelled: number;
             postponed: number;
-            outForDelivery: number;
-            delivered: number;
             rejected: number;
             approved: number;
             metrics: {
-                totalOrders: number;
-                grossOrderValue: string | number;
-                averageOrderValue: string | number;
+                totalQuotations: number;
+                grossQuotationValue: string | number;
+                averageQuotationValue: string | number;
             };
         };
-    } | {
-        message: any;
-        statusCode: any;
     }>;
     userDailyReport(reference?: string): Promise<import("./entities/report.entity").Report | {
         message: any;

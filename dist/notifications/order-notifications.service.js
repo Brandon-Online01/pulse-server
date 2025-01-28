@@ -19,74 +19,74 @@ let OrderNotificationsService = class OrderNotificationsService {
         this.eventEmitter = eventEmitter;
         this.configService = configService;
     }
-    formatCurrency(amount, currency = 'USD') {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency
-        }).format(amount);
-    }
     async sendEmail(type, data) {
         this.eventEmitter.emit('email.send', {
             type,
             data
         });
     }
-    getCustomerPriority(order) {
-        const orderValue = Number(order.totalAmount) || 0;
+    getCustomerPriority(quotation) {
+        const quotationValue = Number(quotation.totalAmount) || 0;
         const highPriorityThreshold = this.configService.get('HIGH_PRIORITY_ORDER_THRESHOLD') || 1000;
         const mediumPriorityThreshold = this.configService.get('MEDIUM_PRIORITY_ORDER_THRESHOLD') || 500;
-        if (orderValue >= highPriorityThreshold)
+        if (quotationValue >= highPriorityThreshold)
             return 'high';
-        if (orderValue >= mediumPriorityThreshold)
+        if (quotationValue >= mediumPriorityThreshold)
             return 'medium';
         return 'low';
     }
-    getFulfillmentPriority(order) {
-        const priority = this.getCustomerPriority(order);
+    getFulfillmentPriority(quotation) {
+        const priority = this.getCustomerPriority(quotation);
         switch (priority) {
             case 'high': return 'rush';
             case 'medium': return 'express';
             default: return 'standard';
         }
     }
-    async sendOrderNotifications(order) {
+    async sendQuotationNotifications(quotation) {
         const currency = this.configService.get('CURRENCY_CODE') || 'USD';
         const baseOrderData = {
-            name: order.client?.name || 'Valued Customer',
-            orderId: order.orderNumber,
-            expectedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-            total: Number(order.totalAmount) || 0,
+            name: quotation.client?.name || 'Valued Customer',
+            quotationId: quotation.quotationNumber,
+            expectedDelivery: quotation?.validUntil,
+            total: Number(quotation.totalAmount) || 0,
             currency,
-            shippingMethod: order.shippingMethod || 'Standard Shipping'
+            shippingMethod: quotation.shippingMethod || 'Standard Shipping',
+            validUntil: quotation?.validUntil,
+            quotationItems: quotation.quotationItems.map(item => ({
+                quantity: item.quantity,
+                product: { uid: String(item.product.uid) },
+                totalPrice: Number(item.totalPrice) || 0
+            }))
         };
-        await this.sendEmail(email_enums_1.EmailType.ORDER_CONFIRMATION, baseOrderData);
-        if (order.reseller) {
+        await this.sendEmail(email_enums_1.EmailType.NEW_QUOTATION_CLIENT, baseOrderData);
+        if (quotation.reseller) {
             const resellerData = {
                 ...baseOrderData,
-                resellerCommission: Number(order.resellerCommission) || 0,
-                resellerCode: String(order.reseller?.uid),
+                resellerCommission: Number(quotation.resellerCommission) || 0,
+                resellerCode: String(quotation.reseller?.uid),
             };
-            await this.sendEmail(email_enums_1.EmailType.ORDER_RESELLER_NOTIFICATION, resellerData);
+            await this.sendEmail(email_enums_1.EmailType.NEW_QUOTATION_RESELLER, resellerData);
         }
         const internalData = {
             ...baseOrderData,
-            customerType: order.client?.type || 'Standard',
-            priority: this.getCustomerPriority(order),
-            notes: order.notes
+            customerType: quotation.client?.type || 'Standard',
+            priority: this.getCustomerPriority(quotation),
+            notes: quotation.notes
         };
-        await this.sendEmail(email_enums_1.EmailType.ORDER_INTERNAL_NOTIFICATION, internalData);
+        await this.sendEmail(email_enums_1.EmailType.NEW_QUOTATION_INTERNAL, internalData);
         const warehouseData = {
             ...baseOrderData,
-            fulfillmentPriority: this.getFulfillmentPriority(order),
-            shippingInstructions: order.shippingInstructions,
-            packagingRequirements: order.packagingRequirements,
-            items: order.quotationItems.map(item => ({
+            fulfillmentPriority: this.getFulfillmentPriority(quotation),
+            shippingInstructions: quotation.shippingInstructions,
+            packagingRequirements: quotation.packagingRequirements,
+            items: quotation.quotationItems.map(item => ({
                 sku: item.product.sku,
                 quantity: item.quantity,
                 location: item.product.warehouseLocation
             }))
         };
-        await this.sendEmail(email_enums_1.EmailType.ORDER_WAREHOUSE_FULFILLMENT, warehouseData);
+        await this.sendEmail(email_enums_1.EmailType.NEW_QUOTATION_WAREHOUSE_FULFILLMENT, warehouseData);
     }
 };
 exports.OrderNotificationsService = OrderNotificationsService;

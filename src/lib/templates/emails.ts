@@ -4,15 +4,12 @@ import {
   PasswordResetData,
   PasswordChangedData,
   InvoiceData,
-  OrderData,
   DailyReportData,
-  OrderDeliveredData,
-  OrderOutForDeliveryData,
-  OrderResellerNotificationData,
-  OrderInternalNotificationData,
-  OrderWarehouseFulfillmentData,
   LicenseEmailData,
-  LicenseLimitData
+  LicenseLimitData,
+  QuotationData,
+  QuotationInternalData,
+  QuotationResellerData
 } from '../types/email-templates.types';
 import { formatDate } from '../utils/date.utils';
 
@@ -34,8 +31,8 @@ const BASE_STYLES = {
 
 // Helper function for common sections
 const createSection = (title: string, content: string) => `
-  <div style="${BASE_STYLES.card}">
-    <h3 style="${BASE_STYLES.heading}">${title}</h3>
+  <div style="${BASE_STYLES?.card}">
+    <h3 style="${BASE_STYLES?.heading}">${title}</h3>
     ${content}
   </div>
 `;
@@ -205,115 +202,220 @@ export const PasswordReset = (data: PasswordResetData): string => {
   `;
 };
 
-export const NewOrder = (data: OrderData): string => {
+export const NewQuotationClient = (data: QuotationData): string => {
+  const itemsList = data.quotationItems.map(item => `
+    <tr>
+      <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">${item.quantity}x</td>
+      <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">${item.product.uid}</td>
+      <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: right;">${new Intl.NumberFormat('en-US', { style: 'currency', currency: data.currency }).format(item.totalPrice)}</td>
+    </tr>
+  `).join('');
+
   return `
-    <div style="${BASE_STYLES?.wrapper}">
-      <div style="${BASE_STYLES?.container}">
-        <div style="${BASE_STYLES?.header}">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="white">
-            <path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
-          </svg>
-          <h1 style="margin: 16px 0 8px; font-size: 18px; text-transform: uppercase;">Order Confirmed! 🎉</h1>
-          <p style="margin: 0; opacity: 0.9; font-size: 16px;">Tracking #: ${data?.orderId}</p>
+    <div style="${BASE_STYLES.wrapper}">
+      <div style="${BASE_STYLES.container}">
+        <div style="${BASE_STYLES.header}">
+          <h1 style="margin: 16px 0 8px; font-size: 24px;">Quotation Generated</h1>
+          <p style="margin: 0; opacity: 0.9;">Reference: ${data.quotationId}</p>
         </div>
 
         <div style="padding: 24px 20px;">
-          <div style="${BASE_STYLES?.card}">
-            <h2 style="${BASE_STYLES?.heading}">Thank you, ${data?.name}! 💫</h2>
-            <p style="${BASE_STYLES?.text}">We're excited to be preparing your order. Here's everything you need to know:</p>
+          <div style="${BASE_STYLES.card}">
+            <h2 style="${BASE_STYLES.heading}">Dear ${data.name},</h2>
+            <p style="${BASE_STYLES.text}">Thank you for your interest in our products. We are pleased to provide you with the following quotation:</p>
+            
+            <div style="margin: 24px 0; background: #f7fafc; border-radius: 8px; padding: 16px;">
+              <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                  <tr>
+                    <th style="text-align: left; padding: 12px; border-bottom: 2px solid #e2e8f0;">Quantity</th>
+                    <th style="text-align: left; padding: 12px; border-bottom: 2px solid #e2e8f0;">Product</th>
+                    <th style="text-align: right; padding: 12px; border-bottom: 2px solid #e2e8f0;">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${itemsList}
+                  <tr>
+                    <td colspan="2" style="padding: 12px; font-weight: 600;">Total Amount</td>
+                    <td style="padding: 12px; text-align: right; font-weight: 600;">${new Intl.NumberFormat('en-US', { style: 'currency', currency: data.currency }).format(data.total)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
 
-            <div style="text-align: center; margin: 24px 0;">
-              <a href="/track-order/${data?.orderId}" 
-                 style="${BASE_STYLES.button}">
-                Track Your Order
-              </a>
+            <div style="${BASE_STYLES.alert}">
+              <p style="margin: 0; font-weight: 500;">Important Information:</p>
+              <ul style="margin: 8px 0 0;">
+                <li>This quotation is valid until ${new Date(data.validUntil).toLocaleDateString()}</li>
+                <li>Prices are quoted in ${data.currency}</li>
+                <li>Terms and conditions apply</li>
+              </ul>
             </div>
           </div>
 
-          ${createSection("✨ What's Next?", `
-            <ul style="list-style: none; padding: 0; margin: 0;">
-              <li style="margin-bottom: 16px; display: flex; align-items: start;">
-                <span style="background: #e6efff; border-radius: 50%; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; margin-right: 12px; flex-shrink: 0;">1</span>
-                <div>
-                  <strong style="display: block; margin-bottom: 4px;">Order Preparation</strong>
-                  <span style="color: #718096">We're carefully preparing your items for shipping</span>
-                </div>
-              </li>
-              <li style="margin-bottom: 16px; display: flex; align-items: start;">
-                <span style="background: #e6efff; border-radius: 50%; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; margin-right: 12px; flex-shrink: 0;">2</span>
-                <div>
-                  <strong style="display: block; margin-bottom: 4px;">Shipping Updates</strong>
-                  <span style="color: #718096">We'll notify you when your order ships and is out for delivery</span>
-                </div>
-              </li>
-              <li style="display: flex; align-items: start;">
-                <span style="background: #e6efff; border-radius: 50%; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; margin-right: 12px; flex-shrink: 0;">3</span>
-                <div>
-                  <strong style="display: block; margin-bottom: 4px;">Delivery Day</strong>
-                  <span style="color: #718096">We'll ensure a smooth delivery to your doorstep</span>
-                </div>
-              </li>
-            </ul>
-          `)}
-
-          <div style="${BASE_STYLES.alert}">
-            <p style="margin: 0; font-weight: 500;">💝 Special Thank You Gift</p>
-            <p style="margin: 8px 0 0; color: #718096">Use code <strong>THANKYOU10</strong> on your next order for 10% off!</p>
+          <div style="${BASE_STYLES.card}">
+            <h3 style="${BASE_STYLES.heading}">Next Steps</h3>
+            <p style="${BASE_STYLES.text}">To proceed with this quotation:</p>
+            <ol style="margin: 16px 0; padding-left: 20px;">
+              <li>Review the quotation details carefully</li>
+              <li>Contact us for any clarifications needed</li>
+              <li>Accept the quotation through our platform or by replying to this email</li>
+            </ol>
           </div>
         </div>
 
         <div style="${BASE_STYLES.footer}">
-          <p style="margin: 0 0 12px;">Need assistance with your order?</p>
-          <div style="display: flex; justify-content: center; gap: 16px;">
-            <a href="#" style="${BASE_STYLES.link}">Contact Support</a>
-            <a href="#" style="${BASE_STYLES.link}">FAQs</a>
-            <a href="#" style="${BASE_STYLES.link}">Track Order</a>
-          </div>
+          <p style="margin: 0;">Thank you for choosing our services. We look forward to serving you.</p>
         </div>
       </div>
     </div>
   `;
 };
 
-export const NewOrderInternal = (data: OrderInternalNotificationData): string => {
-  return `
-    <div style="${BASE_STYLES?.wrapper}">
-      <div style="${BASE_STYLES?.container}">
-        <div style="${BASE_STYLES?.header}">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="white">
-            <path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
-          </svg>
-          <h1 style="margin: 16px 0 8px; font-size: 24px;">New Order Received</h1>
-          <p style="margin: 0; opacity: 0.9;">Tracking #: ${data?.orderId}</p>
-        </div>
-        <div style="${BASE_STYLES?.footer}">
-          <p style="margin: 0; opacity: 0.9;">View order details in your dashboard or the attached PDF file.</p>
-        </div>
-      </div>
-    </div>
-  `;
-};
+export const NewQuotationInternal = (data: QuotationInternalData): string => {
+  const itemsList = data.quotationItems.map(item => `
+    <tr>
+      <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">${item.quantity}x</td>
+      <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">${item.product.uid}</td>
+      <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: right;">${new Intl.NumberFormat('en-US', { style: 'currency', currency: data.currency }).format(item.totalPrice)}</td>
+    </tr>
+  `).join('');
 
-export const NewOrderReseller = (data: OrderResellerNotificationData): string => {
   return `
-    <div style="${BASE_STYLES?.wrapper}">
-      <div style="${BASE_STYLES?.container}">
-        <div style="${BASE_STYLES?.header}">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="white">
-            <path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
-          </svg>
-          <h1 style="margin: 16px 0 8px; font-size: 24px;">New Sale!</h1>
-          <p style="margin: 0; opacity: 0.9;">Tracking #: ${data?.orderId}</p>
+    <div style="${BASE_STYLES.wrapper}">
+      <div style="${BASE_STYLES.container}">
+        <div style="${BASE_STYLES.header}">
+          <h1 style="margin: 16px 0 8px; font-size: 24px;">New Quotation Alert</h1>
+          <p style="margin: 0; opacity: 0.9;">Internal Reference: ${data.quotationId}</p>
         </div>
 
         <div style="padding: 24px 20px;">
-          <div style="${BASE_STYLES?.card}">
-            <h2 style="${BASE_STYLES?.heading}">Hi ${data?.name},</h2>
-            <p style="${BASE_STYLES?.text}">Congratulations! A purchase has been made to some of your products.</p>
+          <div style="${BASE_STYLES.card}">
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px;">
+              <div>
+                <h4 style="margin: 0 0 8px; color: #4a5568;">Customer Type</h4>
+                <p style="margin: 0; font-weight: 500;">${data.customerType}</p>
+              </div>
+              <div>
+                <h4 style="margin: 0 0 8px; color: #4a5568;">Priority</h4>
+                <span style="background: ${data.priority === 'high' ? '#fed7d7' : data.priority === 'medium' ? '#fefcbf' : '#e6fffa'}; 
+                             color: ${data.priority === 'high' ? '#c53030' : data.priority === 'medium' ? '#b7791f' : '#2c7a7b'}; 
+                             padding: 4px 12px; 
+                             border-radius: 12px; 
+                             font-weight: 500;">
+                  ${data.priority.toUpperCase()}
+                </span>
+              </div>
+            </div>
+
+            <div style="margin: 24px 0; background: #f7fafc; border-radius: 8px; padding: 16px;">
+              <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                  <tr>
+                    <th style="text-align: left; padding: 12px; border-bottom: 2px solid #e2e8f0;">Quantity</th>
+                    <th style="text-align: left; padding: 12px; border-bottom: 2px solid #e2e8f0;">Product</th>
+                    <th style="text-align: right; padding: 12px; border-bottom: 2px solid #e2e8f0;">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${itemsList}
+                  <tr>
+                    <td colspan="2" style="padding: 12px; font-weight: 600;">Total Amount</td>
+                    <td style="padding: 12px; text-align: right; font-weight: 600;">${new Intl.NumberFormat('en-US', { style: 'currency', currency: data.currency }).format(data.total)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            ${data.notes ? `
+              <div style="${BASE_STYLES.alert}">
+                <p style="margin: 0; font-weight: 500;">Additional Notes:</p>
+                <p style="margin: 8px 0 0;">${data.notes}</p>
+              </div>
+            ` : ''}
+          </div>
+
+          <div style="${BASE_STYLES.card}">
+            <h3 style="${BASE_STYLES.heading}">Required Actions</h3>
+            <ol style="margin: 16px 0; padding-left: 20px;">
+              <li>Review quotation details and pricing</li>
+              <li>Check stock availability</li>
+              <li>Verify customer information</li>
+              <li>Process within 24 hours</li>
+            </ol>
           </div>
         </div>
-        <div style="${BASE_STYLES?.footer}">
-          <p style="margin: 0; opacity: 0.9;">View order details in your dashboard or the attached PDF file.</p>
+
+        <div style="${BASE_STYLES.footer}">
+          <p style="margin: 0;">Internal quotation notification - please handle according to priority level</p>
+        </div>
+      </div>
+    </div>
+  `;
+};
+
+export const NewQuotationReseller = (data: QuotationResellerData): string => {
+  const itemsList = data.quotationItems.map(item => `
+    <tr>
+      <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">${item.quantity}x</td>
+      <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">${item.product.uid}</td>
+      <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: right;">${new Intl.NumberFormat('en-US', { style: 'currency', currency: data.currency }).format(item.totalPrice)}</td>
+    </tr>
+  `).join('');
+
+  return `
+    <div style="${BASE_STYLES.wrapper}">
+      <div style="${BASE_STYLES.container}">
+        <div style="${BASE_STYLES.header}">
+          <h1 style="margin: 16px 0 8px; font-size: 24px;">New Reseller Quotation</h1>
+          <p style="margin: 0; opacity: 0.9;">Reference: ${data.quotationId}</p>
+        </div>
+
+        <div style="padding: 24px 20px;">
+          <div style="${BASE_STYLES.card}">
+            <h2 style="${BASE_STYLES.heading}">Dear ${data.name},</h2>
+            <p style="${BASE_STYLES.text}">A new quotation has been generated under your reseller account:</p>
+
+            <div style="margin: 24px 0; background: #f7fafc; border-radius: 8px; padding: 16px;">
+              <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                  <tr>
+                    <th style="text-align: left; padding: 12px; border-bottom: 2px solid #e2e8f0;">Quantity</th>
+                    <th style="text-align: left; padding: 12px; border-bottom: 2px solid #e2e8f0;">Product</th>
+                    <th style="text-align: right; padding: 12px; border-bottom: 2px solid #e2e8f0;">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${itemsList}
+                  <tr>
+                    <td colspan="2" style="padding: 12px; font-weight: 600;">Total Amount</td>
+                    <td style="padding: 12px; text-align: right; font-weight: 600;">${new Intl.NumberFormat('en-US', { style: 'currency', currency: data.currency }).format(data.total)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div style="${BASE_STYLES.highlight}">
+              <h4 style="margin: 0 0 8px; color: #4a5568;">Commission Details</h4>
+              <p style="margin: 0;">
+                <strong>Reseller Code:</strong> ${data.resellerCode}<br>
+                <strong>Commission Amount:</strong> ${new Intl.NumberFormat('en-US', { style: 'currency', currency: data.currency }).format(data.resellerCommission)}
+              </p>
+            </div>
+
+            <div style="${BASE_STYLES.alert}">
+              <p style="margin: 0; font-weight: 500;">Important Information:</p>
+              <ul style="margin: 8px 0 0;">
+                <li>Quotation valid until ${new Date(data.validUntil).toLocaleDateString()}</li>
+                <li>Commission will be processed upon order completion</li>
+                <li>Standard reseller terms and conditions apply</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div style="${BASE_STYLES.footer}">
+          <p style="margin: 0;">Thank you for your continued partnership.</p>
         </div>
       </div>
     </div>
@@ -400,386 +502,168 @@ export const PasswordChanged = (data: PasswordChangedData): string => {
     `;
 }
 
-export const OrderOutForDelivery = (data: OrderOutForDeliveryData): string => {
-  return `
-    <div style="${BASE_STYLES?.container}">
-      <div style="${BASE_STYLES?.header}">
-        <h1>Great News! Your Order is On Its Way 🚚</h1>
-      </div>
-
-      <div style="padding: 20px;">
-        <h2>Dear ${data?.name},</h2>
-        <p>Your order #${data?.orderId} is out for delivery! Here's what you need to know:</p>
-
-        <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
-          <h3>Delivery Details</h3>
-          <ul>
-            <li>Estimated delivery time: ${data?.estimatedDeliveryTime}</li>
-            <li>Delivery address: ${data?.deliveryAddress}</li>
-            <li>Carrier: ${data?.carrier}</li>
-            <li>Tracking number: <strong>${data?.trackingNumber}</strong></li>
-          </ul>
-        </div>
-
-        <div style="${BASE_STYLES?.alert}">
-          <p><strong>Tips for a smooth delivery:</strong></p>
-          <ul>
-            <li>Ensure someone is available to receive the package</li>
-            <li>Keep your phone handy - our driver might need to reach you</li>
-          </ul>
-        </div>
-      </div>
-
-      <div style="${BASE_STYLES?.footer}">
-        <p>Questions about your delivery? Our customer service team is here 24/7!</p>
-      </div>
-    </div>
-    `;
-}
-
-export const OrderDelivered = (data: OrderDeliveredData): string => {
-  return `
-    <div style="${BASE_STYLES?.container}">
-      <div style="${BASE_STYLES?.header}">
-        <h1>Your Order Has Arrived! 🎉</h1>
-      </div>
-
-      <div style="padding: 20px;">
-        <h2>Dear ${data?.name},</h2>
-        <p>Great news! Order #${data?.orderId} has been successfully delivered.</p>
-
-        <div style="background-color: #e8f5e9; padding: 15px; border-radius: 5px; margin: 20px 0;">
-          <h3>What's Next?</h3>
-          <ul>
-            <li>Review your purchase - your feedback helps others!</li>
-            <li>Need to return something? Visit our easy returns portal</li>
-            <li>Save 10% on your next order with code: THANKYOU10</li>
-          </ul>
-        </div>
-      </div>
-
-      <div style="${BASE_STYLES?.footer}">
-        <p>Thank you for choosing us. We truly value having you as part of our family!</p>
-        <p>P.S. Have questions about your order? Our support team is always here to help.</p>
-      </div>
-    </div>
-    `;
-}
-
 export const DailyReport = (data: DailyReportData): string => {
-  return `
-    <div style="${BASE_STYLES?.container}">
-      <div style="${BASE_STYLES?.header}">
-        <h1>Daily Wrap ⭐</h1>
-      </div>
+  const {
+    name,
+    date,
+    metrics: {
+      xp,
+      attendance,
+      totalQuotations,
+      totalRevenue,
+      newCustomers,
+      quotationGrowth,
+      revenueGrowth,
+      customerGrowth,
+      userSpecific,
+    },
+    tracking,
+  } = data;
 
-      <div style="padding: 20px;">
-        <h2>Hi ${data?.name},</h2>
-        <p>Your daily highlights:</p>
-        
-        ${data?.metrics?.xp ? `
-        <div style="background-color: #fff3cd; padding: 20px; border-radius: 12px; margin: 20px 0;">
-          <h3 style="color: #856404; margin-bottom: 16px;">✨ XP & Level</h3>
-          <div style="display: grid; gap: 12px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: white; border-radius: 8px;">
-              <span>Current Level</span>
-              <strong style="color: #856404">${data?.metrics?.xp?.level}</strong>
-            </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: white; border-radius: 8px;">
-              <span>Total XP</span>
-              <strong style="color: #856404">${data?.metrics?.xp?.currentXP}</strong>
-            </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: white; border-radius: 8px;">
-              <span>Today's XP</span>
-              <strong style="color: #28a745">+${data?.metrics?.xp?.todayXP}</strong>
-            </div>
-          </div>
+  const xpSection = xp ? `
+    <div style="${BASE_STYLES.card}">
+      <h3 style="${BASE_STYLES.heading}">✨ XP & Level</h3>
+      <div style="display: grid; gap: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f7fafc; border-radius: 8px;">
+          <span>Current Level</span>
+          <strong style="color: #4a5568">${xp.level}</strong>
         </div>
-        ` : ''}
-
-        ${data?.metrics?.attendance ? `
-        <div style="background-color: #d1ecf1; padding: 20px; border-radius: 12px; margin: 20px 0;">
-          <h3 style="color: #0c5460; margin-bottom: 16px;">⏰ Today's Schedule</h3>
-          <div style="display: grid; gap: 12px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: white; border-radius: 8px;">
-              <span>Status</span>
-              <strong style="color: ${data?.metrics?.attendance?.status === 'PRESENT' ? '#28a745' : '#6c757d'}">${data?.metrics?.attendance?.status}</strong>
-            </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: white; border-radius: 8px;">
-              <span>Start Time</span>
-              <strong>${data?.metrics?.attendance?.startTime}</strong>
-            </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: white; border-radius: 8px;">
-              <span>End Time</span>
-              <strong>${data?.metrics?.attendance?.endTime || 'Still Working'}</strong>
-            </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: white; border-radius: 8px;">
-              <span>Duration</span>
-              <strong style="color: #0c5460">${data?.metrics?.attendance?.duration || `${data?.metrics?.attendance?.totalHours}h`}</strong>
-            </div>
-            ${data?.metrics?.attendance?.afterHours > 0 ? `
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: white; border-radius: 8px;">
-              <span>After Hours</span>
-              <strong style="color: #28a745">+${data?.metrics?.attendance?.afterHours}h</strong>
-            </div>
-            ` : ''}
-            ${data?.metrics?.attendance?.checkInLocation ? `
-            <div style="padding: 12px; background: white; border-radius: 8px;">
-              <div style="margin-bottom: 8px; color: #0c5460;">Check-in Location</div>
-              <div style="font-size: 14px; color: #666;">
-                <div>Coordinates: ${data?.metrics?.attendance?.checkInLocation?.latitude}, ${data?.metrics?.attendance?.checkInLocation?.longitude}</div>
-                ${data?.metrics?.attendance?.checkInLocation?.notes ? `
-                <div style="margin-top: 4px; font-style: italic;">${data?.metrics?.attendance?.checkInLocation?.notes}</div>
-                ` : ''}
-              </div>
-            </div>
-            ` : ''}
-            ${data?.metrics?.attendance?.checkOutLocation ? `
-            <div style="padding: 12px; background: white; border-radius: 8px;">
-              <div style="margin-bottom: 8px; color: #0c5460;">Check-out Location</div>
-              <div style="font-size: 14px; color: #666;">
-                <div>Coordinates: ${data?.metrics?.attendance?.checkOutLocation?.latitude}, ${data?.metrics?.attendance?.checkOutLocation?.longitude}</div>
-                ${data?.metrics?.attendance?.checkOutLocation?.notes ? `
-                <div style="margin-top: 4px; font-style: italic;">${data?.metrics?.attendance?.checkOutLocation?.notes}</div>
-                ` : ''}
-              </div>
-            </div>
-            ` : ''}
-            ${data?.metrics?.attendance?.verifiedBy ? `
-            <div style="padding: 12px; background: white; border-radius: 8px;">
-              <div style="margin-bottom: 4px; color: #0c5460;">Verified By</div>
-              <div style="font-size: 14px; color: #666;">
-                <div>${data?.metrics?.attendance?.verifiedBy}</div>
-                <div style="font-size: 12px; color: #999; margin-top: 4px;">
-                  ${new Date(data?.metrics?.attendance?.verifiedAt).toLocaleString()}
-                </div>
-              </div>
-            </div>
-            ` : ''}
-          </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f7fafc; border-radius: 8px;">
+          <span>Total XP</span>
+          <strong style="color: #4a5568">${xp.currentXP}</strong>
         </div>
-        ` : ''}
-
-        ${data?.metrics?.checkIns?.length > 0 ? `
-        <div style="background-color: #d4edda; padding: 20px; border-radius: 12px; margin: 20px 0;">
-          <h3 style="color: #155724; margin-bottom: 16px;">📍 Today's Check-ins</h3>
-          <div style="display: grid; gap: 16px;">
-            ${data?.metrics?.checkIns?.map(checkIn => `
-              <div style="padding: 16px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                  <span style="color: #666">${checkIn.time}</span>
-                  ${checkIn.photo ? `<span style="color: #28a745">📸</span>` : ''}
-                </div>
-                <div style="color: #155724; font-weight: 500;">${checkIn.location}</div>
-              </div>
-            `).join('')}
-          </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f7fafc; border-radius: 8px;">
+          <span>Today's XP</span>
+          <strong style="color: #48bb78">+${xp.todayXP}</strong>
         </div>
-        ` : ''}
-
-        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 12px; margin: 20px 0;">
-          <h3 style="color: #0066FF; margin-bottom: 16px;">🎯 Today's Achievements</h3>
-          <div style="display: grid; gap: 16px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-              <span>Orders Processed</span>
-              <strong style="color: #0066FF">${data?.metrics?.totalOrders}</strong>
-            </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-              <span>Revenue Generated</span>
-              <strong style="color: #28a745">${data?.metrics?.totalRevenue}</strong>
-            </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-              <span>New Customers</span>
-              <strong style="color: #17a2b8">${data?.metrics?.newCustomers}</strong>
-            </div>
-          </div>
-        </div>
-
-        <div style="background-color: #e8f5e9; padding: 20px; border-radius: 12px; margin: 20px 0;">
-          <h3 style="color: #28a745; margin-bottom: 16px;">📈 Growth Indicators</h3>
-          <div style="display: grid; gap: 12px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span>Orders Growth</span>
-              <strong style="color: ${data?.metrics?.orderGrowth.startsWith('+') ? '#28a745' : '#dc3545'}">${data?.metrics?.orderGrowth}</strong>
-            </div>
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span>Revenue Growth</span>
-              <strong style="color: ${data?.metrics?.revenueGrowth.startsWith('+') ? '#28a745' : '#dc3545'}">${data?.metrics?.revenueGrowth}</strong>
-            </div>
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span>Customer Growth</span>
-              <strong style="color: ${data?.metrics?.customerGrowth.startsWith('+') ? '#28a745' : '#dc3545'}">${data?.metrics?.customerGrowth}</strong>
-            </div>
-          </div>
-        </div>
-
-        ${data?.metrics?.userSpecific ? `
-          <div style="background-color: #e3f2fd; padding: 20px; border-radius: 12px; margin: 20px 0;">
-            <h3 style="color: #0066FF; margin-bottom: 16px;">🌟 Your Personal Impact</h3>
-            <div style="display: grid; gap: 12px;">
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span>Leads Generated</span>
-                <strong>${data?.metrics?.userSpecific?.todayLeads}</strong>
-              </div>
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span>Claims Processed</span>
-                <strong>${data?.metrics?.userSpecific?.todayClaims}</strong>
-              </div>
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span>Tasks Completed</span>
-                <strong>${data?.metrics?.userSpecific?.todayTasks}</strong>
-              </div>
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span>Orders Handled</span>
-                <strong>${data?.metrics?.userSpecific?.todayOrders}</strong>
-              </div>
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span>Hours Worked</span>
-                <strong>${data?.metrics?.userSpecific?.hoursWorked} hrs</strong>
-              </div>
-            </div>
-          </div>
-        ` : ''}
-
-        <div style="${BASE_STYLES?.alert}">
-          <p style="margin: 0; font-weight: 500;">💡 Quick Tip</p>
-          <p style="margin: 8px 0 0;">Set your goals for tomorrow and start fresh! Remember, every small win counts towards big success.</p>
-        </div>
-      </div>
-
-      <div style="${BASE_STYLES?.footer}">
-        <p>Keep up the amazing work! 🚀</p>
-        <p style="font-size: 14px; color: #6c757d;">This report was generated on ${new Date(data?.date).toLocaleDateString()} at ${new Date(data?.date).toLocaleTimeString()}</p>
       </div>
     </div>
-  `;
-}
+  ` : '';
 
-export const OrderResellerNotification = (data: OrderResellerNotificationData): string => {
-  return `
-    <div style="${BASE_STYLES?.wrapper}">
-      <div style="${BASE_STYLES?.container}">
-        <div style="${BASE_STYLES?.header}">
-          <h1 style="margin: 16px 0 8px; font-size: 24px;">New Order from Your Referral! 🎯</h1>
-          <p style="margin: 0; opacity: 0.9;">Order ${data?.orderId}</p>
+  const attendanceSection = attendance ? `
+    <div style="${BASE_STYLES.card}">
+      <h3 style="${BASE_STYLES.heading}">⏰ Today's Schedule</h3>
+      <div style="display: grid; gap: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f7fafc; border-radius: 8px;">
+          <span>Status</span>
+          <strong style="color: ${attendance.status === 'PRESENT' ? '#48bb78' : '#a0aec0'}">${attendance.status}</strong>
         </div>
-
-        <div style="padding: 24px 20px;">
-          <div style="${BASE_STYLES?.card}">
-            <h2 style="${BASE_STYLES?.heading}">Order Details</h2>
-            
-            <div style="${BASE_STYLES.highlight}">
-              <div style="display: grid; gap: 12px;">
-                <div style="display: flex; justify-content: space-between;">
-                  <span>Order Total</span>
-                  <span style="font-weight: 600">${data?.total} ${data?.currency}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between;">
-                  <span>Your Commission</span>
-                  <span style="font-weight: 600; color: #0066FF">${data?.resellerCommission} ${data?.currency}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between;">
-                  <span>Reseller Code Used</span>
-                  <span style="font-weight: 500">${data?.resellerCode}</span>
-                </div>
-              </div>
-            </div>
-          </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f7fafc; border-radius: 8px;">
+          <span>Start Time</span>
+          <strong>${attendance.startTime}</strong>
         </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f7fafc; border-radius: 8px;">
+          <span>End Time</span>
+          <strong>${attendance.endTime || 'Still Working'}</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f7fafc; border-radius: 8px;">
+          <span>Duration</span>
+          <strong>${attendance.duration || `${attendance.totalHours}h`}</strong>
+        </div>
+      </div>
+    </div>
+  ` : '';
 
-        <div style="${BASE_STYLES?.footer}">
-          <p>Keep up the great work! 🌟</p>
+  const metricsSection = `
+    <div style="${BASE_STYLES.card}">
+      <h3 style="${BASE_STYLES.heading}">Today's Performance</h3>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px;">
+        <div>
+          <h4 style="margin: 0 0 8px; color: #4a5568;">Quotations</h4>
+          <p style="margin: 0; font-size: 24px; font-weight: 600;">${totalQuotations}</p>
+          <span style="color: ${quotationGrowth.startsWith('+') ? '#48bb78' : '#f56565'};">${quotationGrowth}</span>
+        </div>
+        <div>
+          <h4 style="margin: 0 0 8px; color: #4a5568;">Revenue</h4>
+          <p style="margin: 0; font-size: 24px; font-weight: 600;">${totalRevenue}</p>
+          <span style="color: ${revenueGrowth.startsWith('+') ? '#48bb78' : '#f56565'};">${revenueGrowth}</span>
+        </div>
+        <div>
+          <h4 style="margin: 0 0 8px; color: #4a5568;">New Customers</h4>
+          <p style="margin: 0; font-size: 24px; font-weight: 600;">${newCustomers}</p>
+          <span style="color: ${customerGrowth.startsWith('+') ? '#48bb78' : '#f56565'};">${customerGrowth}</span>
         </div>
       </div>
     </div>
   `;
-};
 
-export const OrderInternalNotification = (data: OrderInternalNotificationData): string => {
-  return `
-    <div style="${BASE_STYLES?.wrapper}">
-      <div style="${BASE_STYLES?.container}">
-        <div style="${BASE_STYLES?.header}">
-          <h1 style="margin: 16px 0 8px; font-size: 24px;">New Order Received 📦</h1>
-          <p style="margin: 0; opacity: 0.9;">Internal Processing Required</p>
+  const userMetricsSection = userSpecific ? `
+    <div style="${BASE_STYLES.card}">
+      <h3 style="${BASE_STYLES.heading}">Your Activity</h3>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 16px;">
+        <div>
+          <h4 style="margin: 0 0 8px; color: #4a5568;">Leads</h4>
+          <p style="margin: 0; font-size: 20px; font-weight: 600;">${userSpecific.todayLeads}</p>
         </div>
-
-        <div style="padding: 24px 20px;">
-          <div style="${BASE_STYLES?.card}">
-            <div style="${BASE_STYLES?.highlight}">
-              <div style="display: grid; gap: 12px;">
-                <div style="display: flex; justify-content: space-between;">
-                  <span>Order ID</span>
-                  <span style="font-weight: 600">${data?.orderId}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between;">
-                  <span>Customer Type</span>
-                  <span style="font-weight: 500">${data?.customerType}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between;">
-                  <span>Priority</span>
-                  <span style="font-weight: 600; color: ${data?.priority === 'high' ? '#dc3545' :
-      data?.priority === 'medium' ? '#ffc107' : '#28a745'
-    }">${data?.priority?.toUpperCase()}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between;">
-                  <span>Total Value</span>
-                  <span style="font-weight: 600">${data?.total} ${data?.currency}</span>
-                </div>
-              </div>
-            </div>
-            ${data?.notes ? `
-              <div style="${BASE_STYLES?.alert}">
-                <p style="margin: 0;"><strong>Notes:</strong> ${data?.notes}</p>
-              </div>
-            ` : ''}
-          </div>
+        <div>
+          <h4 style="margin: 0 0 8px; color: #4a5568;">Claims</h4>
+          <p style="margin: 0; font-size: 20px; font-weight: 600;">${userSpecific.todayClaims}</p>
+        </div>
+        <div>
+          <h4 style="margin: 0 0 8px; color: #4a5568;">Tasks</h4>
+          <p style="margin: 0; font-size: 20px; font-weight: 600;">${userSpecific.todayTasks}</p>
+        </div>
+        <div>
+          <h4 style="margin: 0 0 8px; color: #4a5568;">Quotations</h4>
+          <p style="margin: 0; font-size: 20px; font-weight: 600;">${userSpecific.todayQuotations}</p>
+        </div>
+        <div>
+          <h4 style="margin: 0 0 8px; color: #4a5568;">Hours</h4>
+          <p style="margin: 0; font-size: 20px; font-weight: 600;">${userSpecific.hoursWorked}</p>
         </div>
       </div>
     </div>
-  `;
-};
+  ` : '';
 
-export const OrderWarehouseFulfillment = (data: OrderWarehouseFulfillmentData): string => {
-  return `
-    <div style="${BASE_STYLES?.wrapper}">
-      <div style="${BASE_STYLES?.container}">
-        <div style="${BASE_STYLES?.header}">
-          <h1 style="margin: 16px 0 8px; font-size: 24px;">New Fulfillment Request 📦</h1>
-          <p style="margin: 0; opacity: 0.9;">Priority: ${data?.fulfillmentPriority?.toUpperCase()}</p>
+  const trackingSection = tracking ? `
+    <div style="${BASE_STYLES.card}">
+      <h3 style="${BASE_STYLES.heading}">📍 Location Tracking</h3>
+      <div style="display: grid; gap: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f7fafc; border-radius: 8px;">
+          <span>Total Distance</span>
+          <strong>${tracking.totalDistance}</strong>
         </div>
-
-        <div style="padding: 24px 20px;">
-          <div style="${BASE_STYLES?.card}">
-            <h2 style="${BASE_STYLES?.heading}">Order #${data?.orderId}</h2>
-            
-            <div style="${BASE_STYLES.highlight}">
-              <h3 style="margin: 0 0 12px;">Items to Fulfill</h3>
-              ${data?.items?.map(item => `
-                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-                  <div>
-                    <strong>SKU: ${item?.sku}</strong>
-                    ${item?.location ? `<br><small>Location: ${item?.location}</small>` : ''}
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f7fafc; border-radius: 8px;">
+          <span>Average Time per Location</span>
+          <strong>${tracking.averageTimePerLocation}</strong>
                   </div>
-                  <span style="font-weight: 500">Qty: ${item?.quantity}</span>
+        ${tracking.locations.map(location => `
+          <div style="padding: 12px; background: #f7fafc; border-radius: 8px;">
+            <div style="font-weight: 500; margin-bottom: 4px;">${location.address}</div>
+            <div style="color: #718096; font-size: 14px;">Time spent: ${location.timeSpent}</div>
                 </div>
               `).join('')}
             </div>
-
-            ${data?.shippingInstructions ? `
-              <div style="${BASE_STYLES?.alert}">
-                <p style="margin: 0 0 8px;"><strong>Shipping Instructions:</strong></p>
-                <p style="margin: 0;">${data?.shippingInstructions}</p>
-              </div>
-            ` : ''}
-
-            ${data?.packagingRequirements ? `
-              <div style="${BASE_STYLES?.alert}" style="margin-top: 16px;">
-                <p style="margin: 0 0 8px;"><strong>Packaging Requirements:</strong></p>
-                <p style="margin: 0;">${data?.packagingRequirements}</p>
-              </div>
-            ` : ''}
           </div>
+  ` : '';
+
+  return `
+    <div style="${BASE_STYLES.wrapper}">
+      <div style="${BASE_STYLES.container}">
+        <div style="${BASE_STYLES.header}">
+          <h1 style="margin: 16px 0 8px; font-size: 24px;">Daily Wrap ⭐</h1>
+          <p style="margin: 0; opacity: 0.9;">${new Date(date).toLocaleDateString()}</p>
+          </div>
+
+        <div style="padding: 24px 20px;">
+          <h2 style="${BASE_STYLES.heading}">Hi ${name},</h2>
+          <p style="${BASE_STYLES.text}">Here's your daily performance summary:</p>
+          
+          ${xpSection}
+          ${attendanceSection}
+          ${metricsSection}
+          ${userMetricsSection}
+          ${trackingSection}
+
+          <div style="${BASE_STYLES.alert}">
+            <p style="margin: 0; font-weight: 500;">💡 Quick Tip</p>
+            <p style="margin: 8px 0 0;">Set your goals for tomorrow and start fresh! Remember, every small win counts towards big success.</p>
+          </div>
+        </div>
+
+        <div style="${BASE_STYLES.footer}">
+          <p style="margin: 0;">Keep up the amazing work! 🚀</p>
+          <p style="font-size: 14px; color: #6c757d;">Generated on ${new Date(date).toLocaleString()}</p>
         </div>
       </div>
     </div>
@@ -1164,4 +1048,4 @@ export const LicenseActivated = (data: LicenseEmailData): string => `
         </div>
       </div>
     </div>
-`; 
+`;

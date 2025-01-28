@@ -58,8 +58,8 @@ export class ShopController {
   @Post('checkout')
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'checkout a list of products' })
-  checkout(@Body() items: CheckoutDto) {
-    return this.shopService.checkout(items);
+  createQuotation(@Body() quotationData: CheckoutDto) {
+    return this.shopService.createQuotation(quotationData);
   }
 
   @Get('quotations')

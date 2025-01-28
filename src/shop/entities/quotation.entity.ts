@@ -10,7 +10,7 @@ export class Quotation {
     uid: number;
 
     @Column({ unique: true })
-    orderNumber: string;
+    quotationNumber: string;
 
     @Column({ type: 'decimal', precision: 10, scale: 2 })
     totalAmount: number;
@@ -22,7 +22,7 @@ export class Quotation {
     status: OrderStatus;
 
     @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-    orderDate: Date;
+    quotationDate: Date;
 
     @ManyToOne(() => User, { eager: true })
     placedBy: User;
@@ -56,4 +56,7 @@ export class Quotation {
 
     @UpdateDateColumn()
     updatedAt: Date;
+
+    @Column({ type: 'timestamp', nullable: true })
+    validUntil: Date;
 }

@@ -1,7 +1,6 @@
-import { EmailType } from '../../lib/enums/email.enums';
 export declare class CommunicationLog {
     uid: string;
-    emailType: EmailType;
+    emailType: string;
     recipientEmails: string[];
     accepted: string[];
     rejected: string[];

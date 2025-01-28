@@ -26,7 +26,6 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const communication_log_entity_1 = require("./entities/communication-log.entity");
 const emails_1 = require("../lib/templates/emails");
-const emails_2 = require("../lib/templates/emails");
 let CommunicationService = class CommunicationService {
     constructor(configService, notificationsService, userService, communicationLogRepository) {
         this.configService = configService;
@@ -81,77 +80,47 @@ let CommunicationService = class CommunicationService {
             case email_enums_1.EmailType.SIGNUP:
                 return {
                     subject: 'Welcome to Our Platform',
-                    body: (0, emails_2.Signup)(data),
+                    body: (0, emails_1.Signup)(data),
                 };
             case email_enums_1.EmailType.VERIFICATION:
                 return {
                     subject: 'Verify Your Email',
-                    body: (0, emails_2.Verification)(data),
+                    body: (0, emails_1.Verification)(data),
                 };
             case email_enums_1.EmailType.PASSWORD_RESET:
                 return {
                     subject: 'Password Reset Request',
-                    body: (0, emails_2.PasswordReset)(data),
+                    body: (0, emails_1.PasswordReset)(data),
                 };
-            case email_enums_1.EmailType.ORDER_CONFIRMATION:
+            case email_enums_1.EmailType.NEW_QUOTATION_CLIENT:
                 return {
-                    subject: 'Order Confirmation',
-                    body: (0, emails_2.NewOrder)(data),
+                    subject: 'Your Quotation Details',
+                    body: (0, emails_1.NewQuotationClient)(data),
+                };
+            case email_enums_1.EmailType.NEW_QUOTATION_INTERNAL:
+                return {
+                    subject: 'New Quotation from Customer',
+                    body: (0, emails_1.NewQuotationInternal)(data),
+                };
+            case email_enums_1.EmailType.NEW_QUOTATION_RESELLER:
+                return {
+                    subject: 'New Quotation from Your Referral',
+                    body: (0, emails_1.NewQuotationReseller)(data),
                 };
             case email_enums_1.EmailType.INVOICE:
                 return {
-                    subject: 'Invoice for Your Order',
-                    body: (0, emails_2.Invoice)(data),
+                    subject: 'Invoice for Your Quotation',
+                    body: (0, emails_1.Invoice)(data),
                 };
             case email_enums_1.EmailType.PASSWORD_CHANGED:
                 return {
                     subject: 'Password Successfully Changed',
-                    body: (0, emails_2.PasswordChanged)(data),
-                };
-            case email_enums_1.EmailType.ORDER_OUT_FOR_DELIVERY:
-                return {
-                    subject: 'Your Order is Out for Delivery',
-                    body: (0, emails_2.OrderOutForDelivery)(data),
-                };
-            case email_enums_1.EmailType.ORDER_DELIVERED:
-                return {
-                    subject: 'Your Order Has Been Delivered',
-                    body: (0, emails_2.OrderDelivered)(data),
+                    body: (0, emails_1.PasswordChanged)(data),
                 };
             case email_enums_1.EmailType.DAILY_REPORT:
                 return {
                     subject: 'Daily Report',
-                    body: (0, emails_2.DailyReport)(data),
-                };
-            case email_enums_1.EmailType.ORDER_RESELLER_NOTIFICATION:
-                return {
-                    subject: 'New Order from Your Referral',
-                    body: (0, emails_2.OrderResellerNotification)(data),
-                };
-            case email_enums_1.EmailType.ORDER_INTERNAL_NOTIFICATION:
-                return {
-                    subject: 'New Order from a Valued Customer',
-                    body: (0, emails_2.OrderInternalNotification)(data),
-                };
-            case email_enums_1.EmailType.ORDER_WAREHOUSE_FULFILLMENT:
-                return {
-                    subject: 'New Order from a Valued Customer',
-                    body: (0, emails_2.OrderWarehouseFulfillment)(data),
-                };
-            case email_enums_1.EmailType.NEW_ORDER_CLIENT:
-                return {
-                    subject: 'Your Order Confirmation',
-                    body: (0, emails_2.NewOrder)(data),
-                };
-            case email_enums_1.EmailType.NEW_ORDER_INTERNAL:
-                return {
-                    subject: 'New Order from a Valued Customer',
-                    body: (0, emails_2.NewOrderInternal)(data),
-                };
-            case email_enums_1.EmailType.NEW_ORDER_RESELLER:
-                return {
-                    subject: 'New Purchase from Your Products',
-                    body: (0, emails_2.NewOrderReseller)(data),
+                    body: (0, emails_1.DailyReport)(data),
                 };
             case email_enums_1.EmailType.LICENSE_CREATED:
                 return {

@@ -12,10 +12,10 @@ import { Between } from 'typeorm';
 import { startOfDay, endOfDay } from 'date-fns';
 import { OrderStatus } from '../lib/enums/status.enums';
 import { ConfigService } from '@nestjs/config';
-import { ClientsService } from '../clients/clients.service';
-import { CreateProductDto } from '../products/dto/create-product.dto';
 import { EmailType } from '../lib/enums/email.enums';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { ClientsService } from '../clients/clients.service';
+import { CreateProductDto } from '../products/dto/create-product.dto';
 
 @Injectable()
 export class ShopService {
@@ -48,7 +48,6 @@ export class ShopService {
             .replace(this.currencyCode, this.currencySymbol);
     }
 
-    //shopping
     async categories(): Promise<{ categories: string[] | null, message: string }> {
         try {
             const allProducts = await this.productRepository.find();
@@ -135,17 +134,17 @@ export class ShopService {
         return response;
     }
 
-    async checkout(orderItems: CheckoutDto): Promise<{ message: string }> {
+    async createQuotation(quotationData: CheckoutDto): Promise<{ message: string }> {
         try {
-            if (!orderItems?.items?.length) {
-                throw new Error('Order items are required');
+            if (!quotationData?.items?.length) {
+                throw new Error('Quotation items are required');
             }
 
-            if (!orderItems?.owner?.uid) {
+            if (!quotationData?.owner?.uid) {
                 throw new Error('Owner is required');
             }
 
-            const clientData = await this.clientsService?.findOne(Number(orderItems?.client?.uid));
+            const clientData = await this.clientsService?.findOne(Number(quotationData?.client?.uid));
 
             if (!clientData) {
                 throw new NotFoundException(process.env.CLIENT_NOT_FOUND_MESSAGE);
@@ -154,7 +153,7 @@ export class ShopService {
             const { name: clientName } = clientData?.client;
             const internalEmail = this.configService.get<string>('INTERNAL_BROADCAST_EMAIL');
 
-            const productPromises = orderItems?.items?.map(item =>
+            const productPromises = quotationData?.items?.map(item =>
                 this.productRepository.find({ where: { uid: item?.uid }, relations: ['reseller'] })
             );
 
@@ -173,29 +172,29 @@ export class ShopService {
                         : [...unique, item];
                 }, []);
 
-            const newOrder = {
-                orderNumber: `ORD-${Date.now()}`,
-                totalItems: Number(orderItems?.totalItems),
-                totalAmount: Number(orderItems?.totalAmount),
-                placedBy: { uid: orderItems?.owner?.uid },
-                client: { uid: orderItems?.client?.uid },
-                orderItems: orderItems?.items?.map(item => ({
+            const newQuotation = {
+                quotationNumber: `QUO-${Date.now()}`,
+                totalItems: Number(quotationData?.totalItems),
+                totalAmount: Number(quotationData?.totalAmount),
+                placedBy: { uid: quotationData?.owner?.uid },
+                client: { uid: quotationData?.client?.uid },
+                status: OrderStatus.PENDING,
+                quotationItems: quotationData?.items?.map(item => ({
                     quantity: Number(item?.quantity),
                     product: { uid: item?.uid },
                     totalPrice: Number(item?.totalPrice),
                 }))
             } as const;
 
-            await this.quotationRepository.save(newOrder);
+            await this.quotationRepository.save(newQuotation);
 
             const baseConfig = {
                 name: clientName,
-                orderId: newOrder?.orderNumber,
-                expectedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-                total: Number(newOrder?.totalAmount),
+                quotationId: newQuotation?.quotationNumber,
+                validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days validity
+                total: Number(newQuotation?.totalAmount),
                 currency: this.currencyCode,
-                shippingMethod: 'Standard Delivery',
-                orderItems: orderItems?.items?.map(item => ({
+                quotationItems: quotationData?.items?.map(item => ({
                     quantity: Number(item?.quantity),
                     product: { uid: item?.uid },
                     totalPrice: Number(item?.totalPrice),
@@ -216,26 +215,22 @@ export class ShopService {
                 email: email?.email,
             }));
 
-            this.eventEmitter.emit('send.email', EmailType.NEW_ORDER_INTERNAL, [internalEmail], internalConfig);
+            this.eventEmitter.emit('send.email', EmailType.NEW_QUOTATION_INTERNAL, [internalEmail], internalConfig);
 
             resellerConfigs?.forEach(config => {
-                this.eventEmitter.emit('send.email', EmailType.NEW_ORDER_RESELLER, [config?.email], config);
+                this.eventEmitter.emit('send.email', EmailType.NEW_QUOTATION_RESELLER, [config?.email], config);
             });
 
-            this.eventEmitter.emit('send.email', EmailType.NEW_ORDER_CLIENT, [clientData?.client?.email], clientConfig);
+            this.eventEmitter.emit('send.email', EmailType.NEW_QUOTATION_CLIENT, [clientData?.client?.email], clientConfig);
 
-            const response = {
+            return {
                 message: process.env.SUCCESS_MESSAGE,
             };
-
-            return response;
         }
         catch (error) {
-            const response = {
+            return {
                 message: error?.message,
             };
-
-            return response;
         }
     }
 
@@ -416,61 +411,57 @@ export class ShopService {
         }
     }
 
-    async getOrdersForDate(date: Date): Promise<{
+    async getQuotationsForDate(date: Date): Promise<{
         message: string,
         stats: {
-            orders: {
+            quotations: {
                 pending: Quotation[],
                 processing: Quotation[],
                 completed: Quotation[],
                 cancelled: Quotation[],
                 postponed: Quotation[],
-                outForDelivery: Quotation[],
-                delivered: Quotation[],
                 rejected: Quotation[],
                 approved: Quotation[],
                 metrics: {
-                    totalOrders: number,
-                    grossOrderValue: string,
-                    averageOrderValue: string
+                    totalQuotations: number,
+                    grossQuotationValue: string,
+                    averageQuotationValue: string
                 }
             },
         }
     }> {
         try {
-            const orders = await this.quotationRepository.find({
+            const quotations = await this.quotationRepository.find({
                 where: {
-                    orderDate: Between(startOfDay(date), endOfDay(date))
+                    createdAt: Between(startOfDay(date), endOfDay(date))
                 },
                 relations: ['quotationItems']
             });
 
-            if (!orders) {
+            if (!quotations) {
                 throw new Error(process.env.NOT_FOUND_MESSAGE);
             }
 
-            // Group orders by status
-            const groupedOrders = {
-                pending: orders.filter(order => order?.status === OrderStatus.PENDING),
-                processing: orders.filter(order => order?.status === OrderStatus.INPROGRESS),
-                completed: orders.filter(order => order?.status === OrderStatus.COMPLETED),
-                cancelled: orders.filter(order => order?.status === OrderStatus.CANCELLED),
-                postponed: orders.filter(order => order?.status === OrderStatus.POSTPONED),
-                outForDelivery: orders.filter(order => order?.status === OrderStatus.OUTFORDELIVERY),
-                delivered: orders.filter(order => order?.status === OrderStatus.DELIVERED),
-                rejected: orders.filter(order => order?.status === OrderStatus.REJECTED),
-                approved: orders.filter(order => order?.status === OrderStatus.APPROVED)
+            // Group quotations by status
+            const groupedQuotations = {
+                pending: quotations.filter(quotation => quotation?.status === OrderStatus.PENDING),
+                processing: quotations.filter(quotation => quotation?.status === OrderStatus.INPROGRESS),
+                completed: quotations.filter(quotation => quotation?.status === OrderStatus.COMPLETED),
+                cancelled: quotations.filter(quotation => quotation?.status === OrderStatus.CANCELLED),
+                postponed: quotations.filter(quotation => quotation?.status === OrderStatus.POSTPONED),
+                rejected: quotations.filter(quotation => quotation?.status === OrderStatus.REJECTED),
+                approved: quotations.filter(quotation => quotation?.status === OrderStatus.APPROVED)
             };
 
             // Calculate metrics with formatted currency
             const metrics = {
-                totalOrders: orders?.length,
-                grossOrderValue: this.formatCurrency(
-                    orders?.reduce((sum, order) => sum + (Number(order?.totalAmount) || 0), 0)
+                totalQuotations: quotations?.length,
+                grossQuotationValue: this.formatCurrency(
+                    quotations?.reduce((sum, quotation) => sum + (Number(quotation?.totalAmount) || 0), 0)
                 ),
-                averageOrderValue: this.formatCurrency(
-                    orders?.length > 0
-                        ? orders?.reduce((sum, order) => sum + (Number(order?.totalAmount) || 0), 0) / orders?.length
+                averageQuotationValue: this.formatCurrency(
+                    quotations?.length > 0
+                        ? quotations?.reduce((sum, quotation) => sum + (Number(quotation?.totalAmount) || 0), 0) / quotations?.length
                         : 0
                 )
             };
@@ -478,8 +469,8 @@ export class ShopService {
             return {
                 message: process.env.SUCCESS_MESSAGE,
                 stats: {
-                    orders: {
-                        ...groupedOrders,
+                    quotations: {
+                        ...groupedQuotations,
                         metrics
                     }
                 }

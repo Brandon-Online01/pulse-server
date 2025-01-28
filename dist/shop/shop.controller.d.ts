@@ -26,7 +26,7 @@ export declare class ShopController {
         products: Product[] | null;
         message: string;
     }>;
-    checkout(items: CheckoutDto): Promise<{
+    createQuotation(quotationData: CheckoutDto): Promise<{
         message: string;
     }>;
     getQuotations(): Promise<{

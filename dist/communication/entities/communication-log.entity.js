@@ -11,7 +11,6 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CommunicationLog = void 0;
 const typeorm_1 = require("typeorm");
-const email_enums_1 = require("../../lib/enums/email.enums");
 let CommunicationLog = class CommunicationLog {
 };
 exports.CommunicationLog = CommunicationLog;
@@ -20,7 +19,7 @@ __decorate([
     __metadata("design:type", String)
 ], CommunicationLog.prototype, "uid", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'enum', enum: email_enums_1.EmailType }),
+    (0, typeorm_1.Column)('varchar', { nullable: true }),
     __metadata("design:type", String)
 ], CommunicationLog.prototype, "emailType", void 0);
 __decorate([

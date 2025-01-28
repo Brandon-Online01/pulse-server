@@ -43,8 +43,8 @@ let ShopController = class ShopController {
     specials() {
         return this.shopService.specials();
     }
-    checkout(items) {
-        return this.shopService.checkout(items);
+    createQuotation(quotationData) {
+        return this.shopService.createQuotation(quotationData);
     }
     getQuotations() {
         return this.shopService.getAllQuotations();
@@ -123,7 +123,7 @@ __decorate([
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [checkout_dto_1.CheckoutDto]),
     __metadata("design:returntype", void 0)
-], ShopController.prototype, "checkout", null);
+], ShopController.prototype, "createQuotation", null);
 __decorate([
     (0, common_1.Get)('quotations'),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),

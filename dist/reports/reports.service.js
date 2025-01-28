@@ -79,7 +79,7 @@ let ReportsService = class ReportsService {
                 this.leadService.getLeadsForDate(new Date()),
                 this.journalService.getJournalsForDate(new Date()),
                 this.claimsService.getClaimsForDate(new Date()),
-                this.shopService.getOrdersForDate(new Date()),
+                this.shopService.getQuotationsForDate(new Date()),
                 this.tasksService.getTaskStatusSummary(),
                 this.attendanceService.getMonthlyAttendanceStats()
             ]);
@@ -107,7 +107,7 @@ let ReportsService = class ReportsService {
                     completed: tasksStats?.COMPLETED,
                     missed: tasksStats?.MISSED,
                     postponed: tasksStats?.POSTPONED,
-                    total: Object?.values(tasksStats)?.reduce((acc, curr) => acc + curr, 0)
+                    total: Object.values(tasksStats || {}).reduce((acc, curr) => acc + curr, 0)
                 },
                 attendance: {
                     attendance: attendanceStats?.metrics?.attendancePercentage,
@@ -115,19 +115,17 @@ let ReportsService = class ReportsService {
                     total: attendanceStats?.metrics?.totalEmployees
                 },
                 orders: {
-                    pending: ordersStats?.orders?.pending?.length,
-                    processing: ordersStats?.orders?.processing?.length,
-                    completed: ordersStats?.orders?.completed?.length,
-                    cancelled: ordersStats?.orders?.cancelled?.length,
-                    postponed: ordersStats?.orders?.postponed?.length,
-                    outForDelivery: ordersStats?.orders?.outForDelivery?.length,
-                    delivered: ordersStats?.orders?.delivered?.length,
-                    rejected: ordersStats?.orders?.rejected?.length,
-                    approved: ordersStats?.orders?.approved?.length,
+                    pending: ordersStats?.quotations?.pending?.length,
+                    processing: ordersStats?.quotations?.processing?.length,
+                    completed: ordersStats?.quotations?.completed?.length,
+                    cancelled: ordersStats?.quotations?.cancelled?.length,
+                    postponed: ordersStats?.quotations?.postponed?.length,
+                    rejected: ordersStats?.quotations?.rejected?.length,
+                    approved: ordersStats?.quotations?.approved?.length,
                     metrics: {
-                        totalOrders: ordersStats?.orders?.metrics?.totalOrders,
-                        grossOrderValue: ordersStats?.orders?.metrics?.grossOrderValue || 0,
-                        averageOrderValue: ordersStats?.orders?.metrics?.averageOrderValue || 0
+                        totalQuotations: ordersStats?.quotations?.metrics?.totalQuotations,
+                        grossQuotationValue: ordersStats?.quotations?.metrics?.grossQuotationValue || 0,
+                        averageQuotationValue: ordersStats?.quotations?.metrics?.averageQuotationValue || 0
                     }
                 },
             };
@@ -144,7 +142,7 @@ let ReportsService = class ReportsService {
                 this.leadService.getLeadsForDate(date),
                 this.journalService.getJournalsForDate(date),
                 this.claimsService.getClaimsForDate(date),
-                this.shopService.getOrdersForDate(date),
+                this.shopService.getQuotationsForDate(date),
                 this.tasksService.getTasksForDate(date),
                 this.attendanceService.getAttendanceForDate(date),
                 this.newsService.findAll(),
@@ -152,7 +150,7 @@ let ReportsService = class ReportsService {
                 reference ? this.userService.findOne(Number(reference)) : null,
                 this.trackingService.getDailyTracking(Number(reference), date)
             ]);
-            const [{ leads: leadsStats }, { journals: journalsStats }, { claims: claimsStats }, { stats: ordersStats }, { total: tasksTotal }, { totalHours: attendanceHours, activeShifts, attendanceRecords }, { data: newsItems }, { rewards: userRewards }, userData, { data: trackingData }] = allData;
+            const [{ leads: leadsStats }, { journals: journalsStats }, { claims: claimsStats }, { stats: quotationsStats }, { total: tasksTotal }, { totalHours: attendanceHours, activeShifts, attendanceRecords }, { data: newsItems }, { rewards: userRewards }, userData, { data: trackingData }] = allData;
             const report = this.reportRepository.create({
                 title: 'Daily Report',
                 description: `Daily report for the date ${new Date()}`,
@@ -163,7 +161,7 @@ let ReportsService = class ReportsService {
                     claims: claimsStats,
                     tasks: tasksTotal,
                     attendance: { totalHours: attendanceHours, activeShifts, attendanceRecords },
-                    orders: ordersStats?.orders,
+                    quotations: quotationsStats?.quotations,
                     news: newsItems,
                     rewards: userRewards,
                     tracking: trackingData ? {
@@ -185,10 +183,10 @@ let ReportsService = class ReportsService {
             const recipients = [user_enums_1.AccessLevel.USER];
             this.eventEmitter.emit('send.notification', notification, recipients);
             if (userData?.user?.email) {
-                const previousDayOrders = ordersStats?.orders?.metrics?.totalOrders || 0;
-                const previousDayRevenue = Number(ordersStats?.orders?.metrics?.grossOrderValue?.replace(/[^0-9.-]+/g, '')) || 0;
-                const currentRevenue = Number(ordersStats?.orders?.metrics?.grossOrderValue) || 0;
-                const currentOrders = ordersStats?.orders?.metrics?.totalOrders || 0;
+                const previousDayQuotations = quotationsStats?.quotations?.metrics?.totalQuotations || 0;
+                const previousDayRevenue = Number(quotationsStats?.quotations?.metrics?.grossQuotationValue?.replace(/[^0-9.-]+/g, '')) || 0;
+                const currentRevenue = Number(quotationsStats?.quotations?.metrics?.grossQuotationValue) || 0;
+                const currentQuotations = quotationsStats?.quotations?.metrics?.totalQuotations || 0;
                 const emailData = {
                     name: userData.user.username,
                     date: new Date(),
@@ -217,17 +215,17 @@ let ReportsService = class ReportsService {
                             verifiedAt: attendanceRecords[0].verifiedAt?.toISOString(),
                             verifiedBy: attendanceRecords[0].verifiedBy,
                         } : undefined,
-                        totalOrders: currentOrders,
+                        totalQuotations: currentQuotations,
                         totalRevenue: this.formatCurrency(currentRevenue),
                         newCustomers: leadsStats?.total || 0,
-                        orderGrowth: this.calculateGrowth(currentOrders, previousDayOrders),
+                        quotationGrowth: this.calculateGrowth(currentQuotations, previousDayQuotations),
                         revenueGrowth: this.calculateGrowth(currentRevenue, previousDayRevenue),
                         customerGrowth: this.calculateGrowth(leadsStats?.total || 0, (leadsStats?.total || 0) - (leadsStats?.pending?.length || 0)),
                         userSpecific: {
                             todayLeads: leadsStats?.pending?.length || 0,
                             todayClaims: claimsStats?.pending?.length || 0,
                             todayTasks: tasksTotal || 0,
-                            todayOrders: currentOrders,
+                            todayQuotations: currentQuotations,
                             hoursWorked: attendanceHours,
                         },
                     },

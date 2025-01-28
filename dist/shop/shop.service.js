@@ -24,9 +24,9 @@ const typeorm_3 = require("typeorm");
 const date_fns_1 = require("date-fns");
 const status_enums_1 = require("../lib/enums/status.enums");
 const config_1 = require("@nestjs/config");
-const clients_service_1 = require("../clients/clients.service");
 const email_enums_1 = require("../lib/enums/email.enums");
 const event_emitter_1 = require("@nestjs/event-emitter");
+const clients_service_1 = require("../clients/clients.service");
 let ShopService = class ShopService {
     constructor(productRepository, quotationRepository, bannersRepository, configService, clientsService, eventEmitter) {
         this.productRepository = productRepository;
@@ -114,21 +114,21 @@ let ShopService = class ShopService {
         };
         return response;
     }
-    async checkout(orderItems) {
+    async createQuotation(quotationData) {
         try {
-            if (!orderItems?.items?.length) {
-                throw new Error('Order items are required');
+            if (!quotationData?.items?.length) {
+                throw new Error('Quotation items are required');
             }
-            if (!orderItems?.owner?.uid) {
+            if (!quotationData?.owner?.uid) {
                 throw new Error('Owner is required');
             }
-            const clientData = await this.clientsService?.findOne(Number(orderItems?.client?.uid));
+            const clientData = await this.clientsService?.findOne(Number(quotationData?.client?.uid));
             if (!clientData) {
                 throw new common_1.NotFoundException(process.env.CLIENT_NOT_FOUND_MESSAGE);
             }
             const { name: clientName } = clientData?.client;
             const internalEmail = this.configService.get('INTERNAL_BROADCAST_EMAIL');
-            const productPromises = orderItems?.items?.map(item => this.productRepository.find({ where: { uid: item?.uid }, relations: ['reseller'] }));
+            const productPromises = quotationData?.items?.map(item => this.productRepository.find({ where: { uid: item?.uid }, relations: ['reseller'] }));
             const products = await Promise.all(productPromises);
             const resellerEmails = products
                 .flat()
@@ -142,27 +142,27 @@ let ShopService = class ShopService {
                     ? unique
                     : [...unique, item];
             }, []);
-            const newOrder = {
-                orderNumber: `ORD-${Date.now()}`,
-                totalItems: Number(orderItems?.totalItems),
-                totalAmount: Number(orderItems?.totalAmount),
-                placedBy: { uid: orderItems?.owner?.uid },
-                client: { uid: orderItems?.client?.uid },
-                orderItems: orderItems?.items?.map(item => ({
+            const newQuotation = {
+                quotationNumber: `QUO-${Date.now()}`,
+                totalItems: Number(quotationData?.totalItems),
+                totalAmount: Number(quotationData?.totalAmount),
+                placedBy: { uid: quotationData?.owner?.uid },
+                client: { uid: quotationData?.client?.uid },
+                status: status_enums_1.OrderStatus.PENDING,
+                quotationItems: quotationData?.items?.map(item => ({
                     quantity: Number(item?.quantity),
                     product: { uid: item?.uid },
                     totalPrice: Number(item?.totalPrice),
                 }))
             };
-            await this.quotationRepository.save(newOrder);
+            await this.quotationRepository.save(newQuotation);
             const baseConfig = {
                 name: clientName,
-                orderId: newOrder?.orderNumber,
-                expectedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-                total: Number(newOrder?.totalAmount),
+                quotationId: newQuotation?.quotationNumber,
+                validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+                total: Number(newQuotation?.totalAmount),
                 currency: this.currencyCode,
-                shippingMethod: 'Standard Delivery',
-                orderItems: orderItems?.items?.map(item => ({
+                quotationItems: quotationData?.items?.map(item => ({
                     quantity: Number(item?.quantity),
                     product: { uid: item?.uid },
                     totalPrice: Number(item?.totalPrice),
@@ -179,21 +179,19 @@ let ShopService = class ShopService {
                 name: email?.retailerName,
                 email: email?.email,
             }));
-            this.eventEmitter.emit('send.email', email_enums_1.EmailType.NEW_ORDER_INTERNAL, [internalEmail], internalConfig);
+            this.eventEmitter.emit('send.email', email_enums_1.EmailType.NEW_QUOTATION_INTERNAL, [internalEmail], internalConfig);
             resellerConfigs?.forEach(config => {
-                this.eventEmitter.emit('send.email', email_enums_1.EmailType.NEW_ORDER_RESELLER, [config?.email], config);
+                this.eventEmitter.emit('send.email', email_enums_1.EmailType.NEW_QUOTATION_RESELLER, [config?.email], config);
             });
-            this.eventEmitter.emit('send.email', email_enums_1.EmailType.NEW_ORDER_CLIENT, [clientData?.client?.email], clientConfig);
-            const response = {
+            this.eventEmitter.emit('send.email', email_enums_1.EmailType.NEW_QUOTATION_CLIENT, [clientData?.client?.email], clientConfig);
+            return {
                 message: process.env.SUCCESS_MESSAGE,
             };
-            return response;
         }
         catch (error) {
-            const response = {
+            return {
                 message: error?.message,
             };
-            return response;
         }
     }
     async createBanner(bannerData) {
@@ -352,40 +350,38 @@ let ShopService = class ShopService {
             };
         }
     }
-    async getOrdersForDate(date) {
+    async getQuotationsForDate(date) {
         try {
-            const orders = await this.quotationRepository.find({
+            const quotations = await this.quotationRepository.find({
                 where: {
-                    orderDate: (0, typeorm_3.Between)((0, date_fns_1.startOfDay)(date), (0, date_fns_1.endOfDay)(date))
+                    createdAt: (0, typeorm_3.Between)((0, date_fns_1.startOfDay)(date), (0, date_fns_1.endOfDay)(date))
                 },
                 relations: ['quotationItems']
             });
-            if (!orders) {
+            if (!quotations) {
                 throw new Error(process.env.NOT_FOUND_MESSAGE);
             }
-            const groupedOrders = {
-                pending: orders.filter(order => order?.status === status_enums_1.OrderStatus.PENDING),
-                processing: orders.filter(order => order?.status === status_enums_1.OrderStatus.INPROGRESS),
-                completed: orders.filter(order => order?.status === status_enums_1.OrderStatus.COMPLETED),
-                cancelled: orders.filter(order => order?.status === status_enums_1.OrderStatus.CANCELLED),
-                postponed: orders.filter(order => order?.status === status_enums_1.OrderStatus.POSTPONED),
-                outForDelivery: orders.filter(order => order?.status === status_enums_1.OrderStatus.OUTFORDELIVERY),
-                delivered: orders.filter(order => order?.status === status_enums_1.OrderStatus.DELIVERED),
-                rejected: orders.filter(order => order?.status === status_enums_1.OrderStatus.REJECTED),
-                approved: orders.filter(order => order?.status === status_enums_1.OrderStatus.APPROVED)
+            const groupedQuotations = {
+                pending: quotations.filter(quotation => quotation?.status === status_enums_1.OrderStatus.PENDING),
+                processing: quotations.filter(quotation => quotation?.status === status_enums_1.OrderStatus.INPROGRESS),
+                completed: quotations.filter(quotation => quotation?.status === status_enums_1.OrderStatus.COMPLETED),
+                cancelled: quotations.filter(quotation => quotation?.status === status_enums_1.OrderStatus.CANCELLED),
+                postponed: quotations.filter(quotation => quotation?.status === status_enums_1.OrderStatus.POSTPONED),
+                rejected: quotations.filter(quotation => quotation?.status === status_enums_1.OrderStatus.REJECTED),
+                approved: quotations.filter(quotation => quotation?.status === status_enums_1.OrderStatus.APPROVED)
             };
             const metrics = {
-                totalOrders: orders?.length,
-                grossOrderValue: this.formatCurrency(orders?.reduce((sum, order) => sum + (Number(order?.totalAmount) || 0), 0)),
-                averageOrderValue: this.formatCurrency(orders?.length > 0
-                    ? orders?.reduce((sum, order) => sum + (Number(order?.totalAmount) || 0), 0) / orders?.length
+                totalQuotations: quotations?.length,
+                grossQuotationValue: this.formatCurrency(quotations?.reduce((sum, quotation) => sum + (Number(quotation?.totalAmount) || 0), 0)),
+                averageQuotationValue: this.formatCurrency(quotations?.length > 0
+                    ? quotations?.reduce((sum, quotation) => sum + (Number(quotation?.totalAmount) || 0), 0) / quotations?.length
                     : 0)
             };
             return {
                 message: process.env.SUCCESS_MESSAGE,
                 stats: {
-                    orders: {
-                        ...groupedOrders,
+                    quotations: {
+                        ...groupedQuotations,
                         metrics
                     }
                 }

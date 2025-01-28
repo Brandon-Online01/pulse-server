@@ -11,9 +11,8 @@ import { User } from '../user/entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CommunicationLog } from './entities/communication-log.entity';
-import { LicenseCreated, LicenseUpdated, LicenseLimitReached, LicenseRenewed, LicenseSuspended, LicenseActivated } from '../lib/templates/emails';
-import { Signup, Verification, PasswordReset, NewOrder, Invoice, PasswordChanged, OrderOutForDelivery, OrderDelivered, DailyReport, NewOrderInternal, OrderResellerNotification, OrderInternalNotification, OrderWarehouseFulfillment, NewOrderReseller } from '../lib/templates/emails';
-import { DailyReportData, InvoiceData, OrderData, OrderDeliveredData, OrderOutForDeliveryData, PasswordChangedData, PasswordResetData, VerificationEmailData, SignupEmailData, EmailTemplateData, OrderResellerNotificationData, OrderInternalNotificationData, OrderWarehouseFulfillmentData, LicenseEmailData, LicenseLimitData } from '../lib/types/email-templates.types';
+import { LicenseCreated, LicenseUpdated, LicenseLimitReached, LicenseRenewed, LicenseSuspended, LicenseActivated, NewQuotationClient, NewQuotationInternal, NewQuotationReseller, Signup, Verification, PasswordReset, Invoice, PasswordChanged, DailyReport } from '../lib/templates/emails';
+import { DailyReportData, InvoiceData, PasswordChangedData, PasswordResetData, VerificationEmailData, SignupEmailData, EmailTemplateData, LicenseEmailData, LicenseLimitData, QuotationInternalData, QuotationResellerData, QuotationData } from '../lib/types/email-templates.types';
 
 @Injectable()
 export class CommunicationService {
@@ -99,14 +98,24 @@ export class CommunicationService {
 					subject: 'Password Reset Request',
 					body: PasswordReset(data as PasswordResetData),
 				};
-			case EmailType.ORDER_CONFIRMATION:
+			case EmailType.NEW_QUOTATION_CLIENT:
 				return {
-					subject: 'Order Confirmation',
-					body: NewOrder(data as OrderData),
+					subject: 'Your Quotation Details',
+					body: NewQuotationClient(data as QuotationData),
+				};
+			case EmailType.NEW_QUOTATION_INTERNAL:
+				return {
+					subject: 'New Quotation from Customer',
+					body: NewQuotationInternal(data as QuotationInternalData),
+				};
+			case EmailType.NEW_QUOTATION_RESELLER:
+				return {
+					subject: 'New Quotation from Your Referral',
+					body: NewQuotationReseller(data as QuotationResellerData),
 				};
 			case EmailType.INVOICE:
 				return {
-					subject: 'Invoice for Your Order',
+					subject: 'Invoice for Your Quotation',
 					body: Invoice(data as InvoiceData),
 				};
 			case EmailType.PASSWORD_CHANGED:
@@ -114,50 +123,10 @@ export class CommunicationService {
 					subject: 'Password Successfully Changed',
 					body: PasswordChanged(data as PasswordChangedData),
 				};
-			case EmailType.ORDER_OUT_FOR_DELIVERY:
-				return {
-					subject: 'Your Order is Out for Delivery',
-					body: OrderOutForDelivery(data as OrderOutForDeliveryData),
-				};
-			case EmailType.ORDER_DELIVERED:
-				return {
-					subject: 'Your Order Has Been Delivered',
-					body: OrderDelivered(data as OrderDeliveredData),
-				};
 			case EmailType.DAILY_REPORT:
 				return {
 					subject: 'Daily Report',
 					body: DailyReport(data as DailyReportData),
-				};
-			case EmailType.ORDER_RESELLER_NOTIFICATION:
-				return {
-					subject: 'New Order from Your Referral',
-					body: OrderResellerNotification(data as OrderResellerNotificationData),
-				};
-			case EmailType.ORDER_INTERNAL_NOTIFICATION:
-				return {
-					subject: 'New Order from a Valued Customer',
-					body: OrderInternalNotification(data as OrderInternalNotificationData),
-				};
-			case EmailType.ORDER_WAREHOUSE_FULFILLMENT:
-				return {
-					subject: 'New Order from a Valued Customer',
-					body: OrderWarehouseFulfillment(data as OrderWarehouseFulfillmentData),
-				};
-			case EmailType.NEW_ORDER_CLIENT:
-				return {
-					subject: 'Your Order Confirmation',
-					body: NewOrder(data as OrderData),
-				};
-			case EmailType.NEW_ORDER_INTERNAL:
-				return {
-					subject: 'New Order from a Valued Customer',
-					body: NewOrderInternal(data as OrderInternalNotificationData),
-				};
-			case EmailType.NEW_ORDER_RESELLER:
-				return {
-					subject: 'New Purchase from Your Products',
-					body: NewOrderReseller(data as OrderResellerNotificationData),
 				};
 			case EmailType.LICENSE_CREATED:
 				return {

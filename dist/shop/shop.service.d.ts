@@ -6,9 +6,9 @@ import { CreateBannerDto } from './dto/create-banner.dto';
 import { UpdateBannerDto } from './dto/update-banner.dto';
 import { Product } from '../products/entities/product.entity';
 import { ConfigService } from '@nestjs/config';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ClientsService } from '../clients/clients.service';
 import { CreateProductDto } from '../products/dto/create-product.dto';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 export declare class ShopService {
     private productRepository;
     private quotationRepository;
@@ -42,7 +42,7 @@ export declare class ShopService {
         products: Product[] | null;
         message: string;
     }>;
-    checkout(orderItems: CheckoutDto): Promise<{
+    createQuotation(quotationData: CheckoutDto): Promise<{
         message: string;
     }>;
     createBanner(bannerData: CreateBannerDto): Promise<{
@@ -72,23 +72,21 @@ export declare class ShopService {
         quotation: Quotation;
         message: string;
     }>;
-    getOrdersForDate(date: Date): Promise<{
+    getQuotationsForDate(date: Date): Promise<{
         message: string;
         stats: {
-            orders: {
+            quotations: {
                 pending: Quotation[];
                 processing: Quotation[];
                 completed: Quotation[];
                 cancelled: Quotation[];
                 postponed: Quotation[];
-                outForDelivery: Quotation[];
-                delivered: Quotation[];
                 rejected: Quotation[];
                 approved: Quotation[];
                 metrics: {
-                    totalOrders: number;
-                    grossOrderValue: string;
-                    averageOrderValue: string;
+                    totalQuotations: number;
+                    grossQuotationValue: string;
+                    averageQuotationValue: string;
                 };
             };
         };

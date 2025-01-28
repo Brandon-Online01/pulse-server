@@ -19,8 +19,8 @@ export interface PasswordResetData extends BaseEmailData {
     expiryMinutes: number;
 }
 
-export interface OrderData extends BaseEmailData {
-    orderId: string;
+export interface QuotationData extends BaseEmailData {
+    quotationId: string;
     expectedDelivery: Date;
     total: number;
     currency: string;
@@ -93,17 +93,17 @@ export interface DailyReportData {
             location: string;
             photo?: boolean;
         }>;
-        totalOrders: number;
+        totalQuotations: number;
         totalRevenue: string;
         newCustomers: number;
-        orderGrowth: string;
+        quotationGrowth: string;
         revenueGrowth: string;
         customerGrowth: string;
         userSpecific?: {
             todayLeads: number;
             todayClaims: number;
             todayTasks: number;
-            todayOrders: number;
+            todayQuotations: number;
             hoursWorked: number;
         };
     };
@@ -131,12 +131,12 @@ export interface OrderDeliveredData extends BaseEmailData {
     deliveryStatus: string;
 }
 
-export interface OrderResellerNotificationData extends OrderData {
+export interface QuotationResellerNotificationData extends QuotationData {
     resellerCommission: number;
     resellerCode: string;
 }
 
-export interface OrderInternalNotificationData extends OrderData {
+export interface QuotationInternalNotificationData extends QuotationData {
     customerType: string;
     priority: 'low' | 'medium' | 'high';
     notes?: string;
@@ -147,7 +147,7 @@ export interface OrderInternalNotificationData extends OrderData {
     }>;
 }
 
-export interface OrderWarehouseFulfillmentData extends OrderData {
+export interface QuotationWarehouseFulfillmentData extends QuotationData {
     fulfillmentPriority: 'standard' | 'express' | 'rush';
     shippingInstructions?: string;
     packagingRequirements?: string;
@@ -179,22 +179,42 @@ export interface LicenseLimitData extends LicenseEmailData {
     limit: number;
 }
 
+export interface QuotationData extends BaseEmailData {
+    quotationId: string;
+    validUntil: Date;
+    total: number;
+    currency: string;
+    quotationItems: Array<{
+        quantity: number;
+        product: { uid: string };
+        totalPrice: number;
+    }>;
+}
+
+export interface QuotationInternalData extends QuotationData {
+    customerType: string;
+    priority: 'low' | 'medium' | 'high';
+    notes?: string;
+}
+
+export interface QuotationResellerData extends QuotationData {
+    resellerCommission: number;
+    resellerCode: string;
+}
+
 export type EmailDataMap = {
     [EmailType.SIGNUP]: SignupEmailData;
     [EmailType.VERIFICATION]: VerificationEmailData;
     [EmailType.PASSWORD_RESET]: PasswordResetData;
-    [EmailType.ORDER_CONFIRMATION]: OrderData;
     [EmailType.INVOICE]: InvoiceData;
     [EmailType.PASSWORD_CHANGED]: PasswordChangedData;
-    [EmailType.ORDER_OUT_FOR_DELIVERY]: OrderOutForDeliveryData;
-    [EmailType.ORDER_DELIVERED]: OrderDeliveredData;
     [EmailType.DAILY_REPORT]: DailyReportData;
-    [EmailType.ORDER_RESELLER_NOTIFICATION]: OrderResellerNotificationData;
-    [EmailType.ORDER_INTERNAL_NOTIFICATION]: OrderInternalNotificationData;
-    [EmailType.ORDER_WAREHOUSE_FULFILLMENT]: OrderWarehouseFulfillmentData;
-    [EmailType.NEW_ORDER_CLIENT]: OrderData;
-    [EmailType.NEW_ORDER_INTERNAL]: OrderInternalNotificationData;
-    [EmailType.NEW_ORDER_RESELLER]: OrderResellerNotificationData;
+    [EmailType.NEW_QUOTATION_CLIENT]: QuotationData;
+    [EmailType.NEW_QUOTATION_INTERNAL]: QuotationInternalData;
+    [EmailType.NEW_QUOTATION_RESELLER]: QuotationResellerData;
+    [EmailType.NEW_QUOTATION_WAREHOUSE_FULFILLMENT]: QuotationData;
+    [EmailType.QUOTATION_APPROVED]: QuotationData;
+    [EmailType.QUOTATION_REJECTED]: QuotationData;
     [EmailType.LICENSE_CREATED]: LicenseEmailData;
     [EmailType.LICENSE_UPDATED]: LicenseEmailData;
     [EmailType.LICENSE_LIMIT_REACHED]: LicenseLimitData;

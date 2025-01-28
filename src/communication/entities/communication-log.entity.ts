@@ -1,13 +1,12 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn } from 'typeorm';
-import { EmailType } from '../../lib/enums/email.enums';
 
 @Entity('communication_logs')
 export class CommunicationLog {
 	@PrimaryGeneratedColumn('uuid')
 	uid: string;
 
-	@Column({ type: 'enum', enum: EmailType })
-	emailType: EmailType;
+	@Column('varchar', { nullable: true })
+	emailType: string;
 
 	@Column('simple-array', { nullable: true })
 	recipientEmails: string[];

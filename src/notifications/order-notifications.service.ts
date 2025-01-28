@@ -4,10 +4,10 @@ import { EmailType } from '../lib/enums/email.enums';
 import { Quotation } from '../shop/entities/quotation.entity';
 import { ConfigService } from '@nestjs/config';
 import {
-    OrderData,
-    OrderResellerNotificationData,
-    OrderInternalNotificationData,
-    OrderWarehouseFulfillmentData
+    QuotationData,
+    QuotationResellerNotificationData,
+    QuotationInternalNotificationData,
+    QuotationWarehouseFulfillmentData
 } from '../lib/types/email-templates.types';
 
 @Injectable()
@@ -17,13 +17,6 @@ export class OrderNotificationsService {
         private readonly configService: ConfigService
     ) { }
 
-    private formatCurrency(amount: number, currency: string = 'USD'): string {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency
-        }).format(amount);
-    }
-
     private async sendEmail<T>(type: EmailType, data: T): Promise<void> {
         this.eventEmitter.emit('email.send', {
             type,
@@ -31,18 +24,18 @@ export class OrderNotificationsService {
         });
     }
 
-    private getCustomerPriority(order: Quotation): 'low' | 'medium' | 'high' {
-        const orderValue = Number(order.totalAmount) || 0;
+    private getCustomerPriority(quotation: Quotation): 'low' | 'medium' | 'high' {
+        const quotationValue = Number(quotation.totalAmount) || 0;
         const highPriorityThreshold = this.configService.get<number>('HIGH_PRIORITY_ORDER_THRESHOLD') || 1000;
         const mediumPriorityThreshold = this.configService.get<number>('MEDIUM_PRIORITY_ORDER_THRESHOLD') || 500;
 
-        if (orderValue >= highPriorityThreshold) return 'high';
-        if (orderValue >= mediumPriorityThreshold) return 'medium';
+        if (quotationValue >= highPriorityThreshold) return 'high';
+        if (quotationValue >= mediumPriorityThreshold) return 'medium';
         return 'low';
     }
 
-    private getFulfillmentPriority(order: Quotation): 'standard' | 'express' | 'rush' {
-        const priority = this.getCustomerPriority(order);
+    private getFulfillmentPriority(quotation: Quotation): 'standard' | 'express' | 'rush' {
+        const priority = this.getCustomerPriority(quotation);
         switch (priority) {
             case 'high': return 'rush';
             case 'medium': return 'express';
@@ -50,51 +43,57 @@ export class OrderNotificationsService {
         }
     }
 
-    async sendOrderNotifications(order: Quotation): Promise<void> {
+    async sendQuotationNotifications(quotation: Quotation): Promise<void> {
         const currency = this.configService.get<string>('CURRENCY_CODE') || 'USD';
-        const baseOrderData: OrderData = {
-            name: order.client?.name || 'Valued Customer',
-            orderId: order.orderNumber,
-            expectedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
-            total: Number(order.totalAmount) || 0,
+        const baseOrderData: QuotationData = {
+            name: quotation.client?.name || 'Valued Customer',
+            quotationId: quotation.quotationNumber,
+            expectedDelivery: quotation?.validUntil,
+            total: Number(quotation.totalAmount) || 0,
             currency,
-            shippingMethod: order.shippingMethod || 'Standard Shipping'
+            shippingMethod: quotation.shippingMethod || 'Standard Shipping',
+            validUntil: quotation?.validUntil,
+            quotationItems: quotation.quotationItems.map(item => ({
+                quantity: item.quantity,
+                product: { uid: String(item.product.uid) },
+                totalPrice: Number(item.totalPrice) || 0
+            }))
         };
 
         // 1. Send customer order confirmation
-        await this.sendEmail(EmailType.ORDER_CONFIRMATION, baseOrderData);
+        await this.sendEmail(EmailType.NEW_QUOTATION_CLIENT, baseOrderData);
 
         // 2. Send reseller notification if applicable
-        if (order.reseller) {
-            const resellerData: OrderResellerNotificationData = {
+        if (quotation.reseller) {
+            const resellerData: QuotationResellerNotificationData = {
                 ...baseOrderData,
-                resellerCommission: Number(order.resellerCommission) || 0,
-                resellerCode: String(order.reseller?.uid),
+                resellerCommission: Number(quotation.resellerCommission) || 0,
+                resellerCode: String(quotation.reseller?.uid),
             };
-            await this.sendEmail(EmailType.ORDER_RESELLER_NOTIFICATION, resellerData);
+            await this.sendEmail(EmailType.NEW_QUOTATION_RESELLER, resellerData);
         }
 
         // 3. Send internal team notification
-        const internalData: OrderInternalNotificationData = {
+        const internalData: QuotationInternalNotificationData = {
             ...baseOrderData,
-            customerType: order.client?.type || 'Standard',
-            priority: this.getCustomerPriority(order),
-            notes: order.notes
+            customerType: quotation.client?.type || 'Standard',
+            priority: this.getCustomerPriority(quotation),
+            notes: quotation.notes
         };
-        await this.sendEmail(EmailType.ORDER_INTERNAL_NOTIFICATION, internalData);
+        await this.sendEmail(EmailType.NEW_QUOTATION_INTERNAL, internalData);
 
         // 4. Send warehouse fulfillment request
-        const warehouseData: OrderWarehouseFulfillmentData = {
+        const warehouseData: QuotationWarehouseFulfillmentData = {
             ...baseOrderData,
-            fulfillmentPriority: this.getFulfillmentPriority(order),
-            shippingInstructions: order.shippingInstructions,
-            packagingRequirements: order.packagingRequirements,
-            items: order.quotationItems.map(item => ({
+            fulfillmentPriority: this.getFulfillmentPriority(quotation),
+            shippingInstructions: quotation.shippingInstructions,
+            packagingRequirements: quotation.packagingRequirements,
+            items: quotation.quotationItems.map(item => ({
                 sku: item.product.sku,
                 quantity: item.quantity,
                 location: item.product.warehouseLocation
             }))
         };
-        await this.sendEmail(EmailType.ORDER_WAREHOUSE_FULFILLMENT, warehouseData);
+        await this.sendEmail(EmailType.NEW_QUOTATION_WAREHOUSE_FULFILLMENT, warehouseData);
     }
 } 

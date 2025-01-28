@@ -5,9 +5,8 @@ export declare class OrderNotificationsService {
     private readonly eventEmitter;
     private readonly configService;
     constructor(eventEmitter: EventEmitter2, configService: ConfigService);
-    private formatCurrency;
     private sendEmail;
     private getCustomerPriority;
     private getFulfillmentPriority;
-    sendOrderNotifications(order: Quotation): Promise<void>;
+    sendQuotationNotifications(quotation: Quotation): Promise<void>;
 }

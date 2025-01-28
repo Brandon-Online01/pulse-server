@@ -47,7 +47,6 @@ async function bootstrap() {
 	const document = SwaggerModule.createDocument(app, config, {
 		deepScanRoutes: true,
 		operationIdFactory: (
-			controllerKey: string,
 			methodKey: string
 		) => methodKey,
 	});
