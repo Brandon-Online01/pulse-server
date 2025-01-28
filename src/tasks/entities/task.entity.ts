@@ -1,9 +1,8 @@
 import { SubTask } from './subtask.entity';
 import { User } from '../../user/entities/user.entity';
-import { Branch } from '../../branch/entities/branch.entity';
 import { Client } from '../../clients/entities/client.entity';
 import { TaskStatus, TaskPriority, RepetitionType, TaskType } from '../../lib/enums/task.enums';
-import { Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, JoinColumn } from 'typeorm';
+import { Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, BeforeInsert, BeforeUpdate } from 'typeorm';
 
 @Entity('tasks')
 export class Task {
@@ -40,11 +39,17 @@ export class Task {
     @Column({ type: 'datetime', nullable: true })
     lastCompletedAt: Date;
 
+    @Column({ type: 'datetime', nullable: true })
+    startDate: Date;
+
     @Column({ type: 'json', nullable: true })
     attachments: string[];
 
     @Column({ type: 'boolean', default: false })
     isDeleted: boolean;
+
+    @Column({ type: 'boolean', default: false })
+    isOverdue: boolean;
 
     @CreateDateColumn()
     createdAt: Date;
@@ -54,9 +59,6 @@ export class Task {
 
     @ManyToOne(() => User, { onDelete: 'SET NULL' })
     createdBy: User;
-
-    @ManyToOne(() => Branch, (branch) => branch?.tasks)
-    branch: Branch;
 
     @ManyToMany(() => User)
     @JoinTable({
@@ -76,4 +78,37 @@ export class Task {
 
     @OneToMany(() => SubTask, subtask => subtask.task)
     subtasks: SubTask[];
+
+    @BeforeInsert()
+    setInitialStatus() {
+        this.status = TaskStatus.PENDING;
+        this.progress = 0;
+        if (!this.startDate) {
+            this.startDate = new Date();
+        }
+    }
+
+    @BeforeUpdate()
+    updateStatus() {
+        const now = new Date();
+
+        // Check for overdue
+        if (this.deadline && now > this.deadline && this.status !== TaskStatus.COMPLETED) {
+            this.status = TaskStatus.OVERDUE;
+            this.isOverdue = true;
+        }
+
+        // Update status based on progress
+        if (this.progress === 100 && this.status !== TaskStatus.COMPLETED) {
+            this.status = TaskStatus.COMPLETED;
+            this.lastCompletedAt = now;
+        } else if (this.progress > 0 && this.progress < 100 && this.status === TaskStatus.PENDING) {
+            this.status = TaskStatus.IN_PROGRESS;
+        }
+
+        // Reset overdue flag if task is completed
+        if (this.status === TaskStatus.COMPLETED) {
+            this.isOverdue = false;
+        }
+    }
 }

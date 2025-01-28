@@ -4,28 +4,33 @@ import { IsBoolean, IsEnum, IsNotEmpty, IsObject, IsOptional, IsString } from 'c
 import { SubTaskStatus } from '../../lib/enums/status.enums';
 
 export class UpdateSubtaskDto extends PartialType(CreateSubtaskDto) {
+    @ApiProperty({
+        description: 'The title of the subtask',
+        example: 'Updated Meeting Agenda',
+        required: false
+    })
     @IsString()
     @IsOptional()
-    @ApiProperty({
-        example: 'Attendance & Dress Code',
-        description: 'Title of the subtask'
-    })
     title?: string;
 
+    @ApiProperty({
+        description: 'Detailed description of the subtask',
+        example: 'Updated agenda with new discussion points and revised time allocations',
+        required: false
+    })
     @IsString()
     @IsOptional()
-    @ApiProperty({
-        example: 'Check employee attendance and dress code',
-        description: 'Description of the subtask'
-    })
     description?: string;
 
-    @IsEnum(SubTaskStatus)
     @ApiProperty({
-        example: SubTaskStatus.PENDING,
-        description: 'Status of the subtask'
+        description: 'The current status of the subtask',
+        enum: SubTaskStatus,
+        example: SubTaskStatus.COMPLETED,
+        required: false
     })
-    status: SubTaskStatus;
+    @IsEnum(SubTaskStatus)
+    @IsOptional()
+    status?: SubTaskStatus;
 
     @IsBoolean()
     @IsOptional()

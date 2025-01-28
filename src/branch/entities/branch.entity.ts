@@ -58,9 +58,6 @@ export class Branch {
     @OneToMany(() => Tracking, (tracking) => tracking?.branch)
     trackings: Tracking[];
 
-    @OneToMany(() => Task, (task) => task?.branch)
-    tasks: Task[];
-
     @OneToMany(() => News, (news) => news?.branch)
     news: News[];
 

@@ -18,29 +18,34 @@ class UpdateSubtaskDto extends (0, swagger_1.PartialType)(create_subtask_dto_1.C
 }
 exports.UpdateSubtaskDto = UpdateSubtaskDto;
 __decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'The title of the subtask',
+        example: 'Updated Meeting Agenda',
+        required: false
+    }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsOptional)(),
-    (0, swagger_1.ApiProperty)({
-        example: 'Attendance & Dress Code',
-        description: 'Title of the subtask'
-    }),
     __metadata("design:type", String)
 ], UpdateSubtaskDto.prototype, "title", void 0);
 __decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Detailed description of the subtask',
+        example: 'Updated agenda with new discussion points and revised time allocations',
+        required: false
+    }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsOptional)(),
-    (0, swagger_1.ApiProperty)({
-        example: 'Check employee attendance and dress code',
-        description: 'Description of the subtask'
-    }),
     __metadata("design:type", String)
 ], UpdateSubtaskDto.prototype, "description", void 0);
 __decorate([
-    (0, class_validator_1.IsEnum)(status_enums_1.SubTaskStatus),
     (0, swagger_1.ApiProperty)({
-        example: status_enums_1.SubTaskStatus.PENDING,
-        description: 'Status of the subtask'
+        description: 'The current status of the subtask',
+        enum: status_enums_1.SubTaskStatus,
+        example: status_enums_1.SubTaskStatus.COMPLETED,
+        required: false
     }),
+    (0, class_validator_1.IsEnum)(status_enums_1.SubTaskStatus),
+    (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], UpdateSubtaskDto.prototype, "status", void 0);
 __decorate([

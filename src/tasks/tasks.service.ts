@@ -1,11 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Between } from 'typeorm';
-import { NotificationType } from '../lib/enums/notification.enums';
-import { NotificationStatus } from '../lib/enums/notification.enums';
+import { NotificationType, NotificationStatus } from '../lib/enums/notification.enums';
+import { TaskStatus, TaskPriority, RepetitionType, TaskType } from '../lib/enums/task.enums';
 import { SubTaskStatus } from '../lib/enums/status.enums';
 import { Task } from './entities/task.entity';
 import { SubTask } from './entities/subtask.entity';
@@ -14,8 +14,9 @@ import { RewardsService } from '../rewards/rewards.service';
 import { XP_VALUES } from '../lib/constants/constants';
 import { XP_VALUES_TYPES } from '../lib/constants/constants';
 import { CreateTaskDto } from './dto/create-task.dto';
-import { TaskStatus, RepetitionType, TaskType } from '../lib/enums/task.enums';
 import { addDays, addWeeks, addMonths, addYears } from 'date-fns';
+import { User } from '../user/entities/user.entity';
+import { Client } from '../clients/entities/client.entity';
 
 @Injectable()
 export class TasksService {
@@ -70,9 +71,7 @@ export class TasksService {
 			repeatedTask.status = TaskStatus.PENDING;
 			repeatedTask.taskType = createTaskDto.taskType || TaskType.OTHER;
 			repeatedTask.priority = createTaskDto.priority;
-			repeatedTask.progress = 0;
 			repeatedTask.attachments = createTaskDto.attachments;
-			repeatedTask.branch = baseTask.branch;
 			repeatedTask.lastCompletedAt = null;
 			repeatedTask.repetitionType = RepetitionType.NONE;
 			repeatedTask.repetitionEndDate = null;
@@ -88,46 +87,72 @@ export class TasksService {
 
 	async create(createTaskDto: CreateTaskDto): Promise<{ message: string }> {
 		try {
-			const assignees = createTaskDto?.assigneeIds?.map(assignee => ({ uid: assignee }));
-			const clients = createTaskDto?.clientIds?.map(clientId => ({ uid: clientId }));
+			// Set default values and validate dates
+			const now = new Date();
+			if (createTaskDto.deadline && new Date(createTaskDto.deadline) < now) {
+				throw new BadRequestException('Task deadline cannot be in the past');
+			}
 
-			const task = await this.taskRepository.save({
-				...createTaskDto,
-				assignees: assignees,
-				clients: clients
-			});
+			if (createTaskDto.repetitionEndDate && new Date(createTaskDto.repetitionEndDate) < now) {
+				throw new BadRequestException('Repetition end date cannot be in the past');
+			}
+
+			// Create task with proper relations
+			const { subtasks, ...taskDataWithoutSubtasks } = createTaskDto;
+			const taskData: Partial<Task> = {
+				...taskDataWithoutSubtasks,
+				assignees: createTaskDto?.assigneeIds?.map(uid => ({ uid } as User)) || [],
+				clients: createTaskDto?.clientIds?.map(uid => ({ uid } as Client)) || [],
+				startDate: now,
+				status: TaskStatus.PENDING,
+				progress: 0,
+				isDeleted: false,
+				isOverdue: false,
+				lastCompletedAt: null,
+				attachments: []
+			};
+
+			const task = await this.taskRepository.save(taskData);
 
 			if (!task) {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
 			// Create future instances if task is repeating
-			await this.createRepeatingTasks(task, createTaskDto);
+			if (createTaskDto.repetitionType !== RepetitionType.NONE) {
+				await this.createRepeatingTasks(task, createTaskDto);
+			}
 
-			if (createTaskDto?.subtasks && createTaskDto?.subtasks?.length > 0) {
-				const subtasks = createTaskDto?.subtasks?.map(subtask => ({
+			// Create subtasks if provided
+			if (createTaskDto?.subtasks?.length > 0) {
+				const subtasks = createTaskDto.subtasks.map(subtask => ({
 					...subtask,
-					task: { uid: task?.uid }
+					task: { uid: task.uid },
+					status: SubTaskStatus.PENDING
 				}));
 
 				await this.subtaskRepository.save(subtasks);
 			}
 
-			// Send notification to assignees
-			if (assignees?.length > 0) {
+			// Send notifications to assignees
+			if (taskData.assignees?.length > 0) {
 				const notification = {
 					type: NotificationType.USER,
-					title: 'New Task Assigned',
-					message: `You have been assigned to a new task: ${task?.title}`,
+					title: 'New Task Assignment',
+					message: `You have been assigned to: ${task.title}`,
 					status: NotificationStatus.UNREAD,
 					owner: null
 				};
 
-				// Send to each assignee
-				assignees?.forEach(assignee => {
+				taskData.assignees.forEach(assignee => {
 					this.eventEmitter.emit('send.notification', {
 						...notification,
-						owner: assignee
+						owner: assignee,
+						metadata: {
+							taskId: task.uid,
+							deadline: task.deadline,
+							priority: task.priority
+						}
 					}, [assignee.uid]);
 				});
 			}
@@ -136,24 +161,56 @@ export class TasksService {
 				message: process.env.SUCCESS_MESSAGE,
 			};
 		} catch (error) {
-			return {
-				message: error?.message,
-			};
+			throw new BadRequestException(error?.message);
 		}
 	}
 
-	async findAll(): Promise<{ tasks: Task[] | null, message: string }> {
+	async findAll(filters?: {
+		status?: TaskStatus;
+		priority?: TaskPriority;
+		assigneeId?: number;
+		clientId?: number;
+		startDate?: Date;
+		endDate?: Date;
+		isOverdue?: boolean;
+	}): Promise<{ tasks: Task[] | null, message: string }> {
 		try {
-			const tasks = await this.taskRepository.find({
-				where: { isDeleted: false },
-				relations: [
-					'createdBy',
-					'branch',
-					'clients',
-					'subtasks',
-					'assignees'
-				]
-			});
+			const queryBuilder = this.taskRepository
+				.createQueryBuilder('task')
+				.leftJoinAndSelect('task.createdBy', 'createdBy')
+				.leftJoinAndSelect('task.assignees', 'assignees')
+				.leftJoinAndSelect('task.clients', 'clients')
+				.leftJoinAndSelect('task.subtasks', 'subtasks')
+				.where('task.isDeleted = :isDeleted', { isDeleted: false });
+
+			if (filters?.status) {
+				queryBuilder.andWhere('task.status = :status', { status: filters.status });
+			}
+
+			if (filters?.priority) {
+				queryBuilder.andWhere('task.priority = :priority', { priority: filters.priority });
+			}
+
+			if (filters?.assigneeId) {
+				queryBuilder.andWhere('assignees.uid = :assigneeId', { assigneeId: filters.assigneeId });
+			}
+
+			if (filters?.clientId) {
+				queryBuilder.andWhere('clients.uid = :clientId', { clientId: filters.clientId });
+			}
+
+			if (filters?.startDate && filters?.endDate) {
+				queryBuilder.andWhere('task.deadline BETWEEN :startDate AND :endDate', {
+					startDate: filters.startDate,
+					endDate: filters.endDate
+				});
+			}
+
+			if (filters?.isOverdue !== undefined) {
+				queryBuilder.andWhere('task.isOverdue = :isOverdue', { isOverdue: filters.isOverdue });
+			}
+
+			const tasks = await queryBuilder.getMany();
 
 			if (!tasks) {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
@@ -254,9 +311,7 @@ export class TasksService {
 				status: updateTaskDto.status,
 				taskType: updateTaskDto.taskType,
 				deadline: updateTaskDto.deadline,
-				branch: updateTaskDto.branch,
 				priority: updateTaskDto.priority,
-				progress: updateTaskDto.progress,
 				repetitionType: updateTaskDto.repetitionType,
 				repetitionEndDate: updateTaskDto.repetitionEndDate,
 				attachments: updateTaskDto.attachments,
@@ -475,5 +530,77 @@ export class TasksService {
 		} catch (error) {
 			return { message: error?.message };
 		}
+	}
+
+	async updateProgress(ref: number, progress: number): Promise<{ message: string }> {
+		try {
+			const task = await this.taskRepository.findOne({
+				where: { uid: ref, isDeleted: false },
+				relations: ['assignees', 'createdBy']
+			});
+
+			if (!task) {
+				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
+			}
+
+			// Validate progress value
+			if (progress < 0 || progress > 100) {
+				throw new BadRequestException('Progress must be between 0 and 100');
+			}
+
+			// Update progress and let the entity hooks handle status updates
+			task.progress = progress;
+			await this.taskRepository.save(task);
+
+			// Send notification if task is completed
+			if (progress === 100) {
+				const notification = {
+					type: NotificationType.USER,
+					title: 'Task Completed',
+					message: `Task "${task.title}" has been marked as complete`,
+					status: NotificationStatus.UNREAD,
+					owner: null
+				};
+
+				const recipients = [
+					task.createdBy.uid,
+					...(task.assignees?.map(assignee => assignee.uid) || [])
+				];
+
+				const uniqueRecipients = [...new Set(recipients)];
+				uniqueRecipients.forEach(recipientId => {
+					this.eventEmitter.emit('send.notification', {
+						...notification,
+						owner: { uid: recipientId },
+						metadata: {
+							taskId: task.uid,
+							completedAt: new Date()
+						}
+					}, [recipientId]);
+				});
+			}
+
+			return {
+				message: process.env.SUCCESS_MESSAGE,
+			};
+		} catch (error) {
+			throw new BadRequestException(error?.message);
+		}
+	}
+
+	private getStatusSummary(tasks: Task[]): Record<TaskStatus, number> {
+		const byStatus = {} as Record<TaskStatus, number>;
+
+		// Initialize all status counts to 0
+		Object.values(TaskStatus).forEach(status => {
+			byStatus[status] = 0;
+		});
+
+		// Count tasks by status
+		tasks.forEach(task => {
+			byStatus[task.status]++;
+		});
+
+		return byStatus;
 	}
 }

@@ -1,20 +1,32 @@
-import { IsString, IsNotEmpty, IsOptional } from "class-validator";
-import { ApiProperty } from "@nestjs/swagger";
+import { IsString, IsOptional, IsEnum } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { SubTaskStatus } from '../../lib/enums/status.enums';
 
 export class CreateSubtaskDto {
-    @IsString()
-    @IsNotEmpty()
     @ApiProperty({
-        example: 'Attendance & Dress Code',
-        description: 'Title of the subtask'
+        description: 'The title of the subtask',
+        example: 'Prepare Meeting Agenda',
+        required: true
     })
+    @IsString()
     title: string;
 
-    @IsString()
-    @IsOptional()
     @ApiProperty({
-        example: 'Check employee attendance and dress code',
-        description: 'Description of the subtask'
+        description: 'Detailed description of the subtask',
+        example: 'Create a detailed agenda including all discussion points and time allocations',
+        required: true
     })
-    description?: string;
+    @IsString()
+    description: string;
+
+    @ApiProperty({
+        description: 'The current status of the subtask',
+        enum: SubTaskStatus,
+        example: SubTaskStatus.PENDING,
+        default: SubTaskStatus.PENDING,
+        required: false
+    })
+    @IsEnum(SubTaskStatus)
+    @IsOptional()
+    status?: SubTaskStatus;
 } 

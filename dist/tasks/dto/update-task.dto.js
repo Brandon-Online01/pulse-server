@@ -10,80 +10,151 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UpdateTaskDto = void 0;
+const class_transformer_1 = require("class-transformer");
+const swagger_1 = require("@nestjs/swagger");
+const create_subtask_dto_1 = require("./create-subtask.dto");
 const class_validator_1 = require("class-validator");
 const task_enums_1 = require("../../lib/enums/task.enums");
-const class_transformer_1 = require("class-transformer");
 class UpdateTaskDto {
 }
 exports.UpdateTaskDto = UpdateTaskDto;
 __decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'The title of the task',
+        example: 'Client Meeting - Q1 Review (Updated)',
+        required: false
+    }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], UpdateTaskDto.prototype, "title", void 0);
 __decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'The description of the task',
+        example: 'Updated quarterly review meeting details and agenda',
+        required: false
+    }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], UpdateTaskDto.prototype, "description", void 0);
 __decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'The current status of the task',
+        enum: task_enums_1.TaskStatus,
+        example: task_enums_1.TaskStatus.IN_PROGRESS,
+        required: false
+    }),
     (0, class_validator_1.IsEnum)(task_enums_1.TaskStatus),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], UpdateTaskDto.prototype, "status", void 0);
 __decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'The type of task',
+        enum: task_enums_1.TaskType,
+        example: task_enums_1.TaskType.MEETING,
+        required: false
+    }),
     (0, class_validator_1.IsEnum)(task_enums_1.TaskType),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], UpdateTaskDto.prototype, "taskType", void 0);
 __decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'The priority level of the task',
+        enum: task_enums_1.TaskPriority,
+        example: task_enums_1.TaskPriority.HIGH,
+        required: false
+    }),
     (0, class_validator_1.IsEnum)(task_enums_1.TaskPriority),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], UpdateTaskDto.prototype, "priority", void 0);
 __decorate([
-    (0, class_validator_1.IsNumber)(),
-    (0, class_validator_1.IsOptional)(),
-    __metadata("design:type", Number)
-], UpdateTaskDto.prototype, "progress", void 0);
-__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'The deadline for the task completion',
+        example: '2024-02-28T16:00:00.000Z',
+        required: false
+    }),
     (0, class_transformer_1.Type)(() => Date),
     (0, class_validator_1.IsDate)(),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Date)
 ], UpdateTaskDto.prototype, "deadline", void 0);
 __decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'How often the task should repeat',
+        enum: task_enums_1.RepetitionType,
+        example: task_enums_1.RepetitionType.WEEKLY,
+        required: false
+    }),
     (0, class_validator_1.IsEnum)(task_enums_1.RepetitionType),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], UpdateTaskDto.prototype, "repetitionType", void 0);
 __decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'The date until which the task should repeat',
+        example: '2024-03-28T16:00:00.000Z',
+        required: false
+    }),
     (0, class_transformer_1.Type)(() => Date),
     (0, class_validator_1.IsDate)(),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Date)
 ], UpdateTaskDto.prototype, "repetitionEndDate", void 0);
 __decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Array of file attachments for the task',
+        example: ['updated-report.pdf', 'final-presentation.pptx'],
+        required: false,
+        type: [String]
+    }),
     (0, class_validator_1.IsArray)(),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Array)
 ], UpdateTaskDto.prototype, "attachments", void 0);
 __decorate([
-    (0, class_validator_1.IsNumber)(),
-    (0, class_validator_1.IsOptional)(),
-    __metadata("design:type", Object)
-], UpdateTaskDto.prototype, "branch", void 0);
-__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Array of user objects assigned to the task',
+        example: [{ uid: 1 }, { uid: 2 }],
+        required: false,
+        type: 'array',
+        items: {
+            type: 'object',
+            properties: {
+                uid: { type: 'number' }
+            }
+        }
+    }),
     (0, class_validator_1.IsArray)(),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Array)
 ], UpdateTaskDto.prototype, "assignees", void 0);
 __decorate([
-    (0, class_validator_1.IsNumber)(),
+    (0, swagger_1.ApiProperty)({
+        description: 'Array of client objects associated with the task',
+        example: [{ uid: 1 }, { uid: 2 }],
+        required: false,
+        type: 'array',
+        items: {
+            type: 'object',
+            properties: {
+                uid: { type: 'number' }
+            }
+        }
+    }),
+    (0, class_validator_1.IsArray)(),
     (0, class_validator_1.IsOptional)(),
-    __metadata("design:type", Object)
-], UpdateTaskDto.prototype, "client", void 0);
+    __metadata("design:type", Array)
+], UpdateTaskDto.prototype, "clients", void 0);
 __decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Array of subtasks',
+        type: [create_subtask_dto_1.CreateSubtaskDto],
+        required: false
+    }),
     (0, class_validator_1.IsArray)(),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Array)

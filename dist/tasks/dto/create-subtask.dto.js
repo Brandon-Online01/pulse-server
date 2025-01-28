@@ -12,25 +12,38 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateSubtaskDto = void 0;
 const class_validator_1 = require("class-validator");
 const swagger_1 = require("@nestjs/swagger");
+const status_enums_1 = require("../../lib/enums/status.enums");
 class CreateSubtaskDto {
 }
 exports.CreateSubtaskDto = CreateSubtaskDto;
 __decorate([
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsNotEmpty)(),
     (0, swagger_1.ApiProperty)({
-        example: 'Attendance & Dress Code',
-        description: 'Title of the subtask'
+        description: 'The title of the subtask',
+        example: 'Prepare Meeting Agenda',
+        required: true
     }),
+    (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateSubtaskDto.prototype, "title", void 0);
 __decorate([
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsOptional)(),
     (0, swagger_1.ApiProperty)({
-        example: 'Check employee attendance and dress code',
-        description: 'Description of the subtask'
+        description: 'Detailed description of the subtask',
+        example: 'Create a detailed agenda including all discussion points and time allocations',
+        required: true
     }),
+    (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateSubtaskDto.prototype, "description", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'The current status of the subtask',
+        enum: status_enums_1.SubTaskStatus,
+        example: status_enums_1.SubTaskStatus.PENDING,
+        default: status_enums_1.SubTaskStatus.PENDING,
+        required: false
+    }),
+    (0, class_validator_1.IsEnum)(status_enums_1.SubTaskStatus),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateSubtaskDto.prototype, "status", void 0);
 //# sourceMappingURL=create-subtask.dto.js.map

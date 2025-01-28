@@ -4,7 +4,7 @@ declare const UpdateSubtaskDto_base: import("@nestjs/common").Type<Partial<Creat
 export declare class UpdateSubtaskDto extends UpdateSubtaskDto_base {
     title?: string;
     description?: string;
-    status: SubTaskStatus;
+    status?: SubTaskStatus;
     isDeleted?: boolean;
 }
 export {};

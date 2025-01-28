@@ -12,11 +12,34 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Task = void 0;
 const subtask_entity_1 = require("./subtask.entity");
 const user_entity_1 = require("../../user/entities/user.entity");
-const branch_entity_1 = require("../../branch/entities/branch.entity");
 const client_entity_1 = require("../../clients/entities/client.entity");
 const task_enums_1 = require("../../lib/enums/task.enums");
 const typeorm_1 = require("typeorm");
 let Task = class Task {
+    setInitialStatus() {
+        this.status = task_enums_1.TaskStatus.PENDING;
+        this.progress = 0;
+        if (!this.startDate) {
+            this.startDate = new Date();
+        }
+    }
+    updateStatus() {
+        const now = new Date();
+        if (this.deadline && now > this.deadline && this.status !== task_enums_1.TaskStatus.COMPLETED) {
+            this.status = task_enums_1.TaskStatus.OVERDUE;
+            this.isOverdue = true;
+        }
+        if (this.progress === 100 && this.status !== task_enums_1.TaskStatus.COMPLETED) {
+            this.status = task_enums_1.TaskStatus.COMPLETED;
+            this.lastCompletedAt = now;
+        }
+        else if (this.progress > 0 && this.progress < 100 && this.status === task_enums_1.TaskStatus.PENDING) {
+            this.status = task_enums_1.TaskStatus.IN_PROGRESS;
+        }
+        if (this.status === task_enums_1.TaskStatus.COMPLETED) {
+            this.isOverdue = false;
+        }
+    }
 };
 exports.Task = Task;
 __decorate([
@@ -64,6 +87,10 @@ __decorate([
     __metadata("design:type", Date)
 ], Task.prototype, "lastCompletedAt", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ type: 'datetime', nullable: true }),
+    __metadata("design:type", Date)
+], Task.prototype, "startDate", void 0);
+__decorate([
     (0, typeorm_1.Column)({ type: 'json', nullable: true }),
     __metadata("design:type", Array)
 ], Task.prototype, "attachments", void 0);
@@ -71,6 +98,10 @@ __decorate([
     (0, typeorm_1.Column)({ type: 'boolean', default: false }),
     __metadata("design:type", Boolean)
 ], Task.prototype, "isDeleted", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'boolean', default: false }),
+    __metadata("design:type", Boolean)
+], Task.prototype, "isOverdue", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)(),
     __metadata("design:type", Date)
@@ -83,10 +114,6 @@ __decorate([
     (0, typeorm_1.ManyToOne)(() => user_entity_1.User, { onDelete: 'SET NULL' }),
     __metadata("design:type", user_entity_1.User)
 ], Task.prototype, "createdBy", void 0);
-__decorate([
-    (0, typeorm_1.ManyToOne)(() => branch_entity_1.Branch, (branch) => branch?.tasks),
-    __metadata("design:type", branch_entity_1.Branch)
-], Task.prototype, "branch", void 0);
 __decorate([
     (0, typeorm_1.ManyToMany)(() => user_entity_1.User),
     (0, typeorm_1.JoinTable)({
@@ -109,6 +136,18 @@ __decorate([
     (0, typeorm_1.OneToMany)(() => subtask_entity_1.SubTask, subtask => subtask.task),
     __metadata("design:type", Array)
 ], Task.prototype, "subtasks", void 0);
+__decorate([
+    (0, typeorm_1.BeforeInsert)(),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], Task.prototype, "setInitialStatus", null);
+__decorate([
+    (0, typeorm_1.BeforeUpdate)(),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], Task.prototype, "updateStatus", null);
 exports.Task = Task = __decorate([
     (0, typeorm_1.Entity)('tasks')
 ], Task);

@@ -1,12 +1,12 @@
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { Repository } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { TaskStatus, TaskPriority } from '../lib/enums/task.enums';
 import { Task } from './entities/task.entity';
 import { SubTask } from './entities/subtask.entity';
 import { UpdateSubtaskDto } from './dto/update-subtask.dto';
 import { RewardsService } from '../rewards/rewards.service';
 import { CreateTaskDto } from './dto/create-task.dto';
-import { TaskStatus } from '../lib/enums/task.enums';
 export declare class TasksService {
     private taskRepository;
     private subtaskRepository;
@@ -17,7 +17,15 @@ export declare class TasksService {
     create(createTaskDto: CreateTaskDto): Promise<{
         message: string;
     }>;
-    findAll(): Promise<{
+    findAll(filters?: {
+        status?: TaskStatus;
+        priority?: TaskPriority;
+        assigneeId?: number;
+        clientId?: number;
+        startDate?: Date;
+        endDate?: Date;
+        isOverdue?: boolean;
+    }): Promise<{
         tasks: Task[] | null;
         message: string;
     }>;
@@ -55,4 +63,8 @@ export declare class TasksService {
     completeSubTask(ref: number): Promise<{
         message: string;
     }>;
+    updateProgress(ref: number, progress: number): Promise<{
+        message: string;
+    }>;
+    private getStatusSummary;
 }

@@ -1,7 +1,6 @@
 import { Organisation } from "../../organisation/entities/organisation.entity";
 import { GeneralStatus } from "../../lib/enums/status.enums";
 import { Tracking } from "../../tracking/entities/tracking.entity";
-import { Task } from "../../tasks/entities/task.entity";
 import { News } from "../../news/entities/news.entity";
 import { Lead } from "../../leads/entities/lead.entity";
 import { Journal } from "../../journal/entities/journal.entity";
@@ -27,7 +26,6 @@ export declare class Branch {
     updatedAt: Date;
     organisation: Organisation;
     trackings: Tracking[];
-    tasks: Task[];
     news: News[];
     leads: Lead[];
     journals: Journal[];

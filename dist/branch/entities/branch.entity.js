@@ -14,7 +14,6 @@ const organisation_entity_1 = require("../../organisation/entities/organisation.
 const status_enums_1 = require("../../lib/enums/status.enums");
 const typeorm_1 = require("typeorm");
 const tracking_entity_1 = require("../../tracking/entities/tracking.entity");
-const task_entity_1 = require("../../tasks/entities/task.entity");
 const news_entity_1 = require("../../news/entities/news.entity");
 const lead_entity_1 = require("../../leads/entities/lead.entity");
 const journal_entity_1 = require("../../journal/entities/journal.entity");
@@ -84,10 +83,6 @@ __decorate([
     (0, typeorm_1.OneToMany)(() => tracking_entity_1.Tracking, (tracking) => tracking?.branch),
     __metadata("design:type", Array)
 ], Branch.prototype, "trackings", void 0);
-__decorate([
-    (0, typeorm_1.OneToMany)(() => task_entity_1.Task, (task) => task?.branch),
-    __metadata("design:type", Array)
-], Branch.prototype, "tasks", void 0);
 __decorate([
     (0, typeorm_1.OneToMany)(() => news_entity_1.News, (news) => news?.branch),
     __metadata("design:type", Array)
