@@ -36,7 +36,7 @@ export class UpdateTaskDto {
     @ApiProperty({
         description: 'The type of task',
         enum: TaskType,
-        example: TaskType.MEETING,
+        example: TaskType.IN_PERSON_MEETING,
         required: false
     })
     @IsEnum(TaskType)
@@ -124,6 +124,15 @@ export class UpdateTaskDto {
     @IsArray()
     @IsOptional()
     clients?: any[];
+
+    @ApiProperty({
+        description: 'Target category for bulk client assignment. If provided, task will be assigned to all clients in this category',
+        example: 'premium',
+        required: false
+    })
+    @IsString()
+    @IsOptional()
+    targetCategory?: string;
 
     @ApiProperty({
         description: 'Array of subtasks',

@@ -25,6 +25,7 @@ __decorate([
         required: true
     }),
     (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], CreateTaskDto.prototype, "title", void 0);
 __decorate([
@@ -34,17 +35,18 @@ __decorate([
         required: true
     }),
     (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], CreateTaskDto.prototype, "description", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'The type of task',
         enum: task_enums_1.TaskType,
-        example: task_enums_1.TaskType.MEETING,
-        required: false
+        example: task_enums_1.TaskType.IN_PERSON_MEETING,
+        required: true
     }),
     (0, class_validator_1.IsEnum)(task_enums_1.TaskType),
-    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], CreateTaskDto.prototype, "taskType", void 0);
 __decorate([
@@ -52,21 +54,21 @@ __decorate([
         description: 'The priority level of the task',
         enum: task_enums_1.TaskPriority,
         example: task_enums_1.TaskPriority.HIGH,
-        required: false
+        required: true
     }),
     (0, class_validator_1.IsEnum)(task_enums_1.TaskPriority),
-    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], CreateTaskDto.prototype, "priority", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'The deadline for the task completion',
         example: '2024-02-28T16:00:00.000Z',
-        required: false
+        required: true
     }),
     (0, class_transformer_1.Type)(() => Date),
     (0, class_validator_1.IsDate)(),
-    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", Date)
 ], CreateTaskDto.prototype, "deadline", void 0);
 __decorate([
@@ -74,11 +76,10 @@ __decorate([
         description: 'How often the task should repeat',
         enum: task_enums_1.RepetitionType,
         example: task_enums_1.RepetitionType.WEEKLY,
-        required: false,
-        default: task_enums_1.RepetitionType.NONE
+        required: true
     }),
     (0, class_validator_1.IsEnum)(task_enums_1.RepetitionType),
-    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], CreateTaskDto.prototype, "repetitionType", void 0);
 __decorate([
@@ -105,26 +106,39 @@ __decorate([
 ], CreateTaskDto.prototype, "attachments", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
-        description: 'Array of user IDs assigned to the task',
-        example: [1, 2, 3],
-        required: false,
-        type: [Number]
+        description: 'Array of user objects assigned to the task',
+        example: [{ uid: 1 }, { uid: 2 }],
+        required: true,
+        type: 'array',
+        items: {
+            type: 'object',
+            properties: {
+                uid: { type: 'number' }
+            }
+        }
     }),
     (0, class_validator_1.IsArray)(),
-    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", Array)
-], CreateTaskDto.prototype, "assigneeIds", void 0);
+], CreateTaskDto.prototype, "assignees", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
-        description: 'Array of client IDs associated with the task',
-        example: [1, 2],
-        required: false,
-        type: [Number]
+        description: 'Client object associated with the task (optional if targetCategory is provided)',
+        example: { uid: 1 },
     }),
-    (0, class_validator_1.IsArray)(),
     (0, class_validator_1.IsOptional)(),
-    __metadata("design:type", Array)
-], CreateTaskDto.prototype, "clientIds", void 0);
+    __metadata("design:type", Object)
+], CreateTaskDto.prototype, "client", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Target category for bulk client assignment. If provided, task will be assigned to all clients in this category',
+        example: 'premium',
+        required: false
+    }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateTaskDto.prototype, "targetCategory", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'Array of subtasks',

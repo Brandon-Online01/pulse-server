@@ -11,11 +11,10 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var Product_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Product = void 0;
-const typeorm_1 = require("typeorm");
 const product_enums_1 = require("../../lib/enums/product.enums");
 const quotation_item_entity_1 = require("../../shop/entities/quotation-item.entity");
 const reseller_entity_1 = require("../../resellers/entities/reseller.entity");
-const typeorm_2 = require("typeorm");
+const typeorm_1 = require("typeorm");
 let Product = Product_1 = class Product {
     static generateSKU(category, name, uid, reseller) {
         const categoryCode = (category || 'XXX').slice(0, 3).toUpperCase();
@@ -30,7 +29,7 @@ let Product = Product_1 = class Product {
         }
     }
     async updateSKUWithCorrectUid() {
-        const repository = (0, typeorm_2.getRepository)(Product_1);
+        const repository = (0, typeorm_1.getRepository)(Product_1);
         this.sku = Product_1.generateSKU(this.category, this.name, this.uid, this.reseller);
         await repository.save(this);
     }
@@ -41,7 +40,7 @@ __decorate([
     __metadata("design:type", Number)
 ], Product.prototype, "uid", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({ type: 'varchar', length: 255 }),
     __metadata("design:type", String)
 ], Product.prototype, "name", void 0);
 __decorate([
@@ -76,6 +75,10 @@ __decorate([
     (0, typeorm_1.Column)({ default: 0 }),
     __metadata("design:type", Number)
 ], Product.prototype, "stockQuantity", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: false }),
+    __metadata("design:type", String)
+], Product.prototype, "productRef", void 0);
 __decorate([
     (0, typeorm_1.Column)({ default: 10 }),
     __metadata("design:type", Number)
@@ -113,6 +116,6 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], Product.prototype, "updateSKUWithCorrectUid", null);
 exports.Product = Product = Product_1 = __decorate([
-    (0, typeorm_1.Entity)()
+    (0, typeorm_1.Entity)('product')
 ], Product);
 //# sourceMappingURL=product.entity.js.map

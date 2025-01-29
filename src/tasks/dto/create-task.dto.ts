@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsEnum, IsArray, IsDate } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsArray, IsDate, IsNotEmpty, IsBoolean } from 'class-validator';
 import { TaskPriority, RepetitionType, TaskType } from '../../lib/enums/task.enums';
 import { Type } from 'class-transformer';
 import { CreateSubtaskDto } from './create-subtask.dto';
@@ -11,6 +11,7 @@ export class CreateTaskDto {
         required: true
     })
     @IsString()
+    @IsNotEmpty()
     title: string;
 
     @ApiProperty({
@@ -19,48 +20,48 @@ export class CreateTaskDto {
         required: true
     })
     @IsString()
+    @IsNotEmpty()
     description: string;
 
     @ApiProperty({
         description: 'The type of task',
         enum: TaskType,
-        example: TaskType.MEETING,
-        required: false
+        example: TaskType.IN_PERSON_MEETING,
+        required: true
     })
     @IsEnum(TaskType)
-    @IsOptional()
-    taskType?: TaskType;
+    @IsNotEmpty()
+    taskType: TaskType;
 
     @ApiProperty({
         description: 'The priority level of the task',
         enum: TaskPriority,
         example: TaskPriority.HIGH,
-        required: false
+        required: true
     })
     @IsEnum(TaskPriority)
-    @IsOptional()
-    priority?: TaskPriority;
+    @IsNotEmpty()
+    priority: TaskPriority;
 
     @ApiProperty({
         description: 'The deadline for the task completion',
         example: '2024-02-28T16:00:00.000Z',
-        required: false
+        required: true
     })
     @Type(() => Date)
     @IsDate()
-    @IsOptional()
-    deadline?: Date;
+    @IsNotEmpty()
+    deadline: Date;
 
     @ApiProperty({
         description: 'How often the task should repeat',
         enum: RepetitionType,
         example: RepetitionType.WEEKLY,
-        required: false,
-        default: RepetitionType.NONE
+        required: true
     })
     @IsEnum(RepetitionType)
-    @IsOptional()
-    repetitionType?: RepetitionType;
+    @IsNotEmpty()
+    repetitionType: RepetitionType;
 
     @ApiProperty({
         description: 'The date until which the task should repeat',
@@ -83,24 +84,36 @@ export class CreateTaskDto {
     attachments?: string[];
 
     @ApiProperty({
-        description: 'Array of user IDs assigned to the task',
-        example: [1, 2, 3],
-        required: false,
-        type: [Number]
+        description: 'Array of user objects assigned to the task',
+        example: [{ uid: 1 }, { uid: 2 }],
+        required: true,
+        type: 'array',
+        items: {
+            type: 'object',
+            properties: {
+                uid: { type: 'number' }
+            }
+        }
     })
     @IsArray()
-    @IsOptional()
-    assigneeIds?: number[];
+    @IsNotEmpty()
+    assignees: { uid: number }[];
 
     @ApiProperty({
-        description: 'Array of client IDs associated with the task',
-        example: [1, 2],
-        required: false,
-        type: [Number]
+        description: 'Client object associated with the task (optional if targetCategory is provided)',
+        example: { uid: 1 },
     })
-    @IsArray()
     @IsOptional()
-    clientIds?: number[];
+    client?: { uid: number };
+
+    @ApiProperty({
+        description: 'Target category for bulk client assignment. If provided, task will be assigned to all clients in this category',
+        example: 'premium',
+        required: false
+    })
+    @IsString()
+    @IsOptional()
+    targetCategory?: string;
 
     @ApiProperty({
         description: 'Array of subtasks',

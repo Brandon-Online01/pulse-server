@@ -53,7 +53,7 @@ __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'The type of task',
         enum: task_enums_1.TaskType,
-        example: task_enums_1.TaskType.MEETING,
+        example: task_enums_1.TaskType.IN_PERSON_MEETING,
         required: false
     }),
     (0, class_validator_1.IsEnum)(task_enums_1.TaskType),
@@ -149,6 +149,16 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Array)
 ], UpdateTaskDto.prototype, "clients", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Target category for bulk client assignment. If provided, task will be assigned to all clients in this category',
+        example: 'premium',
+        required: false
+    }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], UpdateTaskDto.prototype, "targetCategory", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'Array of subtasks',

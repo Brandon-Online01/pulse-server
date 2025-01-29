@@ -1,6 +1,6 @@
 import { ApiProperty, PartialType } from '@nestjs/swagger';
 import { CreateSubtaskDto } from './create-subtask.dto';
-import { IsBoolean, IsEnum, IsNotEmpty, IsObject, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsEnum, IsOptional, IsString } from 'class-validator';
 import { SubTaskStatus } from '../../lib/enums/status.enums';
 
 export class UpdateSubtaskDto extends PartialType(CreateSubtaskDto) {

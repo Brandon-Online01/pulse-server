@@ -1,15 +1,14 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany, ManyToOne, BeforeInsert, AfterInsert } from 'typeorm';
 import { ProductStatus } from '../../lib/enums/product.enums';
 import { QuotationItem } from '../../shop/entities/quotation-item.entity';
 import { Reseller } from '../../resellers/entities/reseller.entity';
-import { getRepository } from 'typeorm';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, BeforeInsert, AfterInsert, ManyToOne, getRepository } from 'typeorm';
 
-@Entity()
+@Entity('product')
 export class Product {
     @PrimaryGeneratedColumn()
     uid: number;
 
-    @Column()
+    @Column({ type: 'varchar', length: 255 })
     name: string;
 
     @Column({ type: 'text', nullable: true })
@@ -35,6 +34,9 @@ export class Product {
 
     @Column({ default: 0 })
     stockQuantity: number;
+
+    @Column({ nullable: false })
+    productRef: string;
 
     @Column({ default: 10 })
     reorderPoint: number;

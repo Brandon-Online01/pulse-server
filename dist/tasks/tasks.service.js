@@ -27,12 +27,14 @@ const rewards_service_1 = require("../rewards/rewards.service");
 const constants_1 = require("../lib/constants/constants");
 const constants_2 = require("../lib/constants/constants");
 const date_fns_1 = require("date-fns");
+const client_entity_1 = require("../clients/entities/client.entity");
 let TasksService = class TasksService {
-    constructor(taskRepository, subtaskRepository, eventEmitter, rewardsService) {
+    constructor(taskRepository, subtaskRepository, eventEmitter, rewardsService, clientRepository) {
         this.taskRepository = taskRepository;
         this.subtaskRepository = subtaskRepository;
         this.eventEmitter = eventEmitter;
         this.rewardsService = rewardsService;
+        this.clientRepository = clientRepository;
     }
     async createRepeatingTasks(baseTask, createTaskDto) {
         if (!createTaskDto.repetitionType || createTaskDto.repetitionType === task_enums_1.RepetitionType.NONE || !createTaskDto.deadline || !createTaskDto.repetitionEndDate) {
@@ -77,13 +79,13 @@ let TasksService = class TasksService {
             repeatedTask.repetitionEndDate = null;
             repeatedTask.createdBy = baseTask.createdBy;
             await this.taskRepository.save(repeatedTask);
-            console.log(`Created repeating task for ${nextDate}`);
             currentDate = nextDate;
             tasksCreated++;
         }
     }
     async create(createTaskDto) {
         try {
+            console.log(createTaskDto, 'createTaskDto');
             const now = new Date();
             if (createTaskDto.deadline && new Date(createTaskDto.deadline) < now) {
                 throw new common_1.BadRequestException('Task deadline cannot be in the past');
@@ -91,19 +93,32 @@ let TasksService = class TasksService {
             if (createTaskDto.repetitionEndDate && new Date(createTaskDto.repetitionEndDate) < now) {
                 throw new common_1.BadRequestException('Repetition end date cannot be in the past');
             }
-            const { subtasks, ...taskDataWithoutSubtasks } = createTaskDto;
             const taskData = {
-                ...taskDataWithoutSubtasks,
-                assignees: createTaskDto?.assigneeIds?.map(uid => ({ uid })) || [],
-                clients: createTaskDto?.clientIds?.map(uid => ({ uid })) || [],
-                startDate: now,
+                ...createTaskDto,
                 status: task_enums_1.TaskStatus.PENDING,
                 progress: 0,
-                isDeleted: false,
-                isOverdue: false,
-                lastCompletedAt: null,
+                assignees: createTaskDto.assignees || [],
+                clients: [],
                 attachments: []
             };
+            const clientUids = new Set();
+            if (createTaskDto.client?.uid) {
+                clientUids.add(createTaskDto.client.uid);
+            }
+            if (createTaskDto.targetCategory) {
+                const categoryClients = await this.clientRepository.find({
+                    where: {
+                        category: createTaskDto.targetCategory,
+                        isDeleted: false
+                    },
+                    select: ['uid']
+                });
+                categoryClients.forEach(client => clientUids.add(client.uid));
+            }
+            if (clientUids.size > 0) {
+                taskData.clients = Array.from(clientUids).map(uid => ({ uid }));
+            }
+            console.log(taskData, 'taskData');
             const task = await this.taskRepository.save(taskData);
             if (!task) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
@@ -516,9 +531,11 @@ exports.TasksService = TasksService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_2.InjectRepository)(task_entity_1.Task)),
     __param(1, (0, typeorm_2.InjectRepository)(subtask_entity_1.SubTask)),
+    __param(4, (0, typeorm_2.InjectRepository)(client_entity_1.Client)),
     __metadata("design:paramtypes", [typeorm_1.Repository,
         typeorm_1.Repository,
         event_emitter_1.EventEmitter2,
-        rewards_service_1.RewardsService])
+        rewards_service_1.RewardsService,
+        typeorm_1.Repository])
 ], TasksService);
 //# sourceMappingURL=tasks.service.js.map

@@ -3,13 +3,18 @@ import { CreateSubtaskDto } from './create-subtask.dto';
 export declare class CreateTaskDto {
     title: string;
     description: string;
-    taskType?: TaskType;
-    priority?: TaskPriority;
-    deadline?: Date;
-    repetitionType?: RepetitionType;
+    taskType: TaskType;
+    priority: TaskPriority;
+    deadline: Date;
+    repetitionType: RepetitionType;
     repetitionEndDate?: Date;
     attachments?: string[];
-    assigneeIds?: number[];
-    clientIds?: number[];
+    assignees: {
+        uid: number;
+    }[];
+    client?: {
+        uid: number;
+    };
+    targetCategory?: string;
     subtasks?: CreateSubtaskDto[];
 }

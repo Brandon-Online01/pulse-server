@@ -49,13 +49,13 @@ exports.LEVELS = {
     5: { min: 15001, max: 22500 },
     6: { min: 22501, max: 30000 },
     7: { min: 30001, max: 45000 },
-    8: { min: 45001, max: Infinity }
+    8: { min: 45001, max: 1000000 }
 };
 exports.RANKS = {
     BRONZE: { levels: [1, 2] },
     SILVER: { levels: [3, 4] },
     GOLD: { levels: [5, 6] },
     PLATINUM: { levels: [7, 8] },
-    DIAMOND: { levels: [8, Infinity] }
+    DIAMOND: { levels: [8, 1000000] }
 };
 //# sourceMappingURL=constants.js.map

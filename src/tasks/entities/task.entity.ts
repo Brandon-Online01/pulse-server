@@ -51,6 +51,9 @@ export class Task {
     @Column({ type: 'boolean', default: false })
     isOverdue: boolean;
 
+    @Column({ type: 'varchar', length: 255, nullable: true })
+    targetCategory: string;
+
     @CreateDateColumn()
     createdAt: Date;
 

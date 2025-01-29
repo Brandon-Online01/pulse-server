@@ -28,12 +28,17 @@ var RepetitionType;
 })(RepetitionType || (exports.RepetitionType = RepetitionType = {}));
 var TaskType;
 (function (TaskType) {
-    TaskType["MEETING"] = "MEETING";
+    TaskType["IN_PERSON_MEETING"] = "IN_PERSON_MEETING";
+    TaskType["VIRTUAL_MEETING"] = "VIRTUAL_MEETING";
     TaskType["CALL"] = "CALL";
     TaskType["EMAIL"] = "EMAIL";
+    TaskType["WHATSAPP"] = "WHATSAPP";
+    TaskType["SMS"] = "SMS";
     TaskType["FOLLOW_UP"] = "FOLLOW_UP";
     TaskType["PROPOSAL"] = "PROPOSAL";
     TaskType["REPORT"] = "REPORT";
+    TaskType["QUOTATION"] = "QUOTATION";
+    TaskType["VISIT"] = "VISIT";
     TaskType["OTHER"] = "OTHER";
 })(TaskType || (exports.TaskType = TaskType = {}));
 //# sourceMappingURL=task.enums.js.map

@@ -12,6 +12,7 @@ export declare class Product {
     sku: string;
     warehouseLocation: string;
     stockQuantity: number;
+    productRef: string;
     reorderPoint: number;
     createdAt: Date;
     updatedAt: Date;

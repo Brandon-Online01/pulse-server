@@ -7,12 +7,14 @@ import { SubTask } from './entities/subtask.entity';
 import { UpdateSubtaskDto } from './dto/update-subtask.dto';
 import { RewardsService } from '../rewards/rewards.service';
 import { CreateTaskDto } from './dto/create-task.dto';
+import { Client } from '../clients/entities/client.entity';
 export declare class TasksService {
     private taskRepository;
     private subtaskRepository;
     private readonly eventEmitter;
     private readonly rewardsService;
-    constructor(taskRepository: Repository<Task>, subtaskRepository: Repository<SubTask>, eventEmitter: EventEmitter2, rewardsService: RewardsService);
+    private readonly clientRepository;
+    constructor(taskRepository: Repository<Task>, subtaskRepository: Repository<SubTask>, eventEmitter: EventEmitter2, rewardsService: RewardsService, clientRepository: Repository<Client>);
     private createRepeatingTasks;
     create(createTaskDto: CreateTaskDto): Promise<{
         message: string;

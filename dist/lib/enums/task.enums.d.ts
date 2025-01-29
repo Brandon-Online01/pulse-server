@@ -21,11 +21,16 @@ export declare enum RepetitionType {
     YEARLY = "YEARLY"
 }
 export declare enum TaskType {
-    MEETING = "MEETING",
+    IN_PERSON_MEETING = "IN_PERSON_MEETING",
+    VIRTUAL_MEETING = "VIRTUAL_MEETING",
     CALL = "CALL",
     EMAIL = "EMAIL",
+    WHATSAPP = "WHATSAPP",
+    SMS = "SMS",
     FOLLOW_UP = "FOLLOW_UP",
     PROPOSAL = "PROPOSAL",
     REPORT = "REPORT",
+    QUOTATION = "QUOTATION",
+    VISIT = "VISIT",
     OTHER = "OTHER"
 }

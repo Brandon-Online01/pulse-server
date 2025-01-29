@@ -18,6 +18,7 @@ export declare class Task {
     attachments: string[];
     isDeleted: boolean;
     isOverdue: boolean;
+    targetCategory: string;
     createdAt: Date;
     updatedAt: Date;
     createdBy: User;

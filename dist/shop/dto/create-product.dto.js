@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateProductDto = void 0;
 const swagger_1 = require("@nestjs/swagger");
 const class_validator_1 = require("class-validator");
+const product_enums_1 = require("../../lib/enums/product.enums");
 class CreateProductDto {
 }
 exports.CreateProductDto = CreateProductDto;
@@ -26,7 +27,7 @@ __decorate([
 ], CreateProductDto.prototype, "name", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.IsOptional)(),
     (0, swagger_1.ApiProperty)({
         description: 'The description of the product',
         example: 'Product Description'
@@ -34,17 +35,8 @@ __decorate([
     __metadata("design:type", String)
 ], CreateProductDto.prototype, "description", void 0);
 __decorate([
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsNotEmpty)(),
-    (0, swagger_1.ApiProperty)({
-        description: 'The image of the product',
-        example: 'https://example.com/image.jpg'
-    }),
-    __metadata("design:type", String)
-], CreateProductDto.prototype, "image", void 0);
-__decorate([
     (0, class_validator_1.IsNumber)(),
-    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.IsOptional)(),
     (0, swagger_1.ApiProperty)({
         description: 'The price of the product',
         example: 10.99
@@ -53,62 +45,82 @@ __decorate([
 ], CreateProductDto.prototype, "price", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsNotEmpty)(),
-    (0, swagger_1.ApiProperty)({
-        description: 'The sale price of the product',
-        example: 9.99
-    }),
-    __metadata("design:type", Number)
-], CreateProductDto.prototype, "salePrice", void 0);
-__decorate([
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsNotEmpty)(),
-    (0, swagger_1.ApiProperty)({
-        description: 'The discount of the product',
-        example: 10
-    }),
-    __metadata("design:type", Number)
-], CreateProductDto.prototype, "discount", void 0);
-__decorate([
-    (0, class_validator_1.IsNumber)(),
-    (0, class_validator_1.IsNotEmpty)(),
-    (0, swagger_1.ApiProperty)({
-        description: 'The barcode of the product',
-        example: 1234567890
-    }),
-    __metadata("design:type", Number)
-], CreateProductDto.prototype, "barcode", void 0);
-__decorate([
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsNotEmpty)(),
-    (0, swagger_1.ApiProperty)({
-        description: 'The package quantity of the product',
-        example: 10
-    }),
-    __metadata("design:type", Number)
-], CreateProductDto.prototype, "packageQuantity", void 0);
-__decorate([
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.IsOptional)(),
     (0, swagger_1.ApiProperty)({
         description: 'The category of the product',
-        example: 'Dairy'
+        example: 'Electronics'
     }),
     __metadata("design:type", String)
 ], CreateProductDto.prototype, "category", void 0);
 __decorate([
-    (0, class_validator_1.IsNumber)(),
-    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.IsEnum)(product_enums_1.ProductStatus),
+    (0, class_validator_1.IsOptional)(),
     (0, swagger_1.ApiProperty)({
-        description: 'The weight of the product',
+        description: 'The status of the product',
+        enum: product_enums_1.ProductStatus,
+        default: product_enums_1.ProductStatus.NEW
+    }),
+    __metadata("design:type", String)
+], CreateProductDto.prototype, "status", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    (0, swagger_1.ApiProperty)({
+        description: 'The URL of the product image',
+        example: 'https://example.com/image.jpg'
+    }),
+    __metadata("design:type", String)
+], CreateProductDto.prototype, "imageUrl", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    (0, swagger_1.ApiProperty)({
+        description: 'The SKU of the product',
+        example: 'ELE-PRO-001-000001'
+    }),
+    __metadata("design:type", String)
+], CreateProductDto.prototype, "sku", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    (0, swagger_1.ApiProperty)({
+        description: 'The warehouse location of the product',
+        example: 'A1-B2-C3'
+    }),
+    __metadata("design:type", String)
+], CreateProductDto.prototype, "warehouseLocation", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.IsOptional)(),
+    (0, swagger_1.ApiProperty)({
+        description: 'The current stock quantity',
         example: 100
     }),
     __metadata("design:type", Number)
-], CreateProductDto.prototype, "weight", void 0);
+], CreateProductDto.prototype, "stockQuantity", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    (0, swagger_1.ApiProperty)({
+        description: 'The product reference code',
+        example: 'REF-001'
+    }),
+    __metadata("design:type", String)
+], CreateProductDto.prototype, "productReferenceCode", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.IsOptional)(),
+    (0, swagger_1.ApiProperty)({
+        description: 'The reorder point for stock management',
+        example: 10,
+        default: 10
+    }),
+    __metadata("design:type", Number)
+], CreateProductDto.prototype, "reorderPoint", void 0);
 __decorate([
     (0, class_validator_1.IsNotEmpty)(),
     (0, swagger_1.ApiProperty)({
-        description: 'The status of the product',
+        description: 'The reseller associated with the product',
         example: { uid: 1 }
     }),
     __metadata("design:type", Object)

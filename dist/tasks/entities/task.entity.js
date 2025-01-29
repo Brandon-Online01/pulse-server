@@ -103,6 +103,10 @@ __decorate([
     __metadata("design:type", Boolean)
 ], Task.prototype, "isOverdue", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', length: 255, nullable: true }),
+    __metadata("design:type", String)
+], Task.prototype, "targetCategory", void 0);
+__decorate([
     (0, typeorm_1.CreateDateColumn)(),
     __metadata("design:type", Date)
 ], Task.prototype, "createdAt", void 0);

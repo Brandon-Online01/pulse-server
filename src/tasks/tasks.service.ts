@@ -15,8 +15,8 @@ import { XP_VALUES } from '../lib/constants/constants';
 import { XP_VALUES_TYPES } from '../lib/constants/constants';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { addDays, addWeeks, addMonths, addYears } from 'date-fns';
-import { User } from '../user/entities/user.entity';
 import { Client } from '../clients/entities/client.entity';
+import { Not } from 'typeorm';
 
 @Injectable()
 export class TasksService {
@@ -26,7 +26,9 @@ export class TasksService {
 		@InjectRepository(SubTask)
 		private subtaskRepository: Repository<SubTask>,
 		private readonly eventEmitter: EventEmitter2,
-		private readonly rewardsService: RewardsService
+		private readonly rewardsService: RewardsService,
+		@InjectRepository(Client)
+		private readonly clientRepository: Repository<Client>
 	) { }
 
 	private async createRepeatingTasks(baseTask: Task, createTaskDto: CreateTaskDto): Promise<void> {
@@ -78,7 +80,6 @@ export class TasksService {
 			repeatedTask.createdBy = baseTask.createdBy;
 
 			await this.taskRepository.save(repeatedTask);
-			console.log(`Created repeating task for ${nextDate}`);
 
 			currentDate = nextDate;
 			tasksCreated++;
@@ -87,6 +88,7 @@ export class TasksService {
 
 	async create(createTaskDto: CreateTaskDto): Promise<{ message: string }> {
 		try {
+			console.log(createTaskDto, 'createTaskDto')
 			// Set default values and validate dates
 			const now = new Date();
 			if (createTaskDto.deadline && new Date(createTaskDto.deadline) < now) {
@@ -97,20 +99,43 @@ export class TasksService {
 				throw new BadRequestException('Repetition end date cannot be in the past');
 			}
 
-			// Create task with proper relations
-			const { subtasks, ...taskDataWithoutSubtasks } = createTaskDto;
-			const taskData: Partial<Task> = {
-				...taskDataWithoutSubtasks,
-				assignees: createTaskDto?.assigneeIds?.map(uid => ({ uid } as User)) || [],
-				clients: createTaskDto?.clientIds?.map(uid => ({ uid } as Client)) || [],
-				startDate: now,
+			// Create base task data
+			const taskData = {
+				...createTaskDto,
 				status: TaskStatus.PENDING,
 				progress: 0,
-				isDeleted: false,
-				isOverdue: false,
-				lastCompletedAt: null,
+				assignees: createTaskDto.assignees || [],
+				clients: [],
 				attachments: []
 			};
+
+			// Handle client assignments
+			const clientUids = new Set();
+
+			// Case 1: Specific client selected
+			if (createTaskDto.client?.uid) {
+				clientUids.add(createTaskDto.client.uid);
+			}
+
+			// Case 2: Target category specified
+			if (createTaskDto.targetCategory) {
+				const categoryClients = await this.clientRepository.find({
+					where: {
+						category: createTaskDto.targetCategory,
+						isDeleted: false
+					},
+					select: ['uid']
+				});
+
+				categoryClients.forEach(client => clientUids.add(client.uid));
+			}
+
+			// Convert client UIDs to the correct format for ManyToMany relationship
+			if (clientUids.size > 0) {
+				taskData.clients = Array.from(clientUids).map(uid => ({ uid }));
+			}
+
+			console.log(taskData, 'taskData')
 
 			const task = await this.taskRepository.save(taskData);
 

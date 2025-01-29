@@ -12,5 +12,6 @@ export declare class UpdateTaskDto {
     attachments?: string[];
     assignees?: any[];
     clients?: any[];
+    targetCategory?: string;
     subtasks?: CreateSubtaskDto[];
 }
