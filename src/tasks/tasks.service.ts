@@ -1,11 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Between } from 'typeorm';
-import { NotificationType, NotificationStatus } from '../lib/enums/notification.enums';
-import { TaskStatus, TaskPriority, RepetitionType, TaskType } from '../lib/enums/task.enums';
 import { SubTaskStatus } from '../lib/enums/status.enums';
 import { Task } from './entities/task.entity';
 import { SubTask } from './entities/subtask.entity';
@@ -16,7 +13,9 @@ import { XP_VALUES_TYPES } from '../lib/constants/constants';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { addDays, addWeeks, addMonths, addYears } from 'date-fns';
 import { Client } from '../clients/entities/client.entity';
-import { Not } from 'typeorm';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { NotificationType, NotificationStatus } from '../lib/enums/notification.enums';
+import { TaskStatus, TaskPriority, RepetitionType, TaskType } from '../lib/enums/task.enums';
 
 @Injectable()
 export class TasksService {
@@ -88,7 +87,6 @@ export class TasksService {
 
 	async create(createTaskDto: CreateTaskDto): Promise<{ message: string }> {
 		try {
-			console.log(createTaskDto, 'createTaskDto')
 			// Set default values and validate dates
 			const now = new Date();
 			if (createTaskDto.deadline && new Date(createTaskDto.deadline) < now) {
@@ -134,8 +132,6 @@ export class TasksService {
 			if (clientUids.size > 0) {
 				taskData.clients = Array.from(clientUids).map(uid => ({ uid }));
 			}
-
-			console.log(taskData, 'taskData')
 
 			const task = await this.taskRepository.save(taskData);
 
@@ -611,21 +607,5 @@ export class TasksService {
 		} catch (error) {
 			throw new BadRequestException(error?.message);
 		}
-	}
-
-	private getStatusSummary(tasks: Task[]): Record<TaskStatus, number> {
-		const byStatus = {} as Record<TaskStatus, number>;
-
-		// Initialize all status counts to 0
-		Object.values(TaskStatus).forEach(status => {
-			byStatus[status] = 0;
-		});
-
-		// Count tasks by status
-		tasks.forEach(task => {
-			byStatus[task.status]++;
-		});
-
-		return byStatus;
 	}
 }

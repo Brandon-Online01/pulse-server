@@ -13,13 +13,10 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TasksService = void 0;
-const common_1 = require("@nestjs/common");
 const typeorm_1 = require("typeorm");
 const typeorm_2 = require("@nestjs/typeorm");
 const event_emitter_1 = require("@nestjs/event-emitter");
 const typeorm_3 = require("typeorm");
-const notification_enums_1 = require("../lib/enums/notification.enums");
-const task_enums_1 = require("../lib/enums/task.enums");
 const status_enums_1 = require("../lib/enums/status.enums");
 const task_entity_1 = require("./entities/task.entity");
 const subtask_entity_1 = require("./entities/subtask.entity");
@@ -28,6 +25,9 @@ const constants_1 = require("../lib/constants/constants");
 const constants_2 = require("../lib/constants/constants");
 const date_fns_1 = require("date-fns");
 const client_entity_1 = require("../clients/entities/client.entity");
+const common_1 = require("@nestjs/common");
+const notification_enums_1 = require("../lib/enums/notification.enums");
+const task_enums_1 = require("../lib/enums/task.enums");
 let TasksService = class TasksService {
     constructor(taskRepository, subtaskRepository, eventEmitter, rewardsService, clientRepository) {
         this.taskRepository = taskRepository;
@@ -85,7 +85,6 @@ let TasksService = class TasksService {
     }
     async create(createTaskDto) {
         try {
-            console.log(createTaskDto, 'createTaskDto');
             const now = new Date();
             if (createTaskDto.deadline && new Date(createTaskDto.deadline) < now) {
                 throw new common_1.BadRequestException('Task deadline cannot be in the past');
@@ -118,7 +117,6 @@ let TasksService = class TasksService {
             if (clientUids.size > 0) {
                 taskData.clients = Array.from(clientUids).map(uid => ({ uid }));
             }
-            console.log(taskData, 'taskData');
             const task = await this.taskRepository.save(taskData);
             if (!task) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
@@ -514,16 +512,6 @@ let TasksService = class TasksService {
         catch (error) {
             throw new common_1.BadRequestException(error?.message);
         }
-    }
-    getStatusSummary(tasks) {
-        const byStatus = {};
-        Object.values(task_enums_1.TaskStatus).forEach(status => {
-            byStatus[status] = 0;
-        });
-        tasks.forEach(task => {
-            byStatus[task.status]++;
-        });
-        return byStatus;
     }
 };
 exports.TasksService = TasksService;
