@@ -9,8 +9,14 @@ import { CheckIn } from '../../check-ins/entities/check-in.entity';
 export enum CustomerType {
     STANDARD = 'standard',
     PREMIUM = 'premium',
+    ENTERPRISE = 'enterprise',
     VIP = 'vip',
-    WHOLESALE = 'wholesale'
+    WHOLESALE = 'wholesale',
+    CONTRACT = 'contract',
+    HARDWARE = 'hardware',
+    SOFTWARE = 'software',
+    SERVICE = 'service',
+    OTHER = 'other'
 }
 
 @Entity('client')

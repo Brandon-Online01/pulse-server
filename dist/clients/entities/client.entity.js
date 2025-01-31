@@ -21,8 +21,14 @@ var CustomerType;
 (function (CustomerType) {
     CustomerType["STANDARD"] = "standard";
     CustomerType["PREMIUM"] = "premium";
+    CustomerType["ENTERPRISE"] = "enterprise";
     CustomerType["VIP"] = "vip";
     CustomerType["WHOLESALE"] = "wholesale";
+    CustomerType["CONTRACT"] = "contract";
+    CustomerType["HARDWARE"] = "hardware";
+    CustomerType["SOFTWARE"] = "software";
+    CustomerType["SERVICE"] = "service";
+    CustomerType["OTHER"] = "other";
 })(CustomerType || (exports.CustomerType = CustomerType = {}));
 let Client = class Client {
 };
