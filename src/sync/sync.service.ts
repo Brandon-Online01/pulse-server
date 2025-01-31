@@ -192,7 +192,7 @@ export class SyncService {
         }
     }
 
-    @Cron(CronExpression.EVERY_10_SECONDS)
+    @Cron(CronExpression.EVERY_5_MINUTES)
     async syncAll() {
         try {
             const usersResult = await this.syncUsers();
@@ -204,8 +204,6 @@ export class SyncService {
                 await this.processUsers(syncUsers);
             }
 
-            console.log('customers', syncCustomers);
-
             if (syncCustomers?.length > 0) {
                 await this.processCustomers(syncCustomers);
             }
@@ -216,7 +214,6 @@ export class SyncService {
             };
 
         } catch (error) {
-            this.logger.error(`Sync failed: ${error.message}`);
             throw error;
         }
     }
@@ -255,12 +252,6 @@ export class SyncService {
                 }
             })
         );
-
-        const errors = results.filter(r => r.status === 'rejected') as PromiseRejectedResult[];
-
-        if (errors.length > 0) {
-            this.logger.error('Sync errors:', errors.map(e => e.reason.message));
-        }
     }
 
     private async processCustomers(customers: SyncCustomer[]) {
