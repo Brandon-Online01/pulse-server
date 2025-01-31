@@ -212,7 +212,6 @@ let TasksService = class TasksService {
                 where: { uid: ref, isDeleted: false },
                 relations: [
                     'createdBy',
-                    'branch',
                     'clients',
                     'subtasks',
                     'assignees'
@@ -242,7 +241,6 @@ let TasksService = class TasksService {
                 where: { createdBy: { uid: ref }, isDeleted: false },
                 relations: [
                     'createdBy',
-                    'branch',
                     'clients',
                     'subtasks',
                     'assignees'

@@ -45,7 +45,7 @@ export class LicensingService {
                 maxUsers: 20,
                 maxBranches: 3,
                 storageLimit: 20480, // 20GB in MB
-                apiCallLimit: 50000,
+                apiCallLimit: 500000,
                 integrationLimit: 5,
                 price: 199,
                 features: PLAN_FEATURES[SubscriptionPlan.PROFESSIONAL],
@@ -54,7 +54,7 @@ export class LicensingService {
                 maxUsers: 50,
                 maxBranches: 10,
                 storageLimit: 102400, // 100GB in MB
-                apiCallLimit: 200000,
+                apiCallLimit: 2000000,
                 integrationLimit: 15,
                 price: 499,
                 features: PLAN_FEATURES[SubscriptionPlan.BUSINESS],
@@ -63,7 +63,7 @@ export class LicensingService {
                 maxUsers: 999999,
                 maxBranches: 999999,
                 storageLimit: 1024 * 1024, // 1TB in MB
-                apiCallLimit: 1000000,
+                apiCallLimit: 10000000,
                 integrationLimit: 999999,
                 price: 999,
                 features: PLAN_FEATURES[SubscriptionPlan.ENTERPRISE],
