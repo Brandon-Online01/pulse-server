@@ -65,6 +65,7 @@ import { LicenseUsage } from './licensing/entities/license-usage.entity';
 import { LicenseEvent } from './licensing/entities/license-event.entity';
 import { LicensingModule } from './licensing/licensing.module';
 import { LicenseUsageInterceptor } from './licensing/license-usage.interceptor';
+import { SyncModule } from './sync/sync.module';
 
 @Module({
   imports: [
@@ -151,6 +152,7 @@ import { LicenseUsageInterceptor } from './licensing/license-usage.interceptor';
     CheckInsModule,
     RewardsModule,
     LicensingModule,
+    SyncModule,
   ],
   controllers: [],
   providers: [

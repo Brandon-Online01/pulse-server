@@ -17,13 +17,13 @@ export class LicenseUsage {
     @Column({ type: 'enum', enum: MetricType })
     metricType: MetricType;
 
-    @Column('bigint')
+    @Column({ type: 'int', })
     currentValue: number;
 
-    @Column('bigint')
+    @Column({ type: 'int' })
     limit: number;
 
-    @Column('float')
+    @Column({ type: 'float' })
     utilizationPercentage: number;
 
     @Column({ type: 'json', nullable: true })

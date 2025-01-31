@@ -34,15 +34,15 @@ __decorate([
     __metadata("design:type", String)
 ], LicenseUsage.prototype, "metricType", void 0);
 __decorate([
-    (0, typeorm_1.Column)('bigint'),
+    (0, typeorm_1.Column)({ type: 'int', }),
     __metadata("design:type", Number)
 ], LicenseUsage.prototype, "currentValue", void 0);
 __decorate([
-    (0, typeorm_1.Column)('bigint'),
+    (0, typeorm_1.Column)({ type: 'int' }),
     __metadata("design:type", Number)
 ], LicenseUsage.prototype, "limit", void 0);
 __decorate([
-    (0, typeorm_1.Column)('float'),
+    (0, typeorm_1.Column)({ type: 'float' }),
     __metadata("design:type", Number)
 ], LicenseUsage.prototype, "utilizationPercentage", void 0);
 __decorate([

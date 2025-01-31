@@ -74,6 +74,7 @@ const license_usage_entity_1 = require("./licensing/entities/license-usage.entit
 const license_event_entity_1 = require("./licensing/entities/license-event.entity");
 const licensing_module_1 = require("./licensing/licensing.module");
 const license_usage_interceptor_1 = require("./licensing/license-usage.interceptor");
+const sync_module_1 = require("./sync/sync.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -163,6 +164,7 @@ exports.AppModule = AppModule = __decorate([
             check_ins_module_1.CheckInsModule,
             rewards_module_1.RewardsModule,
             licensing_module_1.LicensingModule,
+            sync_module_1.SyncModule,
         ],
         controllers: [],
         providers: [
