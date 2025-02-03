@@ -42,6 +42,8 @@ async function bootstrap() {
 		.addTag('tasks', 'Task and project management system')
 		.addTag('gps', 'GPS tracking and location services')
 		.addTag('user', 'User account management')
+		.addTag('websockets', 'Real-time WebSocket Communication')
+		.addServer('wss://api.loro.co.za', 'WebSocket Server')
 		.build();
 
 	const document = SwaggerModule.createDocument(app, config, {
@@ -51,7 +53,105 @@ async function bootstrap() {
 		) => methodKey,
 	});
 
-	SwaggerModule.setup('api', app, document, {
+	// Add WebSocket documentation
+	const wsDocument = {
+		...document,
+		components: {
+			...document.components,
+			schemas: {
+				...document.components?.schemas,
+				WebSocketNewQuotation: {
+					type: 'object',
+					properties: {
+						event: {
+							type: 'string',
+							enum: ['newQuotation'],
+							description: 'WebSocket event name'
+						},
+						data: {
+							type: 'object',
+							properties: {
+								quotationNumber: {
+									type: 'string',
+									description: 'The quotation number that was created'
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		paths: {
+			...document.paths,
+			'/websocket': {
+				get: {
+					tags: ['websockets'],
+					summary: 'WebSocket Connection',
+					description: `
+						# WebSocket Documentation
+						
+						## Connection Details
+						- URL: wss://api.loro.co.za
+						- Protocol: Socket.IO
+						
+						## Available Events
+						
+						### newQuotation
+						Emitted when a new quotation is created
+						
+						\`\`\`typescript
+						// Event name: newQuotation
+						// Payload structure:
+						{
+							quotationNumber: string
+						}
+						\`\`\`
+						
+						## Code Examples
+						
+						### JavaScript/TypeScript (Socket.IO Client)
+						\`\`\`typescript
+						import { io } from "socket.io-client";
+						
+						const socket = io("wss://api.loro.co.za");
+						
+						socket.on("newQuotation", (data) => {
+							console.log("New quotation:", data.quotationNumber);
+						});
+						\`\`\`
+						
+						### C# (.NET)
+						\`\`\`csharp
+						using SocketIOClient;
+						
+						var client = new SocketIO("https://api.loro.co.za");
+						
+						client.On("newQuotation", response => {
+							var data = response.GetValue<QuotationData>();
+							Console.WriteLine($"New quotation: {data.QuotationNumber}");
+						});
+						
+						await client.ConnectAsync();
+						\`\`\`
+					`,
+					responses: {
+						'101': {
+							description: 'WebSocket connection established',
+							content: {
+								'application/json': {
+									schema: {
+										$ref: '#/components/schemas/WebSocketNewQuotation'
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	};
+
+	SwaggerModule.setup('api', app, wsDocument, {
 		swaggerOptions: {
 			persistAuthorization: true,
 			tagsSorter: 'alpha',
