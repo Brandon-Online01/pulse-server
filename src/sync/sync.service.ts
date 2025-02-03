@@ -13,6 +13,8 @@ import { CustomerType } from '../clients/entities/client.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Client } from '../clients/entities/client.entity';
+import { ProductStatus } from 'src/lib/enums/product.enums';
+import { Product } from 'src/products/entities/product.entity';
 
 interface SyncUser {
     username: string;
@@ -40,6 +42,13 @@ interface SyncCustomer {
     PhysicalAddress4: string;
 }
 
+interface SyncInventory {
+    Description: string;
+    SellPrice: number;
+    description_1: string;
+    item_code: string;
+}
+
 @Injectable()
 export class SyncService {
     private readonly logger = new Logger(SyncService.name);
@@ -50,7 +59,9 @@ export class SyncService {
         private userService: UserService,
         private clientService: ClientsService,
         @InjectRepository(Client)
-        private clientRepository: Repository<Client>
+        private clientRepository: Repository<Client>,
+        @InjectRepository(Product)
+        private productRepository: Repository<Product>
     ) { }
 
     private async createConnection() {
@@ -173,12 +184,10 @@ export class SyncService {
             }
 
             const [inventoryRows] = await this.connection.execute('SELECT * FROM tblinventory');
-            const [multistoreRows] = await this.connection.execute('SELECT * FROM tblmultistore');
 
             return {
                 data: {
                     inventory: inventoryRows,
-                    multistore: multistoreRows
                 },
                 message: 'Successfully synced inventory and multistore data'
             };
@@ -197,8 +206,11 @@ export class SyncService {
         try {
             const usersResult = await this.syncUsers();
             const customersResult = await this.syncCustomers();
+            const inventoryResult = await this.syncInventory();
+
             const syncUsers = usersResult?.data as SyncUser[] | undefined;
             const syncCustomers = customersResult?.data as SyncCustomer[] | undefined;
+            const syncInventory = inventoryResult?.data?.inventory as SyncInventory[] | undefined;
 
             if (syncUsers?.length > 0) {
                 await this.processUsers(syncUsers);
@@ -206,6 +218,10 @@ export class SyncService {
 
             if (syncCustomers?.length > 0) {
                 await this.processCustomers(syncCustomers);
+            }
+
+            if (syncInventory?.length > 0) {
+                await this.processInventory(syncInventory);
             }
 
             return {
@@ -301,7 +317,41 @@ export class SyncService {
                 }
             })
         );
-
-        console.log(results);
     }
+
+    private async processInventory(inventory: SyncInventory[]) {
+        const results = await Promise.allSettled(
+            inventory.map(async (item) => {
+                try {
+                    const existingProduct = await this.productRepository.findOne({
+                        where: { productRef: item.item_code }
+                    });
+
+                    if (existingProduct) {
+                        return { action: 'skipped', reason: 'Product already exists' };
+                    }
+
+                    const productProfile = {
+                        name: item.description_1,
+                        description: item.description_1,
+                        price: item.SellPrice,
+                        sku: item.item_code,
+                        category: 'import',
+                        status: ProductStatus.ACTIVE,
+                        stockQuantity: 0,
+                        productRef: item.item_code,
+                        isDeleted: false,
+                        warehouseLocation: null,
+                        reorderPoint: 10
+                    };
+
+                    await this.productRepository.save(productProfile);
+
+                } catch (error) {
+                    throw new Error(`Error processing product ${item?.item_code}: ${error.message}`);
+                }
+            })
+        );
+    }
+
 }

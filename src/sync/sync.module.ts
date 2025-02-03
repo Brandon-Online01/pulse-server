@@ -7,14 +7,14 @@ import { UserModule } from '../user/user.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Client } from '../clients/entities/client.entity';
 import { ClientsModule } from '../clients/clients.module';
-
+import { Product } from 'src/products/entities/product.entity';
 @Module({
   imports: [
     ConfigModule,
     ScheduleModule.forRoot(),
     UserModule,
     ClientsModule,
-    TypeOrmModule.forFeature([Client])
+    TypeOrmModule.forFeature([Client, Product])
   ],
   controllers: [SyncController],
   providers: [SyncService],
