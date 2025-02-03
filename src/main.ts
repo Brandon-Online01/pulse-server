@@ -12,9 +12,17 @@ async function bootstrap() {
 	app.use(compression());
 
 	app.enableCors({
-		origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
+		origin: [
+			...process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
+			'https://loro.co.za',
+			'https://www.loro.co.za',
+			'https://*.loro.co.za'
+		],
 		methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
 		credentials: true,
+		allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+		exposedHeaders: ['Content-Range', 'X-Content-Range'],
+		maxAge: 3600
 	});
 
 	const config = new DocumentBuilder()
