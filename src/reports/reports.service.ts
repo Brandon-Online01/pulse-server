@@ -20,7 +20,6 @@ import { ConfigService } from '@nestjs/config';
 import { RewardsService } from 'src/rewards/rewards.service';
 import { DailyReportData } from '../lib/types/email-templates.types';
 import { TrackingService } from '../tracking/tracking.service';
-import { formatDate } from 'src/lib/utils/date.utils';
 
 @Injectable()
 export class ReportsService {
@@ -69,6 +68,122 @@ export class ReportsService {
 			message: error?.message || 'An error occurred',
 			statusCode: error?.status || 500
 		}
+	}
+
+	private formatReportData(
+		leadsStats: any,
+		journalsStats: any,
+		claimsStats: any,
+		quotationsStats: any,
+		tasksTotal: number,
+		attendanceRecords: any[],
+		attendanceHours: number,
+		trackingData: any,
+		userRewards: any,
+		previousDayQuotations: number,
+		previousDayRevenue: number,
+	) {
+		const currentRevenue = Number(quotationsStats?.quotations?.metrics?.grossQuotationValue) || 0;
+		const currentQuotations = quotationsStats?.quotations?.metrics?.totalQuotations || 0;
+
+		// Sort attendance records by time to get first check-in and last check-out
+		const sortedAttendance = [...attendanceRecords].sort((a, b) => a.checkIn.getTime() - b.checkIn.getTime());
+		const firstCheckIn = sortedAttendance[0];
+		const lastCheckOut = sortedAttendance[sortedAttendance.length - 1];
+
+		const commonData = {
+			leads: {
+				total: leadsStats?.total || 0,
+				review: leadsStats?.review || [],
+				pending: leadsStats?.pending || [],
+				approved: leadsStats?.approved || [],
+				declined: leadsStats?.declined || []
+			},
+			journals: journalsStats || [],
+			claims: {
+				paid: claimsStats?.paid || [],
+				pending: claimsStats?.pending || [],
+				approved: claimsStats?.approved || [],
+				declined: claimsStats?.declined || [],
+				totalValue: this.formatCurrency(claimsStats?.totalValue || 0)
+			},
+			tasks: tasksTotal || 0,
+			attendance: sortedAttendance.length > 0 ? {
+				totalHours: attendanceHours,
+				startTime: firstCheckIn.checkIn.toLocaleTimeString(),
+				endTime: lastCheckOut.checkOut?.toLocaleTimeString(),
+				duration: `${Math.floor(attendanceHours)}h ${Math.round((attendanceHours % 1) * 60)}m`,
+				status: lastCheckOut.status,
+				checkInLocation: firstCheckIn.checkInLatitude && firstCheckIn.checkInLongitude ? {
+					latitude: firstCheckIn.checkInLatitude,
+					longitude: firstCheckIn.checkInLongitude,
+					notes: firstCheckIn.checkInNotes || '',
+				} : undefined,
+				checkOutLocation: lastCheckOut.checkOutLatitude && lastCheckOut.checkOutLongitude ? {
+					latitude: lastCheckOut.checkOutLatitude,
+					longitude: lastCheckOut.checkOutLongitude,
+					notes: lastCheckOut.checkOutNotes || '',
+				} : undefined,
+				verifiedAt: firstCheckIn.verifiedAt?.toISOString(),
+				verifiedBy: firstCheckIn.verifiedBy,
+			} : undefined,
+			quotations: {
+				totalQuotations: currentQuotations,
+				grossQuotationValue: this.formatCurrency(currentRevenue),
+				averageQuotationValue: this.formatCurrency(currentQuotations > 0 ? currentRevenue / currentQuotations : 0),
+				growth: this.calculateGrowth(currentQuotations, previousDayQuotations),
+				revenueGrowth: this.calculateGrowth(currentRevenue, previousDayRevenue),
+			},
+			tracking: trackingData ? {
+				totalDistance: trackingData?.totalDistance,
+				locationAnalysis: {
+					timeSpentByLocation: trackingData?.locationAnalysis?.timeSpentByLocation || {},
+					averageTimePerLocation: trackingData?.locationAnalysis?.averageTimePerLocation || 0
+				}
+			} : null,
+			xp: {
+				level: userRewards?.rank || 1,
+				currentXP: userRewards?.totalXP || 0,
+				todayXP: userRewards?.todayXP || 0,
+			},
+			metrics: {
+				totalQuotations: currentQuotations,
+				totalRevenue: this.formatCurrency(currentRevenue),
+				newCustomers: leadsStats?.total || 0,
+				customerGrowth: this.calculateGrowth(
+					leadsStats?.total || 0,
+					(leadsStats?.total || 0) - (leadsStats?.pending?.length || 0)
+				),
+				userSpecific: {
+					todayLeads: leadsStats?.pending?.length || 0,
+					todayClaims: claimsStats?.pending?.length || 0,
+					todayTasks: tasksTotal || 0,
+					todayQuotations: currentQuotations,
+					hoursWorked: attendanceHours,
+				}
+			}
+		};
+
+		return {
+			reportMetadata: commonData,
+			emailData: {
+				metrics: {
+					...commonData.metrics,
+					xp: commonData.xp,
+					attendance: commonData.attendance,
+					quotationGrowth: commonData.quotations.growth,
+					revenueGrowth: commonData.quotations.revenueGrowth
+				},
+				tracking: trackingData ? {
+					totalDistance: trackingData?.totalDistance,
+					locations: Object.entries(trackingData.locationAnalysis.timeSpentByLocation || {}).map(([address, minutes]) => ({
+						address,
+						timeSpent: `${Math.round(Number(minutes))} minutes`
+					})),
+					averageTimePerLocation: `${Math.round(trackingData.locationAnalysis.averageTimePerLocation || 0)} minutes`
+				} : undefined
+			}
+		};
 	}
 
 	async managerDailyReport() {
@@ -155,10 +270,9 @@ export class ReportsService {
 				this.shopService.getQuotationsForDate(date),
 				this.tasksService.getTasksForDate(date),
 				this.attendanceService.getAttendanceForDate(date),
-				this.newsService.findAll(),
-				this.rewardsService.getUserRewards(Number(reference)),
+				reference ? this.rewardsService.getUserRewards(Number(reference)) : null,
 				reference ? this.userService.findOne(Number(reference)) : null,
-				this.trackingService.getDailyTracking(Number(reference), date)
+				reference ? this.trackingService.getDailyTracking(Number(reference), date) : null
 			]);
 
 			const [
@@ -167,32 +281,39 @@ export class ReportsService {
 				{ claims: claimsStats },
 				{ stats: quotationsStats },
 				{ total: tasksTotal },
-				{ totalHours: attendanceHours, activeShifts, attendanceRecords },
-				{ data: newsItems },
-				{ rewards: userRewards },
+				{ totalHours: attendanceHours, attendanceRecords },
+				userRewards,
 				userData,
 				{ data: trackingData }
 			] = allData;
 
-			// Create report record with tracking data
+			// Get previous day metrics for comparison
+			const previousDay = new Date(date);
+			previousDay.setDate(previousDay.getDate() - 1);
+			const previousDayStats = await this.shopService.getQuotationsForDate(previousDay);
+			const previousDayQuotations = previousDayStats?.stats?.quotations?.metrics?.totalQuotations || 0;
+			const previousDayRevenue = Number(previousDayStats?.stats?.quotations?.metrics?.grossQuotationValue) || 0;
+
+			const { reportMetadata, emailData } = this.formatReportData(
+				leadsStats,
+				journalsStats,
+				claimsStats,
+				quotationsStats,
+				tasksTotal,
+				attendanceRecords || [],
+				attendanceHours || 0,
+				trackingData,
+				userRewards,
+				previousDayQuotations,
+				previousDayRevenue
+			);
+
+			// Create report record
 			const report = this.reportRepository.create({
 				title: 'Daily Report',
 				description: `Daily report for the date ${new Date()}`,
 				type: ReportType.DAILY,
-				metadata: {
-					leads: leadsStats,
-					journals: journalsStats,
-					claims: claimsStats,
-					tasks: tasksTotal,
-					attendance: { totalHours: attendanceHours, activeShifts, attendanceRecords },
-					quotations: quotationsStats?.quotations,
-					news: newsItems,
-					rewards: userRewards,
-					tracking: trackingData ? {
-						totalDistance: trackingData.totalDistance,
-						locationAnalysis: trackingData.locationAnalysis
-					} : null
-				},
+				metadata: reportMetadata,
 				owner: userData?.user,
 				branch: userData?.user?.branch
 			});
@@ -211,74 +332,15 @@ export class ReportsService {
 			const recipients = [AccessLevel.USER];
 			this.eventEmitter.emit('send.notification', notification, recipients);
 
-			// Send email only to the user
+			// Send email only if user has email
 			if (userData?.user?.email) {
-				// Get previous day metrics for comparison
-				const previousDayQuotations = quotationsStats?.quotations?.metrics?.totalQuotations || 0;
-				const previousDayRevenue = Number(quotationsStats?.quotations?.metrics?.grossQuotationValue?.replace(/[^0-9.-]+/g, '')) || 0;
-
-				// Calculate current day metrics
-				const currentRevenue = Number(quotationsStats?.quotations?.metrics?.grossQuotationValue) || 0;
-				const currentQuotations = quotationsStats?.quotations?.metrics?.totalQuotations || 0;
-
-				// Format metrics for email
-				const emailData: DailyReportData = {
+				const emailTemplate: DailyReportData = {
 					name: userData.user.username,
 					date: `${new Date()}`,
-					metrics: {
-						xp: {
-							level: userRewards?.rewards?.rank || 1,
-							currentXP: userRewards?.rewards?.totalXP || 0,
-							todayXP: userRewards?.rewards?.todayXP || 0,
-						},
-						attendance: attendanceRecords[0] ? {
-							startTime: attendanceRecords[0].checkIn.toLocaleTimeString(),
-							endTime: attendanceRecords[0].checkOut?.toLocaleTimeString(),
-							totalHours: attendanceHours,
-							duration: attendanceRecords[0].duration,
-							status: attendanceRecords[0].status,
-							checkInLocation: attendanceRecords[0].checkInLatitude && attendanceRecords[0].checkInLongitude ? {
-								latitude: attendanceRecords[0].checkInLatitude,
-								longitude: attendanceRecords[0].checkInLongitude,
-								notes: attendanceRecords[0].checkInNotes,
-							} : undefined,
-							checkOutLocation: attendanceRecords[0].checkOutLatitude && attendanceRecords[0].checkOutLongitude ? {
-								latitude: attendanceRecords[0].checkOutLatitude,
-								longitude: attendanceRecords[0].checkOutLongitude,
-								notes: attendanceRecords[0].checkOutNotes,
-							} : undefined,
-							verifiedAt: attendanceRecords[0].verifiedAt?.toISOString(),
-							verifiedBy: attendanceRecords[0].verifiedBy,
-						} : undefined,
-						totalQuotations: currentQuotations,
-						totalRevenue: this.formatCurrency(currentRevenue),
-						newCustomers: leadsStats?.total || 0,
-						quotationGrowth: this.calculateGrowth(currentQuotations, previousDayQuotations),
-						revenueGrowth: this.calculateGrowth(currentRevenue, previousDayRevenue),
-						customerGrowth: this.calculateGrowth(
-							leadsStats?.total || 0,
-							(leadsStats?.total || 0) - (leadsStats?.pending?.length || 0)
-						),
-						userSpecific: {
-							todayLeads: leadsStats?.pending?.length || 0,
-							todayClaims: claimsStats?.pending?.length || 0,
-							todayTasks: tasksTotal || 0,
-							todayQuotations: currentQuotations,
-							hoursWorked: attendanceHours,
-						},
-					},
-					tracking: trackingData ? {
-						totalDistance: trackingData?.totalDistance,
-						locations: Object.entries(trackingData.locationAnalysis.timeSpentByLocation).map(([address, minutes]) => ({
-							address,
-							timeSpent: `${Math.round(Number(minutes))} minutes`
-						})),
-						averageTimePerLocation: `${Math.round(trackingData.locationAnalysis.averageTimePerLocation)} minutes`
-					} : undefined
+					...emailData
 				};
 
-				// Send email only to the user
-				this.eventEmitter.emit('send.email', EmailType.DAILY_REPORT, [userData.user.email], emailData);
+				this.eventEmitter.emit('send.email', EmailType.DAILY_REPORT, [userData.user.email], emailTemplate);
 			}
 
 			return report;

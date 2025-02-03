@@ -33,10 +33,8 @@ export declare class ReportsService {
     private formatCurrency;
     private calculateGrowth;
     private handleError;
+    private formatReportData;
     managerDailyReport(): Promise<{
-        message: any;
-        statusCode: any;
-    } | {
         leads: {
             pending: number;
             approved: number;
@@ -80,9 +78,12 @@ export declare class ReportsService {
                 averageQuotationValue: string | number;
             };
         };
-    }>;
-    userDailyReport(reference?: string): Promise<Report | {
+    } | {
         message: any;
         statusCode: any;
     }>;
+    userDailyReport(reference?: string): Promise<{
+        message: any;
+        statusCode: any;
+    } | Report>;
 }
