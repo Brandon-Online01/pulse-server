@@ -16,6 +16,7 @@ import { EmailType } from '../lib/enums/email.enums';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ClientsService } from '../clients/clients.service';
 import { CreateProductDto } from '../products/dto/create-product.dto';
+import { ShopGateway } from './shop.gateway';
 
 @Injectable()
 export class ShopService {
@@ -33,6 +34,7 @@ export class ShopService {
         private readonly configService: ConfigService,
         private readonly clientsService: ClientsService,
         private readonly eventEmitter: EventEmitter2,
+        private readonly shopGateway: ShopGateway,
     ) {
         this.currencyLocale = this.configService.get<string>('CURRENCY_LOCALE') || 'en-ZA';
         this.currencyCode = this.configService.get<string>('CURRENCY_CODE') || 'ZAR';
@@ -172,6 +174,18 @@ export class ShopService {
                         : [...unique, item];
                 }, []);
 
+            // Create a map of product UIDs to their references
+            const productRefs = new Map(
+                products.flat().map(product => [product.uid, product.productRef])
+            );
+
+            // Validate that all products were found
+            const missingProducts = quotationData?.items?.filter(item => !productRefs.has(item.uid));
+
+            if (missingProducts?.length > 0) {
+                throw new Error(`Products not found for items: ${missingProducts.map(item => item.uid).join(', ')}`);
+            }
+
             const newQuotation = {
                 quotationNumber: `QUO-${Date.now()}`,
                 totalItems: Number(quotationData?.totalItems),
@@ -183,10 +197,14 @@ export class ShopService {
                     quantity: Number(item?.quantity),
                     product: { uid: item?.uid },
                     totalPrice: Number(item?.totalPrice),
+                    itemCode: productRefs.get(item?.uid)
                 }))
             } as const;
 
             await this.quotationRepository.save(newQuotation);
+
+            // Emit WebSocket event for new quotation
+            this.shopGateway.emitNewQuotation(newQuotation?.quotationNumber);
 
             const baseConfig = {
                 name: clientName,

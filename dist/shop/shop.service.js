@@ -27,14 +27,16 @@ const config_1 = require("@nestjs/config");
 const email_enums_1 = require("../lib/enums/email.enums");
 const event_emitter_1 = require("@nestjs/event-emitter");
 const clients_service_1 = require("../clients/clients.service");
+const shop_gateway_1 = require("./shop.gateway");
 let ShopService = class ShopService {
-    constructor(productRepository, quotationRepository, bannersRepository, configService, clientsService, eventEmitter) {
+    constructor(productRepository, quotationRepository, bannersRepository, configService, clientsService, eventEmitter, shopGateway) {
         this.productRepository = productRepository;
         this.quotationRepository = quotationRepository;
         this.bannersRepository = bannersRepository;
         this.configService = configService;
         this.clientsService = clientsService;
         this.eventEmitter = eventEmitter;
+        this.shopGateway = shopGateway;
         this.currencyLocale = this.configService.get('CURRENCY_LOCALE') || 'en-ZA';
         this.currencyCode = this.configService.get('CURRENCY_CODE') || 'ZAR';
         this.currencySymbol = this.configService.get('CURRENCY_SYMBOL') || 'R';
@@ -142,6 +144,11 @@ let ShopService = class ShopService {
                     ? unique
                     : [...unique, item];
             }, []);
+            const productRefs = new Map(products.flat().map(product => [product.uid, product.productRef]));
+            const missingProducts = quotationData?.items?.filter(item => !productRefs.has(item.uid));
+            if (missingProducts?.length > 0) {
+                throw new Error(`Products not found for items: ${missingProducts.map(item => item.uid).join(', ')}`);
+            }
             const newQuotation = {
                 quotationNumber: `QUO-${Date.now()}`,
                 totalItems: Number(quotationData?.totalItems),
@@ -153,9 +160,11 @@ let ShopService = class ShopService {
                     quantity: Number(item?.quantity),
                     product: { uid: item?.uid },
                     totalPrice: Number(item?.totalPrice),
+                    itemCode: productRefs.get(item?.uid)
                 }))
             };
             await this.quotationRepository.save(newQuotation);
+            this.shopGateway.emitNewQuotation(newQuotation?.quotationNumber);
             const baseConfig = {
                 name: clientName,
                 quotationId: newQuotation?.quotationNumber,
@@ -472,6 +481,7 @@ exports.ShopService = ShopService = __decorate([
         typeorm_1.Repository,
         config_1.ConfigService,
         clients_service_1.ClientsService,
-        event_emitter_1.EventEmitter2])
+        event_emitter_1.EventEmitter2,
+        shop_gateway_1.ShopGateway])
 ], ShopService);
 //# sourceMappingURL=shop.service.js.map

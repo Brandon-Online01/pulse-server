@@ -9,6 +9,7 @@ import { ClientsModule } from '../clients/clients.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { CommunicationModule } from '../communication/communication.module';
 import { LicensingModule } from '../licensing/licensing.module';
+import { ShopGateway } from './shop.gateway';
 
 @Module({
   imports: [
@@ -19,7 +20,7 @@ import { LicensingModule } from '../licensing/licensing.module';
     TypeOrmModule.forFeature([Quotation, Product, Banners])
   ],
   controllers: [ShopController],
-  providers: [ShopService],
+  providers: [ShopService, ShopGateway],
   exports: [ShopService]
 })
 export class ShopModule { }

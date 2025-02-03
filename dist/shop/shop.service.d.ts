@@ -9,6 +9,7 @@ import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ClientsService } from '../clients/clients.service';
 import { CreateProductDto } from '../products/dto/create-product.dto';
+import { ShopGateway } from './shop.gateway';
 export declare class ShopService {
     private productRepository;
     private quotationRepository;
@@ -16,10 +17,11 @@ export declare class ShopService {
     private readonly configService;
     private readonly clientsService;
     private readonly eventEmitter;
+    private readonly shopGateway;
     private readonly currencyLocale;
     private readonly currencyCode;
     private readonly currencySymbol;
-    constructor(productRepository: Repository<Product>, quotationRepository: Repository<Quotation>, bannersRepository: Repository<Banners>, configService: ConfigService, clientsService: ClientsService, eventEmitter: EventEmitter2);
+    constructor(productRepository: Repository<Product>, quotationRepository: Repository<Quotation>, bannersRepository: Repository<Banners>, configService: ConfigService, clientsService: ClientsService, eventEmitter: EventEmitter2, shopGateway: ShopGateway);
     private formatCurrency;
     categories(): Promise<{
         categories: string[] | null;
