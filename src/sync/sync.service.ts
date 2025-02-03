@@ -192,7 +192,7 @@ export class SyncService {
         }
     }
 
-    @Cron(CronExpression.EVERY_5_MINUTES)
+    @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
     async syncAll() {
         try {
             const usersResult = await this.syncUsers();

@@ -86,10 +86,11 @@ let TasksService = class TasksService {
     async create(createTaskDto) {
         try {
             const now = new Date();
-            if (createTaskDto.deadline && new Date(createTaskDto.deadline) < now) {
+            const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            if (createTaskDto.deadline && new Date(createTaskDto.deadline) < startOfToday) {
                 throw new common_1.BadRequestException('Task deadline cannot be in the past');
             }
-            if (createTaskDto.repetitionEndDate && new Date(createTaskDto.repetitionEndDate) < now) {
+            if (createTaskDto.repetitionEndDate && new Date(createTaskDto.repetitionEndDate) < startOfToday) {
                 throw new common_1.BadRequestException('Repetition end date cannot be in the past');
             }
             const taskData = {
