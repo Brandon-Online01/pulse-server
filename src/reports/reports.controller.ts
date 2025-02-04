@@ -3,9 +3,10 @@ import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '../guards/auth.guard';
 import { RoleGuard } from '../guards/role.guard';
 import { Roles } from '../decorators/role.decorator';
-import { Controller, Get, UseGuards, Param } from '@nestjs/common';
+import { Controller, Get, UseGuards, Param, Post, Body, Query } from '@nestjs/common';
 import { AccessLevel } from '../lib/enums/user.enums';
 import { EnterpriseOnly } from '../decorators/enterprise-only.decorator';
+import { GenerateReportDto } from './dto/generate-report.dto';
 
 @ApiTags('reports')
 @Controller('reports')
@@ -26,5 +27,12 @@ export class ReportsController {
   @ApiOperation({ summary: 'get daily activity report, optionally filtered for specific user roles' })
   userDailyReport(@Param('reference') reference?: string) {
     return this.reportsService.userDailyReport(reference);
+  }
+
+  @Post('generate')
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
+  @ApiOperation({ summary: 'Generate a report based on type and filters' })
+  generateReport(@Body() generateReportDto: GenerateReportDto) {
+    return this.reportsService.generateReport(generateReportDto);
   }
 }

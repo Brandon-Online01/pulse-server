@@ -48,4 +48,58 @@ export declare class LeadsService {
             total: number;
         };
     }>;
+    getLeadsReport(filter: any): Promise<{
+        total: number;
+        metrics: {
+            conversionRate: string;
+            averageResponseTime: string;
+            topSources: {
+                source: string;
+                count: number;
+            }[];
+            qualityScore: number;
+            sourceEffectiveness: {
+                source: string;
+                totalLeads: number;
+                convertedLeads: number;
+                conversionRate: string;
+                averageResponseTime: string;
+                qualityScore: number;
+            }[];
+            geographicDistribution: Record<string, {
+                total: number;
+                converted: number;
+                conversionRate: string;
+            }>;
+            leadQualityBySource: {
+                source: string;
+                averageQualityScore: number;
+                leadDistribution: {
+                    high: number;
+                    medium: number;
+                    low: number;
+                };
+            }[];
+            conversionTrends: {
+                date: string;
+                totalLeads: number;
+                convertedLeads: number;
+                conversionRate: string;
+            }[];
+            responseTimeDistribution: Record<string, number>;
+        };
+        review: Lead[];
+        pending: Lead[];
+        approved: Lead[];
+        declined: Lead[];
+    }>;
+    private calculateAverageResponseTime;
+    private analyzeLeadSources;
+    private calculateQualityScore;
+    private analyzeSourceEffectiveness;
+    private analyzeGeographicDistribution;
+    private analyzeLeadQualityBySource;
+    private analyzeConversionTrends;
+    private analyzeResponseTimeDistribution;
+    private calculateIndividualLeadQualityScore;
 }

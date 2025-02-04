@@ -340,4 +340,341 @@ export class LeadsService {
       return response;
     }
   }
+
+  async getLeadsReport(filter: any) {
+    try {
+      const leads = await this.leadRepository.find({
+        where: {
+          ...filter,
+          isDeleted: false
+        },
+        relations: ['owner', 'branch', 'client']
+      });
+
+      if (!leads) {
+        throw new NotFoundException('No leads found for the specified period');
+      }
+
+      const groupedLeads = {
+        review: leads.filter(lead => lead.status === LeadStatus.REVIEW),
+        pending: leads.filter(lead => lead.status === LeadStatus.PENDING),
+        approved: leads.filter(lead => lead.status === LeadStatus.APPROVED),
+        declined: leads.filter(lead => lead.status === LeadStatus.DECLINED)
+      };
+
+      const totalLeads = leads.length;
+      const approvedLeads = groupedLeads.approved.length;
+      const avgResponseTime = this.calculateAverageResponseTime(leads);
+      const sources = this.analyzeLeadSources(leads);
+      const sourceEffectiveness = this.analyzeSourceEffectiveness(leads);
+      const geographicDistribution = this.analyzeGeographicDistribution(leads);
+      const leadQualityBySource = this.analyzeLeadQualityBySource(leads);
+      const conversionTrends = this.analyzeConversionTrends(leads);
+      const responseTimeDistribution = this.analyzeResponseTimeDistribution(leads);
+
+      return {
+        ...groupedLeads,
+        total: totalLeads,
+        metrics: {
+          conversionRate: `${((approvedLeads / totalLeads) * 100).toFixed(1)}%`,
+          averageResponseTime: `${avgResponseTime} hours`,
+          topSources: sources,
+          qualityScore: this.calculateQualityScore(leads),
+          sourceEffectiveness,
+          geographicDistribution,
+          leadQualityBySource,
+          conversionTrends,
+          responseTimeDistribution
+        }
+      };
+    } catch (error) {
+      return null;
+    }
+  }
+
+  private calculateAverageResponseTime(leads: Lead[]): number {
+    const respondedLeads = leads.filter(lead =>
+      lead.status === LeadStatus.APPROVED ||
+      lead.status === LeadStatus.DECLINED
+    );
+
+    if (respondedLeads.length === 0) return 0;
+
+    const totalResponseTime = respondedLeads.reduce((sum, lead) => {
+      const responseTime = lead.updatedAt.getTime() - lead.createdAt.getTime();
+      return sum + responseTime;
+    }, 0);
+
+    // Convert from milliseconds to hours
+    return Number((totalResponseTime / (respondedLeads.length * 60 * 60 * 1000)).toFixed(1));
+  }
+
+  private analyzeLeadSources(leads: Lead[]): Array<{ source: string; count: number }> {
+    const sourceCounts = leads.reduce((acc, lead) => {
+      const source = lead.client?.category || 'Direct';
+      acc[source] = (acc[source] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    return Object.entries(sourceCounts)
+      .map(([source, count]) => ({ source, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5); // Return top 5 sources
+  }
+
+  private calculateQualityScore(leads: Lead[]): number {
+    if (leads.length === 0) return 0;
+
+    const approvedLeads = leads.filter(lead => lead.status === LeadStatus.APPROVED).length;
+    const responseTimeScore = this.calculateAverageResponseTime(leads) < 24 ? 1 : 0.5;
+    const conversionRate = approvedLeads / leads.length;
+
+    // Calculate score out of 100
+    const score = ((conversionRate * 0.6 + responseTimeScore * 0.4) * 100);
+    return Number(score.toFixed(1));
+  }
+
+  private analyzeSourceEffectiveness(leads: Lead[]): Array<{
+    source: string;
+    totalLeads: number;
+    convertedLeads: number;
+    conversionRate: string;
+    averageResponseTime: string;
+    qualityScore: number;
+  }> {
+    const sourceStats = new Map<string, {
+      total: number;
+      converted: number;
+      totalResponseTime: number;
+      respondedLeads: number;
+      qualityScores: number[];
+    }>();
+
+    leads.forEach(lead => {
+      const source = lead.client?.category || 'Direct';
+
+      if (!sourceStats.has(source)) {
+        sourceStats.set(source, {
+          total: 0,
+          converted: 0,
+          totalResponseTime: 0,
+          respondedLeads: 0,
+          qualityScores: []
+        });
+      }
+
+      const stats = sourceStats.get(source);
+      stats.total++;
+
+      if (lead.status === LeadStatus.APPROVED) {
+        stats.converted++;
+      }
+
+      if (lead.status !== LeadStatus.PENDING) {
+        stats.respondedLeads++;
+        stats.totalResponseTime += lead.updatedAt.getTime() - lead.createdAt.getTime();
+      }
+
+      stats.qualityScores.push(this.calculateIndividualLeadQualityScore(lead));
+    });
+
+    return Array.from(sourceStats.entries())
+      .map(([source, stats]) => ({
+        source,
+        totalLeads: stats.total,
+        convertedLeads: stats.converted,
+        conversionRate: `${((stats.converted / stats.total) * 100).toFixed(1)}%`,
+        averageResponseTime: `${(
+          stats.respondedLeads > 0
+            ? stats.totalResponseTime / (stats.respondedLeads * 60 * 60 * 1000)
+            : 0
+        ).toFixed(1)} hours`,
+        qualityScore: Number((
+          stats.qualityScores.reduce((sum, score) => sum + score, 0) / stats.total
+        ).toFixed(1))
+      }))
+      .sort((a, b) => b.convertedLeads - a.convertedLeads);
+  }
+
+  private analyzeGeographicDistribution(leads: Lead[]): Record<string, {
+    total: number;
+    converted: number;
+    conversionRate: string;
+  }> {
+    const geoStats = new Map<string, {
+      total: number;
+      converted: number;
+    }>();
+
+    leads.forEach(lead => {
+      const region = lead.client?.address?.split(',').pop()?.trim() || 'Unknown';
+
+      if (!geoStats.has(region)) {
+        geoStats.set(region, {
+          total: 0,
+          converted: 0
+        });
+      }
+
+      const stats = geoStats.get(region);
+      stats.total++;
+      if (lead.status === LeadStatus.APPROVED) {
+        stats.converted++;
+      }
+    });
+
+    return Object.fromEntries(
+      Array.from(geoStats.entries())
+        .map(([region, stats]) => [
+          region,
+          {
+            total: stats.total,
+            converted: stats.converted,
+            conversionRate: `${((stats.converted / stats.total) * 100).toFixed(1)}%`
+          }
+        ])
+    );
+  }
+
+  private analyzeLeadQualityBySource(leads: Lead[]): Array<{
+    source: string;
+    averageQualityScore: number;
+    leadDistribution: {
+      high: number;
+      medium: number;
+      low: number;
+    };
+  }> {
+    const sourceQuality = new Map<string, {
+      scores: number[];
+      distribution: {
+        high: number;
+        medium: number;
+        low: number;
+      };
+    }>();
+
+    leads.forEach(lead => {
+      const source = lead.client?.category || 'Direct';
+      const qualityScore = this.calculateIndividualLeadQualityScore(lead);
+
+      if (!sourceQuality.has(source)) {
+        sourceQuality.set(source, {
+          scores: [],
+          distribution: {
+            high: 0,
+            medium: 0,
+            low: 0
+          }
+        });
+      }
+
+      const stats = sourceQuality.get(source);
+      stats.scores.push(qualityScore);
+
+      if (qualityScore >= 80) stats.distribution.high++;
+      else if (qualityScore >= 50) stats.distribution.medium++;
+      else stats.distribution.low++;
+    });
+
+    return Array.from(sourceQuality.entries())
+      .map(([source, stats]) => ({
+        source,
+        averageQualityScore: Number((
+          stats.scores.reduce((sum, score) => sum + score, 0) / stats.scores.length
+        ).toFixed(1)),
+        leadDistribution: stats.distribution
+      }))
+      .sort((a, b) => b.averageQualityScore - a.averageQualityScore);
+  }
+
+  private analyzeConversionTrends(leads: Lead[]): Array<{
+    date: string;
+    totalLeads: number;
+    convertedLeads: number;
+    conversionRate: string;
+  }> {
+    const dailyStats = new Map<string, {
+      total: number;
+      converted: number;
+    }>();
+
+    leads.forEach(lead => {
+      const date = lead.createdAt.toISOString().split('T')[0];
+
+      if (!dailyStats.has(date)) {
+        dailyStats.set(date, {
+          total: 0,
+          converted: 0
+        });
+      }
+
+      const stats = dailyStats.get(date);
+      stats.total++;
+      if (lead.status === LeadStatus.APPROVED) {
+        stats.converted++;
+      }
+    });
+
+    return Array.from(dailyStats.entries())
+      .map(([date, stats]) => ({
+        date,
+        totalLeads: stats.total,
+        convertedLeads: stats.converted,
+        conversionRate: `${((stats.converted / stats.total) * 100).toFixed(1)}%`
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+  }
+
+  private analyzeResponseTimeDistribution(leads: Lead[]): Record<string, number> {
+    const distribution = {
+      'Under 1 hour': 0,
+      '1-4 hours': 0,
+      '4-12 hours': 0,
+      '12-24 hours': 0,
+      'Over 24 hours': 0
+    };
+
+    leads.forEach(lead => {
+      if (lead.status === LeadStatus.PENDING) return;
+
+      const responseTime =
+        (lead.updatedAt.getTime() - lead.createdAt.getTime()) / (60 * 60 * 1000); // hours
+
+      if (responseTime < 1) distribution['Under 1 hour']++;
+      else if (responseTime < 4) distribution['1-4 hours']++;
+      else if (responseTime < 12) distribution['4-12 hours']++;
+      else if (responseTime < 24) distribution['12-24 hours']++;
+      else distribution['Over 24 hours']++;
+    });
+
+    return distribution;
+  }
+
+  private calculateIndividualLeadQualityScore(lead: Lead): number {
+    let score = 0;
+
+    // Response time score (40%)
+    if (lead.status !== LeadStatus.PENDING) {
+      const responseTime =
+        (lead.updatedAt.getTime() - lead.createdAt.getTime()) / (60 * 60 * 1000);
+      if (responseTime < 1) score += 40;
+      else if (responseTime < 4) score += 30;
+      else if (responseTime < 12) score += 20;
+      else if (responseTime < 24) score += 10;
+    }
+
+    // Status score (30%)
+    if (lead.status === LeadStatus.APPROVED) score += 30;
+    else if (lead.status === LeadStatus.REVIEW) score += 15;
+
+    // Data completeness score (30%)
+    if (lead.client) {
+      if (lead.client.email) score += 10;
+      if (lead.client.phone) score += 10;
+      if (lead.client.address) score += 10;
+    }
+
+    return score;
+  }
 }

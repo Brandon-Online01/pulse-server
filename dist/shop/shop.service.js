@@ -469,6 +469,150 @@ let ShopService = class ShopService {
             };
         }
     }
+    async getQuotationsReport(filter) {
+        try {
+            const quotations = await this.quotationRepository.find({
+                where: filter,
+                relations: ['placedBy', 'client', 'quotationItems', 'quotationItems.product']
+            });
+            if (!quotations) {
+                throw new common_1.NotFoundException('No quotations found for the specified period');
+            }
+            const groupedQuotations = {
+                pending: quotations.filter(quotation => quotation.status === status_enums_1.OrderStatus.PENDING),
+                approved: quotations.filter(quotation => quotation.status === status_enums_1.OrderStatus.APPROVED),
+                rejected: quotations.filter(quotation => quotation.status === status_enums_1.OrderStatus.REJECTED)
+            };
+            const totalQuotations = quotations.length;
+            const totalValue = quotations.reduce((sum, quotation) => sum + Number(quotation.totalAmount), 0);
+            const approvedQuotations = groupedQuotations.approved.length;
+            const productStats = this.analyzeProducts(quotations);
+            const orderTimeAnalysis = this.analyzeOrderTimes(quotations);
+            const shopAnalysis = this.analyzeShops(quotations);
+            const basketAnalysis = this.analyzeBaskets(quotations);
+            return {
+                ...groupedQuotations,
+                total: totalQuotations,
+                metrics: {
+                    totalQuotations,
+                    grossQuotationValue: this.formatCurrency(totalValue),
+                    averageQuotationValue: this.formatCurrency(totalQuotations > 0 ? totalValue / totalQuotations : 0),
+                    conversionRate: `${((approvedQuotations / totalQuotations) * 100).toFixed(1)}%`,
+                    topProducts: productStats.topProducts,
+                    leastSoldProducts: productStats.leastSoldProducts,
+                    peakOrderTimes: orderTimeAnalysis,
+                    averageBasketSize: basketAnalysis.averageSize,
+                    topShops: shopAnalysis
+                }
+            };
+        }
+        catch (error) {
+            return null;
+        }
+    }
+    analyzeProducts(quotations) {
+        const productStats = new Map();
+        quotations.forEach(quotation => {
+            quotation.quotationItems?.forEach(item => {
+                if (!productStats.has(item.product.uid)) {
+                    productStats.set(item.product.uid, {
+                        name: item.product.name,
+                        totalSold: 0,
+                        totalValue: 0,
+                        lastSoldDate: quotation.createdAt
+                    });
+                }
+                const stats = productStats.get(item.product.uid);
+                stats.totalSold += item.quantity;
+                stats.totalValue += Number(item.totalPrice);
+                if (quotation.createdAt > stats.lastSoldDate) {
+                    stats.lastSoldDate = quotation.createdAt;
+                }
+            });
+        });
+        const sortedProducts = Array.from(productStats.entries())
+            .map(([productId, stats]) => ({
+            productId,
+            productName: stats.name,
+            totalSold: stats.totalSold,
+            totalValue: this.formatCurrency(stats.totalValue),
+            lastSoldDate: stats.lastSoldDate
+        }));
+        return {
+            topProducts: [...sortedProducts]
+                .sort((a, b) => b.totalSold - a.totalSold)
+                .slice(0, 10),
+            leastSoldProducts: [...sortedProducts]
+                .sort((a, b) => a.totalSold - b.totalSold)
+                .slice(0, 10)
+        };
+    }
+    analyzeOrderTimes(quotations) {
+        const hourCounts = new Array(24).fill(0);
+        quotations.forEach(quotation => {
+            const hour = quotation.createdAt.getHours();
+            hourCounts[hour]++;
+        });
+        return hourCounts.map((count, hour) => ({
+            hour,
+            count,
+            percentage: `${((count / quotations.length) * 100).toFixed(1)}%`
+        }))
+            .sort((a, b) => b.count - a.count);
+    }
+    analyzeShops(quotations) {
+        const shopStats = new Map();
+        quotations.forEach(quotation => {
+            const shopId = quotation.placedBy?.branch?.uid;
+            const shopName = quotation.placedBy?.branch?.name;
+            if (shopId && shopName) {
+                if (!shopStats.has(shopId)) {
+                    shopStats.set(shopId, {
+                        name: shopName,
+                        orders: 0,
+                        totalValue: 0
+                    });
+                }
+                const stats = shopStats.get(shopId);
+                stats.orders++;
+                stats.totalValue += Number(quotation.totalAmount);
+            }
+        });
+        return Array.from(shopStats.entries())
+            .map(([shopId, stats]) => ({
+            shopId,
+            shopName: stats.name,
+            totalOrders: stats.orders,
+            totalValue: this.formatCurrency(stats.totalValue),
+            averageOrderValue: this.formatCurrency(stats.totalValue / stats.orders)
+        }))
+            .sort((a, b) => b.totalOrders - a.totalOrders);
+    }
+    analyzeBaskets(quotations) {
+        const basketSizes = quotations.map(quotation => quotation.quotationItems?.length || 0);
+        const totalItems = basketSizes.reduce((sum, size) => sum + size, 0);
+        const averageSize = totalItems / quotations.length;
+        const sizeDistribution = basketSizes.reduce((acc, size) => {
+            const range = this.getBasketSizeRange(size);
+            acc[range] = (acc[range] || 0) + 1;
+            return acc;
+        }, {});
+        return {
+            averageSize: Number(averageSize.toFixed(1)),
+            sizeDistribution
+        };
+    }
+    getBasketSizeRange(size) {
+        if (size === 1)
+            return '1 item';
+        if (size <= 3)
+            return '2-3 items';
+        if (size <= 5)
+            return '4-5 items';
+        if (size <= 10)
+            return '6-10 items';
+        return '10+ items';
+    }
 };
 exports.ShopService = ShopService;
 exports.ShopService = ShopService = __decorate([

@@ -14,12 +14,13 @@ import { UserModule } from '../user/user.module';
 import { RewardsModule } from '../rewards/rewards.module';
 import { CheckInsModule } from '../check-ins/check-ins.module';
 import { LicensingModule } from '../licensing/licensing.module';
-import { TrackingModule } from 'src/tracking/tracking.module';
+import { TrackingModule } from '../tracking/tracking.module';
+import { CheckIn } from '../check-ins/entities/check-in.entity';
 
 @Module({
   imports: [
     LicensingModule,
-    TypeOrmModule.forFeature([Report]),
+    TypeOrmModule.forFeature([Report, CheckIn]),
     LeadsModule,
     JournalModule,
     ClaimsModule,

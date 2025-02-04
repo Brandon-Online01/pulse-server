@@ -21,6 +21,7 @@ const role_decorator_1 = require("../decorators/role.decorator");
 const common_1 = require("@nestjs/common");
 const user_enums_1 = require("../lib/enums/user.enums");
 const enterprise_only_decorator_1 = require("../decorators/enterprise-only.decorator");
+const generate_report_dto_1 = require("./dto/generate-report.dto");
 let ReportsController = class ReportsController {
     constructor(reportsService) {
         this.reportsService = reportsService;
@@ -30,6 +31,9 @@ let ReportsController = class ReportsController {
     }
     userDailyReport(reference) {
         return this.reportsService.userDailyReport(reference);
+    }
+    generateReport(generateReportDto) {
+        return this.reportsService.generateReport(generateReportDto);
     }
 };
 exports.ReportsController = ReportsController;
@@ -50,6 +54,15 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], ReportsController.prototype, "userDailyReport", null);
+__decorate([
+    (0, common_1.Post)('generate'),
+    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER),
+    (0, swagger_1.ApiOperation)({ summary: 'Generate a report based on type and filters' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [generate_report_dto_1.GenerateReportDto]),
+    __metadata("design:returntype", void 0)
+], ReportsController.prototype, "generateReport", null);
 exports.ReportsController = ReportsController = __decorate([
     (0, swagger_1.ApiTags)('reports'),
     (0, common_1.Controller)('reports'),

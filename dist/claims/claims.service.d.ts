@@ -65,4 +65,52 @@ export declare class ClaimsService {
         totalValue: string;
         byCategory: Record<ClaimCategory, number>;
     }>;
+    getClaimsReport(filter: any): Promise<{
+        total: number;
+        totalValue: number;
+        metrics: {
+            totalClaims: number;
+            averageClaimValue: number;
+            approvalRate: string;
+            averageProcessingTime: string;
+            categoryBreakdown: {
+                category: ClaimCategory;
+                count: number;
+                totalValue: string;
+                averageValue: string;
+            }[];
+            topClaimants: {
+                userId: number;
+                userName: string;
+                totalClaims: number;
+                totalValue: string;
+                approvalRate: string;
+            }[];
+            claimValueDistribution: Record<string, number>;
+            monthlyTrends: {
+                month: string;
+                totalClaims: number;
+                totalValue: string;
+                approvalRate: string;
+            }[];
+            branchPerformance: {
+                branchId: number;
+                branchName: string;
+                totalClaims: number;
+                totalValue: string;
+                averageProcessingTime: string;
+                approvalRate: string;
+            }[];
+        };
+        paid: Claim[];
+        pending: Claim[];
+        approved: Claim[];
+        declined: Claim[];
+    }>;
+    private calculateAverageProcessingTime;
+    private analyzeCategoryBreakdown;
+    private analyzeTopClaimants;
+    private analyzeClaimValueDistribution;
+    private analyzeMonthlyTrends;
+    private analyzeBranchPerformance;
 }

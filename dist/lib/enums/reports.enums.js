@@ -22,5 +22,7 @@ var ReportType;
     ReportType["LEAD"] = "lead";
     ReportType["NEWS"] = "news";
     ReportType["TASK"] = "task";
+    ReportType["CLAIM"] = "claim";
+    ReportType["QUOTATION"] = "quotation";
 })(ReportType || (exports.ReportType = ReportType = {}));
 //# sourceMappingURL=reports.enums.js.map

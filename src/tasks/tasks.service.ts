@@ -608,4 +608,227 @@ export class TasksService {
 			throw new BadRequestException(error?.message);
 		}
 	}
+
+	async getTasksReport(filter: any) {
+		try {
+			const tasks = await this.taskRepository.find({
+				where: {
+					...filter,
+					isDeleted: false
+				},
+				relations: ['assignees', 'clients', 'subtasks', 'createdBy']
+			});
+
+			if (!tasks) {
+				throw new NotFoundException('No tasks found for the specified period');
+			}
+
+			const groupedTasks = {
+				pending: tasks.filter(task => task.status === TaskStatus.PENDING),
+				inProgress: tasks.filter(task => task.status === TaskStatus.IN_PROGRESS),
+				completed: tasks.filter(task => task.status === TaskStatus.COMPLETED),
+				overdue: tasks.filter(task => task.status === TaskStatus.OVERDUE)
+			};
+
+			const totalTasks = tasks.length;
+			const completedTasks = groupedTasks.completed.length;
+			const avgCompletionTime = this.calculateAverageCompletionTime(tasks);
+			const overdueRate = this.calculateOverdueRate(tasks);
+			const taskDistribution = this.analyzeTaskDistribution(tasks);
+			const incompletionReasons = this.analyzeIncompletionReasons(tasks);
+			const clientCompletionRates = this.analyzeClientCompletionRates(tasks);
+			const taskPriorityDistribution = this.analyzeTaskPriorityDistribution(tasks);
+			const assigneePerformance = this.analyzeAssigneePerformance(tasks);
+
+			return {
+				...groupedTasks,
+				total: totalTasks,
+				metrics: {
+					completionRate: `${((completedTasks / totalTasks) * 100).toFixed(1)}%`,
+					averageCompletionTime: `${avgCompletionTime} hours`,
+					overdueRate: `${overdueRate}%`,
+					taskDistribution,
+					incompletionReasons,
+					clientCompletionRates,
+					taskPriorityDistribution,
+					assigneePerformance
+				}
+			};
+		} catch (error) {
+			return null;
+		}
+	}
+
+	private calculateAverageCompletionTime(tasks: Task[]): number {
+		const completedTasks = tasks.filter(task =>
+			task.status === TaskStatus.COMPLETED &&
+			task.lastCompletedAt
+		);
+
+		if (completedTasks.length === 0) return 0;
+
+		const totalCompletionTime = completedTasks.reduce((sum, task) => {
+			const completionTime = task.lastCompletedAt.getTime() - task.createdAt.getTime();
+			return sum + completionTime;
+		}, 0);
+
+		// Convert from milliseconds to hours
+		return Number((totalCompletionTime / (completedTasks.length * 60 * 60 * 1000)).toFixed(1));
+	}
+
+	private calculateOverdueRate(tasks: Task[]): number {
+		if (tasks.length === 0) return 0;
+		const overdueTasks = tasks.filter(task => task.isOverdue || task.status === TaskStatus.OVERDUE).length;
+		return Number(((overdueTasks / tasks.length) * 100).toFixed(1));
+	}
+
+	private analyzeTaskDistribution(tasks: Task[]): Record<TaskType, number> {
+		const distribution = Object.values(TaskType).reduce((acc, type) => {
+			acc[type] = 0;
+			return acc;
+		}, {} as Record<TaskType, number>);
+
+		tasks.forEach(task => {
+			if (task.taskType) {
+				distribution[task.taskType]++;
+			}
+		});
+
+		return distribution;
+	}
+
+	private analyzeIncompletionReasons(tasks: Task[]): Array<{ reason: string; count: number }> {
+		const incompleteTasks = tasks.filter(task =>
+			task.status === TaskStatus.CANCELLED ||
+			task.status === TaskStatus.MISSED ||
+			task.status === TaskStatus.OVERDUE
+		);
+
+		const reasons = incompleteTasks.reduce((acc, task) => {
+			const reason = this.determineIncompletionReason(task);
+			acc[reason] = (acc[reason] || 0) + 1;
+			return acc;
+		}, {} as Record<string, number>);
+
+		return Object.entries(reasons)
+			.map(([reason, count]) => ({ reason, count }))
+			.sort((a, b) => b.count - a.count);
+	}
+
+	private determineIncompletionReason(task: Task): string {
+		if (task.status === TaskStatus.OVERDUE) return 'Deadline Missed';
+		if (task.status === TaskStatus.CANCELLED) return 'Cancelled';
+		if (task.status === TaskStatus.MISSED) {
+			if (!task.lastCompletedAt) return 'Never Started';
+			if (task.progress < 50) return 'Insufficient Progress';
+			return 'Incomplete Work';
+		}
+		return 'Other';
+	}
+
+	private analyzeClientCompletionRates(tasks: Task[]): Array<{
+		clientId: number;
+		clientName: string;
+		totalTasks: number;
+		completedTasks: number;
+		completionRate: string;
+	}> {
+		const clientTasks = new Map<number, {
+			clientName: string;
+			total: number;
+			completed: number;
+		}>();
+
+		tasks.forEach(task => {
+			task.clients?.forEach(client => {
+				if (!clientTasks.has(client.uid)) {
+					clientTasks.set(client.uid, {
+						clientName: client.name,
+						total: 0,
+						completed: 0
+					});
+				}
+
+				const stats = clientTasks.get(client.uid);
+				stats.total++;
+				if (task.status === TaskStatus.COMPLETED) {
+					stats.completed++;
+				}
+			});
+		});
+
+		return Array.from(clientTasks.entries())
+			.map(([clientId, stats]) => ({
+				clientId,
+				clientName: stats.clientName,
+				totalTasks: stats.total,
+				completedTasks: stats.completed,
+				completionRate: `${((stats.completed / stats.total) * 100).toFixed(1)}%`
+			}))
+			.sort((a, b) =>
+				(b.completedTasks / b.totalTasks) - (a.completedTasks / a.totalTasks)
+			);
+	}
+
+	private analyzeTaskPriorityDistribution(tasks: Task[]): Record<TaskPriority, number> {
+		return tasks.reduce((acc, task) => {
+			acc[task.priority] = (acc[task.priority] || 0) + 1;
+			return acc;
+		}, {} as Record<TaskPriority, number>);
+	}
+
+	private analyzeAssigneePerformance(tasks: Task[]): Array<{
+		assigneeId: number;
+		assigneeName: string;
+		totalTasks: number;
+		completedTasks: number;
+		completionRate: string;
+		averageCompletionTime: string;
+	}> {
+		const assigneeStats = new Map<number, {
+			name: string;
+			total: number;
+			completed: number;
+			totalCompletionTime: number;
+		}>();
+
+		tasks.forEach(task => {
+			task.assignees?.forEach(assignee => {
+				if (!assigneeStats.has(assignee.uid)) {
+					assigneeStats.set(assignee.uid, {
+						name: assignee.username,
+						total: 0,
+						completed: 0,
+						totalCompletionTime: 0
+					});
+				}
+
+				const stats = assigneeStats.get(assignee.uid);
+				stats.total++;
+
+				if (task.status === TaskStatus.COMPLETED && task.lastCompletedAt) {
+					stats.completed++;
+					stats.totalCompletionTime +=
+						task.lastCompletedAt.getTime() - task.createdAt.getTime();
+				}
+			});
+		});
+
+		return Array.from(assigneeStats.entries())
+			.map(([assigneeId, stats]) => ({
+				assigneeId,
+				assigneeName: stats.name,
+				totalTasks: stats.total,
+				completedTasks: stats.completed,
+				completionRate: `${((stats.completed / stats.total) * 100).toFixed(1)}%`,
+				averageCompletionTime: `${(
+					stats.completed > 0
+						? (stats.totalCompletionTime / (stats.completed * 60 * 60 * 1000))
+						: 0
+				).toFixed(1)} hours`
+			}))
+			.sort((a, b) =>
+				(b.completedTasks / b.totalTasks) - (a.completedTasks / a.totalTasks)
+			);
+	}
 }

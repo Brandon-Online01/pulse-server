@@ -18,4 +18,6 @@ export enum ReportType {
     LEAD = 'lead',
     NEWS = 'news',
     TASK = 'task',
+    CLAIM = 'claim',
+    QUOTATION = 'quotation',
 }

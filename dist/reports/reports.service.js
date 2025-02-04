@@ -34,9 +34,12 @@ const email_enums_1 = require("../lib/enums/email.enums");
 const config_1 = require("@nestjs/config");
 const rewards_service_1 = require("../rewards/rewards.service");
 const tracking_service_1 = require("../tracking/tracking.service");
+const date_fns_1 = require("date-fns");
+const check_in_entity_1 = require("../check-ins/entities/check-in.entity");
 let ReportsService = class ReportsService {
-    constructor(reportRepository, leadService, journalService, claimsService, tasksService, shopService, attendanceService, newsService, userService, trackingService, eventEmitter, configService, rewardsService) {
+    constructor(reportRepository, checkInRepository, leadService, journalService, claimsService, tasksService, shopService, attendanceService, newsService, userService, trackingService, eventEmitter, configService, rewardsService) {
         this.reportRepository = reportRepository;
+        this.checkInRepository = checkInRepository;
         this.leadService = leadService;
         this.journalService = journalService;
         this.claimsService = claimsService;
@@ -284,6 +287,422 @@ let ReportsService = class ReportsService {
             return this.handleError(error);
         }
     }
+    async generateReport(params) {
+        try {
+            const { startDate, endDate, period, type, branchId } = params;
+            let reportData = {};
+            let title = '';
+            let description = '';
+            const currentStartDate = new Date(startDate);
+            const currentEndDate = new Date(endDate);
+            const previousStartDate = new Date(startDate);
+            const previousEndDate = new Date(startDate);
+            switch (period) {
+                case 'daily':
+                    previousStartDate.setDate(previousStartDate.getDate() - 1);
+                    previousEndDate.setDate(previousEndDate.getDate() - 1);
+                    break;
+                case 'weekly':
+                    previousStartDate.setDate(previousStartDate.getDate() - 7);
+                    previousEndDate.setDate(previousEndDate.getDate() - 7);
+                    break;
+                case 'monthly':
+                    previousStartDate.setMonth(previousStartDate.getMonth() - 1);
+                    previousEndDate.setMonth(previousEndDate.getMonth() - 1);
+                    break;
+            }
+            const dateFilter = {
+                createdAt: {
+                    gte: currentStartDate,
+                    lte: currentEndDate
+                }
+            };
+            const previousDateFilter = {
+                createdAt: {
+                    gte: previousStartDate,
+                    lte: previousEndDate
+                }
+            };
+            const branchFilter = branchId ? { branch: { uid: branchId } } : {};
+            const currentFilter = { ...dateFilter, ...branchFilter };
+            const previousFilter = { ...previousDateFilter, ...branchFilter };
+            switch (type) {
+                case reports_enums_1.ReportType.CLAIM:
+                    const [currentClaimsData, previousClaimsData] = await Promise.all([
+                        this.claimsService.getClaimsReport(currentFilter),
+                        this.claimsService.getClaimsReport(previousFilter)
+                    ]);
+                    const currentTotalValue = currentClaimsData?.totalValue || 0;
+                    const previousTotalValue = previousClaimsData?.totalValue || 0;
+                    const valueGrowth = this.calculateGrowth(currentTotalValue, previousTotalValue);
+                    reportData = {
+                        total: currentClaimsData?.total || 0,
+                        paid: currentClaimsData?.paid || [],
+                        pending: currentClaimsData?.pending || [],
+                        approved: currentClaimsData?.approved || [],
+                        declined: currentClaimsData?.declined || [],
+                        totalValue: this.formatCurrency(currentTotalValue),
+                        metrics: {
+                            averageClaimValue: this.formatCurrency(currentClaimsData?.metrics?.averageClaimValue || 0),
+                            totalClaims: currentClaimsData?.metrics?.totalClaims || 0,
+                            approvalRate: currentClaimsData?.metrics?.approvalRate || '0%',
+                            processingTime: currentClaimsData?.metrics?.averageProcessingTime || '0 days',
+                            valueGrowth,
+                            categoryBreakdown: currentClaimsData?.metrics?.categoryBreakdown || {},
+                            topClaimants: currentClaimsData?.metrics?.topClaimants || [],
+                            claimTrends: {
+                                thisMonth: currentClaimsData?.metrics?.totalClaims || 0,
+                                lastMonth: previousClaimsData?.metrics?.totalClaims || 0,
+                                growth: this.calculateGrowth(currentClaimsData?.metrics?.totalClaims || 0, previousClaimsData?.metrics?.totalClaims || 0)
+                            }
+                        }
+                    };
+                    title = 'Claims Report';
+                    description = `Claims report for period ${startDate} to ${endDate}`;
+                    break;
+                case reports_enums_1.ReportType.QUOTATION:
+                    const [currentQuotationsData, previousQuotationsData] = await Promise.all([
+                        this.shopService.getQuotationsReport(currentFilter),
+                        this.shopService.getQuotationsReport(previousFilter)
+                    ]);
+                    reportData = {
+                        total: currentQuotationsData?.total || 0,
+                        pending: currentQuotationsData?.pending || [],
+                        approved: currentQuotationsData?.approved || [],
+                        rejected: currentQuotationsData?.rejected || [],
+                        metrics: {
+                            totalQuotations: currentQuotationsData?.metrics?.totalQuotations || 0,
+                            grossQuotationValue: this.formatCurrency(Number(currentQuotationsData?.metrics?.grossQuotationValue?.replace(/[^0-9.-]+/g, '')) || 0),
+                            averageQuotationValue: this.formatCurrency(Number(currentQuotationsData?.metrics?.averageQuotationValue?.replace(/[^0-9.-]+/g, '')) || 0),
+                            conversionRate: currentQuotationsData?.metrics?.conversionRate || '0%',
+                            quotationTrends: {
+                                thisMonth: currentQuotationsData?.metrics?.totalQuotations || 0,
+                                lastMonth: previousQuotationsData?.metrics?.totalQuotations || 0,
+                                growth: this.calculateGrowth(currentQuotationsData?.metrics?.totalQuotations || 0, previousQuotationsData?.metrics?.totalQuotations || 0)
+                            },
+                            topProducts: currentQuotationsData?.metrics?.topProducts || [],
+                            leastSoldProducts: currentQuotationsData?.metrics?.leastSoldProducts || [],
+                            peakOrderTimes: currentQuotationsData?.metrics?.peakOrderTimes || [],
+                            averageBasketSize: currentQuotationsData?.metrics?.averageBasketSize || 0,
+                            topShops: currentQuotationsData?.metrics?.topShops || []
+                        }
+                    };
+                    title = 'Quotations Report';
+                    description = `Quotations report for period ${startDate} to ${endDate}`;
+                    break;
+                case reports_enums_1.ReportType.LEAD:
+                    const [currentLeadsData, previousLeadsData] = await Promise.all([
+                        this.leadService.getLeadsReport(currentFilter),
+                        this.leadService.getLeadsReport(previousFilter)
+                    ]);
+                    reportData = {
+                        total: currentLeadsData?.total || 0,
+                        review: currentLeadsData?.review || [],
+                        pending: currentLeadsData?.pending || [],
+                        approved: currentLeadsData?.approved || [],
+                        declined: currentLeadsData?.declined || [],
+                        metrics: {
+                            conversionRate: currentLeadsData?.metrics?.conversionRate || '0%',
+                            averageResponseTime: currentLeadsData?.metrics?.averageResponseTime || '0 hours',
+                            topSources: currentLeadsData?.metrics?.topSources || [],
+                            qualityScore: currentLeadsData?.metrics?.qualityScore || 0,
+                            leadTrends: {
+                                thisMonth: currentLeadsData?.total || 0,
+                                lastMonth: previousLeadsData?.total || 0,
+                                growth: this.calculateGrowth(currentLeadsData?.total || 0, previousLeadsData?.total || 0)
+                            },
+                            sourceEffectiveness: currentLeadsData?.metrics?.sourceEffectiveness || {},
+                            geographicDistribution: currentLeadsData?.metrics?.geographicDistribution || {},
+                            leadQualityBySource: currentLeadsData?.metrics?.leadQualityBySource || {}
+                        }
+                    };
+                    title = 'Leads Report';
+                    description = `Leads report for period ${startDate} to ${endDate}`;
+                    break;
+                case reports_enums_1.ReportType.TASK:
+                    const [currentTasksData, previousTasksData] = await Promise.all([
+                        this.tasksService.getTasksReport(currentFilter),
+                        this.tasksService.getTasksReport(previousFilter)
+                    ]);
+                    reportData = {
+                        total: currentTasksData?.total || 0,
+                        pending: currentTasksData?.pending || [],
+                        inProgress: currentTasksData?.inProgress || [],
+                        completed: currentTasksData?.completed || [],
+                        overdue: currentTasksData?.overdue || [],
+                        metrics: {
+                            completionRate: currentTasksData?.metrics?.completionRate || '0%',
+                            averageCompletionTime: currentTasksData?.metrics?.averageCompletionTime || '0 hours',
+                            overdueRate: currentTasksData?.metrics?.overdueRate || '0%',
+                            taskDistribution: currentTasksData?.metrics?.taskDistribution || {},
+                            taskTrends: {
+                                thisMonth: currentTasksData?.total || 0,
+                                lastMonth: previousTasksData?.total || 0,
+                                growth: this.calculateGrowth(currentTasksData?.total || 0, previousTasksData?.total || 0)
+                            },
+                            incompletionReasons: currentTasksData?.metrics?.incompletionReasons || [],
+                            clientCompletionRates: currentTasksData?.metrics?.clientCompletionRates || [],
+                            taskPriorityDistribution: currentTasksData?.metrics?.taskPriorityDistribution || {},
+                            assigneePerformance: currentTasksData?.metrics?.assigneePerformance || []
+                        }
+                    };
+                    title = 'Tasks Report';
+                    description = `Tasks report for period ${startDate} to ${endDate}`;
+                    break;
+                default:
+                    throw new Error('Invalid report type');
+            }
+            const report = this.reportRepository.create({
+                title,
+                description,
+                type,
+                metadata: {
+                    period,
+                    startDate,
+                    endDate,
+                    branchId,
+                    generatedAt: new Date(),
+                    ...reportData
+                }
+            });
+            await this.reportRepository.save(report);
+            return report;
+        }
+        catch (error) {
+            return this.handleError(error);
+        }
+    }
+    calculateGrowthPercentage(current, previous) {
+        if (previous === 0)
+            return '+100%';
+        const growth = ((current - previous) / previous) * 100;
+        return `${growth >= 0 ? '+' : ''}${growth.toFixed(1)}%`;
+    }
+    async getCheckInsReport(filter) {
+        try {
+            const checkIns = await this.checkInRepository.find({
+                where: filter,
+                relations: ['owner', 'branch', 'client']
+            });
+            if (!checkIns) {
+                throw new common_1.NotFoundException('No check-ins found for the specified period');
+            }
+            const totalCheckIns = checkIns.length;
+            const totalDuration = checkIns.reduce((sum, checkIn) => {
+                if (checkIn.checkOutTime) {
+                    const duration = (0, date_fns_1.differenceInMinutes)(new Date(checkIn.checkOutTime), new Date(checkIn.checkInTime));
+                    return sum + duration;
+                }
+                return sum;
+            }, 0);
+            const averageDuration = totalCheckIns > 0 ? totalDuration / totalCheckIns : 0;
+            const employeeStats = this.analyzeEmployeeAttendance(checkIns);
+            const locationStats = this.analyzeCheckInLocations(checkIns);
+            const timeStats = this.analyzeCheckInTimes(checkIns);
+            return {
+                totalCheckIns,
+                totalDurationMinutes: totalDuration,
+                averageDurationMinutes: Math.round(averageDuration),
+                metrics: {
+                    employeeStats,
+                    locationStats,
+                    timeStats,
+                    completionRate: `${((checkIns.filter(c => c.checkOutTime).length / totalCheckIns) * 100).toFixed(1)}%`
+                }
+            };
+        }
+        catch (error) {
+            return null;
+        }
+    }
+    getLocationString(checkInLocation) {
+        if (!checkInLocation)
+            return 'Unknown';
+        if (typeof checkInLocation === 'string')
+            return checkInLocation;
+        return checkInLocation.address || 'Unknown';
+    }
+    analyzeEmployeeAttendance(checkIns) {
+        const employeeStats = new Map();
+        checkIns.forEach(checkIn => {
+            if (!employeeStats.has(checkIn.owner.uid)) {
+                employeeStats.set(checkIn.owner.uid, {
+                    name: checkIn.owner.username,
+                    checkIns: 0,
+                    totalDuration: 0,
+                    completedCheckIns: 0,
+                    locations: {}
+                });
+            }
+            const stats = employeeStats.get(checkIn.owner.uid);
+            stats.checkIns++;
+            if (checkIn.checkOutTime) {
+                stats.completedCheckIns++;
+                stats.totalDuration += (0, date_fns_1.differenceInMinutes)(new Date(checkIn.checkOutTime), new Date(checkIn.checkInTime));
+            }
+            const location = this.getLocationString(checkIn.checkInLocation);
+            stats.locations[location] = (stats.locations[location] || 0) + 1;
+        });
+        return Array.from(employeeStats.entries())
+            .map(([employeeId, stats]) => ({
+            employeeId,
+            employeeName: stats.name,
+            totalCheckIns: stats.checkIns,
+            averageDuration: Math.round(stats.totalDuration / stats.completedCheckIns || 0),
+            completedCheckIns: stats.completedCheckIns,
+            mostFrequentLocation: Object.entries(stats.locations)
+                .sort((a, b) => b[1] - a[1])[0]?.[0] || 'Unknown'
+        }))
+            .sort((a, b) => b.totalCheckIns - a.totalCheckIns);
+    }
+    analyzeCheckInLocations(checkIns) {
+        const locationStats = new Map();
+        checkIns.forEach(checkIn => {
+            const location = this.getLocationString(checkIn.checkInLocation);
+            if (!locationStats.has(location)) {
+                locationStats.set(location, {
+                    checkIns: 0,
+                    employees: new Set(),
+                    totalDuration: 0,
+                    completedCheckIns: 0
+                });
+            }
+            const stats = locationStats.get(location);
+            stats.checkIns++;
+            stats.employees.add(checkIn.owner.uid);
+            if (checkIn.checkOutTime) {
+                stats.completedCheckIns++;
+                stats.totalDuration += (0, date_fns_1.differenceInMinutes)(new Date(checkIn.checkOutTime), new Date(checkIn.checkInTime));
+            }
+        });
+        return Array.from(locationStats.entries())
+            .map(([location, stats]) => ({
+            location,
+            totalCheckIns: stats.checkIns,
+            uniqueEmployees: stats.employees.size,
+            averageDuration: Math.round(stats.totalDuration / stats.completedCheckIns || 0)
+        }))
+            .sort((a, b) => b.totalCheckIns - a.totalCheckIns);
+    }
+    analyzeCheckInTimes(checkIns) {
+        const hourCounts = new Array(24).fill(0);
+        let totalStartMinutes = 0;
+        let totalEndMinutes = 0;
+        let totalDuration = 0;
+        let completedCheckIns = 0;
+        checkIns.forEach(checkIn => {
+            const startHour = new Date(checkIn.checkInTime).getHours();
+            hourCounts[startHour]++;
+            const startMinutes = startHour * 60 + new Date(checkIn.checkInTime).getMinutes();
+            totalStartMinutes += startMinutes;
+            if (checkIn.checkOutTime) {
+                completedCheckIns++;
+                const endHour = new Date(checkIn.checkOutTime).getHours();
+                const endMinutes = endHour * 60 + new Date(checkIn.checkOutTime).getMinutes();
+                totalEndMinutes += endMinutes;
+                totalDuration += (0, date_fns_1.differenceInMinutes)(new Date(checkIn.checkOutTime), new Date(checkIn.checkInTime));
+            }
+        });
+        const avgStartMinutes = Math.round(totalStartMinutes / checkIns.length);
+        const avgEndMinutes = Math.round(totalEndMinutes / completedCheckIns);
+        return {
+            peakHours: hourCounts
+                .map((count, hour) => ({ hour, count }))
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 5),
+            averageStartTime: `${Math.floor(avgStartMinutes / 60)}:${String(avgStartMinutes % 60).padStart(2, '0')}`,
+            averageEndTime: `${Math.floor(avgEndMinutes / 60)}:${String(avgEndMinutes % 60).padStart(2, '0')}`,
+            averageDuration: Math.round(totalDuration / completedCheckIns)
+        };
+    }
+    async getDailyFlashReport() {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const filter = {
+            createdAt: {
+                gte: today,
+                lt: tomorrow
+            }
+        };
+        const [salesData, attendanceData] = await Promise.all([
+            this.shopService.getQuotationsReport(filter),
+            this.getCheckInsReport(filter)
+        ]);
+        return {
+            date: today.toISOString().split('T')[0],
+            sales: {
+                totalQuotations: salesData?.total || 0,
+                totalValue: salesData?.metrics?.grossQuotationValue || '0',
+                conversionRate: salesData?.metrics?.conversionRate || '0%',
+                topProducts: salesData?.metrics?.topProducts?.slice(0, 3) || []
+            },
+            attendance: {
+                totalCheckIns: attendanceData?.totalCheckIns || 0,
+                averageDuration: attendanceData?.averageDurationMinutes || 0,
+                completionRate: attendanceData?.metrics?.completionRate || '0%',
+                presentEmployees: attendanceData?.metrics?.employeeStats?.length || 0
+            }
+        };
+    }
+    async getWeeklyJournalFlashReport() {
+        const today = new Date();
+        const weekStart = new Date(today);
+        weekStart.setDate(weekStart.getDate() - 7);
+        weekStart.setHours(0, 0, 0, 0);
+        const filter = {
+            createdAt: {
+                gte: weekStart,
+                lte: today
+            }
+        };
+        const journalData = await this.journalService.getJournalsReport(filter);
+        return {
+            period: `${weekStart.toISOString().split('T')[0]} to ${today.toISOString().split('T')[0]}`,
+            totalJournals: journalData?.metrics?.totalEntries || 0,
+            completionRate: journalData?.metrics?.completionRate || '0%',
+            topContributors: journalData?.metrics?.topCategories?.slice(0, 3) || [],
+            categoryBreakdown: journalData?.metrics?.topCategories || {}
+        };
+    }
+    async getMonthlyClaimsFlashReport() {
+        const today = new Date();
+        const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+        const lastMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+        const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
+        const [currentMonthData, lastMonthData] = await Promise.all([
+            this.claimsService.getClaimsReport({
+                createdAt: {
+                    gte: monthStart,
+                    lte: today
+                }
+            }),
+            this.claimsService.getClaimsReport({
+                createdAt: {
+                    gte: lastMonthStart,
+                    lte: lastMonthEnd
+                }
+            })
+        ]);
+        const currentTotal = currentMonthData?.total || 0;
+        const lastTotal = lastMonthData?.total || 0;
+        const growth = this.calculateGrowthPercentage(currentTotal, lastTotal);
+        return {
+            period: monthStart.toISOString().split('T')[0],
+            currentMonth: {
+                totalClaims: currentTotal,
+                totalValue: currentMonthData?.totalValue || 0,
+                approvalRate: currentMonthData?.metrics?.approvalRate || '0%',
+                averageValue: currentMonthData?.metrics?.averageClaimValue || 0
+            },
+            comparison: {
+                claimsGrowth: growth,
+                valueGrowth: this.calculateGrowthPercentage(currentMonthData?.totalValue || 0, lastMonthData?.totalValue || 0)
+            },
+            topCategories: currentMonthData?.metrics?.categoryBreakdown?.slice(0, 3) || []
+        };
+    }
 };
 exports.ReportsService = ReportsService;
 __decorate([
@@ -295,7 +714,9 @@ __decorate([
 exports.ReportsService = ReportsService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(report_entity_1.Report)),
+    __param(1, (0, typeorm_1.InjectRepository)(check_in_entity_1.CheckIn)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
         leads_service_1.LeadsService,
         journal_service_1.JournalService,
         claims_service_1.ClaimsService,

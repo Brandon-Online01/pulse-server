@@ -312,4 +312,84 @@ export class JournalService {
       };
     }
   }
+
+  async getJournalsReport(filter: any) {
+    try {
+      const journals = await this.journalRepository.find({
+        where: {
+          ...filter,
+          isDeleted: false
+        },
+        relations: ['owner', 'branch'],
+        order: {
+          timestamp: 'DESC'
+        }
+      });
+
+      if (!journals) {
+        throw new NotFoundException('No journals found for the specified period');
+      }
+
+      const totalEntries = journals.length;
+      const categories = this.analyzeJournalCategories(journals);
+      const entriesPerDay = this.calculateEntriesPerDay(journals);
+      const completionRate = this.calculateCompletionRate(journals);
+
+      return {
+        entries: journals,
+        metrics: {
+          totalEntries,
+          averageEntriesPerDay: entriesPerDay,
+          topCategories: categories,
+          completionRate: `${completionRate}%`
+        }
+      };
+    } catch (error) {
+      return null;
+    }
+  }
+
+  private analyzeJournalCategories(journals: Journal[]): Array<{ category: string; count: number }> {
+    const categoryCounts = journals.reduce((acc, journal) => {
+      // Extract category from comments or clientRef if available
+      const category = this.extractCategory(journal);
+      acc[category] = (acc[category] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    return Object.entries(categoryCounts)
+      .map(([category, count]) => ({ category, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5); // Return top 5 categories
+  }
+
+  private extractCategory(journal: Journal): string {
+    // Try to extract category from comments
+    const comments = journal.comments.toLowerCase();
+    if (comments.includes('meeting')) return 'Meeting';
+    if (comments.includes('call')) return 'Call';
+    if (comments.includes('report')) return 'Report';
+    if (comments.includes('follow')) return 'Follow-up';
+    return 'Other';
+  }
+
+  private calculateEntriesPerDay(journals: Journal[]): number {
+    if (journals.length === 0) return 0;
+
+    const dates = journals.map(j => j.timestamp.toISOString().split('T')[0]);
+    const uniqueDates = new Set(dates).size;
+    return Number((journals.length / uniqueDates).toFixed(1));
+  }
+
+  private calculateCompletionRate(journals: Journal[]): number {
+    if (journals.length === 0) return 0;
+
+    const completedEntries = journals.filter(journal =>
+      journal.fileURL &&
+      journal.comments &&
+      journal.comments.length > 10
+    ).length;
+
+    return Number(((completedEntries / journals.length) * 100).toFixed(1));
+  }
 }

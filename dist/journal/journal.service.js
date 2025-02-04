@@ -275,6 +275,77 @@ let JournalService = class JournalService {
             };
         }
     }
+    async getJournalsReport(filter) {
+        try {
+            const journals = await this.journalRepository.find({
+                where: {
+                    ...filter,
+                    isDeleted: false
+                },
+                relations: ['owner', 'branch'],
+                order: {
+                    timestamp: 'DESC'
+                }
+            });
+            if (!journals) {
+                throw new common_1.NotFoundException('No journals found for the specified period');
+            }
+            const totalEntries = journals.length;
+            const categories = this.analyzeJournalCategories(journals);
+            const entriesPerDay = this.calculateEntriesPerDay(journals);
+            const completionRate = this.calculateCompletionRate(journals);
+            return {
+                entries: journals,
+                metrics: {
+                    totalEntries,
+                    averageEntriesPerDay: entriesPerDay,
+                    topCategories: categories,
+                    completionRate: `${completionRate}%`
+                }
+            };
+        }
+        catch (error) {
+            return null;
+        }
+    }
+    analyzeJournalCategories(journals) {
+        const categoryCounts = journals.reduce((acc, journal) => {
+            const category = this.extractCategory(journal);
+            acc[category] = (acc[category] || 0) + 1;
+            return acc;
+        }, {});
+        return Object.entries(categoryCounts)
+            .map(([category, count]) => ({ category, count }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 5);
+    }
+    extractCategory(journal) {
+        const comments = journal.comments.toLowerCase();
+        if (comments.includes('meeting'))
+            return 'Meeting';
+        if (comments.includes('call'))
+            return 'Call';
+        if (comments.includes('report'))
+            return 'Report';
+        if (comments.includes('follow'))
+            return 'Follow-up';
+        return 'Other';
+    }
+    calculateEntriesPerDay(journals) {
+        if (journals.length === 0)
+            return 0;
+        const dates = journals.map(j => j.timestamp.toISOString().split('T')[0]);
+        const uniqueDates = new Set(dates).size;
+        return Number((journals.length / uniqueDates).toFixed(1));
+    }
+    calculateCompletionRate(journals) {
+        if (journals.length === 0)
+            return 0;
+        const completedEntries = journals.filter(journal => journal.fileURL &&
+            journal.comments &&
+            journal.comments.length > 10).length;
+        return Number(((completedEntries / journals.length) * 100).toFixed(1));
+    }
 };
 exports.JournalService = JournalService;
 exports.JournalService = JournalService = __decorate([

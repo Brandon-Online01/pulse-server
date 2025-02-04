@@ -357,6 +357,212 @@ let ClaimsService = class ClaimsService {
             };
         }
     }
+    async getClaimsReport(filter) {
+        try {
+            const claims = await this.claimsRepository.find({
+                where: {
+                    ...filter,
+                    isDeleted: false,
+                    deletedAt: (0, typeorm_2.IsNull)(),
+                    status: (0, typeorm_2.Not)(finance_enums_1.ClaimStatus.DELETED)
+                },
+                relations: ['owner', 'branch']
+            });
+            if (!claims) {
+                throw new common_1.NotFoundException('No claims found for the specified period');
+            }
+            const groupedClaims = {
+                paid: claims.filter(claim => claim.status === finance_enums_1.ClaimStatus.PAID),
+                pending: claims.filter(claim => claim.status === finance_enums_1.ClaimStatus.PENDING),
+                approved: claims.filter(claim => claim.status === finance_enums_1.ClaimStatus.APPROVED),
+                declined: claims.filter(claim => claim.status === finance_enums_1.ClaimStatus.DECLINED)
+            };
+            const totalValue = claims.reduce((sum, claim) => sum + Number(claim.amount), 0);
+            const totalClaims = claims.length;
+            const approvedClaims = groupedClaims.approved.length;
+            const avgProcessingTime = this.calculateAverageProcessingTime(claims);
+            const categoryBreakdown = this.analyzeCategoryBreakdown(claims);
+            const topClaimants = this.analyzeTopClaimants(claims);
+            return {
+                ...groupedClaims,
+                total: totalClaims,
+                totalValue,
+                metrics: {
+                    totalClaims,
+                    averageClaimValue: totalValue / totalClaims || 0,
+                    approvalRate: `${((approvedClaims / totalClaims) * 100).toFixed(1)}%`,
+                    averageProcessingTime: `${avgProcessingTime} days`,
+                    categoryBreakdown,
+                    topClaimants,
+                    claimValueDistribution: this.analyzeClaimValueDistribution(claims),
+                    monthlyTrends: this.analyzeMonthlyTrends(claims),
+                    branchPerformance: this.analyzeBranchPerformance(claims)
+                }
+            };
+        }
+        catch (error) {
+            return null;
+        }
+    }
+    calculateAverageProcessingTime(claims) {
+        const processedClaims = claims.filter(claim => claim.status === finance_enums_1.ClaimStatus.PAID ||
+            claim.status === finance_enums_1.ClaimStatus.APPROVED ||
+            claim.status === finance_enums_1.ClaimStatus.DECLINED);
+        if (processedClaims.length === 0)
+            return 0;
+        const totalProcessingTime = processedClaims.reduce((sum, claim) => {
+            const processingTime = claim.updatedAt.getTime() - claim.createdAt.getTime();
+            return sum + processingTime;
+        }, 0);
+        return Number((totalProcessingTime / (processedClaims.length * 24 * 60 * 60 * 1000)).toFixed(1));
+    }
+    analyzeCategoryBreakdown(claims) {
+        const categoryStats = new Map();
+        claims.forEach(claim => {
+            if (!categoryStats.has(claim.category)) {
+                categoryStats.set(claim.category, {
+                    count: 0,
+                    totalValue: 0
+                });
+            }
+            const stats = categoryStats.get(claim.category);
+            stats.count++;
+            stats.totalValue += Number(claim.amount);
+        });
+        return Array.from(categoryStats.entries())
+            .map(([category, stats]) => ({
+            category,
+            count: stats.count,
+            totalValue: this.formatCurrency(stats.totalValue),
+            averageValue: this.formatCurrency(stats.totalValue / stats.count)
+        }))
+            .sort((a, b) => b.count - a.count);
+    }
+    analyzeTopClaimants(claims) {
+        const claimantStats = new Map();
+        claims.forEach(claim => {
+            const userId = claim.owner?.uid;
+            const userName = claim.owner?.username;
+            if (userId && userName) {
+                if (!claimantStats.has(userId)) {
+                    claimantStats.set(userId, {
+                        name: userName,
+                        claims: 0,
+                        totalValue: 0,
+                        approved: 0
+                    });
+                }
+                const stats = claimantStats.get(userId);
+                stats.claims++;
+                stats.totalValue += Number(claim.amount);
+                if (claim.status === finance_enums_1.ClaimStatus.APPROVED || claim.status === finance_enums_1.ClaimStatus.PAID) {
+                    stats.approved++;
+                }
+            }
+        });
+        return Array.from(claimantStats.entries())
+            .map(([userId, stats]) => ({
+            userId,
+            userName: stats.name,
+            totalClaims: stats.claims,
+            totalValue: this.formatCurrency(stats.totalValue),
+            approvalRate: `${((stats.approved / stats.claims) * 100).toFixed(1)}%`
+        }))
+            .sort((a, b) => b.totalClaims - a.totalClaims)
+            .slice(0, 10);
+    }
+    analyzeClaimValueDistribution(claims) {
+        const ranges = {
+            'Under 1000': 0,
+            '1000-5000': 0,
+            '5000-10000': 0,
+            '10000-50000': 0,
+            'Over 50000': 0
+        };
+        claims.forEach(claim => {
+            const amount = Number(claim.amount);
+            if (amount < 1000)
+                ranges['Under 1000']++;
+            else if (amount < 5000)
+                ranges['1000-5000']++;
+            else if (amount < 10000)
+                ranges['5000-10000']++;
+            else if (amount < 50000)
+                ranges['10000-50000']++;
+            else
+                ranges['Over 50000']++;
+        });
+        return ranges;
+    }
+    analyzeMonthlyTrends(claims) {
+        const monthlyStats = new Map();
+        claims.forEach(claim => {
+            const month = claim.createdAt.toISOString().slice(0, 7);
+            if (!monthlyStats.has(month)) {
+                monthlyStats.set(month, {
+                    claims: 0,
+                    totalValue: 0,
+                    approved: 0
+                });
+            }
+            const stats = monthlyStats.get(month);
+            stats.claims++;
+            stats.totalValue += Number(claim.amount);
+            if (claim.status === finance_enums_1.ClaimStatus.APPROVED || claim.status === finance_enums_1.ClaimStatus.PAID) {
+                stats.approved++;
+            }
+        });
+        return Array.from(monthlyStats.entries())
+            .map(([month, stats]) => ({
+            month,
+            totalClaims: stats.claims,
+            totalValue: this.formatCurrency(stats.totalValue),
+            approvalRate: `${((stats.approved / stats.claims) * 100).toFixed(1)}%`
+        }))
+            .sort((a, b) => a.month.localeCompare(b.month));
+    }
+    analyzeBranchPerformance(claims) {
+        const branchStats = new Map();
+        claims.forEach(claim => {
+            const branchId = claim.branch?.uid;
+            const branchName = claim.branch?.name;
+            if (branchId && branchName) {
+                if (!branchStats.has(branchId)) {
+                    branchStats.set(branchId, {
+                        name: branchName,
+                        claims: 0,
+                        totalValue: 0,
+                        approved: 0,
+                        totalProcessingTime: 0,
+                        processedClaims: 0
+                    });
+                }
+                const stats = branchStats.get(branchId);
+                stats.claims++;
+                stats.totalValue += Number(claim.amount);
+                if (claim.status === finance_enums_1.ClaimStatus.APPROVED || claim.status === finance_enums_1.ClaimStatus.PAID) {
+                    stats.approved++;
+                }
+                if (claim.status !== finance_enums_1.ClaimStatus.PENDING) {
+                    stats.processedClaims++;
+                    stats.totalProcessingTime +=
+                        claim.updatedAt.getTime() - claim.createdAt.getTime();
+                }
+            }
+        });
+        return Array.from(branchStats.entries())
+            .map(([branchId, stats]) => ({
+            branchId,
+            branchName: stats.name,
+            totalClaims: stats.claims,
+            totalValue: this.formatCurrency(stats.totalValue),
+            averageProcessingTime: `${(stats.processedClaims > 0
+                ? stats.totalProcessingTime / (stats.processedClaims * 24 * 60 * 60 * 1000)
+                : 0).toFixed(1)} days`,
+            approvalRate: `${((stats.approved / stats.claims) * 100).toFixed(1)}%`
+        }))
+            .sort((a, b) => b.totalClaims - a.totalClaims);
+    }
 };
 exports.ClaimsService = ClaimsService;
 exports.ClaimsService = ClaimsService = __decorate([

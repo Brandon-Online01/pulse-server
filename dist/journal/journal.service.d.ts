@@ -46,4 +46,20 @@ export declare class JournalService {
     count(): Promise<{
         total: number;
     }>;
+    getJournalsReport(filter: any): Promise<{
+        entries: Journal[];
+        metrics: {
+            totalEntries: number;
+            averageEntriesPerDay: number;
+            topCategories: {
+                category: string;
+                count: number;
+            }[];
+            completionRate: string;
+        };
+    }>;
+    private analyzeJournalCategories;
+    private extractCategory;
+    private calculateEntriesPerDay;
+    private calculateCompletionRate;
 }

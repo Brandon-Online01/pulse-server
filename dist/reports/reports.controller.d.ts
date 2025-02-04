@@ -1,4 +1,5 @@
 import { ReportsService } from './reports.service';
+import { GenerateReportDto } from './dto/generate-report.dto';
 export declare class ReportsController {
     private readonly reportsService;
     constructor(reportsService: ReportsService);
@@ -51,6 +52,10 @@ export declare class ReportsController {
         };
     }>;
     userDailyReport(reference?: string): Promise<import("./entities/report.entity").Report | {
+        message: any;
+        statusCode: any;
+    }>;
+    generateReport(generateReportDto: GenerateReportDto): Promise<import("./entities/report.entity").Report | {
         message: any;
         statusCode: any;
     }>;

@@ -7,7 +7,7 @@ import { UpdateSubtaskDto } from './dto/update-subtask.dto';
 import { RewardsService } from '../rewards/rewards.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { Client } from '../clients/entities/client.entity';
-import { TaskStatus, TaskPriority } from '../lib/enums/task.enums';
+import { TaskStatus, TaskPriority, TaskType } from '../lib/enums/task.enums';
 export declare class TasksService {
     private taskRepository;
     private subtaskRepository;
@@ -68,4 +68,45 @@ export declare class TasksService {
     updateProgress(ref: number, progress: number): Promise<{
         message: string;
     }>;
+    getTasksReport(filter: any): Promise<{
+        total: number;
+        metrics: {
+            completionRate: string;
+            averageCompletionTime: string;
+            overdueRate: string;
+            taskDistribution: Record<TaskType, number>;
+            incompletionReasons: {
+                reason: string;
+                count: number;
+            }[];
+            clientCompletionRates: {
+                clientId: number;
+                clientName: string;
+                totalTasks: number;
+                completedTasks: number;
+                completionRate: string;
+            }[];
+            taskPriorityDistribution: Record<TaskPriority, number>;
+            assigneePerformance: {
+                assigneeId: number;
+                assigneeName: string;
+                totalTasks: number;
+                completedTasks: number;
+                completionRate: string;
+                averageCompletionTime: string;
+            }[];
+        };
+        pending: Task[];
+        inProgress: Task[];
+        completed: Task[];
+        overdue: Task[];
+    }>;
+    private calculateAverageCompletionTime;
+    private calculateOverdueRate;
+    private analyzeTaskDistribution;
+    private analyzeIncompletionReasons;
+    private determineIncompletionReason;
+    private analyzeClientCompletionRates;
+    private analyzeTaskPriorityDistribution;
+    private analyzeAssigneePerformance;
 }

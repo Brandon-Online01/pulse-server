@@ -24,6 +24,7 @@ const rewards_module_1 = require("../rewards/rewards.module");
 const check_ins_module_1 = require("../check-ins/check-ins.module");
 const licensing_module_1 = require("../licensing/licensing.module");
 const tracking_module_1 = require("../tracking/tracking.module");
+const check_in_entity_1 = require("../check-ins/entities/check-in.entity");
 let ReportsModule = class ReportsModule {
 };
 exports.ReportsModule = ReportsModule;
@@ -31,7 +32,7 @@ exports.ReportsModule = ReportsModule = __decorate([
     (0, common_1.Module)({
         imports: [
             licensing_module_1.LicensingModule,
-            typeorm_1.TypeOrmModule.forFeature([report_entity_1.Report]),
+            typeorm_1.TypeOrmModule.forFeature([report_entity_1.Report, check_in_entity_1.CheckIn]),
             leads_module_1.LeadsModule,
             journal_module_1.JournalModule,
             claims_module_1.ClaimsModule,

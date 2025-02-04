@@ -103,4 +103,46 @@ export declare class ShopService {
         message: string;
         updatedCount: number;
     }>;
+    getQuotationsReport(filter: any): Promise<{
+        total: number;
+        metrics: {
+            totalQuotations: number;
+            grossQuotationValue: string;
+            averageQuotationValue: string;
+            conversionRate: string;
+            topProducts: {
+                productId: number;
+                productName: string;
+                totalSold: number;
+                totalValue: string;
+            }[];
+            leastSoldProducts: {
+                productId: number;
+                productName: string;
+                totalSold: number;
+                lastSoldDate: Date;
+            }[];
+            peakOrderTimes: {
+                hour: number;
+                count: number;
+                percentage: string;
+            }[];
+            averageBasketSize: number;
+            topShops: {
+                shopId: number;
+                shopName: string;
+                totalOrders: number;
+                totalValue: string;
+                averageOrderValue: string;
+            }[];
+        };
+        pending: Quotation[];
+        approved: Quotation[];
+        rejected: Quotation[];
+    }>;
+    private analyzeProducts;
+    private analyzeOrderTimes;
+    private analyzeShops;
+    private analyzeBaskets;
+    private getBasketSizeRange;
 }

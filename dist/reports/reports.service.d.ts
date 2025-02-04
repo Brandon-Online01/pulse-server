@@ -12,8 +12,11 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ConfigService } from '@nestjs/config';
 import { RewardsService } from 'src/rewards/rewards.service';
 import { TrackingService } from '../tracking/tracking.service';
+import { GenerateReportDto } from '../reports/dto/generate-report.dto';
+import { CheckIn } from '../check-ins/entities/check-in.entity';
 export declare class ReportsService {
     private readonly reportRepository;
+    private checkInRepository;
     private readonly leadService;
     private readonly journalService;
     private readonly claimsService;
@@ -29,7 +32,7 @@ export declare class ReportsService {
     private readonly currencyLocale;
     private readonly currencyCode;
     private readonly currencySymbol;
-    constructor(reportRepository: Repository<Report>, leadService: LeadsService, journalService: JournalService, claimsService: ClaimsService, tasksService: TasksService, shopService: ShopService, attendanceService: AttendanceService, newsService: NewsService, userService: UserService, trackingService: TrackingService, eventEmitter: EventEmitter2, configService: ConfigService, rewardsService: RewardsService);
+    constructor(reportRepository: Repository<Report>, checkInRepository: Repository<CheckIn>, leadService: LeadsService, journalService: JournalService, claimsService: ClaimsService, tasksService: TasksService, shopService: ShopService, attendanceService: AttendanceService, newsService: NewsService, userService: UserService, trackingService: TrackingService, eventEmitter: EventEmitter2, configService: ConfigService, rewardsService: RewardsService);
     private formatCurrency;
     private calculateGrowth;
     private handleError;
@@ -85,5 +88,94 @@ export declare class ReportsService {
     userDailyReport(reference?: string): Promise<Report | {
         message: any;
         statusCode: any;
+    }>;
+    generateReport(params: GenerateReportDto): Promise<Report | {
+        message: any;
+        statusCode: any;
+    }>;
+    private calculateGrowthPercentage;
+    getCheckInsReport(filter: any): Promise<{
+        totalCheckIns: number;
+        totalDurationMinutes: number;
+        averageDurationMinutes: number;
+        metrics: {
+            employeeStats: {
+                employeeId: number;
+                employeeName: string;
+                totalCheckIns: number;
+                averageDuration: number;
+                completedCheckIns: number;
+                mostFrequentLocation: string;
+            }[];
+            locationStats: {
+                location: string;
+                totalCheckIns: number;
+                uniqueEmployees: number;
+                averageDuration: number;
+            }[];
+            timeStats: {
+                peakHours: Array<{
+                    hour: number;
+                    count: number;
+                }>;
+                averageStartTime: string;
+                averageEndTime: string;
+                averageDuration: number;
+            };
+            completionRate: string;
+        };
+    }>;
+    private getLocationString;
+    private analyzeEmployeeAttendance;
+    private analyzeCheckInLocations;
+    private analyzeCheckInTimes;
+    getDailyFlashReport(): Promise<{
+        date: string;
+        sales: {
+            totalQuotations: number;
+            totalValue: string;
+            conversionRate: string;
+            topProducts: {
+                productId: number;
+                productName: string;
+                totalSold: number;
+                totalValue: string;
+            }[];
+        };
+        attendance: {
+            totalCheckIns: number;
+            averageDuration: number;
+            completionRate: string;
+            presentEmployees: number;
+        };
+    }>;
+    getWeeklyJournalFlashReport(): Promise<{
+        period: string;
+        totalJournals: number;
+        completionRate: string;
+        topContributors: {
+            category: string;
+            count: number;
+        }[];
+        categoryBreakdown: {};
+    }>;
+    getMonthlyClaimsFlashReport(): Promise<{
+        period: string;
+        currentMonth: {
+            totalClaims: number;
+            totalValue: number;
+            approvalRate: string;
+            averageValue: number;
+        };
+        comparison: {
+            claimsGrowth: string;
+            valueGrowth: string;
+        };
+        topCategories: {
+            category: import("../lib/enums/finance.enums").ClaimCategory;
+            count: number;
+            totalValue: string;
+            averageValue: string;
+        }[];
     }>;
 }

@@ -17,5 +17,7 @@ export declare enum ReportType {
     JOURNAL = "journal",
     LEAD = "lead",
     NEWS = "news",
-    TASK = "task"
+    TASK = "task",
+    CLAIM = "claim",
+    QUOTATION = "quotation"
 }
