@@ -53,7 +53,7 @@ let OrderNotificationsService = class OrderNotificationsService {
             currency,
             quotationItems: quotation.quotationItems.map(item => ({
                 quantity: item.quantity,
-                product: { uid: Number(item.product.uid) },
+                product: { uid: Number(item.product.uid), name: item.product.name, code: item.product?.productRef },
                 totalPrice: Number(item.totalPrice) || 0
             }))
         };

@@ -87,6 +87,8 @@ export interface QuotationData extends BaseEmailData {
         quantity: number;
         product: {
             uid: number;
+            name: string;
+            code: string;
         };
         totalPrice: number;
     }>;

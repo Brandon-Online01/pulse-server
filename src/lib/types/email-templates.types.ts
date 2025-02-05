@@ -93,7 +93,11 @@ export interface QuotationData extends BaseEmailData {
     currency: string;
     quotationItems: Array<{
         quantity: number;
-        product: { uid: number };
+        product: { 
+            uid: number;
+            name: string;
+            code: string;
+        };
         totalPrice: number;
     }>;
 }

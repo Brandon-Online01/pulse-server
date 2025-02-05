@@ -171,11 +171,18 @@ let ShopService = class ShopService {
                 validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
                 total: Number(newQuotation?.totalAmount),
                 currency: this.currencyCode,
-                quotationItems: quotationData?.items?.map(item => ({
-                    quantity: Number(item?.quantity),
-                    product: { uid: item?.uid },
-                    totalPrice: Number(item?.totalPrice),
-                }))
+                quotationItems: quotationData?.items?.map(item => {
+                    const product = products.flat().find(p => p.uid === item.uid);
+                    return {
+                        quantity: Number(item?.quantity),
+                        product: {
+                            uid: item?.uid,
+                            name: product?.name || 'Unknown Product',
+                            code: product?.productRef || 'N/A'
+                        },
+                        totalPrice: Number(item?.totalPrice),
+                    };
+                })
             };
             const clientConfig = {
                 ...baseConfig,

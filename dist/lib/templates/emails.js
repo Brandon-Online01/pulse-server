@@ -187,7 +187,10 @@ const NewQuotationClient = (data) => {
     const itemsList = data.quotationItems.map(item => `
     <tr>
       <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">${item.quantity}x</td>
-      <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">${item.product.uid}</td>
+      <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">
+        <div style="font-weight: 500;">${item.product.name}</div>
+        <div style="font-size: 12px; color: #666;">Code: ${item.product.code}</div>
+      </td>
       <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: right;">${new Intl.NumberFormat('en-US', { style: 'currency', currency: data.currency }).format(item.totalPrice)}</td>
     </tr>
   `).join('');
