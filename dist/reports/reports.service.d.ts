@@ -38,9 +38,6 @@ export declare class ReportsService {
     private handleError;
     private formatReportData;
     managerDailyReport(): Promise<{
-        message: any;
-        statusCode: any;
-    } | {
         leads: {
             pending: number;
             approved: number;
@@ -84,15 +81,18 @@ export declare class ReportsService {
                 averageQuotationValue: string | number;
             };
         };
-    }>;
-    userDailyReport(reference?: string): Promise<Report | {
+    } | {
         message: any;
         statusCode: any;
     }>;
-    generateReport(params: GenerateReportDto): Promise<Report | {
+    userDailyReport(reference?: string): Promise<{
         message: any;
         statusCode: any;
-    }>;
+    } | Report>;
+    generateReport(params: GenerateReportDto): Promise<{
+        message: any;
+        statusCode: any;
+    } | Report>;
     private calculateGrowthPercentage;
     getCheckInsReport(filter: any): Promise<{
         totalCheckIns: number;

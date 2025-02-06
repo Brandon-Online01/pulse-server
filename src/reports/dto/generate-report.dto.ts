@@ -38,13 +38,4 @@ export class GenerateReportDto {
     })
     @IsEnum(ReportType)
     type: ReportType;
-
-    @ApiProperty({
-        description: 'Branch ID to filter report by (optional)',
-        example: 1,
-        required: false,
-    })
-    @IsOptional()
-    @IsString()
-    branchId?: string;
 } 

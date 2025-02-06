@@ -59,7 +59,7 @@ let ReportsService = class ReportsService {
     formatCurrency(amount) {
         return new Intl.NumberFormat(this.currencyLocale, {
             style: 'currency',
-            currency: this.currencyCode
+            currency: this.currencyCode,
         })
             .format(amount)
             .replace(this.currencyCode, this.currencySymbol);
@@ -73,7 +73,7 @@ let ReportsService = class ReportsService {
     handleError(error) {
         return {
             message: error?.message || 'An error occurred',
-            statusCode: error?.status || 500
+            statusCode: error?.status || 500,
         };
     }
     formatReportData(leadsStats, journalsStats, claimsStats, quotationsStats, tasksTotal, attendanceRecords, attendanceHours, trackingData, userRewards, previousDayQuotations, previousDayRevenue) {
@@ -88,7 +88,7 @@ let ReportsService = class ReportsService {
                 review: leadsStats?.review || [],
                 pending: leadsStats?.pending || [],
                 approved: leadsStats?.approved || [],
-                declined: leadsStats?.declined || []
+                declined: leadsStats?.declined || [],
             },
             journals: journalsStats || [],
             claims: {
@@ -96,28 +96,34 @@ let ReportsService = class ReportsService {
                 pending: claimsStats?.pending || [],
                 approved: claimsStats?.approved || [],
                 declined: claimsStats?.declined || [],
-                totalValue: this.formatCurrency(claimsStats?.totalValue || 0)
+                totalValue: this.formatCurrency(claimsStats?.totalValue || 0),
             },
             tasks: tasksTotal || 0,
-            attendance: sortedAttendance.length > 0 ? {
-                totalHours: attendanceHours,
-                startTime: firstCheckIn.checkIn.toLocaleTimeString(),
-                endTime: lastCheckOut.checkOut?.toLocaleTimeString(),
-                duration: `${Math.floor(attendanceHours)}h ${Math.round((attendanceHours % 1) * 60)}m`,
-                status: lastCheckOut.status,
-                checkInLocation: firstCheckIn.checkInLatitude && firstCheckIn.checkInLongitude ? {
-                    latitude: firstCheckIn.checkInLatitude,
-                    longitude: firstCheckIn.checkInLongitude,
-                    notes: firstCheckIn.checkInNotes || '',
-                } : undefined,
-                checkOutLocation: lastCheckOut.checkOutLatitude && lastCheckOut.checkOutLongitude ? {
-                    latitude: lastCheckOut.checkOutLatitude,
-                    longitude: lastCheckOut.checkOutLongitude,
-                    notes: lastCheckOut.checkOutNotes || '',
-                } : undefined,
-                verifiedAt: firstCheckIn.verifiedAt?.toISOString(),
-                verifiedBy: firstCheckIn.verifiedBy,
-            } : undefined,
+            attendance: sortedAttendance.length > 0
+                ? {
+                    totalHours: attendanceHours,
+                    startTime: firstCheckIn.checkIn.toLocaleTimeString(),
+                    endTime: lastCheckOut.checkOut?.toLocaleTimeString(),
+                    duration: `${Math.floor(attendanceHours)}h ${Math.round((attendanceHours % 1) * 60)}m`,
+                    status: lastCheckOut.status,
+                    checkInLocation: firstCheckIn.checkInLatitude && firstCheckIn.checkInLongitude
+                        ? {
+                            latitude: firstCheckIn.checkInLatitude,
+                            longitude: firstCheckIn.checkInLongitude,
+                            notes: firstCheckIn.checkInNotes || '',
+                        }
+                        : undefined,
+                    checkOutLocation: lastCheckOut.checkOutLatitude && lastCheckOut.checkOutLongitude
+                        ? {
+                            latitude: lastCheckOut.checkOutLatitude,
+                            longitude: lastCheckOut.checkOutLongitude,
+                            notes: lastCheckOut.checkOutNotes || '',
+                        }
+                        : undefined,
+                    verifiedAt: firstCheckIn.verifiedAt?.toISOString(),
+                    verifiedBy: firstCheckIn.verifiedBy,
+                }
+                : undefined,
             quotations: {
                 totalQuotations: currentQuotations,
                 grossQuotationValue: this.formatCurrency(currentRevenue),
@@ -125,13 +131,15 @@ let ReportsService = class ReportsService {
                 growth: this.calculateGrowth(currentQuotations, previousDayQuotations),
                 revenueGrowth: this.calculateGrowth(currentRevenue, previousDayRevenue),
             },
-            tracking: trackingData ? {
-                totalDistance: trackingData?.totalDistance,
-                locationAnalysis: {
-                    timeSpentByLocation: trackingData?.locationAnalysis?.timeSpentByLocation || {},
-                    averageTimePerLocation: trackingData?.locationAnalysis?.averageTimePerLocation || 0
+            tracking: trackingData
+                ? {
+                    totalDistance: trackingData?.totalDistance,
+                    locationAnalysis: {
+                        timeSpentByLocation: trackingData?.locationAnalysis?.timeSpentByLocation || {},
+                        averageTimePerLocation: trackingData?.locationAnalysis?.averageTimePerLocation || 0,
+                    },
                 }
-            } : null,
+                : null,
             xp: {
                 level: userRewards?.rank || 1,
                 currentXP: userRewards?.totalXP || 0,
@@ -148,8 +156,8 @@ let ReportsService = class ReportsService {
                     todayTasks: tasksTotal || 0,
                     todayQuotations: currentQuotations,
                     hoursWorked: attendanceHours,
-                }
-            }
+                },
+            },
         };
         return {
             reportMetadata: commonData,
@@ -159,17 +167,19 @@ let ReportsService = class ReportsService {
                     xp: commonData.xp,
                     attendance: commonData.attendance,
                     quotationGrowth: commonData.quotations.growth,
-                    revenueGrowth: commonData.quotations.revenueGrowth
+                    revenueGrowth: commonData.quotations.revenueGrowth,
                 },
-                tracking: trackingData ? {
-                    totalDistance: trackingData?.totalDistance,
-                    locations: Object.entries(trackingData.locationAnalysis.timeSpentByLocation || {}).map(([address, minutes]) => ({
-                        address,
-                        timeSpent: `${Math.round(Number(minutes))} minutes`
-                    })),
-                    averageTimePerLocation: `${Math.round(trackingData.locationAnalysis.averageTimePerLocation || 0)} minutes`
-                } : undefined
-            }
+                tracking: trackingData
+                    ? {
+                        totalDistance: trackingData?.totalDistance,
+                        locations: Object.entries(trackingData.locationAnalysis.timeSpentByLocation || {}).map(([address, minutes]) => ({
+                            address,
+                            timeSpent: `${Math.round(Number(minutes))} minutes`,
+                        })),
+                        averageTimePerLocation: `${Math.round(trackingData.locationAnalysis.averageTimePerLocation || 0)} minutes`,
+                    }
+                    : undefined,
+            },
         };
     }
     async managerDailyReport() {
@@ -180,16 +190,16 @@ let ReportsService = class ReportsService {
                 this.claimsService.getClaimsForDate(new Date()),
                 this.shopService.getQuotationsForDate(new Date()),
                 this.tasksService.getTaskStatusSummary(),
-                this.attendanceService.getMonthlyAttendanceStats()
+                this.attendanceService.getMonthlyAttendanceStats(),
             ]);
-            const [{ leads: leadsStats }, { journals: journalsStats }, { claims: claimsStats }, { stats: ordersStats }, { byStatus: tasksStats }, { stats: attendanceStats }] = allData;
+            const [{ leads: leadsStats }, { journals: journalsStats }, { claims: claimsStats }, { stats: ordersStats }, { byStatus: tasksStats }, { stats: attendanceStats },] = allData;
             const response = {
                 leads: {
                     pending: leadsStats?.pending?.length,
                     approved: leadsStats?.approved?.length,
                     inReview: leadsStats?.review?.length,
                     declined: leadsStats?.declined?.length,
-                    total: leadsStats?.total
+                    total: leadsStats?.total,
                 },
                 journals: {
                     total: journalsStats?.length,
@@ -199,19 +209,19 @@ let ReportsService = class ReportsService {
                     approved: claimsStats?.approved?.length || 0,
                     declined: claimsStats?.declined?.length || 0,
                     paid: claimsStats?.paid?.length || 0,
-                    totalValue: claimsStats?.totalValue || 0
+                    totalValue: claimsStats?.totalValue || 0,
                 },
                 tasks: {
                     pending: tasksStats?.PENDING,
                     completed: tasksStats?.COMPLETED,
                     missed: tasksStats?.MISSED,
                     postponed: tasksStats?.POSTPONED,
-                    total: Object.values(tasksStats || {}).reduce((acc, curr) => acc + curr, 0)
+                    total: Object.values(tasksStats || {}).reduce((acc, curr) => acc + curr, 0),
                 },
                 attendance: {
                     attendance: attendanceStats?.metrics?.attendancePercentage,
                     present: attendanceStats?.metrics?.totalPresent,
-                    total: attendanceStats?.metrics?.totalEmployees
+                    total: attendanceStats?.metrics?.totalEmployees,
                 },
                 orders: {
                     pending: ordersStats?.quotations?.pending?.length,
@@ -224,8 +234,8 @@ let ReportsService = class ReportsService {
                     metrics: {
                         totalQuotations: ordersStats?.quotations?.metrics?.totalQuotations,
                         grossQuotationValue: ordersStats?.quotations?.metrics?.grossQuotationValue || 0,
-                        averageQuotationValue: ordersStats?.quotations?.metrics?.averageQuotationValue || 0
-                    }
+                        averageQuotationValue: ordersStats?.quotations?.metrics?.averageQuotationValue || 0,
+                    },
                 },
             };
             return response;
@@ -246,9 +256,9 @@ let ReportsService = class ReportsService {
                 this.attendanceService.getAttendanceForDate(date),
                 reference ? this.rewardsService.getUserRewards(Number(reference)) : null,
                 reference ? this.userService.findOne(Number(reference)) : null,
-                reference ? this.trackingService.getDailyTracking(Number(reference), date) : null
+                reference ? this.trackingService.getDailyTracking(Number(reference), date) : null,
             ]);
-            const [{ leads: leadsStats }, { journals: journalsStats }, { claims: claimsStats }, { stats: quotationsStats }, { total: tasksTotal }, { totalHours: attendanceHours, attendanceRecords }, userRewards, userData, { data: trackingData }] = allData;
+            const [{ leads: leadsStats }, { journals: journalsStats }, { claims: claimsStats }, { stats: quotationsStats }, { total: tasksTotal }, { totalHours: attendanceHours, attendanceRecords }, userRewards, userData, { data: trackingData },] = allData;
             const previousDay = new Date(date);
             previousDay.setDate(previousDay.getDate() - 1);
             const previousDayStats = await this.shopService.getQuotationsForDate(previousDay);
@@ -261,7 +271,7 @@ let ReportsService = class ReportsService {
                 type: reports_enums_1.ReportType.DAILY,
                 metadata: reportMetadata,
                 owner: userData?.user,
-                branch: userData?.user?.branch
+                branch: userData?.user?.branch,
             });
             await this.reportRepository.save(report);
             const notification = {
@@ -269,7 +279,7 @@ let ReportsService = class ReportsService {
                 title: 'Daily Report Generated',
                 message: `Your daily activity report for ${new Date().toLocaleDateString()} has been generated`,
                 status: notification_enums_1.NotificationStatus.UNREAD,
-                owner: userData?.user
+                owner: userData?.user,
             };
             const recipients = [user_enums_1.AccessLevel.USER];
             this.eventEmitter.emit('send.notification', notification, recipients);
@@ -277,7 +287,7 @@ let ReportsService = class ReportsService {
                 const emailTemplate = {
                     name: userData.user.username,
                     date: `${new Date()}`,
-                    ...emailData
+                    ...emailData,
                 };
                 this.eventEmitter.emit('send.email', email_enums_1.EmailType.DAILY_REPORT, [userData.user.email], emailTemplate);
             }
@@ -289,15 +299,52 @@ let ReportsService = class ReportsService {
     }
     async generateReport(params) {
         try {
-            const { startDate, endDate, period, type, branchId } = params;
-            let reportData = {};
-            let title = '';
-            let description = '';
+            console.log('=== REPORT GENERATION START ===');
+            console.log('1. Raw DTO received:', {
+                params,
+                paramTypes: {
+                    startDate: typeof params.startDate,
+                    endDate: typeof params.endDate,
+                    period: typeof params.period,
+                    type: typeof params.type
+                }
+            });
+            const { startDate, endDate, period, type } = params;
+            console.log('2. Destructured values:', {
+                startDate,
+                endDate,
+                period,
+                type,
+                startDateType: typeof startDate,
+                endDateType: typeof endDate
+            });
             const currentStartDate = new Date(startDate);
             const currentEndDate = new Date(endDate);
-            const previousStartDate = new Date(startDate);
-            const previousEndDate = new Date(startDate);
-            switch (period) {
+            console.log('3. Parsed dates:', {
+                currentStartDate,
+                currentEndDate,
+                isStartDateValid: !isNaN(currentStartDate.getTime()),
+                isEndDateValid: !isNaN(currentEndDate.getTime()),
+                startDateTimestamp: currentStartDate.getTime(),
+                endDateTimestamp: currentEndDate.getTime()
+            });
+            if (isNaN(currentStartDate.getTime()) || isNaN(currentEndDate.getTime())) {
+                console.error('4. Date validation failed:', {
+                    startDateValid: !isNaN(currentStartDate.getTime()),
+                    endDateValid: !isNaN(currentEndDate.getTime()),
+                    startDateString: startDate,
+                    endDateString: endDate
+                });
+                throw new Error('Invalid date format provided');
+            }
+            console.log('5. Period validation:', {
+                providedPeriod: period,
+                periodLowerCase: period.toLowerCase(),
+                isValidPeriod: ['daily', 'weekly', 'monthly'].includes(period.toLowerCase())
+            });
+            const previousStartDate = new Date(currentStartDate);
+            const previousEndDate = new Date(currentStartDate);
+            switch (period.toLowerCase()) {
                 case 'daily':
                     previousStartDate.setDate(previousStartDate.getDate() - 1);
                     previousEndDate.setDate(previousEndDate.getDate() - 1);
@@ -310,7 +357,16 @@ let ReportsService = class ReportsService {
                     previousStartDate.setMonth(previousStartDate.getMonth() - 1);
                     previousEndDate.setMonth(previousEndDate.getMonth() - 1);
                     break;
+                default:
+                    console.error('Invalid period:', period);
+                    throw new Error('Invalid period specified');
             }
+            console.log('Comparison period dates:', {
+                previousStartDate: previousStartDate.toISOString(),
+                previousEndDate: previousEndDate.toISOString(),
+                previousStartDateLocal: previousStartDate.toString(),
+                previousEndDateLocal: previousEndDate.toString()
+            });
             const dateFilter = {
                 createdAt: {
                     gte: currentStartDate,
@@ -323,14 +379,21 @@ let ReportsService = class ReportsService {
                     lte: previousEndDate
                 }
             };
-            const branchFilter = branchId ? { branch: { uid: branchId } } : {};
-            const currentFilter = { ...dateFilter, ...branchFilter };
-            const previousFilter = { ...previousDateFilter, ...branchFilter };
+            console.log('Final date filters:', {
+                current: JSON.stringify(dateFilter, null, 2),
+                previous: JSON.stringify(previousDateFilter, null, 2)
+            });
+            const currentFilter = { ...dateFilter };
+            const previousFilter = { ...previousDateFilter };
+            console.log('Generating report for type:', type);
+            let reportData = {};
+            let title = '';
+            let description = '';
             switch (type) {
                 case reports_enums_1.ReportType.CLAIM:
                     const [currentClaimsData, previousClaimsData] = await Promise.all([
                         this.claimsService.getClaimsReport(currentFilter),
-                        this.claimsService.getClaimsReport(previousFilter)
+                        this.claimsService.getClaimsReport(previousFilter),
                     ]);
                     const currentTotalValue = currentClaimsData?.totalValue || 0;
                     const previousTotalValue = previousClaimsData?.totalValue || 0;
@@ -353,39 +416,72 @@ let ReportsService = class ReportsService {
                             claimTrends: {
                                 thisMonth: currentClaimsData?.metrics?.totalClaims || 0,
                                 lastMonth: previousClaimsData?.metrics?.totalClaims || 0,
-                                growth: this.calculateGrowth(currentClaimsData?.metrics?.totalClaims || 0, previousClaimsData?.metrics?.totalClaims || 0)
-                            }
-                        }
+                                growth: this.calculateGrowth(currentClaimsData?.metrics?.totalClaims || 0, previousClaimsData?.metrics?.totalClaims || 0),
+                            },
+                        },
                     };
                     title = 'Claims Report';
                     description = `Claims report for period ${startDate} to ${endDate}`;
                     break;
                 case reports_enums_1.ReportType.QUOTATION:
-                    const [currentQuotationsData, previousQuotationsData] = await Promise.all([
+                    console.log('Fetching quotation reports with filters:', {
+                        currentFilter: JSON.stringify(currentFilter, null, 2),
+                        previousFilter: JSON.stringify(previousFilter, null, 2)
+                    });
+                    let [currentData, previousData] = await Promise.all([
                         this.shopService.getQuotationsReport(currentFilter),
                         this.shopService.getQuotationsReport(previousFilter)
                     ]);
-                    reportData = {
-                        total: currentQuotationsData?.total || 0,
-                        pending: currentQuotationsData?.pending || [],
-                        approved: currentQuotationsData?.approved || [],
-                        rejected: currentQuotationsData?.rejected || [],
+                    console.log('Raw quotation data received:', {
+                        current: JSON.stringify(currentData, null, 2),
+                        previous: JSON.stringify(previousData, null, 2)
+                    });
+                    const defaultData = {
+                        total: 0,
+                        pending: [],
+                        approved: [],
+                        rejected: [],
                         metrics: {
-                            totalQuotations: currentQuotationsData?.metrics?.totalQuotations || 0,
-                            grossQuotationValue: this.formatCurrency(Number(currentQuotationsData?.metrics?.grossQuotationValue?.replace(/[^0-9.-]+/g, '')) || 0),
-                            averageQuotationValue: this.formatCurrency(Number(currentQuotationsData?.metrics?.averageQuotationValue?.replace(/[^0-9.-]+/g, '')) || 0),
-                            conversionRate: currentQuotationsData?.metrics?.conversionRate || '0%',
+                            totalQuotations: 0,
+                            grossQuotationValue: '0',
+                            averageQuotationValue: '0',
+                            conversionRate: '0%',
+                            topProducts: [],
+                            leastSoldProducts: [],
+                            peakOrderTimes: [],
+                            averageBasketSize: 0,
+                            topShops: [],
+                        },
+                    };
+                    if (!currentData) {
+                        console.log('No current quotation data found');
+                        currentData = defaultData;
+                    }
+                    if (!previousData) {
+                        console.log('No previous quotation data found');
+                        previousData = defaultData;
+                    }
+                    reportData = {
+                        total: currentData?.total || 0,
+                        pending: currentData?.pending || [],
+                        approved: currentData?.approved || [],
+                        rejected: currentData?.rejected || [],
+                        metrics: {
+                            totalQuotations: currentData?.metrics?.totalQuotations || 0,
+                            grossQuotationValue: this.formatCurrency(Number(currentData?.metrics?.grossQuotationValue?.toString().replace(/[^0-9.-]+/g, '')) || 0),
+                            averageQuotationValue: this.formatCurrency(Number(currentData?.metrics?.averageQuotationValue?.toString().replace(/[^0-9.-]+/g, '')) || 0),
+                            conversionRate: currentData?.metrics?.conversionRate || '0%',
                             quotationTrends: {
-                                thisMonth: currentQuotationsData?.metrics?.totalQuotations || 0,
-                                lastMonth: previousQuotationsData?.metrics?.totalQuotations || 0,
-                                growth: this.calculateGrowth(currentQuotationsData?.metrics?.totalQuotations || 0, previousQuotationsData?.metrics?.totalQuotations || 0)
+                                thisMonth: currentData?.metrics?.totalQuotations || 0,
+                                lastMonth: previousData?.metrics?.totalQuotations || 0,
+                                growth: this.calculateGrowth(currentData?.metrics?.totalQuotations || 0, previousData?.metrics?.totalQuotations || 0),
                             },
-                            topProducts: currentQuotationsData?.metrics?.topProducts || [],
-                            leastSoldProducts: currentQuotationsData?.metrics?.leastSoldProducts || [],
-                            peakOrderTimes: currentQuotationsData?.metrics?.peakOrderTimes || [],
-                            averageBasketSize: currentQuotationsData?.metrics?.averageBasketSize || 0,
-                            topShops: currentQuotationsData?.metrics?.topShops || []
-                        }
+                            topProducts: currentData?.metrics?.topProducts || [],
+                            leastSoldProducts: currentData?.metrics?.leastSoldProducts || [],
+                            peakOrderTimes: currentData?.metrics?.peakOrderTimes || [],
+                            averageBasketSize: currentData?.metrics?.averageBasketSize || 0,
+                            topShops: currentData?.metrics?.topShops || [],
+                        },
                     };
                     title = 'Quotations Report';
                     description = `Quotations report for period ${startDate} to ${endDate}`;
@@ -393,7 +489,7 @@ let ReportsService = class ReportsService {
                 case reports_enums_1.ReportType.LEAD:
                     const [currentLeadsData, previousLeadsData] = await Promise.all([
                         this.leadService.getLeadsReport(currentFilter),
-                        this.leadService.getLeadsReport(previousFilter)
+                        this.leadService.getLeadsReport(previousFilter),
                     ]);
                     reportData = {
                         total: currentLeadsData?.total || 0,
@@ -409,12 +505,12 @@ let ReportsService = class ReportsService {
                             leadTrends: {
                                 thisMonth: currentLeadsData?.total || 0,
                                 lastMonth: previousLeadsData?.total || 0,
-                                growth: this.calculateGrowth(currentLeadsData?.total || 0, previousLeadsData?.total || 0)
+                                growth: this.calculateGrowth(currentLeadsData?.total || 0, previousLeadsData?.total || 0),
                             },
                             sourceEffectiveness: currentLeadsData?.metrics?.sourceEffectiveness || {},
                             geographicDistribution: currentLeadsData?.metrics?.geographicDistribution || {},
-                            leadQualityBySource: currentLeadsData?.metrics?.leadQualityBySource || {}
-                        }
+                            leadQualityBySource: currentLeadsData?.metrics?.leadQualityBySource || {},
+                        },
                     };
                     title = 'Leads Report';
                     description = `Leads report for period ${startDate} to ${endDate}`;
@@ -422,7 +518,7 @@ let ReportsService = class ReportsService {
                 case reports_enums_1.ReportType.TASK:
                     const [currentTasksData, previousTasksData] = await Promise.all([
                         this.tasksService.getTasksReport(currentFilter),
-                        this.tasksService.getTasksReport(previousFilter)
+                        this.tasksService.getTasksReport(previousFilter),
                     ]);
                     reportData = {
                         total: currentTasksData?.total || 0,
@@ -438,13 +534,13 @@ let ReportsService = class ReportsService {
                             taskTrends: {
                                 thisMonth: currentTasksData?.total || 0,
                                 lastMonth: previousTasksData?.total || 0,
-                                growth: this.calculateGrowth(currentTasksData?.total || 0, previousTasksData?.total || 0)
+                                growth: this.calculateGrowth(currentTasksData?.total || 0, previousTasksData?.total || 0),
                             },
                             incompletionReasons: currentTasksData?.metrics?.incompletionReasons || [],
                             clientCompletionRates: currentTasksData?.metrics?.clientCompletionRates || [],
                             taskPriorityDistribution: currentTasksData?.metrics?.taskPriorityDistribution || {},
-                            assigneePerformance: currentTasksData?.metrics?.assigneePerformance || []
-                        }
+                            assigneePerformance: currentTasksData?.metrics?.assigneePerformance || [],
+                        },
                     };
                     title = 'Tasks Report';
                     description = `Tasks report for period ${startDate} to ${endDate}`;
@@ -452,24 +548,51 @@ let ReportsService = class ReportsService {
                 default:
                     throw new Error('Invalid report type');
             }
+            console.log('Creating report with data:', { title, description, type, reportData });
             const report = this.reportRepository.create({
                 title,
                 description,
                 type,
                 metadata: {
                     period,
-                    startDate,
-                    endDate,
-                    branchId,
-                    generatedAt: new Date(),
-                    ...reportData
-                }
+                    startDate: currentStartDate.toISOString(),
+                    endDate: currentEndDate.toISOString(),
+                    generatedAt: new Date().toISOString(),
+                    ...reportData,
+                },
             });
-            await this.reportRepository.save(report);
-            return report;
+            const savedReport = await this.reportRepository.save(report);
+            console.log('Report saved successfully:', savedReport.uid);
+            return savedReport;
         }
         catch (error) {
-            return this.handleError(error);
+            console.error('Error generating report:', {
+                error,
+                errorMessage: error.message,
+                errorStack: error.stack,
+                errorName: error.name,
+                errorResponse: error.response?.data,
+                params: JSON.stringify(params, null, 2)
+            });
+            if (error instanceof TypeError) {
+                return this.handleError({
+                    message: 'Invalid data type in report generation',
+                    status: 400,
+                    details: error.message
+                });
+            }
+            if (error.name === 'EntityNotFoundError') {
+                return this.handleError({
+                    message: 'Required data not found',
+                    status: 404,
+                    details: error.message
+                });
+            }
+            return this.handleError({
+                message: 'Failed to generate report: ' + error.message,
+                status: 500,
+                details: error.stack
+            });
         }
     }
     calculateGrowthPercentage(current, previous) {
@@ -482,7 +605,7 @@ let ReportsService = class ReportsService {
         try {
             const checkIns = await this.checkInRepository.find({
                 where: filter,
-                relations: ['owner', 'branch', 'client']
+                relations: ['owner', 'branch', 'client'],
             });
             if (!checkIns) {
                 throw new common_1.NotFoundException('No check-ins found for the specified period');
@@ -507,8 +630,8 @@ let ReportsService = class ReportsService {
                     employeeStats,
                     locationStats,
                     timeStats,
-                    completionRate: `${((checkIns.filter(c => c.checkOutTime).length / totalCheckIns) * 100).toFixed(1)}%`
-                }
+                    completionRate: `${((checkIns.filter((c) => c.checkOutTime).length / totalCheckIns) * 100).toFixed(1)}%`,
+                },
             };
         }
         catch (error) {
@@ -524,14 +647,14 @@ let ReportsService = class ReportsService {
     }
     analyzeEmployeeAttendance(checkIns) {
         const employeeStats = new Map();
-        checkIns.forEach(checkIn => {
+        checkIns.forEach((checkIn) => {
             if (!employeeStats.has(checkIn.owner.uid)) {
                 employeeStats.set(checkIn.owner.uid, {
                     name: checkIn.owner.username,
                     checkIns: 0,
                     totalDuration: 0,
                     completedCheckIns: 0,
-                    locations: {}
+                    locations: {},
                 });
             }
             const stats = employeeStats.get(checkIn.owner.uid);
@@ -550,21 +673,20 @@ let ReportsService = class ReportsService {
             totalCheckIns: stats.checkIns,
             averageDuration: Math.round(stats.totalDuration / stats.completedCheckIns || 0),
             completedCheckIns: stats.completedCheckIns,
-            mostFrequentLocation: Object.entries(stats.locations)
-                .sort((a, b) => b[1] - a[1])[0]?.[0] || 'Unknown'
+            mostFrequentLocation: Object.entries(stats.locations).sort((a, b) => b[1] - a[1])[0]?.[0] || 'Unknown',
         }))
             .sort((a, b) => b.totalCheckIns - a.totalCheckIns);
     }
     analyzeCheckInLocations(checkIns) {
         const locationStats = new Map();
-        checkIns.forEach(checkIn => {
+        checkIns.forEach((checkIn) => {
             const location = this.getLocationString(checkIn.checkInLocation);
             if (!locationStats.has(location)) {
                 locationStats.set(location, {
                     checkIns: 0,
                     employees: new Set(),
                     totalDuration: 0,
-                    completedCheckIns: 0
+                    completedCheckIns: 0,
                 });
             }
             const stats = locationStats.get(location);
@@ -580,7 +702,7 @@ let ReportsService = class ReportsService {
             location,
             totalCheckIns: stats.checkIns,
             uniqueEmployees: stats.employees.size,
-            averageDuration: Math.round(stats.totalDuration / stats.completedCheckIns || 0)
+            averageDuration: Math.round(stats.totalDuration / stats.completedCheckIns || 0),
         }))
             .sort((a, b) => b.totalCheckIns - a.totalCheckIns);
     }
@@ -590,7 +712,7 @@ let ReportsService = class ReportsService {
         let totalEndMinutes = 0;
         let totalDuration = 0;
         let completedCheckIns = 0;
-        checkIns.forEach(checkIn => {
+        checkIns.forEach((checkIn) => {
             const startHour = new Date(checkIn.checkInTime).getHours();
             hourCounts[startHour]++;
             const startMinutes = startHour * 60 + new Date(checkIn.checkInTime).getMinutes();
@@ -612,7 +734,7 @@ let ReportsService = class ReportsService {
                 .slice(0, 5),
             averageStartTime: `${Math.floor(avgStartMinutes / 60)}:${String(avgStartMinutes % 60).padStart(2, '0')}`,
             averageEndTime: `${Math.floor(avgEndMinutes / 60)}:${String(avgEndMinutes % 60).padStart(2, '0')}`,
-            averageDuration: Math.round(totalDuration / completedCheckIns)
+            averageDuration: Math.round(totalDuration / completedCheckIns),
         };
     }
     async getDailyFlashReport() {
@@ -623,12 +745,12 @@ let ReportsService = class ReportsService {
         const filter = {
             createdAt: {
                 gte: today,
-                lt: tomorrow
-            }
+                lt: tomorrow,
+            },
         };
         const [salesData, attendanceData] = await Promise.all([
             this.shopService.getQuotationsReport(filter),
-            this.getCheckInsReport(filter)
+            this.getCheckInsReport(filter),
         ]);
         return {
             date: today.toISOString().split('T')[0],
@@ -636,14 +758,14 @@ let ReportsService = class ReportsService {
                 totalQuotations: salesData?.total || 0,
                 totalValue: salesData?.metrics?.grossQuotationValue || '0',
                 conversionRate: salesData?.metrics?.conversionRate || '0%',
-                topProducts: salesData?.metrics?.topProducts?.slice(0, 3) || []
+                topProducts: salesData?.metrics?.topProducts?.slice(0, 3) || [],
             },
             attendance: {
                 totalCheckIns: attendanceData?.totalCheckIns || 0,
                 averageDuration: attendanceData?.averageDurationMinutes || 0,
                 completionRate: attendanceData?.metrics?.completionRate || '0%',
-                presentEmployees: attendanceData?.metrics?.employeeStats?.length || 0
-            }
+                presentEmployees: attendanceData?.metrics?.employeeStats?.length || 0,
+            },
         };
     }
     async getWeeklyJournalFlashReport() {
@@ -654,8 +776,8 @@ let ReportsService = class ReportsService {
         const filter = {
             createdAt: {
                 gte: weekStart,
-                lte: today
-            }
+                lte: today,
+            },
         };
         const journalData = await this.journalService.getJournalsReport(filter);
         return {
@@ -663,7 +785,7 @@ let ReportsService = class ReportsService {
             totalJournals: journalData?.metrics?.totalEntries || 0,
             completionRate: journalData?.metrics?.completionRate || '0%',
             topContributors: journalData?.metrics?.topCategories?.slice(0, 3) || [],
-            categoryBreakdown: journalData?.metrics?.topCategories || {}
+            categoryBreakdown: journalData?.metrics?.topCategories || {},
         };
     }
     async getMonthlyClaimsFlashReport() {
@@ -675,15 +797,15 @@ let ReportsService = class ReportsService {
             this.claimsService.getClaimsReport({
                 createdAt: {
                     gte: monthStart,
-                    lte: today
-                }
+                    lte: today,
+                },
             }),
             this.claimsService.getClaimsReport({
                 createdAt: {
                     gte: lastMonthStart,
-                    lte: lastMonthEnd
-                }
-            })
+                    lte: lastMonthEnd,
+                },
+            }),
         ]);
         const currentTotal = currentMonthData?.total || 0;
         const lastTotal = lastMonthData?.total || 0;
@@ -694,13 +816,13 @@ let ReportsService = class ReportsService {
                 totalClaims: currentTotal,
                 totalValue: currentMonthData?.totalValue || 0,
                 approvalRate: currentMonthData?.metrics?.approvalRate || '0%',
-                averageValue: currentMonthData?.metrics?.averageClaimValue || 0
+                averageValue: currentMonthData?.metrics?.averageClaimValue || 0,
             },
             comparison: {
                 claimsGrowth: growth,
-                valueGrowth: this.calculateGrowthPercentage(currentMonthData?.totalValue || 0, lastMonthData?.totalValue || 0)
+                valueGrowth: this.calculateGrowthPercentage(currentMonthData?.totalValue || 0, lastMonthData?.totalValue || 0),
             },
-            topCategories: currentMonthData?.metrics?.categoryBreakdown?.slice(0, 3) || []
+            topCategories: currentMonthData?.metrics?.categoryBreakdown?.slice(0, 3) || [],
         };
     }
 };

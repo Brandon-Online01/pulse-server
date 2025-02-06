@@ -61,7 +61,7 @@ export class ReportsService {
 	private formatCurrency(amount: number): string {
 		return new Intl.NumberFormat(this.currencyLocale, {
 			style: 'currency',
-			currency: this.currencyCode
+			currency: this.currencyCode,
 		})
 			.format(amount)
 			.replace(this.currencyCode, this.currencySymbol);
@@ -76,8 +76,8 @@ export class ReportsService {
 	private handleError(error: any) {
 		return {
 			message: error?.message || 'An error occurred',
-			statusCode: error?.status || 500
-		}
+			statusCode: error?.status || 500,
+		};
 	}
 
 	private formatReportData(
@@ -107,7 +107,7 @@ export class ReportsService {
 				review: leadsStats?.review || [],
 				pending: leadsStats?.pending || [],
 				approved: leadsStats?.approved || [],
-				declined: leadsStats?.declined || []
+				declined: leadsStats?.declined || [],
 			},
 			journals: journalsStats || [],
 			claims: {
@@ -115,42 +115,55 @@ export class ReportsService {
 				pending: claimsStats?.pending || [],
 				approved: claimsStats?.approved || [],
 				declined: claimsStats?.declined || [],
-				totalValue: this.formatCurrency(claimsStats?.totalValue || 0)
+				totalValue: this.formatCurrency(claimsStats?.totalValue || 0),
 			},
 			tasks: tasksTotal || 0,
-			attendance: sortedAttendance.length > 0 ? {
-				totalHours: attendanceHours,
-				startTime: firstCheckIn.checkIn.toLocaleTimeString(),
-				endTime: lastCheckOut.checkOut?.toLocaleTimeString(),
-				duration: `${Math.floor(attendanceHours)}h ${Math.round((attendanceHours % 1) * 60)}m`,
-				status: lastCheckOut.status,
-				checkInLocation: firstCheckIn.checkInLatitude && firstCheckIn.checkInLongitude ? {
-					latitude: firstCheckIn.checkInLatitude,
-					longitude: firstCheckIn.checkInLongitude,
-					notes: firstCheckIn.checkInNotes || '',
-				} : undefined,
-				checkOutLocation: lastCheckOut.checkOutLatitude && lastCheckOut.checkOutLongitude ? {
-					latitude: lastCheckOut.checkOutLatitude,
-					longitude: lastCheckOut.checkOutLongitude,
-					notes: lastCheckOut.checkOutNotes || '',
-				} : undefined,
-				verifiedAt: firstCheckIn.verifiedAt?.toISOString(),
-				verifiedBy: firstCheckIn.verifiedBy,
-			} : undefined,
+			attendance:
+				sortedAttendance.length > 0
+					? {
+							totalHours: attendanceHours,
+							startTime: firstCheckIn.checkIn.toLocaleTimeString(),
+							endTime: lastCheckOut.checkOut?.toLocaleTimeString(),
+							duration: `${Math.floor(attendanceHours)}h ${Math.round((attendanceHours % 1) * 60)}m`,
+							status: lastCheckOut.status,
+							checkInLocation:
+								firstCheckIn.checkInLatitude && firstCheckIn.checkInLongitude
+									? {
+											latitude: firstCheckIn.checkInLatitude,
+											longitude: firstCheckIn.checkInLongitude,
+											notes: firstCheckIn.checkInNotes || '',
+									  }
+									: undefined,
+							checkOutLocation:
+								lastCheckOut.checkOutLatitude && lastCheckOut.checkOutLongitude
+									? {
+											latitude: lastCheckOut.checkOutLatitude,
+											longitude: lastCheckOut.checkOutLongitude,
+											notes: lastCheckOut.checkOutNotes || '',
+									  }
+									: undefined,
+							verifiedAt: firstCheckIn.verifiedAt?.toISOString(),
+							verifiedBy: firstCheckIn.verifiedBy,
+					  }
+					: undefined,
 			quotations: {
 				totalQuotations: currentQuotations,
 				grossQuotationValue: this.formatCurrency(currentRevenue),
-				averageQuotationValue: this.formatCurrency(currentQuotations > 0 ? currentRevenue / currentQuotations : 0),
+				averageQuotationValue: this.formatCurrency(
+					currentQuotations > 0 ? currentRevenue / currentQuotations : 0,
+				),
 				growth: this.calculateGrowth(currentQuotations, previousDayQuotations),
 				revenueGrowth: this.calculateGrowth(currentRevenue, previousDayRevenue),
 			},
-			tracking: trackingData ? {
-				totalDistance: trackingData?.totalDistance,
-				locationAnalysis: {
-					timeSpentByLocation: trackingData?.locationAnalysis?.timeSpentByLocation || {},
-					averageTimePerLocation: trackingData?.locationAnalysis?.averageTimePerLocation || 0
-				}
-			} : null,
+			tracking: trackingData
+				? {
+						totalDistance: trackingData?.totalDistance,
+						locationAnalysis: {
+							timeSpentByLocation: trackingData?.locationAnalysis?.timeSpentByLocation || {},
+							averageTimePerLocation: trackingData?.locationAnalysis?.averageTimePerLocation || 0,
+						},
+				  }
+				: null,
 			xp: {
 				level: userRewards?.rank || 1,
 				currentXP: userRewards?.totalXP || 0,
@@ -162,7 +175,7 @@ export class ReportsService {
 				newCustomers: leadsStats?.total || 0,
 				customerGrowth: this.calculateGrowth(
 					leadsStats?.total || 0,
-					(leadsStats?.total || 0) - (leadsStats?.pending?.length || 0)
+					(leadsStats?.total || 0) - (leadsStats?.pending?.length || 0),
 				),
 				userSpecific: {
 					todayLeads: leadsStats?.pending?.length || 0,
@@ -170,8 +183,8 @@ export class ReportsService {
 					todayTasks: tasksTotal || 0,
 					todayQuotations: currentQuotations,
 					hoursWorked: attendanceHours,
-				}
-			}
+				},
+			},
 		};
 
 		return {
@@ -182,17 +195,23 @@ export class ReportsService {
 					xp: commonData.xp,
 					attendance: commonData.attendance,
 					quotationGrowth: commonData.quotations.growth,
-					revenueGrowth: commonData.quotations.revenueGrowth
+					revenueGrowth: commonData.quotations.revenueGrowth,
 				},
-				tracking: trackingData ? {
-					totalDistance: trackingData?.totalDistance,
-					locations: Object.entries(trackingData.locationAnalysis.timeSpentByLocation || {}).map(([address, minutes]) => ({
-						address,
-						timeSpent: `${Math.round(Number(minutes))} minutes`
-					})),
-					averageTimePerLocation: `${Math.round(trackingData.locationAnalysis.averageTimePerLocation || 0)} minutes`
-				} : undefined
-			}
+				tracking: trackingData
+					? {
+							totalDistance: trackingData?.totalDistance,
+							locations: Object.entries(trackingData.locationAnalysis.timeSpentByLocation || {}).map(
+								([address, minutes]) => ({
+									address,
+									timeSpent: `${Math.round(Number(minutes))} minutes`,
+								}),
+							),
+							averageTimePerLocation: `${Math.round(
+								trackingData.locationAnalysis.averageTimePerLocation || 0,
+							)} minutes`,
+					  }
+					: undefined,
+			},
 		};
 	}
 
@@ -204,7 +223,7 @@ export class ReportsService {
 				this.claimsService.getClaimsForDate(new Date()),
 				this.shopService.getQuotationsForDate(new Date()),
 				this.tasksService.getTaskStatusSummary(),
-				this.attendanceService.getMonthlyAttendanceStats()
+				this.attendanceService.getMonthlyAttendanceStats(),
 			]);
 
 			const [
@@ -213,7 +232,7 @@ export class ReportsService {
 				{ claims: claimsStats },
 				{ stats: ordersStats },
 				{ byStatus: tasksStats },
-				{ stats: attendanceStats }
+				{ stats: attendanceStats },
 			] = allData;
 
 			const response = {
@@ -222,7 +241,7 @@ export class ReportsService {
 					approved: leadsStats?.approved?.length,
 					inReview: leadsStats?.review?.length,
 					declined: leadsStats?.declined?.length,
-					total: leadsStats?.total
+					total: leadsStats?.total,
 				},
 				journals: {
 					total: journalsStats?.length,
@@ -232,19 +251,19 @@ export class ReportsService {
 					approved: claimsStats?.approved?.length || 0,
 					declined: claimsStats?.declined?.length || 0,
 					paid: claimsStats?.paid?.length || 0,
-					totalValue: claimsStats?.totalValue || 0
+					totalValue: claimsStats?.totalValue || 0,
 				},
 				tasks: {
 					pending: tasksStats?.PENDING,
 					completed: tasksStats?.COMPLETED,
 					missed: tasksStats?.MISSED,
 					postponed: tasksStats?.POSTPONED,
-					total: Object.values(tasksStats || {}).reduce((acc: number, curr: number) => acc + curr, 0)
+					total: Object.values(tasksStats || {}).reduce((acc: number, curr: number) => acc + curr, 0),
 				},
 				attendance: {
 					attendance: attendanceStats?.metrics?.attendancePercentage,
 					present: attendanceStats?.metrics?.totalPresent,
-					total: attendanceStats?.metrics?.totalEmployees
+					total: attendanceStats?.metrics?.totalEmployees,
 				},
 				orders: {
 					pending: ordersStats?.quotations?.pending?.length,
@@ -257,14 +276,14 @@ export class ReportsService {
 					metrics: {
 						totalQuotations: ordersStats?.quotations?.metrics?.totalQuotations,
 						grossQuotationValue: ordersStats?.quotations?.metrics?.grossQuotationValue || 0,
-						averageQuotationValue: ordersStats?.quotations?.metrics?.averageQuotationValue || 0
-					}
+						averageQuotationValue: ordersStats?.quotations?.metrics?.averageQuotationValue || 0,
+					},
 				},
-			}
+			};
 
-			return response
+			return response;
 		} catch (error) {
-			return this.handleError(error)
+			return this.handleError(error);
 		}
 	}
 
@@ -282,7 +301,7 @@ export class ReportsService {
 				this.attendanceService.getAttendanceForDate(date),
 				reference ? this.rewardsService.getUserRewards(Number(reference)) : null,
 				reference ? this.userService.findOne(Number(reference)) : null,
-				reference ? this.trackingService.getDailyTracking(Number(reference), date) : null
+				reference ? this.trackingService.getDailyTracking(Number(reference), date) : null,
 			]);
 
 			const [
@@ -294,7 +313,7 @@ export class ReportsService {
 				{ totalHours: attendanceHours, attendanceRecords },
 				userRewards,
 				userData,
-				{ data: trackingData }
+				{ data: trackingData },
 			] = allData;
 
 			// Get previous day metrics for comparison
@@ -315,7 +334,7 @@ export class ReportsService {
 				trackingData,
 				userRewards,
 				previousDayQuotations,
-				previousDayRevenue
+				previousDayRevenue,
 			);
 
 			// Create report record
@@ -325,7 +344,7 @@ export class ReportsService {
 				type: ReportType.DAILY,
 				metadata: reportMetadata,
 				owner: userData?.user,
-				branch: userData?.user?.branch
+				branch: userData?.user?.branch,
 			});
 
 			await this.reportRepository.save(report);
@@ -336,7 +355,7 @@ export class ReportsService {
 				title: 'Daily Report Generated',
 				message: `Your daily activity report for ${new Date().toLocaleDateString()} has been generated`,
 				status: NotificationStatus.UNREAD,
-				owner: userData?.user
+				owner: userData?.user,
 			};
 
 			const recipients = [AccessLevel.USER];
@@ -347,7 +366,7 @@ export class ReportsService {
 				const emailTemplate: DailyReportData = {
 					name: userData.user.username,
 					date: `${new Date()}`,
-					...emailData
+					...emailData,
 				};
 
 				this.eventEmitter.emit('send.email', EmailType.DAILY_REPORT, [userData.user.email], emailTemplate);
@@ -361,19 +380,67 @@ export class ReportsService {
 
 	async generateReport(params: GenerateReportDto) {
 		try {
-			const { startDate, endDate, period, type, branchId } = params;
-			let reportData: any = {};
-			let title = '';
-			let description = '';
+			// Log the raw incoming DTO
+			console.log('=== REPORT GENERATION START ===');
+			console.log('1. Raw DTO received:', {
+				params,
+				paramTypes: {
+					startDate: typeof params.startDate,
+					endDate: typeof params.endDate,
+					period: typeof params.period,
+					type: typeof params.type
+				}
+			});
 
-			// Calculate previous period for comparison
+			const { startDate, endDate, period, type } = params;
+			
+			// Log the destructured values
+			console.log('2. Destructured values:', {
+				startDate,
+				endDate,
+				period,
+				type,
+				startDateType: typeof startDate,
+				endDateType: typeof endDate
+			});
+
+			// Parse dates and log results
 			const currentStartDate = new Date(startDate);
 			const currentEndDate = new Date(endDate);
-			const previousStartDate = new Date(startDate);
-			const previousEndDate = new Date(startDate);
+
+			console.log('3. Parsed dates:', {
+				currentStartDate,
+				currentEndDate,
+				isStartDateValid: !isNaN(currentStartDate.getTime()),
+				isEndDateValid: !isNaN(currentEndDate.getTime()),
+				startDateTimestamp: currentStartDate.getTime(),
+				endDateTimestamp: currentEndDate.getTime()
+			});
+
+			// Validate dates
+			if (isNaN(currentStartDate.getTime()) || isNaN(currentEndDate.getTime())) {
+				console.error('4. Date validation failed:', {
+					startDateValid: !isNaN(currentStartDate.getTime()),
+					endDateValid: !isNaN(currentEndDate.getTime()),
+					startDateString: startDate,
+					endDateString: endDate
+				});
+				throw new Error('Invalid date format provided');
+			}
+
+			// Log period validation
+			console.log('5. Period validation:', {
+				providedPeriod: period,
+				periodLowerCase: period.toLowerCase(),
+				isValidPeriod: ['daily', 'weekly', 'monthly'].includes(period.toLowerCase())
+			});
+
+			// Calculate previous period for comparison
+			const previousStartDate = new Date(currentStartDate);
+			const previousEndDate = new Date(currentStartDate);
 
 			// Adjust previous period based on selected period
-			switch (period) {
+			switch (period.toLowerCase()) {
 				case 'daily':
 					previousStartDate.setDate(previousStartDate.getDate() - 1);
 					previousEndDate.setDate(previousEndDate.getDate() - 1);
@@ -386,7 +453,18 @@ export class ReportsService {
 					previousStartDate.setMonth(previousStartDate.getMonth() - 1);
 					previousEndDate.setMonth(previousEndDate.getMonth() - 1);
 					break;
+				default:
+					console.error('Invalid period:', period);
+					throw new Error('Invalid period specified');
 			}
+
+			// Log calculated comparison dates
+			console.log('Comparison period dates:', {
+				previousStartDate: previousStartDate.toISOString(),
+				previousEndDate: previousEndDate.toISOString(),
+				previousStartDateLocal: previousStartDate.toString(),
+				previousEndDateLocal: previousEndDate.toString()
+			});
 
 			const dateFilter = {
 				createdAt: {
@@ -402,15 +480,27 @@ export class ReportsService {
 				}
 			};
 
-			const branchFilter = branchId ? { branch: { uid: branchId } } : {};
-			const currentFilter = { ...dateFilter, ...branchFilter };
-			const previousFilter = { ...previousDateFilter, ...branchFilter };
+			// Log the final filter objects
+			console.log('Final date filters:', {
+				current: JSON.stringify(dateFilter, null, 2),
+				previous: JSON.stringify(previousDateFilter, null, 2)
+			});
+
+			const currentFilter = { ...dateFilter };
+			const previousFilter = { ...previousDateFilter };
+
+			// Log the type of report being generated
+			console.log('Generating report for type:', type);
+
+			let reportData: any = {};
+			let title = '';
+			let description = '';
 
 			switch (type) {
 				case ReportType.CLAIM:
 					const [currentClaimsData, previousClaimsData] = await Promise.all([
 						this.claimsService.getClaimsReport(currentFilter),
-						this.claimsService.getClaimsReport(previousFilter)
+						this.claimsService.getClaimsReport(previousFilter),
 					]);
 
 					const currentTotalValue = currentClaimsData?.totalValue || 0;
@@ -437,45 +527,91 @@ export class ReportsService {
 								lastMonth: previousClaimsData?.metrics?.totalClaims || 0,
 								growth: this.calculateGrowth(
 									currentClaimsData?.metrics?.totalClaims || 0,
-									previousClaimsData?.metrics?.totalClaims || 0
-								)
-							}
-						}
+									previousClaimsData?.metrics?.totalClaims || 0,
+								),
+							},
+						},
 					};
 					title = 'Claims Report';
 					description = `Claims report for period ${startDate} to ${endDate}`;
 					break;
 
 				case ReportType.QUOTATION:
-					const [currentQuotationsData, previousQuotationsData] = await Promise.all([
+					console.log('Fetching quotation reports with filters:', {
+						currentFilter: JSON.stringify(currentFilter, null, 2),
+						previousFilter: JSON.stringify(previousFilter, null, 2)
+					});
+
+					let [currentData, previousData] = await Promise.all([
 						this.shopService.getQuotationsReport(currentFilter),
 						this.shopService.getQuotationsReport(previousFilter)
 					]);
 
-					reportData = {
-						total: currentQuotationsData?.total || 0,
-						pending: currentQuotationsData?.pending || [],
-						approved: currentQuotationsData?.approved || [],
-						rejected: currentQuotationsData?.rejected || [],
+					console.log('Raw quotation data received:', {
+						current: JSON.stringify(currentData, null, 2),
+						previous: JSON.stringify(previousData, null, 2)
+					});
+
+					const defaultData = {
+						total: 0,
+						pending: [],
+						approved: [],
+						rejected: [],
 						metrics: {
-							totalQuotations: currentQuotationsData?.metrics?.totalQuotations || 0,
-							grossQuotationValue: this.formatCurrency(Number(currentQuotationsData?.metrics?.grossQuotationValue?.replace(/[^0-9.-]+/g, '')) || 0),
-							averageQuotationValue: this.formatCurrency(Number(currentQuotationsData?.metrics?.averageQuotationValue?.replace(/[^0-9.-]+/g, '')) || 0),
-							conversionRate: currentQuotationsData?.metrics?.conversionRate || '0%',
+							totalQuotations: 0,
+							grossQuotationValue: '0',
+							averageQuotationValue: '0',
+							conversionRate: '0%',
+							topProducts: [],
+							leastSoldProducts: [],
+							peakOrderTimes: [],
+							averageBasketSize: 0,
+							topShops: [],
+						},
+					};
+
+					if (!currentData) {
+						console.log('No current quotation data found');
+						currentData = defaultData;
+					}
+
+					if (!previousData) {
+						console.log('No previous quotation data found');
+						previousData = defaultData;
+					}
+
+					reportData = {
+						total: currentData?.total || 0,
+						pending: currentData?.pending || [],
+						approved: currentData?.approved || [],
+						rejected: currentData?.rejected || [],
+						metrics: {
+							totalQuotations: currentData?.metrics?.totalQuotations || 0,
+							grossQuotationValue: this.formatCurrency(
+								Number(
+									currentData?.metrics?.grossQuotationValue?.toString().replace(/[^0-9.-]+/g, ''),
+								) || 0,
+							),
+							averageQuotationValue: this.formatCurrency(
+								Number(
+									currentData?.metrics?.averageQuotationValue?.toString().replace(/[^0-9.-]+/g, ''),
+								) || 0,
+							),
+							conversionRate: currentData?.metrics?.conversionRate || '0%',
 							quotationTrends: {
-								thisMonth: currentQuotationsData?.metrics?.totalQuotations || 0,
-								lastMonth: previousQuotationsData?.metrics?.totalQuotations || 0,
+								thisMonth: currentData?.metrics?.totalQuotations || 0,
+								lastMonth: previousData?.metrics?.totalQuotations || 0,
 								growth: this.calculateGrowth(
-									currentQuotationsData?.metrics?.totalQuotations || 0,
-									previousQuotationsData?.metrics?.totalQuotations || 0
-								)
+									currentData?.metrics?.totalQuotations || 0,
+									previousData?.metrics?.totalQuotations || 0,
+								),
 							},
-							topProducts: currentQuotationsData?.metrics?.topProducts || [],
-							leastSoldProducts: currentQuotationsData?.metrics?.leastSoldProducts || [],
-							peakOrderTimes: currentQuotationsData?.metrics?.peakOrderTimes || [],
-							averageBasketSize: currentQuotationsData?.metrics?.averageBasketSize || 0,
-							topShops: currentQuotationsData?.metrics?.topShops || []
-						}
+							topProducts: currentData?.metrics?.topProducts || [],
+							leastSoldProducts: currentData?.metrics?.leastSoldProducts || [],
+							peakOrderTimes: currentData?.metrics?.peakOrderTimes || [],
+							averageBasketSize: currentData?.metrics?.averageBasketSize || 0,
+							topShops: currentData?.metrics?.topShops || [],
+						},
 					};
 					title = 'Quotations Report';
 					description = `Quotations report for period ${startDate} to ${endDate}`;
@@ -484,7 +620,7 @@ export class ReportsService {
 				case ReportType.LEAD:
 					const [currentLeadsData, previousLeadsData] = await Promise.all([
 						this.leadService.getLeadsReport(currentFilter),
-						this.leadService.getLeadsReport(previousFilter)
+						this.leadService.getLeadsReport(previousFilter),
 					]);
 
 					reportData = {
@@ -503,13 +639,13 @@ export class ReportsService {
 								lastMonth: previousLeadsData?.total || 0,
 								growth: this.calculateGrowth(
 									currentLeadsData?.total || 0,
-									previousLeadsData?.total || 0
-								)
+									previousLeadsData?.total || 0,
+								),
 							},
 							sourceEffectiveness: currentLeadsData?.metrics?.sourceEffectiveness || {},
 							geographicDistribution: currentLeadsData?.metrics?.geographicDistribution || {},
-							leadQualityBySource: currentLeadsData?.metrics?.leadQualityBySource || {}
-						}
+							leadQualityBySource: currentLeadsData?.metrics?.leadQualityBySource || {},
+						},
 					};
 					title = 'Leads Report';
 					description = `Leads report for period ${startDate} to ${endDate}`;
@@ -518,7 +654,7 @@ export class ReportsService {
 				case ReportType.TASK:
 					const [currentTasksData, previousTasksData] = await Promise.all([
 						this.tasksService.getTasksReport(currentFilter),
-						this.tasksService.getTasksReport(previousFilter)
+						this.tasksService.getTasksReport(previousFilter),
 					]);
 
 					reportData = {
@@ -537,14 +673,14 @@ export class ReportsService {
 								lastMonth: previousTasksData?.total || 0,
 								growth: this.calculateGrowth(
 									currentTasksData?.total || 0,
-									previousTasksData?.total || 0
-								)
+									previousTasksData?.total || 0,
+								),
 							},
 							incompletionReasons: currentTasksData?.metrics?.incompletionReasons || [],
 							clientCompletionRates: currentTasksData?.metrics?.clientCompletionRates || [],
 							taskPriorityDistribution: currentTasksData?.metrics?.taskPriorityDistribution || {},
-							assigneePerformance: currentTasksData?.metrics?.assigneePerformance || []
-						}
+							assigneePerformance: currentTasksData?.metrics?.assigneePerformance || [],
+						},
 					};
 					title = 'Tasks Report';
 					description = `Tasks report for period ${startDate} to ${endDate}`;
@@ -554,6 +690,8 @@ export class ReportsService {
 					throw new Error('Invalid report type');
 			}
 
+			console.log('Creating report with data:', { title, description, type, reportData });
+
 			// Create report record
 			const report = this.reportRepository.create({
 				title,
@@ -561,19 +699,49 @@ export class ReportsService {
 				type,
 				metadata: {
 					period,
-					startDate,
-					endDate,
-					branchId,
-					generatedAt: new Date(),
-					...reportData
-				}
+					startDate: currentStartDate.toISOString(),
+					endDate: currentEndDate.toISOString(),
+					generatedAt: new Date().toISOString(),
+					...reportData,
+				},
 			});
 
-			await this.reportRepository.save(report);
+			const savedReport = await this.reportRepository.save(report);
+			console.log('Report saved successfully:', savedReport.uid);
 
-			return report;
+			return savedReport;
 		} catch (error) {
-			return this.handleError(error);
+			console.error('Error generating report:', {
+				error,
+				errorMessage: error.message,
+				errorStack: error.stack,
+				errorName: error.name,
+				errorResponse: error.response?.data,
+				params: JSON.stringify(params, null, 2)
+			});
+
+			// Check for specific error types
+			if (error instanceof TypeError) {
+				return this.handleError({
+					message: 'Invalid data type in report generation',
+					status: 400,
+					details: error.message
+				});
+			}
+
+			if (error.name === 'EntityNotFoundError') {
+				return this.handleError({
+					message: 'Required data not found',
+					status: 404,
+					details: error.message
+				});
+			}
+
+			return this.handleError({
+				message: 'Failed to generate report: ' + error.message,
+				status: 500,
+				details: error.stack
+			});
 		}
 	}
 
@@ -588,7 +756,7 @@ export class ReportsService {
 		try {
 			const checkIns = await this.checkInRepository.find({
 				where: filter,
-				relations: ['owner', 'branch', 'client']
+				relations: ['owner', 'branch', 'client'],
 			});
 
 			if (!checkIns) {
@@ -598,10 +766,7 @@ export class ReportsService {
 			const totalCheckIns = checkIns.length;
 			const totalDuration = checkIns.reduce((sum, checkIn) => {
 				if (checkIn.checkOutTime) {
-					const duration = differenceInMinutes(
-						new Date(checkIn.checkOutTime),
-						new Date(checkIn.checkInTime)
-					);
+					const duration = differenceInMinutes(new Date(checkIn.checkOutTime), new Date(checkIn.checkInTime));
 					return sum + duration;
 				}
 				return sum;
@@ -620,8 +785,10 @@ export class ReportsService {
 					employeeStats,
 					locationStats,
 					timeStats,
-					completionRate: `${((checkIns.filter(c => c.checkOutTime).length / totalCheckIns) * 100).toFixed(1)}%`
-				}
+					completionRate: `${((checkIns.filter((c) => c.checkOutTime).length / totalCheckIns) * 100).toFixed(
+						1,
+					)}%`,
+				},
 			};
 		} catch (error) {
 			return null;
@@ -642,22 +809,25 @@ export class ReportsService {
 		completedCheckIns: number;
 		mostFrequentLocation: string;
 	}> {
-		const employeeStats = new Map<number, {
-			name: string;
-			checkIns: number;
-			totalDuration: number;
-			completedCheckIns: number;
-			locations: Record<string, number>;
-		}>();
+		const employeeStats = new Map<
+			number,
+			{
+				name: string;
+				checkIns: number;
+				totalDuration: number;
+				completedCheckIns: number;
+				locations: Record<string, number>;
+			}
+		>();
 
-		checkIns.forEach(checkIn => {
+		checkIns.forEach((checkIn) => {
 			if (!employeeStats.has(checkIn.owner.uid)) {
 				employeeStats.set(checkIn.owner.uid, {
 					name: checkIn.owner.username,
 					checkIns: 0,
 					totalDuration: 0,
 					completedCheckIns: 0,
-					locations: {}
+					locations: {},
 				});
 			}
 
@@ -668,7 +838,7 @@ export class ReportsService {
 				stats.completedCheckIns++;
 				stats.totalDuration += differenceInMinutes(
 					new Date(checkIn.checkOutTime),
-					new Date(checkIn.checkInTime)
+					new Date(checkIn.checkInTime),
 				);
 			}
 
@@ -683,8 +853,7 @@ export class ReportsService {
 				totalCheckIns: stats.checkIns,
 				averageDuration: Math.round(stats.totalDuration / stats.completedCheckIns || 0),
 				completedCheckIns: stats.completedCheckIns,
-				mostFrequentLocation: Object.entries(stats.locations)
-					.sort((a, b) => b[1] - a[1])[0]?.[0] || 'Unknown'
+				mostFrequentLocation: Object.entries(stats.locations).sort((a, b) => b[1] - a[1])[0]?.[0] || 'Unknown',
 			}))
 			.sort((a, b) => b.totalCheckIns - a.totalCheckIns);
 	}
@@ -695,14 +864,17 @@ export class ReportsService {
 		uniqueEmployees: number;
 		averageDuration: number;
 	}> {
-		const locationStats = new Map<string, {
-			checkIns: number;
-			employees: Set<number>;
-			totalDuration: number;
-			completedCheckIns: number;
-		}>();
+		const locationStats = new Map<
+			string,
+			{
+				checkIns: number;
+				employees: Set<number>;
+				totalDuration: number;
+				completedCheckIns: number;
+			}
+		>();
 
-		checkIns.forEach(checkIn => {
+		checkIns.forEach((checkIn) => {
 			const location = this.getLocationString(checkIn.checkInLocation);
 
 			if (!locationStats.has(location)) {
@@ -710,7 +882,7 @@ export class ReportsService {
 					checkIns: 0,
 					employees: new Set(),
 					totalDuration: 0,
-					completedCheckIns: 0
+					completedCheckIns: 0,
 				});
 			}
 
@@ -722,7 +894,7 @@ export class ReportsService {
 				stats.completedCheckIns++;
 				stats.totalDuration += differenceInMinutes(
 					new Date(checkIn.checkOutTime),
-					new Date(checkIn.checkInTime)
+					new Date(checkIn.checkInTime),
 				);
 			}
 		});
@@ -732,7 +904,7 @@ export class ReportsService {
 				location,
 				totalCheckIns: stats.checkIns,
 				uniqueEmployees: stats.employees.size,
-				averageDuration: Math.round(stats.totalDuration / stats.completedCheckIns || 0)
+				averageDuration: Math.round(stats.totalDuration / stats.completedCheckIns || 0),
 			}))
 			.sort((a, b) => b.totalCheckIns - a.totalCheckIns);
 	}
@@ -749,7 +921,7 @@ export class ReportsService {
 		let totalDuration = 0;
 		let completedCheckIns = 0;
 
-		checkIns.forEach(checkIn => {
+		checkIns.forEach((checkIn) => {
 			const startHour = new Date(checkIn.checkInTime).getHours();
 			hourCounts[startHour]++;
 
@@ -761,10 +933,7 @@ export class ReportsService {
 				const endHour = new Date(checkIn.checkOutTime).getHours();
 				const endMinutes = endHour * 60 + new Date(checkIn.checkOutTime).getMinutes();
 				totalEndMinutes += endMinutes;
-				totalDuration += differenceInMinutes(
-					new Date(checkIn.checkOutTime),
-					new Date(checkIn.checkInTime)
-				);
+				totalDuration += differenceInMinutes(new Date(checkIn.checkOutTime), new Date(checkIn.checkInTime));
 			}
 		});
 
@@ -778,7 +947,7 @@ export class ReportsService {
 				.slice(0, 5),
 			averageStartTime: `${Math.floor(avgStartMinutes / 60)}:${String(avgStartMinutes % 60).padStart(2, '0')}`,
 			averageEndTime: `${Math.floor(avgEndMinutes / 60)}:${String(avgEndMinutes % 60).padStart(2, '0')}`,
-			averageDuration: Math.round(totalDuration / completedCheckIns)
+			averageDuration: Math.round(totalDuration / completedCheckIns),
 		};
 	}
 
@@ -792,16 +961,13 @@ export class ReportsService {
 		const filter = {
 			createdAt: {
 				gte: today,
-				lt: tomorrow
-			}
+				lt: tomorrow,
+			},
 		};
 
-		const [
-			salesData,
-			attendanceData
-		] = await Promise.all([
+		const [salesData, attendanceData] = await Promise.all([
 			this.shopService.getQuotationsReport(filter),
-			this.getCheckInsReport(filter)
+			this.getCheckInsReport(filter),
 		]);
 
 		return {
@@ -810,14 +976,14 @@ export class ReportsService {
 				totalQuotations: salesData?.total || 0,
 				totalValue: salesData?.metrics?.grossQuotationValue || '0',
 				conversionRate: salesData?.metrics?.conversionRate || '0%',
-				topProducts: salesData?.metrics?.topProducts?.slice(0, 3) || []
+				topProducts: salesData?.metrics?.topProducts?.slice(0, 3) || [],
 			},
 			attendance: {
 				totalCheckIns: attendanceData?.totalCheckIns || 0,
 				averageDuration: attendanceData?.averageDurationMinutes || 0,
 				completionRate: attendanceData?.metrics?.completionRate || '0%',
-				presentEmployees: attendanceData?.metrics?.employeeStats?.length || 0
-			}
+				presentEmployees: attendanceData?.metrics?.employeeStats?.length || 0,
+			},
 		};
 	}
 
@@ -830,8 +996,8 @@ export class ReportsService {
 		const filter = {
 			createdAt: {
 				gte: weekStart,
-				lte: today
-			}
+				lte: today,
+			},
 		};
 
 		const journalData = await this.journalService.getJournalsReport(filter);
@@ -841,7 +1007,7 @@ export class ReportsService {
 			totalJournals: journalData?.metrics?.totalEntries || 0,
 			completionRate: journalData?.metrics?.completionRate || '0%',
 			topContributors: journalData?.metrics?.topCategories?.slice(0, 3) || [],
-			categoryBreakdown: journalData?.metrics?.topCategories || {}
+			categoryBreakdown: journalData?.metrics?.topCategories || {},
 		};
 	}
 
@@ -855,15 +1021,15 @@ export class ReportsService {
 			this.claimsService.getClaimsReport({
 				createdAt: {
 					gte: monthStart,
-					lte: today
-				}
+					lte: today,
+				},
 			}),
 			this.claimsService.getClaimsReport({
 				createdAt: {
 					gte: lastMonthStart,
-					lte: lastMonthEnd
-				}
-			})
+					lte: lastMonthEnd,
+				},
+			}),
 		]);
 
 		const currentTotal = currentMonthData?.total || 0;
@@ -876,16 +1042,16 @@ export class ReportsService {
 				totalClaims: currentTotal,
 				totalValue: currentMonthData?.totalValue || 0,
 				approvalRate: currentMonthData?.metrics?.approvalRate || '0%',
-				averageValue: currentMonthData?.metrics?.averageClaimValue || 0
+				averageValue: currentMonthData?.metrics?.averageClaimValue || 0,
 			},
 			comparison: {
 				claimsGrowth: growth,
 				valueGrowth: this.calculateGrowthPercentage(
 					currentMonthData?.totalValue || 0,
-					lastMonthData?.totalValue || 0
-				)
+					lastMonthData?.totalValue || 0,
+				),
 			},
-			topCategories: currentMonthData?.metrics?.categoryBreakdown?.slice(0, 3) || []
+			topCategories: currentMonthData?.metrics?.categoryBreakdown?.slice(0, 3) || [],
 		};
 	}
 }
