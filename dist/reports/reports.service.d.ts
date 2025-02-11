@@ -12,7 +12,8 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ConfigService } from '@nestjs/config';
 import { RewardsService } from 'src/rewards/rewards.service';
 import { TrackingService } from '../tracking/tracking.service';
-import { GenerateReportDto } from '../reports/dto/generate-report.dto';
+import { ReportResponse } from './types/report-response.types';
+import { GenerateReportDto } from './dto/generate-report.dto';
 import { CheckIn } from '../check-ins/entities/check-in.entity';
 export declare class ReportsService {
     private readonly reportRepository;
@@ -29,6 +30,7 @@ export declare class ReportsService {
     private readonly eventEmitter;
     private readonly configService;
     private readonly rewardsService;
+    private readonly logger;
     private readonly currencyLocale;
     private readonly currencyCode;
     private readonly currencySymbol;
@@ -38,22 +40,31 @@ export declare class ReportsService {
     private handleError;
     private formatReportData;
     managerDailyReport(): Promise<{
+        message: any;
+        statusCode: any;
+    } | {
         leads: {
             pending: number;
             approved: number;
             inReview: number;
             declined: number;
             total: number;
-        };
-        journals: {
-            total: number;
+            metrics: {
+                leadTrends: {
+                    growth: string;
+                };
+            };
         };
         claims: {
             pending: number;
             approved: number;
             declined: number;
             paid: number;
-            totalValue: string | number;
+            total: number;
+            totalValue: string;
+            metrics: {
+                valueGrowth: string;
+            };
         };
         tasks: {
             pending: number;
@@ -61,11 +72,11 @@ export declare class ReportsService {
             missed: number;
             postponed: number;
             total: number;
-        };
-        attendance: {
-            attendance: number;
-            present: number;
-            total: number;
+            metrics: {
+                taskTrends: {
+                    growth: string;
+                };
+            };
         };
         orders: {
             pending: number;
@@ -77,105 +88,51 @@ export declare class ReportsService {
             approved: number;
             metrics: {
                 totalQuotations: number;
-                grossQuotationValue: string | number;
-                averageQuotationValue: string | number;
+                grossQuotationValue: string;
+                averageQuotationValue: string;
+                quotationTrends: {
+                    growth: string;
+                };
             };
-        };
-    } | {
-        message: any;
-        statusCode: any;
-    }>;
-    userDailyReport(reference?: string): Promise<{
-        message: any;
-        statusCode: any;
-    } | Report>;
-    generateReport(params: GenerateReportDto): Promise<{
-        message: any;
-        statusCode: any;
-    } | Report>;
-    private calculateGrowthPercentage;
-    getCheckInsReport(filter: any): Promise<{
-        totalCheckIns: number;
-        totalDurationMinutes: number;
-        averageDurationMinutes: number;
-        metrics: {
-            employeeStats: {
-                employeeId: number;
-                employeeName: string;
-                totalCheckIns: number;
-                averageDuration: number;
-                completedCheckIns: number;
-                mostFrequentLocation: string;
-            }[];
-            locationStats: {
-                location: string;
-                totalCheckIns: number;
-                uniqueEmployees: number;
-                averageDuration: number;
-            }[];
-            timeStats: {
-                peakHours: Array<{
-                    hour: number;
-                    count: number;
-                }>;
-                averageStartTime: string;
-                averageEndTime: string;
-                averageDuration: number;
-            };
-            completionRate: string;
-        };
-    }>;
-    private getLocationString;
-    private analyzeEmployeeAttendance;
-    private analyzeCheckInLocations;
-    private analyzeCheckInTimes;
-    getDailyFlashReport(): Promise<{
-        date: string;
-        sales: {
-            totalQuotations: number;
-            totalValue: string;
-            conversionRate: string;
-            topProducts: {
-                productId: number;
-                productName: string;
-                totalSold: number;
-                totalValue: string;
-            }[];
         };
         attendance: {
-            totalCheckIns: number;
-            averageDuration: number;
-            completionRate: string;
-            presentEmployees: number;
+            attendance: number;
+            present: number;
+            total: number;
+            metrics: {
+                attendanceTrends: {
+                    growth: string;
+                };
+            };
         };
     }>;
-    getWeeklyJournalFlashReport(): Promise<{
-        period: string;
-        totalJournals: number;
-        completionRate: string;
-        topContributors: {
-            category: string;
-            count: number;
-        }[];
-        categoryBreakdown: {};
+    userDailyReport(reference?: string): Promise<Report | {
+        message: any;
+        statusCode: any;
     }>;
-    getMonthlyClaimsFlashReport(): Promise<{
-        period: string;
-        currentMonth: {
-            totalClaims: number;
-            totalValue: number;
-            approvalRate: string;
-            averageValue: number;
-        };
-        comparison: {
-            claimsGrowth: string;
-            valueGrowth: string;
-        };
-        topCategories: {
-            category: import("../lib/enums/finance.enums").ClaimCategory;
-            count: number;
-            totalValue: string;
-            averageValue: string;
-        }[];
-    }>;
+    private getComparisonData;
+    private getPeriodMetrics;
+    private getTargetMetrics;
+    private getFinancialMetrics;
+    private getPerformanceMetrics;
+    private getTrendMetrics;
+    generateReport(params: GenerateReportDto): Promise<ReportResponse>;
+    private getRevenueBreakdown;
+    private groupByType;
+    private groupBySource;
+    private groupByPriority;
+    private groupByDepartment;
+    private calculateAverageResponseTime;
+    private calculateAverageCompletionTime;
+    private calculateLeadQualityScore;
+    private calculateAverageHours;
+    private calculatePunctualityRate;
+    private calculateOvertime;
+    private calculateAbsences;
+    private calculateRemoteWork;
+    private calculateDailyPatterns;
+    private calculateWeeklyPatterns;
+    private calculateMonthlyPatterns;
+    private generateHighlights;
+    private generateRecommendations;
 }

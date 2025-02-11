@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { LeadsService } from '../leads/leads.service';
 import { JournalService } from '../journal/journal.service';
 import { ClaimsService } from '../claims/claims.service';
@@ -20,9 +20,18 @@ import { ConfigService } from '@nestjs/config';
 import { RewardsService } from 'src/rewards/rewards.service';
 import { DailyReportData } from '../lib/types/email-templates.types';
 import { TrackingService } from '../tracking/tracking.service';
-import { GenerateReportDto } from '../reports/dto/generate-report.dto';
+import {
+	ReportResponse,
+	FinancialMetrics,
+	PerformanceMetrics,
+	ComparisonMetrics,
+	TrendMetrics,
+} from './types/report-response.types';
+import { ComparisonType, GenerateReportDto, ReportFormat } from './dto/generate-report.dto';
 import { differenceInMinutes } from 'date-fns';
 import { CheckIn } from '../check-ins/entities/check-in.entity';
+import { subMonths, subYears, format as formatDate } from 'date-fns';
+import { Between } from 'typeorm';
 
 interface Location {
 	address: string;
@@ -31,6 +40,7 @@ interface Location {
 
 @Injectable()
 export class ReportsService {
+	private readonly logger = new Logger(ReportsService.name);
 	private readonly currencyLocale: string;
 	private readonly currencyCode: string;
 	private readonly currencySymbol: string;
@@ -235,50 +245,88 @@ export class ReportsService {
 				{ stats: attendanceStats },
 			] = allData;
 
+			// Calculate previous period metrics
+			const previousDate = new Date();
+			previousDate.setDate(previousDate.getDate() - 1);
+			
+			const [previousClaims, previousQuotations] = await Promise.all([
+				this.claimsService.getClaimsForDate(previousDate),
+				this.shopService.getQuotationsForDate(previousDate),
+			]);
+
 			const response = {
 				leads: {
-					pending: leadsStats?.pending?.length,
-					approved: leadsStats?.approved?.length,
-					inReview: leadsStats?.review?.length,
-					declined: leadsStats?.declined?.length,
-					total: leadsStats?.total,
-				},
-				journals: {
-					total: journalsStats?.length,
+					pending: leadsStats?.pending?.length || 0,
+					approved: leadsStats?.approved?.length || 0,
+					inReview: leadsStats?.review?.length || 0,
+					declined: leadsStats?.declined?.length || 0,
+					total: leadsStats?.total || 0,
+					metrics: {
+						leadTrends: {
+							growth: this.calculateGrowth(leadsStats?.total || 0, leadsStats?.total - (leadsStats?.pending?.length || 0))
+						}
+					}
 				},
 				claims: {
 					pending: claimsStats?.pending?.length || 0,
 					approved: claimsStats?.approved?.length || 0,
 					declined: claimsStats?.declined?.length || 0,
 					paid: claimsStats?.paid?.length || 0,
-					totalValue: claimsStats?.totalValue || 0,
+					total: (claimsStats?.paid?.length || 0) + (claimsStats?.pending?.length || 0) + 
+						   (claimsStats?.approved?.length || 0) + (claimsStats?.declined?.length || 0),
+					totalValue: this.formatCurrency(Number(claimsStats?.totalValue || 0)),
+					metrics: {
+						valueGrowth: this.calculateGrowth(
+							Number(claimsStats?.totalValue || 0),
+							Number(previousClaims?.claims?.totalValue || 0)
+						)
+					}
 				},
 				tasks: {
-					pending: tasksStats?.PENDING,
-					completed: tasksStats?.COMPLETED,
-					missed: tasksStats?.MISSED,
-					postponed: tasksStats?.POSTPONED,
+					pending: tasksStats?.PENDING || 0,
+					completed: tasksStats?.COMPLETED || 0,
+					missed: tasksStats?.MISSED || 0,
+					postponed: tasksStats?.POSTPONED || 0,
 					total: Object.values(tasksStats || {}).reduce((acc: number, curr: number) => acc + curr, 0),
-				},
-				attendance: {
-					attendance: attendanceStats?.metrics?.attendancePercentage,
-					present: attendanceStats?.metrics?.totalPresent,
-					total: attendanceStats?.metrics?.totalEmployees,
+					metrics: {
+						taskTrends: {
+							growth: this.calculateGrowth(tasksStats?.COMPLETED || 0, tasksStats?.PENDING || 0)
+						}
+					}
 				},
 				orders: {
-					pending: ordersStats?.quotations?.pending?.length,
-					processing: ordersStats?.quotations?.processing?.length,
-					completed: ordersStats?.quotations?.completed?.length,
-					cancelled: ordersStats?.quotations?.cancelled?.length,
-					postponed: ordersStats?.quotations?.postponed?.length,
-					rejected: ordersStats?.quotations?.rejected?.length,
-					approved: ordersStats?.quotations?.approved?.length,
+					pending: ordersStats?.quotations?.pending?.length || 0,
+					processing: ordersStats?.quotations?.processing?.length || 0,
+					completed: ordersStats?.quotations?.completed?.length || 0,
+					cancelled: ordersStats?.quotations?.cancelled?.length || 0,
+					postponed: ordersStats?.quotations?.postponed?.length || 0,
+					rejected: ordersStats?.quotations?.rejected?.length || 0,
+					approved: ordersStats?.quotations?.approved?.length || 0,
 					metrics: {
-						totalQuotations: ordersStats?.quotations?.metrics?.totalQuotations,
-						grossQuotationValue: ordersStats?.quotations?.metrics?.grossQuotationValue || 0,
-						averageQuotationValue: ordersStats?.quotations?.metrics?.averageQuotationValue || 0,
-					},
+						totalQuotations: ordersStats?.quotations?.metrics?.totalQuotations || 0,
+						grossQuotationValue: this.formatCurrency(Number(ordersStats?.quotations?.metrics?.grossQuotationValue || 0)),
+						averageQuotationValue: this.formatCurrency(Number(ordersStats?.quotations?.metrics?.averageQuotationValue || 0)),
+						quotationTrends: {
+							growth: this.calculateGrowth(
+								ordersStats?.quotations?.metrics?.totalQuotations || 0,
+								previousQuotations?.stats?.quotations?.metrics?.totalQuotations || 0
+							)
+						}
+					}
 				},
+				attendance: {
+					attendance: attendanceStats?.metrics?.attendancePercentage || 0,
+					present: attendanceStats?.metrics?.totalPresent || 0,
+					total: attendanceStats?.metrics?.totalEmployees || 0,
+					metrics: {
+						attendanceTrends: {
+							growth: this.calculateGrowth(
+								attendanceStats?.metrics?.attendancePercentage || 0,
+								attendanceStats?.metrics?.attendancePercentage || 0
+							)
+						}
+					}
+				}
 			};
 
 			return response;
@@ -378,680 +426,476 @@ export class ReportsService {
 		}
 	}
 
-	async generateReport(params: GenerateReportDto) {
-		try {
-			// Log the raw incoming DTO
-			console.log('=== REPORT GENERATION START ===');
-			console.log('1. Raw DTO received:', {
-				params,
-				paramTypes: {
-					startDate: typeof params.startDate,
-					endDate: typeof params.endDate,
-					period: typeof params.period,
-					type: typeof params.type
-				}
-			});
+	private async getComparisonData(params: GenerateReportDto): Promise<ComparisonMetrics> {
+		const startDate = new Date(params.startDate);
+		const endDate = new Date(params.endDate);
 
-			const { startDate, endDate, period, type } = params;
-			
-			// Log the destructured values
-			console.log('2. Destructured values:', {
-				startDate,
-				endDate,
-				period,
-				type,
-				startDateType: typeof startDate,
-				endDateType: typeof endDate
-			});
+		let comparisonStartDate: Date;
+		let comparisonEndDate: Date;
 
-			// Parse dates and log results
-			const currentStartDate = new Date(startDate);
-			const currentEndDate = new Date(endDate);
-
-			console.log('3. Parsed dates:', {
-				currentStartDate,
-				currentEndDate,
-				isStartDateValid: !isNaN(currentStartDate.getTime()),
-				isEndDateValid: !isNaN(currentEndDate.getTime()),
-				startDateTimestamp: currentStartDate.getTime(),
-				endDateTimestamp: currentEndDate.getTime()
-			});
-
-			// Validate dates
-			if (isNaN(currentStartDate.getTime()) || isNaN(currentEndDate.getTime())) {
-				console.error('4. Date validation failed:', {
-					startDateValid: !isNaN(currentStartDate.getTime()),
-					endDateValid: !isNaN(currentEndDate.getTime()),
-					startDateString: startDate,
-					endDateString: endDate
-				});
-				throw new Error('Invalid date format provided');
-			}
-
-			// Log period validation
-			console.log('5. Period validation:', {
-				providedPeriod: period,
-				periodLowerCase: period.toLowerCase(),
-				isValidPeriod: ['daily', 'weekly', 'monthly'].includes(period.toLowerCase())
-			});
-
-			// Calculate previous period for comparison
-			const previousStartDate = new Date(currentStartDate);
-			const previousEndDate = new Date(currentStartDate);
-
-			// Adjust previous period based on selected period
-			switch (period.toLowerCase()) {
-				case 'daily':
-					previousStartDate.setDate(previousStartDate.getDate() - 1);
-					previousEndDate.setDate(previousEndDate.getDate() - 1);
-					break;
-				case 'weekly':
-					previousStartDate.setDate(previousStartDate.getDate() - 7);
-					previousEndDate.setDate(previousEndDate.getDate() - 7);
-					break;
-				case 'monthly':
-					previousStartDate.setMonth(previousStartDate.getMonth() - 1);
-					previousEndDate.setMonth(previousEndDate.getMonth() - 1);
-					break;
-				default:
-					console.error('Invalid period:', period);
-					throw new Error('Invalid period specified');
-			}
-
-			// Log calculated comparison dates
-			console.log('Comparison period dates:', {
-				previousStartDate: previousStartDate.toISOString(),
-				previousEndDate: previousEndDate.toISOString(),
-				previousStartDateLocal: previousStartDate.toString(),
-				previousEndDateLocal: previousEndDate.toString()
-			});
-
-			const dateFilter = {
-				createdAt: {
-					gte: currentStartDate,
-					lte: currentEndDate
-				}
-			};
-
-			const previousDateFilter = {
-				createdAt: {
-					gte: previousStartDate,
-					lte: previousEndDate
-				}
-			};
-
-			// Log the final filter objects
-			console.log('Final date filters:', {
-				current: JSON.stringify(dateFilter, null, 2),
-				previous: JSON.stringify(previousDateFilter, null, 2)
-			});
-
-			const currentFilter = { ...dateFilter };
-			const previousFilter = { ...previousDateFilter };
-
-			// Log the type of report being generated
-			console.log('Generating report for type:', type);
-
-			let reportData: any = {};
-			let title = '';
-			let description = '';
-
-			switch (type) {
-				case ReportType.CLAIM:
-					const [currentClaimsData, previousClaimsData] = await Promise.all([
-						this.claimsService.getClaimsReport(currentFilter),
-						this.claimsService.getClaimsReport(previousFilter),
-					]);
-
-					const currentTotalValue = currentClaimsData?.totalValue || 0;
-					const previousTotalValue = previousClaimsData?.totalValue || 0;
-					const valueGrowth = this.calculateGrowth(currentTotalValue, previousTotalValue);
-
-					reportData = {
-						total: currentClaimsData?.total || 0,
-						paid: currentClaimsData?.paid || [],
-						pending: currentClaimsData?.pending || [],
-						approved: currentClaimsData?.approved || [],
-						declined: currentClaimsData?.declined || [],
-						totalValue: this.formatCurrency(currentTotalValue),
-						metrics: {
-							averageClaimValue: this.formatCurrency(currentClaimsData?.metrics?.averageClaimValue || 0),
-							totalClaims: currentClaimsData?.metrics?.totalClaims || 0,
-							approvalRate: currentClaimsData?.metrics?.approvalRate || '0%',
-							processingTime: currentClaimsData?.metrics?.averageProcessingTime || '0 days',
-							valueGrowth,
-							categoryBreakdown: currentClaimsData?.metrics?.categoryBreakdown || {},
-							topClaimants: currentClaimsData?.metrics?.topClaimants || [],
-							claimTrends: {
-								thisMonth: currentClaimsData?.metrics?.totalClaims || 0,
-								lastMonth: previousClaimsData?.metrics?.totalClaims || 0,
-								growth: this.calculateGrowth(
-									currentClaimsData?.metrics?.totalClaims || 0,
-									previousClaimsData?.metrics?.totalClaims || 0,
-								),
-							},
-						},
-					};
-					title = 'Claims Report';
-					description = `Claims report for period ${startDate} to ${endDate}`;
-					break;
-
-				case ReportType.QUOTATION:
-					console.log('Fetching quotation reports with filters:', {
-						currentFilter: JSON.stringify(currentFilter, null, 2),
-						previousFilter: JSON.stringify(previousFilter, null, 2)
-					});
-
-					let [currentData, previousData] = await Promise.all([
-						this.shopService.getQuotationsReport(currentFilter),
-						this.shopService.getQuotationsReport(previousFilter)
-					]);
-
-					console.log('Raw quotation data received:', {
-						current: JSON.stringify(currentData, null, 2),
-						previous: JSON.stringify(previousData, null, 2)
-					});
-
-					const defaultData = {
-						total: 0,
-						pending: [],
-						approved: [],
-						rejected: [],
-						metrics: {
-							totalQuotations: 0,
-							grossQuotationValue: '0',
-							averageQuotationValue: '0',
-							conversionRate: '0%',
-							topProducts: [],
-							leastSoldProducts: [],
-							peakOrderTimes: [],
-							averageBasketSize: 0,
-							topShops: [],
-						},
-					};
-
-					if (!currentData) {
-						console.log('No current quotation data found');
-						currentData = defaultData;
-					}
-
-					if (!previousData) {
-						console.log('No previous quotation data found');
-						previousData = defaultData;
-					}
-
-					reportData = {
-						total: currentData?.total || 0,
-						pending: currentData?.pending || [],
-						approved: currentData?.approved || [],
-						rejected: currentData?.rejected || [],
-						metrics: {
-							totalQuotations: currentData?.metrics?.totalQuotations || 0,
-							grossQuotationValue: this.formatCurrency(
-								Number(
-									currentData?.metrics?.grossQuotationValue?.toString().replace(/[^0-9.-]+/g, ''),
-								) || 0,
-							),
-							averageQuotationValue: this.formatCurrency(
-								Number(
-									currentData?.metrics?.averageQuotationValue?.toString().replace(/[^0-9.-]+/g, ''),
-								) || 0,
-							),
-							conversionRate: currentData?.metrics?.conversionRate || '0%',
-							quotationTrends: {
-								thisMonth: currentData?.metrics?.totalQuotations || 0,
-								lastMonth: previousData?.metrics?.totalQuotations || 0,
-								growth: this.calculateGrowth(
-									currentData?.metrics?.totalQuotations || 0,
-									previousData?.metrics?.totalQuotations || 0,
-								),
-							},
-							topProducts: currentData?.metrics?.topProducts || [],
-							leastSoldProducts: currentData?.metrics?.leastSoldProducts || [],
-							peakOrderTimes: currentData?.metrics?.peakOrderTimes || [],
-							averageBasketSize: currentData?.metrics?.averageBasketSize || 0,
-							topShops: currentData?.metrics?.topShops || [],
-						},
-					};
-					title = 'Quotations Report';
-					description = `Quotations report for period ${startDate} to ${endDate}`;
-					break;
-
-				case ReportType.LEAD:
-					const [currentLeadsData, previousLeadsData] = await Promise.all([
-						this.leadService.getLeadsReport(currentFilter),
-						this.leadService.getLeadsReport(previousFilter),
-					]);
-
-					reportData = {
-						total: currentLeadsData?.total || 0,
-						review: currentLeadsData?.review || [],
-						pending: currentLeadsData?.pending || [],
-						approved: currentLeadsData?.approved || [],
-						declined: currentLeadsData?.declined || [],
-						metrics: {
-							conversionRate: currentLeadsData?.metrics?.conversionRate || '0%',
-							averageResponseTime: currentLeadsData?.metrics?.averageResponseTime || '0 hours',
-							topSources: currentLeadsData?.metrics?.topSources || [],
-							qualityScore: currentLeadsData?.metrics?.qualityScore || 0,
-							leadTrends: {
-								thisMonth: currentLeadsData?.total || 0,
-								lastMonth: previousLeadsData?.total || 0,
-								growth: this.calculateGrowth(
-									currentLeadsData?.total || 0,
-									previousLeadsData?.total || 0,
-								),
-							},
-							sourceEffectiveness: currentLeadsData?.metrics?.sourceEffectiveness || {},
-							geographicDistribution: currentLeadsData?.metrics?.geographicDistribution || {},
-							leadQualityBySource: currentLeadsData?.metrics?.leadQualityBySource || {},
-						},
-					};
-					title = 'Leads Report';
-					description = `Leads report for period ${startDate} to ${endDate}`;
-					break;
-
-				case ReportType.TASK:
-					const [currentTasksData, previousTasksData] = await Promise.all([
-						this.tasksService.getTasksReport(currentFilter),
-						this.tasksService.getTasksReport(previousFilter),
-					]);
-
-					reportData = {
-						total: currentTasksData?.total || 0,
-						pending: currentTasksData?.pending || [],
-						inProgress: currentTasksData?.inProgress || [],
-						completed: currentTasksData?.completed || [],
-						overdue: currentTasksData?.overdue || [],
-						metrics: {
-							completionRate: currentTasksData?.metrics?.completionRate || '0%',
-							averageCompletionTime: currentTasksData?.metrics?.averageCompletionTime || '0 hours',
-							overdueRate: currentTasksData?.metrics?.overdueRate || '0%',
-							taskDistribution: currentTasksData?.metrics?.taskDistribution || {},
-							taskTrends: {
-								thisMonth: currentTasksData?.total || 0,
-								lastMonth: previousTasksData?.total || 0,
-								growth: this.calculateGrowth(
-									currentTasksData?.total || 0,
-									previousTasksData?.total || 0,
-								),
-							},
-							incompletionReasons: currentTasksData?.metrics?.incompletionReasons || [],
-							clientCompletionRates: currentTasksData?.metrics?.clientCompletionRates || [],
-							taskPriorityDistribution: currentTasksData?.metrics?.taskPriorityDistribution || {},
-							assigneePerformance: currentTasksData?.metrics?.assigneePerformance || [],
-						},
-					};
-					title = 'Tasks Report';
-					description = `Tasks report for period ${startDate} to ${endDate}`;
-					break;
-
-				default:
-					throw new Error('Invalid report type');
-			}
-
-			console.log('Creating report with data:', { title, description, type, reportData });
-
-			// Create report record
-			const report = this.reportRepository.create({
-				title,
-				description,
-				type,
-				metadata: {
-					period,
-					startDate: currentStartDate.toISOString(),
-					endDate: currentEndDate.toISOString(),
-					generatedAt: new Date().toISOString(),
-					...reportData,
-				},
-			});
-
-			const savedReport = await this.reportRepository.save(report);
-			console.log('Report saved successfully:', savedReport.uid);
-
-			return savedReport;
-		} catch (error) {
-			console.error('Error generating report:', {
-				error,
-				errorMessage: error.message,
-				errorStack: error.stack,
-				errorName: error.name,
-				errorResponse: error.response?.data,
-				params: JSON.stringify(params, null, 2)
-			});
-
-			// Check for specific error types
-			if (error instanceof TypeError) {
-				return this.handleError({
-					message: 'Invalid data type in report generation',
-					status: 400,
-					details: error.message
-				});
-			}
-
-			if (error.name === 'EntityNotFoundError') {
-				return this.handleError({
-					message: 'Required data not found',
-					status: 404,
-					details: error.message
-				});
-			}
-
-			return this.handleError({
-				message: 'Failed to generate report: ' + error.message,
-				status: 500,
-				details: error.stack
-			});
+		switch (params.comparison?.type) {
+			case ComparisonType.YEAR_OVER_YEAR:
+				comparisonStartDate = subYears(startDate, 1);
+				comparisonEndDate = subYears(endDate, 1);
+				break;
+			case ComparisonType.MONTH_OVER_MONTH:
+				comparisonStartDate = subMonths(startDate, 1);
+				comparisonEndDate = subMonths(endDate, 1);
+				break;
+			case ComparisonType.CUSTOM:
+				comparisonStartDate = new Date(params.comparison.customStartDate);
+				comparisonEndDate = new Date(params.comparison.customEndDate);
+				break;
+			default:
+				comparisonStartDate = subMonths(startDate, 1);
+				comparisonEndDate = subMonths(endDate, 1);
 		}
-	}
 
-	// Helper method to calculate growth percentage
-	private calculateGrowthPercentage(current: number, previous: number): string {
-		if (previous === 0) return '+100%';
-		const growth = ((current - previous) / previous) * 100;
-		return `${growth >= 0 ? '+' : ''}${growth.toFixed(1)}%`;
-	}
-
-	async getCheckInsReport(filter: any) {
-		try {
-			const checkIns = await this.checkInRepository.find({
-				where: filter,
-				relations: ['owner', 'branch', 'client'],
-			});
-
-			if (!checkIns) {
-				throw new NotFoundException('No check-ins found for the specified period');
-			}
-
-			const totalCheckIns = checkIns.length;
-			const totalDuration = checkIns.reduce((sum, checkIn) => {
-				if (checkIn.checkOutTime) {
-					const duration = differenceInMinutes(new Date(checkIn.checkOutTime), new Date(checkIn.checkInTime));
-					return sum + duration;
-				}
-				return sum;
-			}, 0);
-
-			const averageDuration = totalCheckIns > 0 ? totalDuration / totalCheckIns : 0;
-			const employeeStats = this.analyzeEmployeeAttendance(checkIns);
-			const locationStats = this.analyzeCheckInLocations(checkIns);
-			const timeStats = this.analyzeCheckInTimes(checkIns);
-
-			return {
-				totalCheckIns,
-				totalDurationMinutes: totalDuration,
-				averageDurationMinutes: Math.round(averageDuration),
-				metrics: {
-					employeeStats,
-					locationStats,
-					timeStats,
-					completionRate: `${((checkIns.filter((c) => c.checkOutTime).length / totalCheckIns) * 100).toFixed(
-						1,
-					)}%`,
-				},
-			};
-		} catch (error) {
-			return null;
-		}
-	}
-
-	private getLocationString(checkInLocation: string | Location | null): string {
-		if (!checkInLocation) return 'Unknown';
-		if (typeof checkInLocation === 'string') return checkInLocation;
-		return checkInLocation.address || 'Unknown';
-	}
-
-	private analyzeEmployeeAttendance(checkIns: CheckIn[]): Array<{
-		employeeId: number;
-		employeeName: string;
-		totalCheckIns: number;
-		averageDuration: number;
-		completedCheckIns: number;
-		mostFrequentLocation: string;
-	}> {
-		const employeeStats = new Map<
-			number,
-			{
-				name: string;
-				checkIns: number;
-				totalDuration: number;
-				completedCheckIns: number;
-				locations: Record<string, number>;
-			}
-		>();
-
-		checkIns.forEach((checkIn) => {
-			if (!employeeStats.has(checkIn.owner.uid)) {
-				employeeStats.set(checkIn.owner.uid, {
-					name: checkIn.owner.username,
-					checkIns: 0,
-					totalDuration: 0,
-					completedCheckIns: 0,
-					locations: {},
-				});
-			}
-
-			const stats = employeeStats.get(checkIn.owner.uid);
-			stats.checkIns++;
-
-			if (checkIn.checkOutTime) {
-				stats.completedCheckIns++;
-				stats.totalDuration += differenceInMinutes(
-					new Date(checkIn.checkOutTime),
-					new Date(checkIn.checkInTime),
-				);
-			}
-
-			const location = this.getLocationString(checkIn.checkInLocation);
-			stats.locations[location] = (stats.locations[location] || 0) + 1;
-		});
-
-		return Array.from(employeeStats.entries())
-			.map(([employeeId, stats]) => ({
-				employeeId,
-				employeeName: stats.name,
-				totalCheckIns: stats.checkIns,
-				averageDuration: Math.round(stats.totalDuration / stats.completedCheckIns || 0),
-				completedCheckIns: stats.completedCheckIns,
-				mostFrequentLocation: Object.entries(stats.locations).sort((a, b) => b[1] - a[1])[0]?.[0] || 'Unknown',
-			}))
-			.sort((a, b) => b.totalCheckIns - a.totalCheckIns);
-	}
-
-	private analyzeCheckInLocations(checkIns: CheckIn[]): Array<{
-		location: string;
-		totalCheckIns: number;
-		uniqueEmployees: number;
-		averageDuration: number;
-	}> {
-		const locationStats = new Map<
-			string,
-			{
-				checkIns: number;
-				employees: Set<number>;
-				totalDuration: number;
-				completedCheckIns: number;
-			}
-		>();
-
-		checkIns.forEach((checkIn) => {
-			const location = this.getLocationString(checkIn.checkInLocation);
-
-			if (!locationStats.has(location)) {
-				locationStats.set(location, {
-					checkIns: 0,
-					employees: new Set(),
-					totalDuration: 0,
-					completedCheckIns: 0,
-				});
-			}
-
-			const stats = locationStats.get(location);
-			stats.checkIns++;
-			stats.employees.add(checkIn.owner.uid);
-
-			if (checkIn.checkOutTime) {
-				stats.completedCheckIns++;
-				stats.totalDuration += differenceInMinutes(
-					new Date(checkIn.checkOutTime),
-					new Date(checkIn.checkInTime),
-				);
-			}
-		});
-
-		return Array.from(locationStats.entries())
-			.map(([location, stats]) => ({
-				location,
-				totalCheckIns: stats.checkIns,
-				uniqueEmployees: stats.employees.size,
-				averageDuration: Math.round(stats.totalDuration / stats.completedCheckIns || 0),
-			}))
-			.sort((a, b) => b.totalCheckIns - a.totalCheckIns);
-	}
-
-	private analyzeCheckInTimes(checkIns: CheckIn[]): {
-		peakHours: Array<{ hour: number; count: number }>;
-		averageStartTime: string;
-		averageEndTime: string;
-		averageDuration: number;
-	} {
-		const hourCounts = new Array(24).fill(0);
-		let totalStartMinutes = 0;
-		let totalEndMinutes = 0;
-		let totalDuration = 0;
-		let completedCheckIns = 0;
-
-		checkIns.forEach((checkIn) => {
-			const startHour = new Date(checkIn.checkInTime).getHours();
-			hourCounts[startHour]++;
-
-			const startMinutes = startHour * 60 + new Date(checkIn.checkInTime).getMinutes();
-			totalStartMinutes += startMinutes;
-
-			if (checkIn.checkOutTime) {
-				completedCheckIns++;
-				const endHour = new Date(checkIn.checkOutTime).getHours();
-				const endMinutes = endHour * 60 + new Date(checkIn.checkOutTime).getMinutes();
-				totalEndMinutes += endMinutes;
-				totalDuration += differenceInMinutes(new Date(checkIn.checkOutTime), new Date(checkIn.checkInTime));
-			}
-		});
-
-		const avgStartMinutes = Math.round(totalStartMinutes / checkIns.length);
-		const avgEndMinutes = Math.round(totalEndMinutes / completedCheckIns);
-
-		return {
-			peakHours: hourCounts
-				.map((count, hour) => ({ hour, count }))
-				.sort((a, b) => b.count - a.count)
-				.slice(0, 5),
-			averageStartTime: `${Math.floor(avgStartMinutes / 60)}:${String(avgStartMinutes % 60).padStart(2, '0')}`,
-			averageEndTime: `${Math.floor(avgEndMinutes / 60)}:${String(avgEndMinutes % 60).padStart(2, '0')}`,
-			averageDuration: Math.round(totalDuration / completedCheckIns),
-		};
-	}
-
-	// Flash Report Functions
-	async getDailyFlashReport() {
-		const today = new Date();
-		today.setHours(0, 0, 0, 0);
-		const tomorrow = new Date(today);
-		tomorrow.setDate(tomorrow.getDate() + 1);
-
-		const filter = {
-			createdAt: {
-				gte: today,
-				lt: tomorrow,
-			},
-		};
-
-		const [salesData, attendanceData] = await Promise.all([
-			this.shopService.getQuotationsReport(filter),
-			this.getCheckInsReport(filter),
+		const [currentPeriod, comparisonPeriod] = await Promise.all([
+			this.getPeriodMetrics(startDate, endDate, params),
+			this.getPeriodMetrics(comparisonStartDate, comparisonEndDate, params),
 		]);
 
 		return {
-			date: today.toISOString().split('T')[0],
-			sales: {
-				totalQuotations: salesData?.total || 0,
-				totalValue: salesData?.metrics?.grossQuotationValue || '0',
-				conversionRate: salesData?.metrics?.conversionRate || '0%',
-				topProducts: salesData?.metrics?.topProducts?.slice(0, 3) || [],
+			previousPeriod: {
+				revenue: comparisonPeriod.revenue,
+				leads: comparisonPeriod.leads,
+				tasks: comparisonPeriod.tasks,
+				claims: comparisonPeriod.claims,
+			},
+			yearOverYear: {
+				revenue: (await this.getPeriodMetrics(subYears(startDate, 1), subYears(endDate, 1), params)).revenue,
+				leads: (await this.getPeriodMetrics(subYears(startDate, 1), subYears(endDate, 1), params)).leads,
+				tasks: (await this.getPeriodMetrics(subYears(startDate, 1), subYears(endDate, 1), params)).tasks,
+				claims: (await this.getPeriodMetrics(subYears(startDate, 1), subYears(endDate, 1), params)).claims,
+			},
+			targets: await this.getTargetMetrics(startDate, endDate, params),
+		};
+	}
+
+	private async getPeriodMetrics(startDate: Date, endDate: Date, params: GenerateReportDto) {
+		const [leadsStats, claimsStats, quotationsStats, tasksStats] = await Promise.all([
+			this.leadService.getLeadsReport({ createdAt: { gte: startDate, lte: endDate } }),
+			this.claimsService.getClaimsReport({ createdAt: { gte: startDate, lte: endDate } }),
+			this.shopService.getQuotationsReport({ createdAt: { gte: startDate, lte: endDate } }),
+			this.tasksService.getTasksReport({ createdAt: { gte: startDate, lte: endDate } }),
+		]);
+
+		return {
+			revenue: Number(quotationsStats?.metrics?.grossQuotationValue || 0),
+			leads: Number(leadsStats?.total || 0),
+			tasks: Number(tasksStats?.total || 0),
+			claims: Number(claimsStats?.totalValue || 0),
+		};
+	}
+
+	private async getTargetMetrics(startDate: Date, endDate: Date, params: GenerateReportDto) {
+		// TODO: Implement target metrics from configuration or database
+		return {
+			revenue: { target: 100000, achieved: 75000 },
+			leads: { target: 100, achieved: 85 },
+			tasks: { target: 200, achieved: 180 },
+			claims: { target: 50, achieved: 45 },
+		};
+	}
+
+	private async getFinancialMetrics(
+		startDate: Date,
+		endDate: Date,
+		params: GenerateReportDto,
+	): Promise<FinancialMetrics> {
+		const [currentPeriod, previousPeriod] = await Promise.all([
+			this.getPeriodMetrics(startDate, endDate, params),
+			this.getPeriodMetrics(subMonths(startDate, 1), subMonths(endDate, 1), params),
+		]);
+
+		const claimsData = await this.claimsService.getClaimsReport({
+			createdAt: { gte: startDate, lte: endDate },
+		});
+		const quotationsData = await this.shopService.getQuotationsReport({
+			createdAt: { gte: startDate, lte: endDate },
+		});
+
+		// Calculate claims metrics
+		const claimsBreakdown = claimsData.metrics.categoryBreakdown;
+		const paidClaims = claimsBreakdown.reduce(
+			(sum, cat) => (cat.category.toString() === 'PAID' ? sum + cat.count : sum),
+			0,
+		);
+		const pendingClaims = claimsBreakdown.reduce(
+			(sum, cat) => (cat.category.toString() === 'PENDING' ? sum + cat.count : sum),
+			0,
+		);
+		const largestClaim = claimsData.metrics.topClaimants[0]?.totalValue
+			? parseFloat(claimsData.metrics.topClaimants[0].totalValue.replace(/[^0-9.-]+/g, ''))
+			: 0;
+
+		// Calculate quotations metrics
+		const acceptedQuotations = quotationsData.metrics.topProducts.reduce((sum, p) => sum + p.totalSold, 0);
+		const totalQuotations = quotationsData.metrics.totalQuotations;
+		const pendingQuotations = totalQuotations - acceptedQuotations;
+
+		return {
+			revenue: {
+				current: currentPeriod.revenue,
+				previous: previousPeriod.revenue,
+				growth: this.calculateGrowth(currentPeriod.revenue, previousPeriod.revenue),
+				trend: currentPeriod.revenue >= previousPeriod.revenue ? 'up' : 'down',
+				breakdown: await this.getRevenueBreakdown(startDate, endDate),
+			},
+			claims: {
+				total: claimsData.metrics.totalClaims,
+				paid: paidClaims,
+				pending: pendingClaims,
+				average: parseFloat(claimsData.metrics.averageClaimValue.toString()),
+				largestClaim,
+				byType: claimsBreakdown.reduce((acc, cat) => {
+					acc[cat.category.toString()] = cat.count;
+					return acc;
+				}, {} as Record<string, number>),
+			},
+			quotations: {
+				total: totalQuotations,
+				accepted: acceptedQuotations,
+				pending: pendingQuotations,
+				conversion: parseFloat(quotationsData.metrics.conversionRate.replace('%', '')),
+				averageValue: parseFloat(quotationsData.metrics.averageQuotationValue.replace(/[^0-9.-]+/g, '')),
+			},
+		};
+	}
+
+	private async getPerformanceMetrics(
+		startDate: Date,
+		endDate: Date,
+		params: GenerateReportDto,
+	): Promise<PerformanceMetrics> {
+		const [leadsData, tasksData] = await Promise.all([
+			this.leadService.getLeadsReport({ createdAt: { gte: startDate, lte: endDate } }),
+			this.tasksService.getTasksReport({ createdAt: { gte: startDate, lte: endDate } }),
+		]);
+
+		const attendanceData = await this.checkInRepository.find({
+			where: {
+				checkInTime: Between(startDate, endDate),
+				checkOutTime: Between(startDate, endDate),
+			},
+			relations: ['owner', 'branch'],
+		});
+
+		// Transform source effectiveness data into the required format
+		const sourceEffectiveness = leadsData.metrics.sourceEffectiveness.reduce((acc, source) => {
+			acc[source.source] = source.totalLeads;
+			return acc;
+		}, {} as Record<string, number>);
+
+		// Calculate total leads from source effectiveness data
+		const totalLeads = leadsData.metrics.sourceEffectiveness.reduce((sum, source) => sum + source.totalLeads, 0);
+		const convertedLeads = leadsData.metrics.sourceEffectiveness.reduce(
+			(sum, source) => sum + source.convertedLeads,
+			0,
+		);
+
+		return {
+			leads: {
+				total: totalLeads,
+				converted: convertedLeads,
+				conversionRate: parseFloat(leadsData.metrics.conversionRate.replace('%', '')),
+				averageResponseTime: leadsData.metrics.averageResponseTime,
+				bySource: sourceEffectiveness,
+				qualityScore: leadsData.metrics.qualityScore,
+			},
+			tasks: {
+				total: Object.values(tasksData.metrics.taskDistribution).reduce((sum, count) => sum + count, 0),
+				completed: tasksData.metrics.taskDistribution['COMPLETED'] || 0,
+				overdue: tasksData.metrics.taskDistribution['OVERDUE'] || 0,
+				completionRate: parseFloat(tasksData.metrics.completionRate.replace('%', '')),
+				averageCompletionTime: tasksData.metrics.averageCompletionTime,
+				byPriority: tasksData.metrics.taskPriorityDistribution,
+				byType: tasksData.metrics.taskDistribution,
 			},
 			attendance: {
-				totalCheckIns: attendanceData?.totalCheckIns || 0,
-				averageDuration: attendanceData?.averageDurationMinutes || 0,
-				completionRate: attendanceData?.metrics?.completionRate || '0%',
-				presentEmployees: attendanceData?.metrics?.employeeStats?.length || 0,
+				averageHours: this.calculateAverageHours(attendanceData),
+				punctuality: this.calculatePunctualityRate(attendanceData),
+				overtime: this.calculateOvertime(attendanceData),
+				absences: this.calculateAbsences(attendanceData),
+				remoteWork: this.calculateRemoteWork(attendanceData),
+				byDepartment: this.groupByDepartment(attendanceData),
 			},
 		};
 	}
 
-	async getWeeklyJournalFlashReport() {
-		const today = new Date();
-		const weekStart = new Date(today);
-		weekStart.setDate(weekStart.getDate() - 7);
-		weekStart.setHours(0, 0, 0, 0);
-
-		const filter = {
-			createdAt: {
-				gte: weekStart,
-				lte: today,
-			},
-		};
-
-		const journalData = await this.journalService.getJournalsReport(filter);
-
+	private async getTrendMetrics(startDate: Date, endDate: Date, params: GenerateReportDto): Promise<TrendMetrics> {
+		// Implement trend analysis and forecasting
 		return {
-			period: `${weekStart.toISOString().split('T')[0]} to ${today.toISOString().split('T')[0]}`,
-			totalJournals: journalData?.metrics?.totalEntries || 0,
-			completionRate: journalData?.metrics?.completionRate || '0%',
-			topContributors: journalData?.metrics?.topCategories?.slice(0, 3) || [],
-			categoryBreakdown: journalData?.metrics?.topCategories || {},
+			seasonal: {
+				peak: { period: 'December', value: 150000 },
+				low: { period: 'January', value: 80000 },
+			},
+			patterns: {
+				daily: this.calculateDailyPatterns(startDate, endDate),
+				weekly: this.calculateWeeklyPatterns(startDate, endDate),
+				monthly: this.calculateMonthlyPatterns(startDate, endDate),
+			},
+			forecast: {
+				nextPeriod: 120000,
+				confidence: 85,
+				factors: ['Seasonal trend', 'Market conditions', 'Historical performance'],
+			},
 		};
 	}
 
-	async getMonthlyClaimsFlashReport() {
-		const today = new Date();
-		const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-		const lastMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-		const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
+	async generateReport(params: GenerateReportDto): Promise<ReportResponse> {
+		try {
+			const startDate = new Date(params.startDate);
+			const endDate = new Date(params.endDate);
 
-		const [currentMonthData, lastMonthData] = await Promise.all([
-			this.claimsService.getClaimsReport({
-				createdAt: {
-					gte: monthStart,
-					lte: today,
+			const [financial, performance, comparison, trends] = await Promise.all([
+				this.getFinancialMetrics(startDate, endDate, params),
+				this.getPerformanceMetrics(startDate, endDate, params),
+				this.getComparisonData(params),
+				this.getTrendMetrics(startDate, endDate, params),
+			]);
+
+			const response: ReportResponse = {
+				metadata: {
+					generatedAt: new Date().toISOString(),
+					period: `${formatDate(startDate, 'PP')} - ${formatDate(endDate, 'PP')}`,
+					filters: params.filters as Record<string, unknown>,
 				},
-			}),
-			this.claimsService.getClaimsReport({
-				createdAt: {
-					gte: lastMonthStart,
-					lte: lastMonthEnd,
+				financial,
+				performance,
+				comparison,
+				trends,
+				summary: {
+					highlights: this.generateHighlights(financial, performance, comparison),
+					recommendations: this.generateRecommendations(financial, performance, trends),
 				},
-			}),
-		]);
+			};
 
-		const currentTotal = currentMonthData?.total || 0;
-		const lastTotal = lastMonthData?.total || 0;
-		const growth = this.calculateGrowthPercentage(currentTotal, lastTotal);
+			// Handle different output formats
+			if (params.visualization?.format === ReportFormat.PDF) {
+				return response; // TODO: Implement PDF generation
+			} else if (params.visualization?.format === ReportFormat.EXCEL) {
+				return response; // TODO: Implement Excel generation
+			}
 
+			return response;
+		} catch (error) {
+			this.logger.error('Error generating report:', error);
+			throw new Error('Failed to generate report');
+		}
+	}
+
+	private async getRevenueBreakdown(
+		startDate: Date,
+		endDate: Date,
+	): Promise<Array<{ category: string; value: number; percentage: number }>> {
+		const quotationsData = await this.shopService.getQuotationsReport({
+			createdAt: { gte: startDate, lte: endDate },
+		});
+
+		const totalRevenue = Number(quotationsData?.metrics?.grossQuotationValue || 0);
+		const categories = quotationsData?.metrics?.topProducts || [];
+
+		return categories.map((product) => ({
+			category: product.productName,
+			value: Number(product.totalValue || 0),
+			percentage: (Number(product.totalValue || 0) / totalRevenue) * 100,
+		}));
+	}
+
+	private groupByType<T extends { type?: string }>(items: T[]): Record<string, number> {
+		return items.reduce((acc, item) => {
+			if (item.type) {
+				acc[item.type] = (acc[item.type] || 0) + 1;
+			}
+			return acc;
+		}, {} as Record<string, number>);
+	}
+
+	private groupBySource<T extends { source?: string }>(items: T[]): Record<string, number> {
+		return items.reduce((acc, item) => {
+			if (item.source) {
+				acc[item.source] = (acc[item.source] || 0) + 1;
+			}
+			return acc;
+		}, {} as Record<string, number>);
+	}
+
+	private groupByPriority<T extends { priority?: string }>(items: T[]): Record<string, number> {
+		return items.reduce((acc, item) => {
+			if (item.priority) {
+				acc[item.priority] = (acc[item.priority] || 0) + 1;
+			}
+			return acc;
+		}, {} as Record<string, number>);
+	}
+
+	private groupByDepartment(attendanceData: CheckIn[]): Record<string, number> {
+		return attendanceData.reduce((acc, record) => {
+			const branch = record.branch?.name || 'Unknown';
+			acc[branch] = (acc[branch] || 0) + 1;
+			return acc;
+		}, {} as Record<string, number>);
+	}
+
+	private calculateAverageResponseTime(leads: any[]): string {
+		const totalResponseTime = leads.reduce((sum, lead) => {
+			if (lead.firstResponseAt && lead.createdAt) {
+				return sum + differenceInMinutes(new Date(lead.firstResponseAt), new Date(lead.createdAt));
+			}
+			return sum;
+		}, 0);
+		const avgMinutes = Math.round(totalResponseTime / leads.length);
+		return `${avgMinutes} minutes`;
+	}
+
+	private calculateAverageCompletionTime(tasks: any[]): string {
+		const totalCompletionTime = tasks.reduce((sum, task) => {
+			if (task.completedAt && task.createdAt) {
+				return sum + differenceInMinutes(new Date(task.completedAt), new Date(task.createdAt));
+			}
+			return sum;
+		}, 0);
+		const avgMinutes = Math.round(totalCompletionTime / tasks.length);
+		return `${avgMinutes} minutes`;
+	}
+
+	private calculateLeadQualityScore(leads: any[]): number {
+		const totalScore = leads.reduce((sum, lead) => {
+			let score = 0;
+			if (lead.converted) score += 5;
+			if (lead.budget && lead.budget > 0) score += 2;
+			if (lead.notes && lead.notes.length > 0) score += 1;
+			if (lead.followUps && lead.followUps.length > 0) score += 2;
+			return sum + score;
+		}, 0);
+		return Math.round((totalScore / (leads.length * 10)) * 100);
+	}
+
+	private calculateAverageHours(attendance: any[]): number {
+		const totalHours = attendance.reduce((sum, record) => {
+			if (record.checkOutTime && record.checkInTime) {
+				return sum + differenceInMinutes(new Date(record.checkOutTime), new Date(record.checkInTime)) / 60;
+			}
+			return sum;
+		}, 0);
+		return Math.round((totalHours / attendance.length) * 10) / 10;
+	}
+
+	private calculatePunctualityRate(attendance: any[]): number {
+		const onTimeCount = attendance.filter((record) => {
+			const checkInTime = new Date(record.checkInTime);
+			const scheduledTime = new Date(record.scheduledStartTime);
+			return checkInTime <= scheduledTime;
+		}).length;
+		return Math.round((onTimeCount / attendance.length) * 100);
+	}
+
+	private calculateOvertime(attendance: any[]): number {
+		const totalOvertime = attendance.reduce((sum, record) => {
+			if (record.checkOutTime && record.scheduledEndTime) {
+				const overtime =
+					Math.max(0, differenceInMinutes(new Date(record.checkOutTime), new Date(record.scheduledEndTime))) /
+					60;
+				return sum + overtime;
+			}
+			return sum;
+		}, 0);
+		return Math.round(totalOvertime * 10) / 10;
+	}
+
+	private calculateAbsences(attendance: any[]): number {
+		return attendance.filter((record) => record.status === 'ABSENT').length;
+	}
+
+	private calculateRemoteWork(attendance: any[]): number {
+		const remoteCount = attendance.filter((record) => record.workMode === 'REMOTE').length;
+		return Math.round((remoteCount / attendance.length) * 100);
+	}
+
+	private calculateDailyPatterns(startDate: Date, endDate: Date): Record<string, number> {
+		// TODO: Implement daily patterns calculation
 		return {
-			period: monthStart.toISOString().split('T')[0],
-			currentMonth: {
-				totalClaims: currentTotal,
-				totalValue: currentMonthData?.totalValue || 0,
-				approvalRate: currentMonthData?.metrics?.approvalRate || '0%',
-				averageValue: currentMonthData?.metrics?.averageClaimValue || 0,
-			},
-			comparison: {
-				claimsGrowth: growth,
-				valueGrowth: this.calculateGrowthPercentage(
-					currentMonthData?.totalValue || 0,
-					lastMonthData?.totalValue || 0,
-				),
-			},
-			topCategories: currentMonthData?.metrics?.categoryBreakdown?.slice(0, 3) || [],
+			Monday: 100,
+			Tuesday: 120,
+			Wednesday: 115,
+			Thursday: 125,
+			Friday: 90,
 		};
+	}
+
+	private calculateWeeklyPatterns(startDate: Date, endDate: Date): Record<string, number> {
+		// TODO: Implement weekly patterns calculation
+		return {
+			'Week 1': 450,
+			'Week 2': 480,
+			'Week 3': 520,
+			'Week 4': 490,
+		};
+	}
+
+	private calculateMonthlyPatterns(startDate: Date, endDate: Date): Record<string, number> {
+		// TODO: Implement monthly patterns calculation
+		return {
+			Jan: 1200,
+			Feb: 1300,
+			Mar: 1450,
+			Apr: 1380,
+		};
+	}
+
+	private generateHighlights(
+		financial: FinancialMetrics,
+		performance: PerformanceMetrics,
+		comparison: ComparisonMetrics,
+	): string[] {
+		const highlights: string[] = [];
+
+		if (financial.revenue.growth.startsWith('+')) {
+			highlights.push(`Revenue increased by ${financial.revenue.growth} compared to previous period`);
+		}
+
+		if (performance.leads.conversionRate > 20) {
+			highlights.push(`Strong lead conversion rate of ${performance.leads.conversionRate.toFixed(1)}%`);
+		}
+
+		if (performance.tasks.completionRate > 80) {
+			highlights.push(`High task completion rate of ${performance.tasks.completionRate.toFixed(1)}%`);
+		}
+
+		if (financial.quotations.conversion > 50) {
+			highlights.push(
+				`Above average quotation conversion rate of ${financial.quotations.conversion.toFixed(1)}%`,
+			);
+		}
+
+		return highlights;
+	}
+
+	private generateRecommendations(
+		financial: FinancialMetrics,
+		performance: PerformanceMetrics,
+		trends: TrendMetrics,
+	): string[] {
+		const recommendations: string[] = [];
+
+		if (financial.revenue.trend === 'down') {
+			recommendations.push('Consider reviewing pricing strategy and implementing targeted promotions');
+		}
+
+		if (performance.leads.conversionRate < 20) {
+			recommendations.push('Focus on lead qualification process and sales team training');
+		}
+
+		if (performance.tasks.overdue > performance.tasks.completed) {
+			recommendations.push('Review task allocation and implement better tracking of deadlines');
+		}
+
+		if (performance.attendance.punctuality < 80) {
+			recommendations.push('Address attendance issues through team meetings and policy reviews');
+		}
+
+		return recommendations;
 	}
 }

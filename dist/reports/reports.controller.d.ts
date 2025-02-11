@@ -3,10 +3,7 @@ import { GenerateReportDto } from './dto/generate-report.dto';
 export declare class ReportsController {
     private readonly reportsService;
     constructor(reportsService: ReportsService);
-    generateReport(generateReportDto: GenerateReportDto): Promise<import("./entities/report.entity").Report | {
-        message: any;
-        statusCode: any;
-    }>;
+    generateReport(generateReportDto: GenerateReportDto): Promise<import("./types/report-response.types").ReportResponse>;
     managerDailyReport(): Promise<{
         message: any;
         statusCode: any;
@@ -17,16 +14,22 @@ export declare class ReportsController {
             inReview: number;
             declined: number;
             total: number;
-        };
-        journals: {
-            total: number;
+            metrics: {
+                leadTrends: {
+                    growth: string;
+                };
+            };
         };
         claims: {
             pending: number;
             approved: number;
             declined: number;
             paid: number;
-            totalValue: string | number;
+            total: number;
+            totalValue: string;
+            metrics: {
+                valueGrowth: string;
+            };
         };
         tasks: {
             pending: number;
@@ -34,11 +37,11 @@ export declare class ReportsController {
             missed: number;
             postponed: number;
             total: number;
-        };
-        attendance: {
-            attendance: number;
-            present: number;
-            total: number;
+            metrics: {
+                taskTrends: {
+                    growth: string;
+                };
+            };
         };
         orders: {
             pending: number;
@@ -50,8 +53,21 @@ export declare class ReportsController {
             approved: number;
             metrics: {
                 totalQuotations: number;
-                grossQuotationValue: string | number;
-                averageQuotationValue: string | number;
+                grossQuotationValue: string;
+                averageQuotationValue: string;
+                quotationTrends: {
+                    growth: string;
+                };
+            };
+        };
+        attendance: {
+            attendance: number;
+            present: number;
+            total: number;
+            metrics: {
+                attendanceTrends: {
+                    growth: string;
+                };
             };
         };
     }>;
