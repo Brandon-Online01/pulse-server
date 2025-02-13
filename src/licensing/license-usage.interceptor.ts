@@ -19,6 +19,8 @@ export class LicenseUsageInterceptor implements NestInterceptor {
         const request = context.switchToHttp().getRequest<Request>();
         const user = request['user'];
 
+        console.log(user)
+
         // Skip if no user or no license info
         if (!user?.licenseId) {
             return next.handle();
@@ -31,6 +33,9 @@ export class LicenseUsageInterceptor implements NestInterceptor {
         try {
             // Get the actual license object
             const license = await this.licensingService.findOne(user.licenseId);
+
+            console.log(license)
+            
             if (!license) {
                 this.logger.warn(`No valid license found for user ${user.uid}`);
                 return next.handle();

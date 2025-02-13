@@ -1,5 +1,12 @@
 import { BadRequestException, HttpException, HttpStatus, Injectable, UnauthorizedException } from '@nestjs/common';
-import { SignInInput, SignUpInput, VerifyEmailInput, SetPasswordInput, ForgotPasswordInput, ResetPasswordInput } from './dto/auth.dto';
+import {
+	SignInInput,
+	SignUpInput,
+	VerifyEmailInput,
+	SetPasswordInput,
+	ForgotPasswordInput,
+	ResetPasswordInput,
+} from './dto/auth.dto';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
@@ -25,7 +32,7 @@ export class AuthService {
 		private pendingSignupService: PendingSignupService,
 		private passwordResetService: PasswordResetService,
 		private licensingService: LicensingService,
-	) { }
+	) {}
 
 	private excludePassword(user: any): Omit<typeof user, 'password'> {
 		const { password, ...userWithoutPassword } = user;
@@ -65,10 +72,14 @@ export class AuthService {
 			// Check organization license if user belongs to an organization
 			if (organisationRef) {
 				const licenses = await this.licensingService.findByOrganisation(organisationRef);
-				const activeLicense = licenses.find(license => this.licensingService.validateLicense(String(license?.uid)));
+				const activeLicense = licenses.find((license) =>
+					this.licensingService.validateLicense(String(license?.uid)),
+				);
 
 				if (!activeLicense) {
-					throw new UnauthorizedException('Your organization\'s license has expired. Please contact your administrator.');
+					throw new UnauthorizedException(
+						"Your organization's license has expired. Please contact your administrator.",
+					);
 				}
 
 				// Add license info to profile data
@@ -81,9 +92,9 @@ export class AuthService {
 						licenseId: String(activeLicense?.uid),
 						plan: activeLicense?.plan,
 						status: activeLicense?.status,
-						features: activeLicense?.features
+						features: activeLicense?.features,
 					},
-					...restOfUser
+					...restOfUser,
 				};
 
 				const tokenRole = accessLevel?.toLowerCase();
@@ -95,7 +106,7 @@ export class AuthService {
 					organisationRef,
 					licenseId: String(activeLicense?.uid),
 					licensePlan: activeLicense?.plan,
-					features: activeLicense?.features
+					features: activeLicense?.features,
 				};
 
 				const accessToken = await this.jwtService.signAsync(payload, { expiresIn: `8h` });
@@ -108,9 +119,9 @@ export class AuthService {
 					source: {
 						id: uid.toString(),
 						type: XP_VALUES_TYPES.LOGIN,
-						details: 'Daily login reward'
-					}
-				}
+						details: 'Daily login reward',
+					},
+				};
 
 				await this.rewardsService.awardXP(gainedXP);
 
@@ -127,7 +138,7 @@ export class AuthService {
 				uid: uid.toString(),
 				accessLevel,
 				name,
-				...restOfUser
+				...restOfUser,
 			};
 
 			const tokenRole = accessLevel?.toLowerCase();
@@ -142,14 +153,13 @@ export class AuthService {
 				refreshToken,
 				message: `Welcome ${profileData.name}!`,
 			};
-
 		} catch (error) {
 			const response = {
 				message: error?.message,
 				accessToken: null,
 				refreshToken: null,
 				profileData: null,
-			}
+			};
 
 			return response;
 		}
@@ -180,26 +190,22 @@ export class AuthService {
 
 			await this.pendingSignupService.create(email, verificationToken);
 
-			this.eventEmitter.emit('send.email',
-				EmailType.VERIFICATION,
-				[email],
-				{
-					name: email.split('@')[0],
-					verificationLink: verificationUrl,
-					expiryHours: 24
-				}
-			);
+			this.eventEmitter.emit('send.email', EmailType.VERIFICATION, [email], {
+				name: email.split('@')[0],
+				verificationLink: verificationUrl,
+				expiryHours: 24,
+			});
 
 			const response = {
 				status: 'success',
 				message: 'Please check your email and verify your account within the next 24 hours.',
-			}
+			};
 
 			return response;
 		} catch (error) {
 			const response = {
 				message: error?.message,
-			}
+			};
 
 			return response;
 		}
@@ -227,12 +233,12 @@ export class AuthService {
 
 			return {
 				message: 'Email verified successfully. You can now set your password.',
-				email: pendingSignup.email
+				email: pendingSignup.email,
 			};
 		} catch (error) {
 			throw new HttpException(
 				error.message || 'Email verification failed',
-				error.status || HttpStatus.BAD_REQUEST
+				error.status || HttpStatus.BAD_REQUEST,
 			);
 		}
 	}
@@ -268,20 +274,16 @@ export class AuthService {
 				phone: '',
 				photoURL: `https://ui-avatars.com/api/?name=${username}&background=805adc&color=fff`,
 				accessLevel: AccessLevel.USER,
-				userref: `USR${Date.now()}`
+				userref: `USR${Date.now()}`,
 			});
 
 			// Delete the pending signup
 			await this.pendingSignupService.delete(pendingSignup.uid);
 
 			// Send welcome email
-			this.eventEmitter.emit('send.email',
-				EmailType.SIGNUP,
-				[pendingSignup.email],
-				{
-					name: username,
-				}
-			);
+			this.eventEmitter.emit('send.email', EmailType.SIGNUP, [pendingSignup.email], {
+				name: username,
+			});
 
 			const response = {
 				status: 'success',
@@ -292,7 +294,7 @@ export class AuthService {
 		} catch (error) {
 			throw new HttpException(
 				error.message || 'Failed to create account',
-				error.status || HttpStatus.BAD_REQUEST
+				error.status || HttpStatus.BAD_REQUEST,
 			);
 		}
 	}
@@ -329,15 +331,11 @@ export class AuthService {
 
 			await this.passwordResetService.create(email, resetToken);
 
-			this.eventEmitter.emit('send.email',
-				EmailType.PASSWORD_RESET,
-				[email],
-				{
-					name: existingUser.user.name,
-					resetLink: resetUrl,
-					expiryMinutes: 30
-				}
-			);
+			this.eventEmitter.emit('send.email', EmailType.PASSWORD_RESET, [email], {
+				name: existingUser.user.name,
+				resetLink: resetUrl,
+				expiryMinutes: 30,
+			});
 
 			const response = {
 				status: 'success',
@@ -348,7 +346,7 @@ export class AuthService {
 		} catch (error) {
 			const response = {
 				message: error?.message,
-			}
+			};
 
 			return response;
 		}
@@ -379,19 +377,15 @@ export class AuthService {
 			// Mark reset request as used
 			await this.passwordResetService.markAsUsed(resetRequest.uid);
 
-			this.eventEmitter.emit('send.email',
-				EmailType.PASSWORD_CHANGED,
-				[user.user.email],
-				{
-					name: user.user.name,
-					date: new Date(),
-					deviceInfo: {
-						browser: 'Web Browser',
-						os: 'Unknown',
-						location: 'Unknown'
-					}
-				}
-			);
+			this.eventEmitter.emit('send.email', EmailType.PASSWORD_CHANGED, [user.user.email], {
+				name: user.user.name,
+				date: new Date(),
+				deviceInfo: {
+					browser: 'Web Browser',
+					os: 'Unknown',
+					location: 'Unknown',
+				},
+			});
 
 			return {
 				message: 'Password reset successfully. You can now sign in with your new password.',
@@ -399,7 +393,7 @@ export class AuthService {
 		} catch (error) {
 			throw new HttpException(
 				error.message || 'Failed to reset password',
-				error.status || HttpStatus.BAD_REQUEST
+				error.status || HttpStatus.BAD_REQUEST,
 			);
 		}
 	}
@@ -421,10 +415,14 @@ export class AuthService {
 			// Check organization license if user belongs to an organization
 			if (authProfile.user.organisationRef) {
 				const licenses = await this.licensingService.findByOrganisation(authProfile.user.organisationRef);
-				const activeLicense = licenses.find(license => this.licensingService.validateLicense(String(license?.uid)));
+				const activeLicense = licenses.find((license) =>
+					this.licensingService.validateLicense(String(license?.uid)),
+				);
 
 				if (!activeLicense) {
-					throw new UnauthorizedException('Your organization\'s license has expired. Please contact your administrator.');
+					throw new UnauthorizedException(
+						"Your organization's license has expired. Please contact your administrator.",
+					);
 				}
 
 				const newPayload = {
@@ -433,11 +431,11 @@ export class AuthService {
 					organisationRef: authProfile?.user?.organisationRef,
 					licenseId: String(activeLicense?.uid),
 					licensePlan: activeLicense?.plan,
-					features: activeLicense?.features
+					features: activeLicense?.features,
 				};
 
 				const accessToken = await this.jwtService.signAsync(newPayload, {
-					expiresIn: `${process.env.JWT_ACCESS_EXPIRES_IN}`
+					expiresIn: `${process.env.JWT_ACCESS_EXPIRES_IN}`,
 				});
 
 				return {
@@ -448,37 +446,33 @@ export class AuthService {
 							licenseId: String(activeLicense?.uid),
 							plan: activeLicense?.plan,
 							status: activeLicense?.status,
-							features: activeLicense?.features
-						}
+							features: activeLicense?.features,
+						},
 					},
-					message: 'Access token refreshed successfully'
+					message: 'Access token refreshed successfully',
 				};
 			}
 
 			// For users without organization
 			const newPayload = {
 				uid: payload.uid,
-				role: authProfile.user.accessLevel?.toLowerCase()
+				role: authProfile.user.accessLevel?.toLowerCase(),
 			};
 
 			const accessToken = await this.jwtService.signAsync(newPayload, {
-				expiresIn: `${process.env.JWT_ACCESS_EXPIRES_IN}`
+				expiresIn: `${process.env.JWT_ACCESS_EXPIRES_IN}`,
 			});
 
 			return {
 				accessToken,
 				profileData: authProfile?.user,
-				message: 'Access token refreshed successfully'
+				message: 'Access token refreshed successfully',
 			};
 		} catch (error) {
-
 			if (error?.name === 'TokenExpiredError') {
 				throw new HttpException('Refresh token has expired', HttpStatus.UNAUTHORIZED);
 			}
-			throw new HttpException(
-				error.message || 'Failed to refresh token',
-				error.status || HttpStatus.BAD_REQUEST
-			);
+			throw new HttpException(error.message || 'Failed to refresh token', error.status || HttpStatus.BAD_REQUEST);
 		}
 	}
 }

@@ -25,6 +25,7 @@ let LicenseUsageInterceptor = LicenseUsageInterceptor_1 = class LicenseUsageInte
     async intercept(context, next) {
         const request = context.switchToHttp().getRequest();
         const user = request['user'];
+        console.log(user);
         if (!user?.licenseId) {
             return next.handle();
         }
@@ -33,6 +34,7 @@ let LicenseUsageInterceptor = LicenseUsageInterceptor_1 = class LicenseUsageInte
         const method = request.method;
         try {
             const license = await this.licensingService.findOne(user.licenseId);
+            console.log(license);
             if (!license) {
                 this.logger.warn(`No valid license found for user ${user.uid}`);
                 return next.handle();

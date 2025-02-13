@@ -13,7 +13,7 @@ export declare class CommunicationService {
     private communicationLogRepository;
     private readonly emailService;
     constructor(configService: ConfigService, notificationsService: NotificationsService, userService: UserService, communicationLogRepository: Repository<CommunicationLog>);
-    sendEmail<T extends EmailType>(emailType: T, recipientsEmails: string[], data: EmailTemplateData<T>): Promise<any>;
+    sendEmail<T extends EmailType>(emailType: T, recipientsEmails: string[], data: EmailTemplateData<T>): Promise<string>;
     private getEmailTemplate;
     sendNotification(notification: CreateNotificationDto, recipients: string[]): Promise<void>;
 }

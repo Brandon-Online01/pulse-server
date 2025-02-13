@@ -11,7 +11,6 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-var LicensingService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LicensingService = void 0;
 const common_1 = require("@nestjs/common");
@@ -23,13 +22,18 @@ const license_features_1 = require("../lib/constants/license-features");
 const event_emitter_1 = require("@nestjs/event-emitter");
 const email_enums_1 = require("../lib/enums/email.enums");
 const crypto = require("crypto");
-let LicensingService = LicensingService_1 = class LicensingService {
+const schedule_1 = require("@nestjs/schedule");
+let LicensingService = class LicensingService {
     constructor(licenseRepository, eventEmitter) {
         this.licenseRepository = licenseRepository;
         this.eventEmitter = eventEmitter;
-        this.logger = new common_1.Logger(LicensingService_1.name);
         this.GRACE_PERIOD_DAYS = 15;
         this.RENEWAL_WINDOW_DAYS = 30;
+    }
+    async resetAllLicensesToActive() {
+        await this.licenseRepository.update({}, {
+            status: license_enums_1.LicenseStatus.ACTIVE,
+        });
     }
     generateLicenseKey() {
         return crypto.randomBytes(16).toString('hex').toUpperCase();
@@ -104,9 +108,9 @@ let LicensingService = LicensingService_1 = class LicensingService {
                 features: planDefaults.features,
                 licenseKey: this.generateLicenseKey(),
                 status: createLicenseDto?.type === license_enums_1.LicenseType.TRIAL ? license_enums_1.LicenseStatus.TRIAL : license_enums_1.LicenseStatus.ACTIVE,
-                organisationRef: Number(createLicenseDto.organisationRef)
+                organisationRef: Number(createLicenseDto.organisationRef),
             });
-            const created = await this.licenseRepository.save(license).then(result => {
+            const created = await this.licenseRepository.save(license).then((result) => {
                 if (Array.isArray(result)) {
                     return result[0];
                 }
@@ -125,7 +129,7 @@ let LicensingService = LicensingService_1 = class LicensingService {
                     storageLimit: created.storageLimit,
                     apiCallLimit: created.apiCallLimit,
                     integrationLimit: created.integrationLimit,
-                }
+                },
             });
             return created;
         }
@@ -196,7 +200,7 @@ let LicensingService = LicensingService_1 = class LicensingService {
                     storageLimit: updated?.storageLimit,
                     apiCallLimit: updated?.apiCallLimit,
                     integrationLimit: updated?.integrationLimit,
-                }
+                },
             });
             return updated;
         }
@@ -258,7 +262,7 @@ let LicensingService = LicensingService_1 = class LicensingService {
                     },
                     metric,
                     currentValue,
-                    limit
+                    limit,
                 });
             }
             return isWithinLimit;
@@ -295,7 +299,7 @@ let LicensingService = LicensingService_1 = class LicensingService {
                     storageLimit: renewed?.storageLimit,
                     apiCallLimit: renewed?.apiCallLimit,
                     integrationLimit: renewed?.integrationLimit,
-                }
+                },
             });
             return renewed;
         }
@@ -319,7 +323,7 @@ let LicensingService = LicensingService_1 = class LicensingService {
                     storageLimit: suspended.storageLimit,
                     apiCallLimit: suspended.apiCallLimit,
                     integrationLimit: suspended.integrationLimit,
-                }
+                },
             });
             return suspended;
         }
@@ -343,7 +347,7 @@ let LicensingService = LicensingService_1 = class LicensingService {
                     storageLimit: activated?.storageLimit,
                     apiCallLimit: activated?.apiCallLimit,
                     integrationLimit: activated?.integrationLimit,
-                }
+                },
             });
             return activated;
         }
@@ -369,7 +373,13 @@ let LicensingService = LicensingService_1 = class LicensingService {
     }
 };
 exports.LicensingService = LicensingService;
-exports.LicensingService = LicensingService = LicensingService_1 = __decorate([
+__decorate([
+    (0, schedule_1.Cron)(schedule_1.CronExpression.EVERY_10_SECONDS),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], LicensingService.prototype, "resetAllLicensesToActive", null);
+exports.LicensingService = LicensingService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(license_entity_1.License)),
     __metadata("design:paramtypes", [typeorm_2.Repository,

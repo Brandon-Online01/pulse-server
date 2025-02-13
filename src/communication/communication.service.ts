@@ -52,27 +52,27 @@ export class CommunicationService {
 
 			const template = this.getEmailTemplate(emailType, data);
 
-			const result = await this.emailService.sendMail({
-				from: this.configService.get<string>('SMTP_FROM'),
-				to: recipientsEmails,
-				subject: template.subject,
-				html: template.body,
-			});
+			// const result = await this.emailService.sendMail({
+			// 	from: this.configService.get<string>('SMTP_FROM'),
+			// 	to: recipientsEmails,
+			// 	subject: template.subject,
+			// 	html: template.body,
+			// });
 
-			await this.communicationLogRepository.save({
-				emailType,
-				recipientEmails: recipientsEmails,
-				accepted: result.accepted,
-				rejected: result.rejected,
-				messageId: result.messageId,
-				messageSize: result.messageSize,
-				envelopeTime: result.envelopeTime,
-				messageTime: result.messageTime,
-				response: result.response,
-				envelope: result.envelope,
-			});
+			// await this.communicationLogRepository.save({
+			// 	emailType,
+			// 	recipientEmails: recipientsEmails,
+			// 	accepted: result.accepted,
+			// 	rejected: result.rejected,
+			// 	messageId: result.messageId,
+			// 	messageSize: result.messageSize,
+			// 	envelopeTime: result.envelopeTime,
+			// 	messageTime: result.messageTime,
+			// 	response: result.response,
+			// 	envelope: result.envelope,
+			// });
 
-			return result;
+			return 'result';
 		} catch (error) {
 			throw error;
 		}

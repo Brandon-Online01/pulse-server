@@ -61,9 +61,9 @@ let AuthService = class AuthService {
             const { uid, accessLevel, name, organisationRef, ...restOfUser } = userWithoutPassword;
             if (organisationRef) {
                 const licenses = await this.licensingService.findByOrganisation(organisationRef);
-                const activeLicense = licenses.find(license => this.licensingService.validateLicense(String(license?.uid)));
+                const activeLicense = licenses.find((license) => this.licensingService.validateLicense(String(license?.uid)));
                 if (!activeLicense) {
-                    throw new common_1.UnauthorizedException('Your organization\'s license has expired. Please contact your administrator.');
+                    throw new common_1.UnauthorizedException("Your organization's license has expired. Please contact your administrator.");
                 }
                 const profileData = {
                     uid: uid.toString(),
@@ -74,9 +74,9 @@ let AuthService = class AuthService {
                         licenseId: String(activeLicense?.uid),
                         plan: activeLicense?.plan,
                         status: activeLicense?.status,
-                        features: activeLicense?.features
+                        features: activeLicense?.features,
                     },
-                    ...restOfUser
+                    ...restOfUser,
                 };
                 const tokenRole = accessLevel?.toLowerCase();
                 const payload = {
@@ -85,7 +85,7 @@ let AuthService = class AuthService {
                     organisationRef,
                     licenseId: String(activeLicense?.uid),
                     licensePlan: activeLicense?.plan,
-                    features: activeLicense?.features
+                    features: activeLicense?.features,
                 };
                 const accessToken = await this.jwtService.signAsync(payload, { expiresIn: `8h` });
                 const refreshToken = await this.jwtService.signAsync(payload, { expiresIn: `7d` });
@@ -96,8 +96,8 @@ let AuthService = class AuthService {
                     source: {
                         id: uid.toString(),
                         type: constants_1.XP_VALUES_TYPES.LOGIN,
-                        details: 'Daily login reward'
-                    }
+                        details: 'Daily login reward',
+                    },
                 };
                 await this.rewardsService.awardXP(gainedXP);
                 return {
@@ -111,7 +111,7 @@ let AuthService = class AuthService {
                 uid: uid.toString(),
                 accessLevel,
                 name,
-                ...restOfUser
+                ...restOfUser,
             };
             const tokenRole = accessLevel?.toLowerCase();
             const payload = { uid: uid?.toString(), role: tokenRole };
@@ -156,7 +156,7 @@ let AuthService = class AuthService {
             this.eventEmitter.emit('send.email', email_enums_1.EmailType.VERIFICATION, [email], {
                 name: email.split('@')[0],
                 verificationLink: verificationUrl,
-                expiryHours: 24
+                expiryHours: 24,
             });
             const response = {
                 status: 'success',
@@ -188,7 +188,7 @@ let AuthService = class AuthService {
             await this.pendingSignupService.markAsVerified(pendingSignup.uid);
             return {
                 message: 'Email verified successfully. You can now set your password.',
-                email: pendingSignup.email
+                email: pendingSignup.email,
             };
         }
         catch (error) {
@@ -220,7 +220,7 @@ let AuthService = class AuthService {
                 phone: '',
                 photoURL: `https://ui-avatars.com/api/?name=${username}&background=805adc&color=fff`,
                 accessLevel: user_enums_1.AccessLevel.USER,
-                userref: `USR${Date.now()}`
+                userref: `USR${Date.now()}`,
             });
             await this.pendingSignupService.delete(pendingSignup.uid);
             this.eventEmitter.emit('send.email', email_enums_1.EmailType.SIGNUP, [pendingSignup.email], {
@@ -262,7 +262,7 @@ let AuthService = class AuthService {
             this.eventEmitter.emit('send.email', email_enums_1.EmailType.PASSWORD_RESET, [email], {
                 name: existingUser.user.name,
                 resetLink: resetUrl,
-                expiryMinutes: 30
+                expiryMinutes: 30,
             });
             const response = {
                 status: 'success',
@@ -301,8 +301,8 @@ let AuthService = class AuthService {
                 deviceInfo: {
                     browser: 'Web Browser',
                     os: 'Unknown',
-                    location: 'Unknown'
-                }
+                    location: 'Unknown',
+                },
             });
             return {
                 message: 'Password reset successfully. You can now sign in with your new password.',
@@ -324,9 +324,9 @@ let AuthService = class AuthService {
             }
             if (authProfile.user.organisationRef) {
                 const licenses = await this.licensingService.findByOrganisation(authProfile.user.organisationRef);
-                const activeLicense = licenses.find(license => this.licensingService.validateLicense(String(license?.uid)));
+                const activeLicense = licenses.find((license) => this.licensingService.validateLicense(String(license?.uid)));
                 if (!activeLicense) {
-                    throw new common_1.UnauthorizedException('Your organization\'s license has expired. Please contact your administrator.');
+                    throw new common_1.UnauthorizedException("Your organization's license has expired. Please contact your administrator.");
                 }
                 const newPayload = {
                     uid: payload?.uid,
@@ -334,10 +334,10 @@ let AuthService = class AuthService {
                     organisationRef: authProfile?.user?.organisationRef,
                     licenseId: String(activeLicense?.uid),
                     licensePlan: activeLicense?.plan,
-                    features: activeLicense?.features
+                    features: activeLicense?.features,
                 };
                 const accessToken = await this.jwtService.signAsync(newPayload, {
-                    expiresIn: `${process.env.JWT_ACCESS_EXPIRES_IN}`
+                    expiresIn: `${process.env.JWT_ACCESS_EXPIRES_IN}`,
                 });
                 return {
                     accessToken,
@@ -347,23 +347,23 @@ let AuthService = class AuthService {
                             licenseId: String(activeLicense?.uid),
                             plan: activeLicense?.plan,
                             status: activeLicense?.status,
-                            features: activeLicense?.features
-                        }
+                            features: activeLicense?.features,
+                        },
                     },
-                    message: 'Access token refreshed successfully'
+                    message: 'Access token refreshed successfully',
                 };
             }
             const newPayload = {
                 uid: payload.uid,
-                role: authProfile.user.accessLevel?.toLowerCase()
+                role: authProfile.user.accessLevel?.toLowerCase(),
             };
             const accessToken = await this.jwtService.signAsync(newPayload, {
-                expiresIn: `${process.env.JWT_ACCESS_EXPIRES_IN}`
+                expiresIn: `${process.env.JWT_ACCESS_EXPIRES_IN}`,
             });
             return {
                 accessToken,
                 profileData: authProfile?.user,
-                message: 'Access token refreshed successfully'
+                message: 'Access token refreshed successfully',
             };
         }
         catch (error) {

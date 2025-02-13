@@ -6,10 +6,10 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 export declare class LicensingService {
     private readonly licenseRepository;
     private readonly eventEmitter;
-    private readonly logger;
     private readonly GRACE_PERIOD_DAYS;
     private readonly RENEWAL_WINDOW_DAYS;
     constructor(licenseRepository: Repository<License>, eventEmitter: EventEmitter2);
+    resetAllLicensesToActive(): Promise<void>;
     private generateLicenseKey;
     private getPlanDefaults;
     create(createLicenseDto: CreateLicenseDto): Promise<License>;
