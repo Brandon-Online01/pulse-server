@@ -374,7 +374,7 @@ let LicensingService = class LicensingService {
 };
 exports.LicensingService = LicensingService;
 __decorate([
-    (0, schedule_1.Cron)(schedule_1.CronExpression.EVERY_10_SECONDS),
+    (0, schedule_1.Cron)(schedule_1.CronExpression.EVERY_10_MINUTES),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)

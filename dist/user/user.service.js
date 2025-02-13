@@ -19,6 +19,8 @@ const user_entity_1 = require("./entities/user.entity");
 const typeorm_2 = require("@nestjs/typeorm");
 const common_1 = require("@nestjs/common");
 const status_enums_1 = require("../lib/enums/status.enums");
+const schedule_1 = require("@nestjs/schedule");
+const schedule_2 = require("@nestjs/schedule");
 let UserService = class UserService {
     constructor(userRepository) {
         this.userRepository = userRepository;
@@ -26,6 +28,16 @@ let UserService = class UserService {
     excludePassword(user) {
         const { password, ...userWithoutPassword } = user;
         return userWithoutPassword;
+    }
+    async assignOrganisationToUser() {
+        const users = await this.userRepository.find({ where: { isDeleted: false } });
+        users?.forEach(async (user) => {
+            await this.userRepository.update(user.uid, {
+                organisation: {
+                    uid: 2,
+                },
+            });
+        });
     }
     async create(createUserDto) {
         try {
@@ -55,7 +67,7 @@ let UserService = class UserService {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
             const response = {
-                users: users.map(user => this.excludePassword(user)),
+                users: users.map((user) => this.excludePassword(user)),
                 message: process.env.SUCCESS_MESSAGE,
             };
             return response;
@@ -63,7 +75,7 @@ let UserService = class UserService {
         catch (error) {
             const response = {
                 message: error?.message,
-                users: null
+                users: null,
             };
             return response;
         }
@@ -71,9 +83,7 @@ let UserService = class UserService {
     async findOne(searchParameter) {
         try {
             const user = await this.userRepository.findOne({
-                where: [
-                    { uid: searchParameter, isDeleted: false },
-                ],
+                where: [{ uid: searchParameter, isDeleted: false }],
                 relations: [
                     'userProfile',
                     'userEmployeementProfile',
@@ -93,8 +103,8 @@ let UserService = class UserService {
                     'checkIns',
                     'reports',
                     'rewards',
-                    'organisation'
-                ]
+                    'organisation',
+                ],
             });
             if (!user) {
                 return {
@@ -110,7 +120,7 @@ let UserService = class UserService {
         catch (error) {
             return {
                 message: error?.message,
-                user: null
+                user: null,
             };
         }
     }
@@ -129,7 +139,7 @@ let UserService = class UserService {
         catch (error) {
             const response = {
                 message: error?.message,
-                user: null
+                user: null,
             };
             return response;
         }
@@ -141,13 +151,10 @@ let UserService = class UserService {
                     {
                         username: searchParameter,
                         isDeleted: false,
-                        status: status_enums_1.AccountStatus.ACTIVE
+                        status: status_enums_1.AccountStatus.ACTIVE,
                     },
                 ],
-                relations: [
-                    'branch',
-                    'rewards',
-                ]
+                relations: ['branch', 'rewards'],
             });
             if (!user) {
                 return {
@@ -163,7 +170,7 @@ let UserService = class UserService {
         catch (error) {
             const response = {
                 message: error?.message,
-                user: null
+                user: null,
             };
             return response;
         }
@@ -171,13 +178,8 @@ let UserService = class UserService {
     async findOneByUid(searchParameter) {
         try {
             const user = await this.userRepository.findOne({
-                where: [
-                    { uid: searchParameter, isDeleted: false },
-                ],
-                relations: [
-                    'branch',
-                    'rewards',
-                ]
+                where: [{ uid: searchParameter, isDeleted: false }],
+                relations: ['branch', 'rewards'],
             });
             if (!user) {
                 return {
@@ -193,7 +195,7 @@ let UserService = class UserService {
         catch (error) {
             const response = {
                 message: error?.message,
-                user: null
+                user: null,
             };
             return response;
         }
@@ -215,7 +217,7 @@ let UserService = class UserService {
         catch (error) {
             const response = {
                 message: error?.message,
-                users: null
+                users: null,
             };
             return response;
         }
@@ -224,7 +226,7 @@ let UserService = class UserService {
         try {
             await this.userRepository.update(ref, updateUserDto);
             const updatedUser = await this.userRepository.findOne({
-                where: { userref: ref, isDeleted: false }
+                where: { userref: ref, isDeleted: false },
             });
             if (!updatedUser) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
@@ -242,14 +244,14 @@ let UserService = class UserService {
     async remove(ref) {
         try {
             const user = await this.userRepository.findOne({
-                where: { userref: ref, isDeleted: false }
+                where: { userref: ref, isDeleted: false },
             });
             if (!user) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
             await this.userRepository.update({ userref: ref }, {
                 isDeleted: true,
-                status: status_enums_1.AccountStatus.INACTIVE
+                status: status_enums_1.AccountStatus.INACTIVE,
             });
             return {
                 message: process.env.SUCCESS_MESSAGE,
@@ -268,7 +270,7 @@ let UserService = class UserService {
             }
             await this.userRepository.save({
                 ...userData,
-                status: userData?.status
+                status: userData?.status,
             });
             this.schedulePendingUserCleanup(userData?.email, userData?.tokenExpires);
         }
@@ -289,7 +291,7 @@ let UserService = class UserService {
         try {
             await this.userRepository.update({ uid: ref }, {
                 isDeleted: false,
-                status: status_enums_1.AccountStatus.ACTIVE
+                status: status_enums_1.AccountStatus.ACTIVE,
             });
             return {
                 message: process.env.SUCCESS_MESSAGE,
@@ -304,7 +306,7 @@ let UserService = class UserService {
     async findByVerificationToken(token) {
         try {
             return await this.userRepository.findOne({
-                where: { verificationToken: token, isDeleted: false }
+                where: { verificationToken: token, isDeleted: false },
             });
         }
         catch (error) {
@@ -314,7 +316,7 @@ let UserService = class UserService {
     async findByResetToken(token) {
         try {
             return await this.userRepository.findOne({
-                where: { resetToken: token, isDeleted: false }
+                where: { resetToken: token, isDeleted: false },
             });
         }
         catch (error) {
@@ -325,7 +327,7 @@ let UserService = class UserService {
         await this.userRepository.update({ uid }, {
             status: status_enums_1.AccountStatus.ACTIVE,
             verificationToken: null,
-            tokenExpires: null
+            tokenExpires: null,
         });
     }
     async setPassword(uid, hashedPassword) {
@@ -333,24 +335,30 @@ let UserService = class UserService {
             password: hashedPassword,
             verificationToken: null,
             tokenExpires: null,
-            status: status_enums_1.AccountStatus.ACTIVE
+            status: status_enums_1.AccountStatus.ACTIVE,
         });
     }
     async setResetToken(uid, token) {
         await this.userRepository.update({ uid }, {
             resetToken: token,
-            tokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000)
+            tokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000),
         });
     }
     async resetPassword(uid, hashedPassword) {
         await this.userRepository.update({ uid }, {
             password: hashedPassword,
             resetToken: null,
-            tokenExpires: null
+            tokenExpires: null,
         });
     }
 };
 exports.UserService = UserService;
+__decorate([
+    (0, schedule_1.Cron)(schedule_2.CronExpression.EVERY_10_MINUTES),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], UserService.prototype, "assignOrganisationToUser", null);
 exports.UserService = UserService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_2.InjectRepository)(user_entity_1.User)),

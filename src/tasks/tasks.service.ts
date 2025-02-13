@@ -484,8 +484,12 @@ export class TasksService {
 
 	public async getTasksForDate(date: Date): Promise<{ total: number }> {
 		try {
-			const startOfDay = new Date(date.setHours(0, 0, 0, 0));
-			const endOfDay = new Date(date.setHours(23, 59, 59, 999));
+			// Create new Date objects to avoid modifying the input date
+			const startOfDay = new Date(date);
+			startOfDay.setHours(0, 0, 0, 0);
+
+			const endOfDay = new Date(date);
+			endOfDay.setHours(23, 59, 59, 999);
 
 			const tasks = await this.taskRepository.count({
 				where: {
@@ -497,6 +501,7 @@ export class TasksService {
 
 			return { total: tasks };
 		} catch (error) {
+			console.error('Error getting tasks for date:', error);
 			return { total: 0 };
 		}
 	}

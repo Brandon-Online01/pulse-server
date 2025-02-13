@@ -62,6 +62,8 @@ let ReportsService = ReportsService_1 = class ReportsService {
         this.currencySymbol = this.configService.get('CURRENCY_SYMBOL') || 'R';
     }
     formatCurrency(amount) {
+        if (isNaN(amount) || amount === null || amount === undefined)
+            return `${this.currencySymbol}0`;
         return new Intl.NumberFormat(this.currencyLocale, {
             style: 'currency',
             currency: this.currencyCode,
@@ -69,11 +71,53 @@ let ReportsService = ReportsService_1 = class ReportsService {
             .format(amount)
             .replace(this.currencyCode, this.currencySymbol);
     }
+    getDateRange(date) {
+        const startDate = new Date(date);
+        startDate.setHours(0, 0, 0, 0);
+        const endDate = new Date(date);
+        endDate.setHours(23, 59, 59, 999);
+        return { startDate, endDate };
+    }
+    getPreviousDateRange(date) {
+        const previousDate = new Date(date);
+        previousDate.setDate(previousDate.getDate() - 1);
+        return this.getDateRange(previousDate);
+    }
     calculateGrowth(current, previous) {
-        if (previous === 0)
-            return '+100%';
+        if (current === 0 && previous === 0)
+            return '0%';
+        if (previous === 0) {
+            if (current === 0)
+                return '0%';
+            return 'New';
+        }
         const growth = ((current - previous) / previous) * 100;
-        return `${growth >= 0 ? '+' : ''}${growth.toFixed(1)}%`;
+        if (isNaN(growth) || !isFinite(growth))
+            return '0%';
+        return `${growth > 0 ? '+' : ''}${growth.toFixed(1)}%`;
+    }
+    calculateTrend(current, previous, type) {
+        if (previous === 0)
+            return '0%';
+        const growth = ((current - previous) / previous) * 100;
+        if (isNaN(growth) || !isFinite(growth))
+            return '0%';
+        switch (type) {
+            case 'leads':
+                return growth > 100 ? '+100%' : `${growth > 0 ? '+' : ''}${Math.min(Math.abs(growth), 100).toFixed(1)}%`;
+            case 'claims':
+                return `${growth > 0 ? '+' : ''}${Math.min(Math.abs(growth), 200).toFixed(1)}%`;
+            case 'tasks':
+                const completionRate = (current / (previous + current)) * 100;
+                return `${completionRate.toFixed(1)}%`;
+            case 'quotations':
+                const normalizedGrowth = Math.min(Math.abs(growth), 150);
+                return `${growth > 0 ? '+' : ''}${normalizedGrowth.toFixed(1)}%`;
+            case 'attendance':
+                return `${Math.min(Math.max(growth, 0), 100).toFixed(1)}%`;
+            default:
+                return `${growth > 0 ? '+' : ''}${growth.toFixed(1)}%`;
+        }
     }
     handleError(error) {
         return {
@@ -213,7 +257,7 @@ let ReportsService = ReportsService_1 = class ReportsService {
                     total: leadsStats?.total || 0,
                     metrics: {
                         leadTrends: {
-                            growth: this.calculateGrowth(leadsStats?.total || 0, leadsStats?.total - (leadsStats?.pending?.length || 0))
+                            growth: this.calculateTrend(leadsStats?.total || 0, (leadsStats?.total || 0) - (leadsStats?.pending?.length || 0), 'leads')
                         }
                     }
                 },
@@ -226,7 +270,7 @@ let ReportsService = ReportsService_1 = class ReportsService {
                         (claimsStats?.approved?.length || 0) + (claimsStats?.declined?.length || 0),
                     totalValue: this.formatCurrency(Number(claimsStats?.totalValue || 0)),
                     metrics: {
-                        valueGrowth: this.calculateGrowth(Number(claimsStats?.totalValue || 0), Number(previousClaims?.claims?.totalValue || 0))
+                        valueGrowth: this.calculateTrend(Number(claimsStats?.totalValue || 0), Number(previousClaims?.claims?.totalValue || 0), 'claims')
                     }
                 },
                 tasks: {
@@ -237,7 +281,7 @@ let ReportsService = ReportsService_1 = class ReportsService {
                     total: Object.values(tasksStats || {}).reduce((acc, curr) => acc + curr, 0),
                     metrics: {
                         taskTrends: {
-                            growth: this.calculateGrowth(tasksStats?.COMPLETED || 0, tasksStats?.PENDING || 0)
+                            growth: this.calculateTrend(tasksStats?.COMPLETED || 0, tasksStats?.PENDING || 0, 'tasks')
                         }
                     }
                 },
@@ -254,7 +298,7 @@ let ReportsService = ReportsService_1 = class ReportsService {
                         grossQuotationValue: this.formatCurrency(Number(ordersStats?.quotations?.metrics?.grossQuotationValue || 0)),
                         averageQuotationValue: this.formatCurrency(Number(ordersStats?.quotations?.metrics?.averageQuotationValue || 0)),
                         quotationTrends: {
-                            growth: this.calculateGrowth(ordersStats?.quotations?.metrics?.totalQuotations || 0, previousQuotations?.stats?.quotations?.metrics?.totalQuotations || 0)
+                            growth: this.calculateTrend(ordersStats?.quotations?.metrics?.totalQuotations || 0, previousQuotations?.stats?.quotations?.metrics?.totalQuotations || 0, 'quotations')
                         }
                     }
                 },
@@ -264,7 +308,7 @@ let ReportsService = ReportsService_1 = class ReportsService {
                     total: attendanceStats?.metrics?.totalEmployees || 0,
                     metrics: {
                         attendanceTrends: {
-                            growth: this.calculateGrowth(attendanceStats?.metrics?.attendancePercentage || 0, attendanceStats?.metrics?.attendancePercentage || 0)
+                            growth: this.calculateTrend(attendanceStats?.metrics?.attendancePercentage || 0, attendanceStats?.metrics?.attendancePercentage || 0, 'attendance')
                         }
                     }
                 }
@@ -278,7 +322,9 @@ let ReportsService = ReportsService_1 = class ReportsService {
     async userDailyReport(reference) {
         try {
             const date = new Date();
-            const allData = await Promise.all([
+            const { startDate, endDate } = this.getDateRange(date);
+            const { startDate: prevStartDate, endDate: prevEndDate } = this.getPreviousDateRange(date);
+            const [{ leads: leadsStats }, { journals: journalsStats }, { claims: claimsStats }, { stats: quotationsStats }, { total: tasksTotal }, { totalHours: attendanceHours, attendanceRecords }, userRewards, userData, { data: trackingData }, previousDayStats, previousClaims] = await Promise.all([
                 this.leadService.getLeadsForDate(date),
                 this.journalService.getJournalsForDate(date),
                 this.claimsService.getClaimsForDate(date),
@@ -288,17 +334,15 @@ let ReportsService = ReportsService_1 = class ReportsService {
                 reference ? this.rewardsService.getUserRewards(Number(reference)) : null,
                 reference ? this.userService.findOne(Number(reference)) : null,
                 reference ? this.trackingService.getDailyTracking(Number(reference), date) : null,
+                this.shopService.getQuotationsForDate(prevStartDate),
+                this.claimsService.getClaimsForDate(prevStartDate)
             ]);
-            const [{ leads: leadsStats }, { journals: journalsStats }, { claims: claimsStats }, { stats: quotationsStats }, { total: tasksTotal }, { totalHours: attendanceHours, attendanceRecords }, userRewards, userData, { data: trackingData },] = allData;
-            const previousDay = new Date(date);
-            previousDay.setDate(previousDay.getDate() - 1);
-            const previousDayStats = await this.shopService.getQuotationsForDate(previousDay);
             const previousDayQuotations = previousDayStats?.stats?.quotations?.metrics?.totalQuotations || 0;
             const previousDayRevenue = Number(previousDayStats?.stats?.quotations?.metrics?.grossQuotationValue) || 0;
             const { reportMetadata, emailData } = this.formatReportData(leadsStats, journalsStats, claimsStats, quotationsStats, tasksTotal, attendanceRecords || [], attendanceHours || 0, trackingData, userRewards, previousDayQuotations, previousDayRevenue);
             const report = this.reportRepository.create({
                 title: 'Daily Report',
-                description: `Daily report for the date ${new Date()}`,
+                description: `Daily report for ${startDate.toLocaleDateString()}`,
                 type: reports_enums_1.ReportType.DAILY,
                 metadata: reportMetadata,
                 owner: userData?.user,
@@ -308,7 +352,7 @@ let ReportsService = ReportsService_1 = class ReportsService {
             const notification = {
                 type: notification_enums_1.NotificationType.USER,
                 title: 'Daily Report Generated',
-                message: `Your daily activity report for ${new Date().toLocaleDateString()} has been generated`,
+                message: `Your daily activity report for ${startDate.toLocaleDateString()} has been generated`,
                 status: notification_enums_1.NotificationStatus.UNREAD,
                 owner: userData?.user,
             };
@@ -317,7 +361,7 @@ let ReportsService = ReportsService_1 = class ReportsService {
             if (userData?.user?.email) {
                 const emailTemplate = {
                     name: userData.user.username,
-                    date: `${new Date()}`,
+                    date: startDate.toLocaleDateString(),
                     ...emailData,
                 };
                 this.eventEmitter.emit('send.email', email_enums_1.EmailType.DAILY_REPORT, [userData.user.email], emailTemplate);
@@ -325,6 +369,7 @@ let ReportsService = ReportsService_1 = class ReportsService {
             return report;
         }
         catch (error) {
+            this.logger.error('Error generating daily report:', error);
             return this.handleError(error);
         }
     }
@@ -376,7 +421,10 @@ let ReportsService = ReportsService_1 = class ReportsService {
             this.claimsService.getClaimsReport({ createdAt: { gte: startDate, lte: endDate } }),
             this.shopService.getQuotationsReport({ createdAt: { gte: startDate, lte: endDate } }),
             this.tasksService.getTasksReport({ createdAt: { gte: startDate, lte: endDate } }),
-        ]);
+        ]).catch(error => {
+            this.logger.error('Error fetching period metrics:', error);
+            return [null, null, null, null];
+        });
         return {
             revenue: Number(quotationsStats?.metrics?.grossQuotationValue || 0),
             leads: Number(leadsStats?.total || 0),
@@ -393,52 +441,83 @@ let ReportsService = ReportsService_1 = class ReportsService {
         };
     }
     async getFinancialMetrics(startDate, endDate, params) {
-        const [currentPeriod, previousPeriod] = await Promise.all([
-            this.getPeriodMetrics(startDate, endDate, params),
-            this.getPeriodMetrics((0, date_fns_2.subMonths)(startDate, 1), (0, date_fns_2.subMonths)(endDate, 1), params),
-        ]);
-        const claimsData = await this.claimsService.getClaimsReport({
-            createdAt: { gte: startDate, lte: endDate },
-        });
-        const quotationsData = await this.shopService.getQuotationsReport({
-            createdAt: { gte: startDate, lte: endDate },
-        });
-        const claimsBreakdown = claimsData.metrics.categoryBreakdown;
-        const paidClaims = claimsBreakdown.reduce((sum, cat) => (cat.category.toString() === 'PAID' ? sum + cat.count : sum), 0);
-        const pendingClaims = claimsBreakdown.reduce((sum, cat) => (cat.category.toString() === 'PENDING' ? sum + cat.count : sum), 0);
-        const largestClaim = claimsData.metrics.topClaimants[0]?.totalValue
-            ? parseFloat(claimsData.metrics.topClaimants[0].totalValue.replace(/[^0-9.-]+/g, ''))
-            : 0;
-        const acceptedQuotations = quotationsData.metrics.topProducts.reduce((sum, p) => sum + p.totalSold, 0);
-        const totalQuotations = quotationsData.metrics.totalQuotations;
-        const pendingQuotations = totalQuotations - acceptedQuotations;
-        return {
-            revenue: {
-                current: currentPeriod.revenue,
-                previous: previousPeriod.revenue,
-                growth: this.calculateGrowth(currentPeriod.revenue, previousPeriod.revenue),
-                trend: currentPeriod.revenue >= previousPeriod.revenue ? 'up' : 'down',
-                breakdown: await this.getRevenueBreakdown(startDate, endDate),
-            },
-            claims: {
-                total: claimsData.metrics.totalClaims,
-                paid: paidClaims,
-                pending: pendingClaims,
-                average: parseFloat(claimsData.metrics.averageClaimValue.toString()),
-                largestClaim,
-                byType: claimsBreakdown.reduce((acc, cat) => {
-                    acc[cat.category.toString()] = cat.count;
-                    return acc;
-                }, {}),
-            },
-            quotations: {
-                total: totalQuotations,
-                accepted: acceptedQuotations,
-                pending: pendingQuotations,
-                conversion: parseFloat(quotationsData.metrics.conversionRate.replace('%', '')),
-                averageValue: parseFloat(quotationsData.metrics.averageQuotationValue.replace(/[^0-9.-]+/g, '')),
-            },
-        };
+        try {
+            const [currentPeriod, previousPeriod] = await Promise.all([
+                this.getPeriodMetrics(startDate, endDate, params),
+                this.getPeriodMetrics((0, date_fns_2.subMonths)(startDate, 1), (0, date_fns_2.subMonths)(endDate, 1), params),
+            ]);
+            const claimsData = await this.claimsService.getClaimsReport({
+                createdAt: { gte: startDate, lte: endDate },
+            });
+            const quotationsData = await this.shopService.getQuotationsReport({
+                createdAt: { gte: startDate, lte: endDate },
+            });
+            const claimsBreakdown = claimsData?.metrics?.categoryBreakdown || [];
+            const paidClaims = claimsBreakdown.reduce((sum, cat) => (cat?.category?.toString() === 'PAID' ? sum + (cat?.count || 0) : sum), 0);
+            const pendingClaims = claimsBreakdown.reduce((sum, cat) => (cat?.category?.toString() === 'PENDING' ? sum + (cat?.count || 0) : sum), 0);
+            const largestClaim = claimsData?.metrics?.topClaimants?.[0]?.totalValue
+                ? parseFloat(claimsData.metrics.topClaimants[0].totalValue.replace(/[^0-9.-]+/g, ''))
+                : 0;
+            const acceptedQuotations = (quotationsData?.metrics?.topProducts || []).reduce((sum, p) => sum + (p?.totalSold || 0), 0);
+            const totalQuotations = quotationsData?.metrics?.totalQuotations || 0;
+            const pendingQuotations = totalQuotations - acceptedQuotations;
+            return {
+                revenue: {
+                    current: currentPeriod?.revenue || 0,
+                    previous: previousPeriod?.revenue || 0,
+                    growth: this.calculateGrowth(currentPeriod?.revenue || 0, previousPeriod?.revenue || 0),
+                    trend: (currentPeriod?.revenue || 0) >= (previousPeriod?.revenue || 0) ? 'up' : 'down',
+                    breakdown: await this.getRevenueBreakdown(startDate, endDate),
+                },
+                claims: {
+                    total: claimsData?.metrics?.totalClaims || 0,
+                    paid: paidClaims,
+                    pending: pendingClaims,
+                    average: parseFloat((claimsData?.metrics?.averageClaimValue || 0).toString()),
+                    largestClaim,
+                    byType: claimsBreakdown.reduce((acc, cat) => {
+                        if (cat?.category) {
+                            acc[cat.category.toString()] = cat?.count || 0;
+                        }
+                        return acc;
+                    }, {}),
+                },
+                quotations: {
+                    total: totalQuotations,
+                    accepted: acceptedQuotations,
+                    pending: pendingQuotations,
+                    conversion: parseFloat((quotationsData?.metrics?.conversionRate || '0%').replace('%', '')),
+                    averageValue: parseFloat((quotationsData?.metrics?.averageQuotationValue || '0').replace(/[^0-9.-]+/g, '')),
+                },
+            };
+        }
+        catch (error) {
+            this.logger.error('Error in getFinancialMetrics:', error);
+            return {
+                revenue: {
+                    current: 0,
+                    previous: 0,
+                    growth: '0%',
+                    trend: 'down',
+                    breakdown: [],
+                },
+                claims: {
+                    total: 0,
+                    paid: 0,
+                    pending: 0,
+                    average: 0,
+                    largestClaim: 0,
+                    byType: {},
+                },
+                quotations: {
+                    total: 0,
+                    accepted: 0,
+                    pending: 0,
+                    conversion: 0,
+                    averageValue: 0,
+                },
+            };
+        }
     }
     async getPerformanceMetrics(startDate, endDate, params) {
         const [leadsData, tasksData] = await Promise.all([
@@ -543,16 +622,22 @@ let ReportsService = ReportsService_1 = class ReportsService {
         }
     }
     async getRevenueBreakdown(startDate, endDate) {
-        const quotationsData = await this.shopService.getQuotationsReport({
-            createdAt: { gte: startDate, lte: endDate },
-        });
-        const totalRevenue = Number(quotationsData?.metrics?.grossQuotationValue || 0);
-        const categories = quotationsData?.metrics?.topProducts || [];
-        return categories.map((product) => ({
-            category: product.productName,
-            value: Number(product.totalValue || 0),
-            percentage: (Number(product.totalValue || 0) / totalRevenue) * 100,
-        }));
+        try {
+            const quotationsData = await this.shopService.getQuotationsReport({
+                createdAt: { gte: startDate, lte: endDate },
+            });
+            const totalRevenue = Number(quotationsData?.metrics?.grossQuotationValue || 0);
+            const categories = quotationsData?.metrics?.topProducts || [];
+            return categories.map((product) => ({
+                category: product?.productName || 'Unknown',
+                value: Number(product?.totalValue || 0),
+                percentage: totalRevenue > 0 ? (Number(product?.totalValue || 0) / totalRevenue) * 100 : 0,
+            }));
+        }
+        catch (error) {
+            this.logger.error('Error in getRevenueBreakdown:', error);
+            return [];
+        }
     }
     groupByType(items) {
         return items.reduce((acc, item) => {

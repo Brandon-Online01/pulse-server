@@ -7,17 +7,33 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { NewSignUp } from '../lib/types/user';
 import { AccountStatus } from '../lib/enums/status.enums';
+import { Cron } from '@nestjs/schedule';
+import { CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class UserService {
 	constructor(
 		@InjectRepository(User)
 		private userRepository: Repository<User>,
-	) { }
+	) {}
 
 	private excludePassword(user: User): Omit<User, 'password'> {
 		const { password, ...userWithoutPassword } = user;
 		return userWithoutPassword;
+	}
+
+	//TODO: Remove this cron job after testing and proper setup
+	@Cron(CronExpression.EVERY_10_MINUTES)
+	async assignOrganisationToUser(): Promise<void> {
+		const users = await this.userRepository.find({ where: { isDeleted: false } });
+
+		users?.forEach(async (user) => {
+			await this.userRepository.update(user.uid, {
+				organisation: {
+					uid: 2,
+				},
+			});
+		});
 	}
 
 	async create(createUserDto: CreateUserDto): Promise<{ message: string }> {
@@ -40,13 +56,13 @@ export class UserService {
 		} catch (error) {
 			const response = {
 				message: error?.message,
-			}
+			};
 
 			return response;
 		}
 	}
 
-	async findAll(): Promise<{ users: Omit<User, 'password'>[] | null, message: string }> {
+	async findAll(): Promise<{ users: Omit<User, 'password'>[] | null; message: string }> {
 		try {
 			const users = await this.userRepository.find({ where: { isDeleted: false } });
 
@@ -55,28 +71,25 @@ export class UserService {
 			}
 
 			const response = {
-				users: users.map(user => this.excludePassword(user)),
+				users: users.map((user) => this.excludePassword(user)),
 				message: process.env.SUCCESS_MESSAGE,
 			};
 
 			return response;
-
 		} catch (error) {
 			const response = {
 				message: error?.message,
-				users: null
-			}
+				users: null,
+			};
 
 			return response;
 		}
 	}
 
-	async findOne(searchParameter: number): Promise<{ user: Omit<User, 'password'> | null, message: string }> {
+	async findOne(searchParameter: number): Promise<{ user: Omit<User, 'password'> | null; message: string }> {
 		try {
 			const user = await this.userRepository.findOne({
-				where: [
-					{ uid: searchParameter, isDeleted: false },
-				],
+				where: [{ uid: searchParameter, isDeleted: false }],
 				relations: [
 					'userProfile',
 					'userEmployeementProfile',
@@ -96,8 +109,8 @@ export class UserService {
 					'checkIns',
 					'reports',
 					'rewards',
-					'organisation'
-				]
+					'organisation',
+				],
 			});
 
 			if (!user) {
@@ -114,12 +127,12 @@ export class UserService {
 		} catch (error) {
 			return {
 				message: error?.message,
-				user: null
+				user: null,
 			};
 		}
 	}
 
-	async findOneByEmail(email: string): Promise<{ user: Omit<User, 'password'> | null, message: string }> {
+	async findOneByEmail(email: string): Promise<{ user: Omit<User, 'password'> | null; message: string }> {
 		try {
 			const user = await this.userRepository.findOne({ where: { email } });
 
@@ -136,27 +149,24 @@ export class UserService {
 		} catch (error) {
 			const response = {
 				message: error?.message,
-				user: null
-			}
+				user: null,
+			};
 
 			return response;
 		}
 	}
 
-	async findOneForAuth(searchParameter: string): Promise<{ user: User | null, message: string }> {
+	async findOneForAuth(searchParameter: string): Promise<{ user: User | null; message: string }> {
 		try {
 			const user = await this.userRepository.findOne({
 				where: [
 					{
 						username: searchParameter,
 						isDeleted: false,
-						status: AccountStatus.ACTIVE
+						status: AccountStatus.ACTIVE,
 					},
 				],
-				relations: [
-					'branch',
-					'rewards',
-				]
+				relations: ['branch', 'rewards'],
 			});
 
 			if (!user) {
@@ -173,23 +183,18 @@ export class UserService {
 		} catch (error) {
 			const response = {
 				message: error?.message,
-				user: null
-			}
+				user: null,
+			};
 
 			return response;
 		}
 	}
 
-	async findOneByUid(searchParameter: number): Promise<{ user: Omit<User, 'password'> | null, message: string }> {
+	async findOneByUid(searchParameter: number): Promise<{ user: Omit<User, 'password'> | null; message: string }> {
 		try {
 			const user = await this.userRepository.findOne({
-				where: [
-					{ uid: searchParameter, isDeleted: false },
-				],
-				relations: [
-					'branch',
-					'rewards',
-				]
+				where: [{ uid: searchParameter, isDeleted: false }],
+				relations: ['branch', 'rewards'],
 			});
 
 			if (!user) {
@@ -206,14 +211,14 @@ export class UserService {
 		} catch (error) {
 			const response = {
 				message: error?.message,
-				user: null
-			}
+				user: null,
+			};
 
 			return response;
 		}
 	}
 
-	async getUsersByRole(recipients: string[]): Promise<{ users: User[] | null, message: string }> {
+	async getUsersByRole(recipients: string[]): Promise<{ users: User[] | null; message: string }> {
 		try {
 			const users = await this.userRepository.find({
 				where: { email: In(recipients) },
@@ -232,8 +237,8 @@ export class UserService {
 		} catch (error) {
 			const response = {
 				message: error?.message,
-				users: null
-			}
+				users: null,
+			};
 
 			return response;
 		}
@@ -244,7 +249,7 @@ export class UserService {
 			await this.userRepository.update(ref, updateUserDto);
 
 			const updatedUser = await this.userRepository.findOne({
-				where: { userref: ref, isDeleted: false }
+				where: { userref: ref, isDeleted: false },
 			});
 
 			if (!updatedUser) {
@@ -264,7 +269,7 @@ export class UserService {
 	async remove(ref: string): Promise<{ message: string }> {
 		try {
 			const user = await this.userRepository.findOne({
-				where: { userref: ref, isDeleted: false }
+				where: { userref: ref, isDeleted: false },
 			});
 
 			if (!user) {
@@ -275,8 +280,8 @@ export class UserService {
 				{ userref: ref },
 				{
 					isDeleted: true,
-					status: AccountStatus.INACTIVE
-				}
+					status: AccountStatus.INACTIVE,
+				},
 			);
 
 			return {
@@ -297,7 +302,7 @@ export class UserService {
 
 			await this.userRepository.save({
 				...userData,
-				status: userData?.status as AccountStatus
+				status: userData?.status as AccountStatus,
 			});
 
 			this.schedulePendingUserCleanup(userData?.email, userData?.tokenExpires);
@@ -315,7 +320,6 @@ export class UserService {
 			if (user && user?.status === 'pending') {
 				await this.userRepository.update({ email }, { isDeleted: true });
 			}
-
 		}, timeUntilExpiry);
 	}
 
@@ -325,8 +329,8 @@ export class UserService {
 				{ uid: ref },
 				{
 					isDeleted: false,
-					status: AccountStatus.ACTIVE
-				}
+					status: AccountStatus.ACTIVE,
+				},
 			);
 
 			return {
@@ -342,7 +346,7 @@ export class UserService {
 	async findByVerificationToken(token: string): Promise<User | null> {
 		try {
 			return await this.userRepository.findOne({
-				where: { verificationToken: token, isDeleted: false }
+				where: { verificationToken: token, isDeleted: false },
 			});
 		} catch (error) {
 			return null;
@@ -352,7 +356,7 @@ export class UserService {
 	async findByResetToken(token: string): Promise<User | null> {
 		try {
 			return await this.userRepository.findOne({
-				where: { resetToken: token, isDeleted: false }
+				where: { resetToken: token, isDeleted: false },
 			});
 		} catch (error) {
 			return null;
@@ -365,8 +369,8 @@ export class UserService {
 			{
 				status: AccountStatus.ACTIVE,
 				verificationToken: null,
-				tokenExpires: null
-			}
+				tokenExpires: null,
+			},
 		);
 	}
 
@@ -377,8 +381,8 @@ export class UserService {
 				password: hashedPassword,
 				verificationToken: null,
 				tokenExpires: null,
-				status: AccountStatus.ACTIVE
-			}
+				status: AccountStatus.ACTIVE,
+			},
 		);
 	}
 
@@ -387,8 +391,8 @@ export class UserService {
 			{ uid },
 			{
 				resetToken: token,
-				tokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
-			}
+				tokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+			},
 		);
 	}
 
@@ -398,8 +402,8 @@ export class UserService {
 			{
 				password: hashedPassword,
 				resetToken: null,
-				tokenExpires: null
-			}
+				tokenExpires: null,
+			},
 		);
 	}
 }

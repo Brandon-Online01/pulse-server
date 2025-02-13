@@ -36,7 +36,10 @@ export declare class ReportsService {
     private readonly currencySymbol;
     constructor(reportRepository: Repository<Report>, checkInRepository: Repository<CheckIn>, leadService: LeadsService, journalService: JournalService, claimsService: ClaimsService, tasksService: TasksService, shopService: ShopService, attendanceService: AttendanceService, newsService: NewsService, userService: UserService, trackingService: TrackingService, eventEmitter: EventEmitter2, configService: ConfigService, rewardsService: RewardsService);
     private formatCurrency;
+    private getDateRange;
+    private getPreviousDateRange;
     private calculateGrowth;
+    private calculateTrend;
     private handleError;
     private formatReportData;
     managerDailyReport(): Promise<{

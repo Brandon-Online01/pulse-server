@@ -5,6 +5,9 @@ export declare class ReportsController {
     constructor(reportsService: ReportsService);
     generateReport(generateReportDto: GenerateReportDto): Promise<import("./types/report-response.types").ReportResponse>;
     managerDailyReport(): Promise<{
+        message: any;
+        statusCode: any;
+    } | {
         leads: {
             pending: number;
             approved: number;
@@ -67,9 +70,6 @@ export declare class ReportsController {
                 };
             };
         };
-    } | {
-        message: any;
-        statusCode: any;
     }>;
     userDailyReport(reference?: string): Promise<import("./entities/report.entity").Report | {
         message: any;

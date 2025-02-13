@@ -11,7 +11,8 @@ async function bootstrap() {
     app.use(compression());
     app.enableCors({
         origin: [
-            ...process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
+            ...process.env.ALLOWED_ORIGINS?.split(',') ||
+                ['http://localhost:3000'],
             'https://loro.co.za',
             'https://www.loro.co.za',
             'https://*.loro.co.za'

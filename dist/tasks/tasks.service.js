@@ -401,8 +401,10 @@ let TasksService = class TasksService {
     }
     async getTasksForDate(date) {
         try {
-            const startOfDay = new Date(date.setHours(0, 0, 0, 0));
-            const endOfDay = new Date(date.setHours(23, 59, 59, 999));
+            const startOfDay = new Date(date);
+            startOfDay.setHours(0, 0, 0, 0);
+            const endOfDay = new Date(date);
+            endOfDay.setHours(23, 59, 59, 999);
             const tasks = await this.taskRepository.count({
                 where: {
                     createdAt: (0, typeorm_3.Between)(startOfDay, endOfDay),
@@ -413,6 +415,7 @@ let TasksService = class TasksService {
             return { total: tasks };
         }
         catch (error) {
+            console.error('Error getting tasks for date:', error);
             return { total: 0 };
         }
     }

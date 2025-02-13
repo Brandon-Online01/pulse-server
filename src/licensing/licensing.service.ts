@@ -22,7 +22,8 @@ export class LicensingService {
 		private readonly eventEmitter: EventEmitter2,
 	) {}
 
-	@Cron(CronExpression.EVERY_10_SECONDS)
+	//TODO: Remove this cron job after testing and proper setup
+	@Cron(CronExpression.EVERY_10_MINUTES)
 	async resetAllLicensesToActive(): Promise<void> {
 		await this.licenseRepository.update(
 			{}, // empty condition to match all records
