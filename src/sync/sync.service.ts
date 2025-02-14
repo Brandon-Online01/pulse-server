@@ -92,6 +92,7 @@ export class SyncService {
                 await this.connection.end();
             }
         } catch (error) {
+            this.logger.error(`Error closing connection: ${error.message}`);
         }
     }
 
@@ -213,15 +214,21 @@ export class SyncService {
             const syncInventory = inventoryResult?.data?.inventory as SyncInventory[] | undefined;
 
             if (syncUsers?.length > 0) {
-                await this.processUsers(syncUsers);
+                await this.processUsers(syncUsers).catch(err => {
+                    this.logger.error(`Error processing users: ${err.message}`);
+                });
             }
 
             if (syncCustomers?.length > 0) {
-                await this.processCustomers(syncCustomers);
+                await this.processCustomers(syncCustomers).catch(err => {
+                    this.logger.error(`Error processing customers: ${err.message}`);
+                });
             }
 
             if (syncInventory?.length > 0) {
-                await this.processInventory(syncInventory);
+                await this.processInventory(syncInventory).catch(err => {
+                    this.logger.error(`Error processing inventory: ${err.message}`);
+                });
             }
 
             return {
@@ -230,7 +237,11 @@ export class SyncService {
             };
 
         } catch (error) {
-            throw error;
+            this.logger.error(`Sync failed: ${error.message}`);
+            return {
+                success: false,
+                message: `Sync failed: ${error.message}`
+            };
         }
     }
 
@@ -264,10 +275,12 @@ export class SyncService {
                         await this.userService.create(userProfile as CreateUserDto);
                     }
                 } catch (error) {
-                    throw new Error(`Error processing user ${user?.username}: ${error.message}`);
+                    this.logger.error(`Error processing user ${user?.username}: ${error.message}`);
+                    return { action: 'failed', reason: error.message };
                 }
             })
         );
+        return results;
     }
 
     private async processCustomers(customers: SyncCustomer[]) {
@@ -313,10 +326,12 @@ export class SyncService {
                     await this.clientService.create(clientProfile as CreateClientDto);
 
                 } catch (error) {
-                    throw new Error(`Error processing customer ${customer?.Code}: ${error.message}`);
+                    this.logger.error(`Error processing customer ${customer?.Code}: ${error.message}`);
+                    return { action: 'failed', reason: error.message };
                 }
             })
         );
+        return results;
     }
 
     private async processInventory(inventory: SyncInventory[]) {
@@ -348,10 +363,12 @@ export class SyncService {
                     await this.productRepository.save(productProfile);
 
                 } catch (error) {
-                    throw new Error(`Error processing product ${item?.item_code}: ${error.message}`);
+                    this.logger.error(`Error processing product ${item?.item_code}: ${error.message}`);
+                    return { action: 'failed', reason: error.message };
                 }
             })
         );
+        return results;
     }
 
 }
