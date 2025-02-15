@@ -152,7 +152,7 @@ import { SyncModule } from './sync/sync.module';
     CheckInsModule,
     RewardsModule,
     LicensingModule,
-    SyncModule,
+    // SyncModule,
   ],
   controllers: [],
   providers: [
