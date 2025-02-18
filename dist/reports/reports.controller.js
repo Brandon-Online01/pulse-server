@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var ReportsController_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReportsController = void 0;
 const reports_service_1 = require("./reports.service");
@@ -22,12 +23,22 @@ const common_1 = require("@nestjs/common");
 const user_enums_1 = require("../lib/enums/user.enums");
 const enterprise_only_decorator_1 = require("../decorators/enterprise-only.decorator");
 const generate_report_dto_1 = require("./dto/generate-report.dto");
-let ReportsController = class ReportsController {
+let ReportsController = ReportsController_1 = class ReportsController {
     constructor(reportsService) {
         this.reportsService = reportsService;
+        this.logger = new common_1.Logger(ReportsController_1.name);
     }
-    generateReport(generateReportDto) {
-        return this.reportsService.generateReport(generateReportDto);
+    async generateReport(generateReportDto) {
+        this.logger.log('Received report generation request', generateReportDto);
+        try {
+            const report = await this.reportsService.generateReport(generateReportDto);
+            this.logger.log('Report generated successfully', { reportId: report.metadata.generatedAt });
+            return report;
+        }
+        catch (error) {
+            this.logger.error(`Failed to generate report: ${error.message}`, error.stack);
+            throw error;
+        }
     }
     managerDailyReport() {
         return this.reportsService.managerDailyReport();
@@ -44,7 +55,7 @@ __decorate([
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [generate_report_dto_1.GenerateReportDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], ReportsController.prototype, "generateReport", null);
 __decorate([
     (0, common_1.Get)('daily-report'),
@@ -63,7 +74,7 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], ReportsController.prototype, "userDailyReport", null);
-exports.ReportsController = ReportsController = __decorate([
+exports.ReportsController = ReportsController = ReportsController_1 = __decorate([
     (0, swagger_1.ApiTags)('reports'),
     (0, common_1.Controller)('reports'),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),

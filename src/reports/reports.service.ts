@@ -506,7 +506,6 @@ export class ReportsService {
 
 			return report;
 		} catch (error) {
-			this.logger.error('Error generating daily report:', error);
 			return this.handleError(error);
 		}
 	}
@@ -565,7 +564,6 @@ export class ReportsService {
 			this.shopService.getQuotationsReport({ createdAt: { gte: startDate, lte: endDate } }),
 			this.tasksService.getTasksReport({ createdAt: { gte: startDate, lte: endDate } }),
 		]).catch(error => {
-			this.logger.error('Error fetching period metrics:', error);
 			return [null, null, null, null];
 		});
 
@@ -655,7 +653,6 @@ export class ReportsService {
 				},
 			};
 		} catch (error) {
-			this.logger.error('Error in getFinancialMetrics:', error);
 			// Return default values if there's an error
 			return {
 				revenue: {
@@ -801,8 +798,7 @@ export class ReportsService {
 
 			return response;
 		} catch (error) {
-			this.logger.error('Error generating report:', error);
-			throw new Error('Failed to generate report');
+			throw error;
 		}
 	}
 
@@ -824,7 +820,6 @@ export class ReportsService {
 				percentage: totalRevenue > 0 ? (Number(product?.totalValue || 0) / totalRevenue) * 100 : 0,
 			}));
 		} catch (error) {
-			this.logger.error('Error in getRevenueBreakdown:', error);
 			return [];
 		}
 	}

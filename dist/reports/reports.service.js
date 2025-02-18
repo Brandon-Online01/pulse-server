@@ -369,7 +369,6 @@ let ReportsService = ReportsService_1 = class ReportsService {
             return report;
         }
         catch (error) {
-            this.logger.error('Error generating daily report:', error);
             return this.handleError(error);
         }
     }
@@ -422,7 +421,6 @@ let ReportsService = ReportsService_1 = class ReportsService {
             this.shopService.getQuotationsReport({ createdAt: { gte: startDate, lte: endDate } }),
             this.tasksService.getTasksReport({ createdAt: { gte: startDate, lte: endDate } }),
         ]).catch(error => {
-            this.logger.error('Error fetching period metrics:', error);
             return [null, null, null, null];
         });
         return {
@@ -492,7 +490,6 @@ let ReportsService = ReportsService_1 = class ReportsService {
             };
         }
         catch (error) {
-            this.logger.error('Error in getFinancialMetrics:', error);
             return {
                 revenue: {
                     current: 0,
@@ -617,8 +614,7 @@ let ReportsService = ReportsService_1 = class ReportsService {
             return response;
         }
         catch (error) {
-            this.logger.error('Error generating report:', error);
-            throw new Error('Failed to generate report');
+            throw error;
         }
     }
     async getRevenueBreakdown(startDate, endDate) {
@@ -635,7 +631,6 @@ let ReportsService = ReportsService_1 = class ReportsService {
             }));
         }
         catch (error) {
-            this.logger.error('Error in getRevenueBreakdown:', error);
             return [];
         }
     }

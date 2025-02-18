@@ -156,12 +156,22 @@ let ShopService = class ShopService {
                 placedBy: { uid: quotationData?.owner?.uid },
                 client: { uid: quotationData?.client?.uid },
                 status: status_enums_1.OrderStatus.PENDING,
-                quotationItems: quotationData?.items?.map(item => ({
-                    quantity: Number(item?.quantity),
-                    product: { uid: item?.uid },
-                    totalPrice: Number(item?.totalPrice),
-                    itemCode: productRefs.get(item?.uid)
-                }))
+                quotationItems: quotationData?.items?.map(item => {
+                    const product = products.flat().find(p => p.uid === item.uid);
+                    return {
+                        quantity: Number(item?.quantity),
+                        product: {
+                            uid: item?.uid,
+                            name: product?.name || 'N/A',
+                            sku: product?.sku || 'N/A',
+                            barcode: product || 'N/A',
+                            productRef: product?.productRef || 'N/A'
+                        },
+                        unitPrice: Number(product?.price || 0),
+                        totalPrice: Number(item?.totalPrice),
+                        itemCode: productRefs.get(item?.uid)
+                    };
+                })
             };
             await this.quotationRepository.save(newQuotation);
             this.shopGateway.emitNewQuotation(newQuotation?.quotationNumber);
@@ -291,7 +301,10 @@ let ShopService = class ShopService {
     async getAllQuotations() {
         try {
             const quotations = await this.quotationRepository.find({
-                relations: ['placedBy', 'client', 'quotationItems']
+                relations: ['placedBy', 'client', 'quotationItems', 'quotationItems.product'],
+                order: {
+                    createdAt: 'DESC'
+                }
             });
             if (!quotations) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
@@ -318,7 +331,10 @@ let ShopService = class ShopService {
                         uid: ref
                     }
                 },
-                relations: ['placedBy', 'client', 'quotationItems']
+                relations: ['placedBy', 'client', 'quotationItems', 'quotationItems.product'],
+                order: {
+                    createdAt: 'DESC'
+                }
             });
             if (!quotations) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
