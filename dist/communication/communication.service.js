@@ -51,7 +51,25 @@ let CommunicationService = class CommunicationService {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
             const template = this.getEmailTemplate(emailType, data);
-            return 'result';
+            const result = await this.emailService.sendMail({
+                from: this.configService.get('SMTP_FROM'),
+                to: recipientsEmails,
+                subject: template.subject,
+                html: template.body,
+            });
+            await this.communicationLogRepository.save({
+                emailType,
+                recipientEmails: recipientsEmails,
+                accepted: result.accepted,
+                rejected: result.rejected,
+                messageId: result.messageId,
+                messageSize: result.messageSize,
+                envelopeTime: result.envelopeTime,
+                messageTime: result.messageTime,
+                response: result.response,
+                envelope: result.envelope,
+            });
+            return result;
         }
         catch (error) {
             throw error;
