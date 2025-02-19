@@ -21,7 +21,7 @@ export class DocsController {
 
   @Post()
   @UseGuards(AuthGuard, RoleGuard)
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+  @isPublic()
   @ApiOperation({ summary: 'create a new document' })
   create(@Body() createDocDto: CreateDocDto) {
     return this.docsService.create(createDocDto);
