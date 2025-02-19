@@ -114,25 +114,17 @@ export class ClaimsService {
 			assigneeId?: number;
 		},
 		page: number = 1,
-		limit: number = Number(process.env.DEFAULT_PAGE_LIMIT)
+		limit: number = 25
 	): Promise<PaginatedResponse<Claim>> {
 		try {
 			const queryBuilder = this.claimsRepository
 				.createQueryBuilder('claim')
-				.leftJoinAndSelect('claim.client', 'client')
-				.leftJoinAndSelect('claim.assignee', 'assignee')
+				.leftJoinAndSelect('claim.owner', 'owner')
+				.leftJoinAndSelect('claim.branch', 'branch')
 				.where('claim.isDeleted = :isDeleted', { isDeleted: false });
 
 			if (filters?.status) {
 				queryBuilder.andWhere('claim.status = :status', { status: filters.status });
-			}
-
-			if (filters?.clientId) {
-				queryBuilder.andWhere('client.uid = :clientId', { clientId: filters.clientId });
-			}
-
-			if (filters?.assigneeId) {
-				queryBuilder.andWhere('assignee.uid = :assigneeId', { assigneeId: filters.assigneeId });
 			}
 
 			if (filters?.startDate && filters?.endDate) {
@@ -144,7 +136,7 @@ export class ClaimsService {
 
 			if (filters?.search) {
 				queryBuilder.andWhere(
-					'((claim.claimNumber ILIKE :search OR client.name ILIKE :search OR claim.description ILIKE :search) OR (claim.claimNumber ILIKE :search OR client.name ILIKE :search OR claim.description ILIKE :search))',
+					'(owner.name ILIKE :search OR owner.surname ILIKE :search OR claim.amount ILIKE :search OR claim.category ILIKE :search)',
 					{ search: `%${filters.search}%` }
 				);
 			}
@@ -165,8 +157,6 @@ export class ClaimsService {
 				...claim,
 				amount: this.formatCurrency(Number(claim?.amount) || 0)
 			}));
-
-			const stats = this.calculateStats(claims);
 
 			return {
 				data: formattedClaims,

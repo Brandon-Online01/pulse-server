@@ -14,7 +14,7 @@ const typeorm_1 = require("typeorm");
 const user_entity_1 = require("../../user/entities/user.entity");
 const branch_entity_1 = require("../../branch/entities/branch.entity");
 const client_entity_1 = require("../../clients/entities/client.entity");
-const leads_enums_1 = require("../../lib/enums/leads.enums");
+const lead_enums_1 = require("../../lib/enums/lead.enums");
 let Lead = class Lead {
 };
 exports.Lead = Lead;
@@ -23,50 +23,60 @@ __decorate([
     __metadata("design:type", Number)
 ], Lead.prototype, "uid", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ nullable: false }),
+    (0, typeorm_1.Column)(),
     __metadata("design:type", String)
 ], Lead.prototype, "name", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ nullable: false }),
+    (0, typeorm_1.Column)(),
     __metadata("design:type", String)
 ], Lead.prototype, "email", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ nullable: false }),
+    (0, typeorm_1.Column)(),
     __metadata("design:type", String)
 ], Lead.prototype, "phone", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ nullable: true, type: 'text' }),
+    (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
 ], Lead.prototype, "notes", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'timestamp', nullable: false, default: () => 'CURRENT_TIMESTAMP' }),
-    __metadata("design:type", Date)
-], Lead.prototype, "createdAt", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ type: 'timestamp', nullable: false, onUpdate: 'CURRENT_TIMESTAMP', default: () => 'CURRENT_TIMESTAMP' }),
-    __metadata("design:type", Date)
-], Lead.prototype, "updatedAt", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ nullable: false, default: leads_enums_1.LeadStatus.PENDING }),
+    (0, typeorm_1.Column)({ type: 'enum', enum: lead_enums_1.LeadStatus, default: lead_enums_1.LeadStatus.PENDING }),
     __metadata("design:type", String)
 ], Lead.prototype, "status", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ default: false }),
+    (0, typeorm_1.Column)({ type: 'boolean', default: false }),
     __metadata("design:type", Boolean)
 ], Lead.prototype, "isDeleted", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => user_entity_1.User, user => user?.leads),
+    (0, typeorm_1.CreateDateColumn)(),
+    __metadata("design:type", Date)
+], Lead.prototype, "createdAt", void 0);
+__decorate([
+    (0, typeorm_1.UpdateDateColumn)(),
+    __metadata("design:type", Date)
+], Lead.prototype, "updatedAt", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => user_entity_1.User, { onDelete: 'SET NULL' }),
+    (0, typeorm_1.JoinColumn)({ name: 'ownerUid' }),
     __metadata("design:type", user_entity_1.User)
 ], Lead.prototype, "owner", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => branch_entity_1.Branch, (branch) => branch?.leads),
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", Number)
+], Lead.prototype, "ownerUid", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => branch_entity_1.Branch, { onDelete: 'SET NULL' }),
+    (0, typeorm_1.JoinColumn)({ name: 'branchUid' }),
     __metadata("design:type", branch_entity_1.Branch)
 ], Lead.prototype, "branch", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", Number)
+], Lead.prototype, "branchUid", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => client_entity_1.Client, (client) => client?.leads),
     __metadata("design:type", client_entity_1.Client)
 ], Lead.prototype, "client", void 0);
 exports.Lead = Lead = __decorate([
-    (0, typeorm_1.Entity)('lead')
+    (0, typeorm_1.Entity)('leads')
 ], Lead);
 //# sourceMappingURL=lead.entity.js.map

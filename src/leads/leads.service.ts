@@ -9,10 +9,11 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { endOfDay } from 'date-fns';
 import { startOfDay } from 'date-fns';
 import { NotificationStatus, NotificationType } from '../lib/enums/notification.enums';
-import { LeadStatus } from '../lib/enums/leads.enums';
+import { LeadStatus } from '../lib/enums/lead.enums';
 import { RewardsService } from '../rewards/rewards.service';
 import { XP_VALUES } from '../lib/constants/constants';
 import { XP_VALUES_TYPES } from '../lib/constants/constants';
+import { PaginatedResponse } from 'src/lib/types/paginated-response';
 
 @Injectable()
 export class LeadsService {
@@ -78,36 +79,76 @@ export class LeadsService {
     }
   }
 
-  async findAll(): Promise<{ leads: Lead[] | null, message: string, stats: any }> {
+  async findAll(
+    filters?: {
+      status?: LeadStatus;
+      search?: string;
+      startDate?: Date;
+      endDate?: Date;
+    },
+    page: number = 1,
+    limit: number = Number(process.env.DEFAULT_PAGE_LIMIT)
+  ): Promise<PaginatedResponse<Lead>> { 
     try {
-      const leads = await this.leadRepository.find({ where: { isDeleted: false } });
+      const queryBuilder = this.leadRepository
+        .createQueryBuilder('lead')
+        .leftJoinAndSelect('lead.owner', 'owner')
+        .leftJoinAndSelect('lead.branch', 'branch')
+        .where('lead.isDeleted = :isDeleted', { isDeleted: false });
+
+      if (filters?.status) {
+        queryBuilder.andWhere('lead.status = :status', { status: filters.status });
+      }
+
+      if (filters?.search) {
+        queryBuilder.andWhere(
+          '(lead.name ILIKE :search OR lead.email ILIKE :search OR lead.phone ILIKE :search)',
+          { search: `%${filters.search}%` }
+        );
+      }
+
+      if (filters?.startDate && filters?.endDate) {
+        queryBuilder.andWhere('lead.createdAt BETWEEN :startDate AND :endDate', {
+          startDate: filters.startDate,
+          endDate: filters.endDate
+        });
+      }
+
+      // Add pagination
+      queryBuilder
+        .skip((page - 1) * limit)
+        .take(limit)
+        .orderBy('lead.createdAt', 'DESC');
+
+      const [leads, total] = await queryBuilder.getManyAndCount();
 
       if (!leads) {
-        return {
-          leads: null,
-          message: process.env.NOT_FOUND_MESSAGE,
-          stats: null
-        };
+        throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
       }
 
       const stats = this.calculateStats(leads);
 
-      const response = {
-        leads: leads,
-        message: process.env.SUCCESS_MESSAGE,
-        stats
+      return {
+        data: leads,
+        meta: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        },
+        message: process.env.SUCCESS_MESSAGE
       };
-
-      return response;
-
     } catch (error) {
-      const response = {
-        message: error?.message,
-        leads: null,
-        stats: null
-      }
-
-      return response;
+      return {
+        data: [],
+        meta: {
+          total: 0,
+          page,
+          limit,
+          totalPages: 0,
+        },
+        message: error?.message
+      };
     }
   }
 

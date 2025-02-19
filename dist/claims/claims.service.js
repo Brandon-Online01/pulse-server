@@ -91,21 +91,15 @@ let ClaimsService = class ClaimsService {
             return response;
         }
     }
-    async findAll(filters, page = 1, limit = Number(process.env.DEFAULT_PAGE_LIMIT)) {
+    async findAll(filters, page = 1, limit = 25) {
         try {
             const queryBuilder = this.claimsRepository
                 .createQueryBuilder('claim')
-                .leftJoinAndSelect('claim.client', 'client')
-                .leftJoinAndSelect('claim.assignee', 'assignee')
+                .leftJoinAndSelect('claim.owner', 'owner')
+                .leftJoinAndSelect('claim.branch', 'branch')
                 .where('claim.isDeleted = :isDeleted', { isDeleted: false });
             if (filters?.status) {
                 queryBuilder.andWhere('claim.status = :status', { status: filters.status });
-            }
-            if (filters?.clientId) {
-                queryBuilder.andWhere('client.uid = :clientId', { clientId: filters.clientId });
-            }
-            if (filters?.assigneeId) {
-                queryBuilder.andWhere('assignee.uid = :assigneeId', { assigneeId: filters.assigneeId });
             }
             if (filters?.startDate && filters?.endDate) {
                 queryBuilder.andWhere('claim.createdAt BETWEEN :startDate AND :endDate', {
@@ -114,7 +108,7 @@ let ClaimsService = class ClaimsService {
                 });
             }
             if (filters?.search) {
-                queryBuilder.andWhere('((claim.claimNumber ILIKE :search OR client.name ILIKE :search OR claim.description ILIKE :search) OR (claim.claimNumber ILIKE :search OR client.name ILIKE :search OR claim.description ILIKE :search))', { search: `%${filters.search}%` });
+                queryBuilder.andWhere('(owner.name ILIKE :search OR owner.surname ILIKE :search OR claim.amount ILIKE :search OR claim.category ILIKE :search)', { search: `%${filters.search}%` });
             }
             queryBuilder
                 .skip((page - 1) * limit)
@@ -128,7 +122,6 @@ let ClaimsService = class ClaimsService {
                 ...claim,
                 amount: this.formatCurrency(Number(claim?.amount) || 0)
             }));
-            const stats = this.calculateStats(claims);
             return {
                 data: formattedClaims,
                 meta: {

@@ -1,43 +1,51 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
 import { Branch } from '../../branch/entities/branch.entity';
 import { Client } from '../../clients/entities/client.entity';
-import { LeadStatus } from '../../lib/enums/leads.enums';
+import { LeadStatus } from '../../lib/enums/lead.enums';
 
-@Entity('lead')
+@Entity('leads')
 export class Lead {
     @PrimaryGeneratedColumn()
     uid: number;
 
-    @Column({ nullable: false })
+    @Column()
     name: string;
 
-    @Column({ nullable: false })
+    @Column()
     email: string;
 
-    @Column({ nullable: false })
+    @Column()
     phone: string;
 
-    @Column({ nullable: true, type: 'text' })
+    @Column({ nullable: true })
     notes: string;
 
-    @Column({ type: 'timestamp', nullable: false, default: () => 'CURRENT_TIMESTAMP' })
-    createdAt: Date;
-
-    @Column({ type: 'timestamp', nullable: false, onUpdate: 'CURRENT_TIMESTAMP', default: () => 'CURRENT_TIMESTAMP' })
-    updatedAt: Date;
-
-    @Column({ nullable: false, default: LeadStatus.PENDING })
+    @Column({ type: 'enum', enum: LeadStatus, default: LeadStatus.PENDING })
     status: LeadStatus;
 
-    @Column({ default: false })
+    @Column({ type: 'boolean', default: false })
     isDeleted: boolean;
 
-    @ManyToOne(() => User, user => user?.leads)
+    @CreateDateColumn()
+    createdAt: Date;
+
+    @UpdateDateColumn()
+    updatedAt: Date;
+
+    @ManyToOne(() => User, { onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'ownerUid' })
     owner: User;
 
-    @ManyToOne(() => Branch, (branch) => branch?.leads)
+    @Column({ nullable: true })
+    ownerUid: number;
+
+    @ManyToOne(() => Branch, { onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'branchUid' })
     branch: Branch;
+
+    @Column({ nullable: true })
+    branchUid: number;
 
     @ManyToOne(() => Client, (client) => client?.leads)
     client: Client;

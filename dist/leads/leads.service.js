@@ -22,7 +22,7 @@ const event_emitter_1 = require("@nestjs/event-emitter");
 const date_fns_1 = require("date-fns");
 const date_fns_2 = require("date-fns");
 const notification_enums_1 = require("../lib/enums/notification.enums");
-const leads_enums_1 = require("../lib/enums/leads.enums");
+const lead_enums_1 = require("../lib/enums/lead.enums");
 const rewards_service_1 = require("../rewards/rewards.service");
 const constants_1 = require("../lib/constants/constants");
 const constants_2 = require("../lib/constants/constants");
@@ -78,31 +78,56 @@ let LeadsService = class LeadsService {
             return response;
         }
     }
-    async findAll() {
+    async findAll(filters, page = 1, limit = Number(process.env.DEFAULT_PAGE_LIMIT)) {
         try {
-            const leads = await this.leadRepository.find({ where: { isDeleted: false } });
+            const queryBuilder = this.leadRepository
+                .createQueryBuilder('lead')
+                .leftJoinAndSelect('lead.owner', 'owner')
+                .leftJoinAndSelect('lead.branch', 'branch')
+                .where('lead.isDeleted = :isDeleted', { isDeleted: false });
+            if (filters?.status) {
+                queryBuilder.andWhere('lead.status = :status', { status: filters.status });
+            }
+            if (filters?.search) {
+                queryBuilder.andWhere('(lead.name ILIKE :search OR lead.email ILIKE :search OR lead.phone ILIKE :search)', { search: `%${filters.search}%` });
+            }
+            if (filters?.startDate && filters?.endDate) {
+                queryBuilder.andWhere('lead.createdAt BETWEEN :startDate AND :endDate', {
+                    startDate: filters.startDate,
+                    endDate: filters.endDate
+                });
+            }
+            queryBuilder
+                .skip((page - 1) * limit)
+                .take(limit)
+                .orderBy('lead.createdAt', 'DESC');
+            const [leads, total] = await queryBuilder.getManyAndCount();
             if (!leads) {
-                return {
-                    leads: null,
-                    message: process.env.NOT_FOUND_MESSAGE,
-                    stats: null
-                };
+                throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
             const stats = this.calculateStats(leads);
-            const response = {
-                leads: leads,
-                message: process.env.SUCCESS_MESSAGE,
-                stats
+            return {
+                data: leads,
+                meta: {
+                    total,
+                    page,
+                    limit,
+                    totalPages: Math.ceil(total / limit),
+                },
+                message: process.env.SUCCESS_MESSAGE
             };
-            return response;
         }
         catch (error) {
-            const response = {
-                message: error?.message,
-                leads: null,
-                stats: null
+            return {
+                data: [],
+                meta: {
+                    total: 0,
+                    page,
+                    limit,
+                    totalPages: 0,
+                },
+                message: error?.message
             };
-            return response;
         }
     }
     async findOne(ref) {
@@ -244,10 +269,10 @@ let LeadsService = class LeadsService {
     calculateStats(leads) {
         return {
             total: leads?.length || 0,
-            pending: leads?.filter(lead => lead?.status === leads_enums_1.LeadStatus.PENDING)?.length || 0,
-            approved: leads?.filter(lead => lead?.status === leads_enums_1.LeadStatus.APPROVED)?.length || 0,
-            inReview: leads?.filter(lead => lead?.status === leads_enums_1.LeadStatus.REVIEW)?.length || 0,
-            declined: leads?.filter(lead => lead?.status === leads_enums_1.LeadStatus.DECLINED)?.length || 0,
+            pending: leads?.filter(lead => lead?.status === lead_enums_1.LeadStatus.PENDING)?.length || 0,
+            approved: leads?.filter(lead => lead?.status === lead_enums_1.LeadStatus.APPROVED)?.length || 0,
+            inReview: leads?.filter(lead => lead?.status === lead_enums_1.LeadStatus.REVIEW)?.length || 0,
+            declined: leads?.filter(lead => lead?.status === lead_enums_1.LeadStatus.DECLINED)?.length || 0,
         };
     }
     async getLeadsForDate(date) {
@@ -259,10 +284,10 @@ let LeadsService = class LeadsService {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
             const groupedLeads = {
-                pending: leads.filter(lead => lead.status === leads_enums_1.LeadStatus.PENDING),
-                approved: leads.filter(lead => lead.status === leads_enums_1.LeadStatus.APPROVED),
-                review: leads.filter(lead => lead.status === leads_enums_1.LeadStatus.REVIEW),
-                declined: leads.filter(lead => lead.status === leads_enums_1.LeadStatus.DECLINED),
+                pending: leads.filter(lead => lead.status === lead_enums_1.LeadStatus.PENDING),
+                approved: leads.filter(lead => lead.status === lead_enums_1.LeadStatus.APPROVED),
+                review: leads.filter(lead => lead.status === lead_enums_1.LeadStatus.REVIEW),
+                declined: leads.filter(lead => lead.status === lead_enums_1.LeadStatus.DECLINED),
                 total: leads?.length
             };
             const response = {
@@ -292,10 +317,10 @@ let LeadsService = class LeadsService {
                 throw new common_1.NotFoundException('No leads found for the specified period');
             }
             const groupedLeads = {
-                review: leads.filter(lead => lead.status === leads_enums_1.LeadStatus.REVIEW),
-                pending: leads.filter(lead => lead.status === leads_enums_1.LeadStatus.PENDING),
-                approved: leads.filter(lead => lead.status === leads_enums_1.LeadStatus.APPROVED),
-                declined: leads.filter(lead => lead.status === leads_enums_1.LeadStatus.DECLINED)
+                review: leads.filter(lead => lead.status === lead_enums_1.LeadStatus.REVIEW),
+                pending: leads.filter(lead => lead.status === lead_enums_1.LeadStatus.PENDING),
+                approved: leads.filter(lead => lead.status === lead_enums_1.LeadStatus.APPROVED),
+                declined: leads.filter(lead => lead.status === lead_enums_1.LeadStatus.DECLINED)
             };
             const totalLeads = leads.length;
             const approvedLeads = groupedLeads.approved.length;
@@ -327,8 +352,8 @@ let LeadsService = class LeadsService {
         }
     }
     calculateAverageResponseTime(leads) {
-        const respondedLeads = leads.filter(lead => lead.status === leads_enums_1.LeadStatus.APPROVED ||
-            lead.status === leads_enums_1.LeadStatus.DECLINED);
+        const respondedLeads = leads.filter(lead => lead.status === lead_enums_1.LeadStatus.APPROVED ||
+            lead.status === lead_enums_1.LeadStatus.DECLINED);
         if (respondedLeads.length === 0)
             return 0;
         const totalResponseTime = respondedLeads.reduce((sum, lead) => {
@@ -351,7 +376,7 @@ let LeadsService = class LeadsService {
     calculateQualityScore(leads) {
         if (leads.length === 0)
             return 0;
-        const approvedLeads = leads.filter(lead => lead.status === leads_enums_1.LeadStatus.APPROVED).length;
+        const approvedLeads = leads.filter(lead => lead.status === lead_enums_1.LeadStatus.APPROVED).length;
         const responseTimeScore = this.calculateAverageResponseTime(leads) < 24 ? 1 : 0.5;
         const conversionRate = approvedLeads / leads.length;
         const score = ((conversionRate * 0.6 + responseTimeScore * 0.4) * 100);
@@ -372,10 +397,10 @@ let LeadsService = class LeadsService {
             }
             const stats = sourceStats.get(source);
             stats.total++;
-            if (lead.status === leads_enums_1.LeadStatus.APPROVED) {
+            if (lead.status === lead_enums_1.LeadStatus.APPROVED) {
                 stats.converted++;
             }
-            if (lead.status !== leads_enums_1.LeadStatus.PENDING) {
+            if (lead.status !== lead_enums_1.LeadStatus.PENDING) {
                 stats.respondedLeads++;
                 stats.totalResponseTime += lead.updatedAt.getTime() - lead.createdAt.getTime();
             }
@@ -406,7 +431,7 @@ let LeadsService = class LeadsService {
             }
             const stats = geoStats.get(region);
             stats.total++;
-            if (lead.status === leads_enums_1.LeadStatus.APPROVED) {
+            if (lead.status === lead_enums_1.LeadStatus.APPROVED) {
                 stats.converted++;
             }
         });
@@ -464,7 +489,7 @@ let LeadsService = class LeadsService {
             }
             const stats = dailyStats.get(date);
             stats.total++;
-            if (lead.status === leads_enums_1.LeadStatus.APPROVED) {
+            if (lead.status === lead_enums_1.LeadStatus.APPROVED) {
                 stats.converted++;
             }
         });
@@ -486,7 +511,7 @@ let LeadsService = class LeadsService {
             'Over 24 hours': 0
         };
         leads.forEach(lead => {
-            if (lead.status === leads_enums_1.LeadStatus.PENDING)
+            if (lead.status === lead_enums_1.LeadStatus.PENDING)
                 return;
             const responseTime = (lead.updatedAt.getTime() - lead.createdAt.getTime()) / (60 * 60 * 1000);
             if (responseTime < 1)
@@ -504,7 +529,7 @@ let LeadsService = class LeadsService {
     }
     calculateIndividualLeadQualityScore(lead) {
         let score = 0;
-        if (lead.status !== leads_enums_1.LeadStatus.PENDING) {
+        if (lead.status !== lead_enums_1.LeadStatus.PENDING) {
             const responseTime = (lead.updatedAt.getTime() - lead.createdAt.getTime()) / (60 * 60 * 1000);
             if (responseTime < 1)
                 score += 40;
@@ -515,9 +540,9 @@ let LeadsService = class LeadsService {
             else if (responseTime < 24)
                 score += 10;
         }
-        if (lead.status === leads_enums_1.LeadStatus.APPROVED)
+        if (lead.status === lead_enums_1.LeadStatus.APPROVED)
             score += 30;
-        else if (lead.status === leads_enums_1.LeadStatus.REVIEW)
+        else if (lead.status === lead_enums_1.LeadStatus.REVIEW)
             score += 15;
         if (lead.client) {
             if (lead.client.email)

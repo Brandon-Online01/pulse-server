@@ -23,6 +23,7 @@ const role_decorator_1 = require("../decorators/role.decorator");
 const user_enums_1 = require("../lib/enums/user.enums");
 const auth_guard_1 = require("../guards/auth.guard");
 const enterprise_only_decorator_1 = require("../decorators/enterprise-only.decorator");
+const lead_enums_1 = require("../lib/enums/lead.enums");
 let LeadsController = class LeadsController {
     constructor(leadsService) {
         this.leadsService = leadsService;
@@ -30,8 +31,14 @@ let LeadsController = class LeadsController {
     create(createLeadDto) {
         return this.leadsService.create(createLeadDto);
     }
-    findAll() {
-        return this.leadsService.findAll();
+    findAll(page, limit, status, search, startDate, endDate) {
+        const filters = {
+            ...(status && { status }),
+            ...(search && { search }),
+            ...(startDate && { startDate: new Date(startDate) }),
+            ...(endDate && { endDate: new Date(endDate) }),
+        };
+        return this.leadsService.findAll(filters, page ? Number(page) : 1, limit ? Number(limit) : Number(process.env.DEFAULT_PAGE_LIMIT));
     }
     findOne(ref) {
         return this.leadsService.findOne(ref);
@@ -63,8 +70,15 @@ __decorate([
     (0, common_1.Get)(),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'get all leads' }),
+    __param(0, (0, common_1.Query)('page')),
+    __param(1, (0, common_1.Query)('limit')),
+    __param(2, (0, common_1.Query)('status')),
+    __param(3, (0, common_1.Query)('search')),
+    __param(4, (0, common_1.Query)('startDate')),
+    __param(5, (0, common_1.Query)('endDate')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [Number, Number, String, String, Date,
+        Date]),
     __metadata("design:returntype", void 0)
 ], LeadsController.prototype, "findAll", null);
 __decorate([

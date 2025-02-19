@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
 import { LeadsService } from './leads.service';
 import { CreateLeadDto } from './dto/create-lead.dto';
 import { UpdateLeadDto } from './dto/update-lead.dto';
@@ -8,6 +8,7 @@ import { Roles } from '../decorators/role.decorator';
 import { AccessLevel } from '../lib/enums/user.enums';
 import { AuthGuard } from '../guards/auth.guard';
 import { EnterpriseOnly } from '../decorators/enterprise-only.decorator';
+import { LeadStatus } from '../lib/enums/lead.enums';
 
 @ApiTags('leads')
 @Controller('leads')
@@ -26,8 +27,26 @@ export class LeadsController {
   @Get()
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get all leads' })
-  findAll() {
-    return this.leadsService.findAll();
+  findAll(
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('status') status?: LeadStatus,
+    @Query('search') search?: string,
+    @Query('startDate') startDate?: Date,
+    @Query('endDate') endDate?: Date,
+  ) {
+    const filters = {
+      ...(status && { status }),
+      ...(search && { search }),
+      ...(startDate && { startDate: new Date(startDate) }),
+      ...(endDate && { endDate: new Date(endDate) }),
+    };
+
+    return this.leadsService.findAll(
+      filters,
+      page ? Number(page) : 1,
+      limit ? Number(limit) : Number(process.env.DEFAULT_PAGE_LIMIT)
+    );
   }
 
   @Get(':ref')

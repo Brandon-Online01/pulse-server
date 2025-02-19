@@ -1,6 +1,7 @@
 import { LeadsService } from './leads.service';
 import { CreateLeadDto } from './dto/create-lead.dto';
 import { UpdateLeadDto } from './dto/update-lead.dto';
+import { LeadStatus } from '../lib/enums/lead.enums';
 export declare class LeadsController {
     private readonly leadsService;
     constructor(leadsService: LeadsService);
@@ -8,11 +9,7 @@ export declare class LeadsController {
         message: string;
         data: import("./entities/lead.entity").Lead | null;
     }>;
-    findAll(): Promise<{
-        leads: import("./entities/lead.entity").Lead[] | null;
-        message: string;
-        stats: any;
-    }>;
+    findAll(page?: number, limit?: number, status?: LeadStatus, search?: string, startDate?: Date, endDate?: Date): Promise<import("../lib/types/paginated-response").PaginatedResponse<import("./entities/lead.entity").Lead>>;
     findOne(ref: number): Promise<{
         lead: import("./entities/lead.entity").Lead | null;
         message: string;
