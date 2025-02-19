@@ -37,14 +37,49 @@ let ReportsController = ReportsController_1 = class ReportsController {
         }
         catch (error) {
             this.logger.error(`Failed to generate report: ${error.message}`, error.stack);
-            throw error;
+            throw new common_1.HttpException({
+                status: common_1.HttpStatus.INTERNAL_SERVER_ERROR,
+                error: 'Failed to generate report',
+                message: error.message
+            }, common_1.HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-    managerDailyReport() {
-        return this.reportsService.managerDailyReport();
+    async managerDailyReport() {
+        try {
+            const report = await this.reportsService.managerDailyReport();
+            this.logger.log('Manager daily report generated successfully');
+            return report;
+        }
+        catch (error) {
+            this.logger.error(`Failed to generate manager daily report: ${error.message}`, error.stack);
+            throw new common_1.HttpException({
+                status: common_1.HttpStatus.INTERNAL_SERVER_ERROR,
+                error: 'Failed to generate daily report',
+                message: error.message
+            }, common_1.HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
-    userDailyReport(reference) {
-        return this.reportsService.userDailyReport(reference);
+    async userDailyReport(reference) {
+        try {
+            const report = await this.reportsService.userDailyReport(reference);
+            this.logger.log('User daily report generated successfully', { userRef: reference });
+            return report;
+        }
+        catch (error) {
+            this.logger.error(`Failed to generate user daily report: ${error.message}`, error.stack);
+            if (error.message.includes('not found')) {
+                throw new common_1.HttpException({
+                    status: common_1.HttpStatus.NOT_FOUND,
+                    error: 'User not found',
+                    message: error.message
+                }, common_1.HttpStatus.NOT_FOUND);
+            }
+            throw new common_1.HttpException({
+                status: common_1.HttpStatus.INTERNAL_SERVER_ERROR,
+                error: 'Failed to generate daily report',
+                message: error.message
+            }, common_1.HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 };
 exports.ReportsController = ReportsController;
@@ -52,6 +87,9 @@ __decorate([
     (0, common_1.Post)('generate'),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER),
     (0, swagger_1.ApiOperation)({ summary: 'Generate a report based on type and filters' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Report generated successfully' }),
+    (0, swagger_1.ApiResponse)({ status: 400, description: 'Invalid request parameters' }),
+    (0, swagger_1.ApiResponse)({ status: 500, description: 'Internal server error' }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [generate_report_dto_1.GenerateReportDto]),
@@ -60,19 +98,26 @@ __decorate([
 __decorate([
     (0, common_1.Get)('daily-report'),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT),
-    (0, swagger_1.ApiOperation)({ summary: 'get a general company overview report with elevated access' }),
+    (0, swagger_1.ApiOperation)({ summary: 'Get a general company overview report with elevated access' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Daily report retrieved successfully' }),
+    (0, swagger_1.ApiResponse)({ status: 403, description: 'Insufficient permissions' }),
+    (0, swagger_1.ApiResponse)({ status: 500, description: 'Internal server error' }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], ReportsController.prototype, "managerDailyReport", null);
 __decorate([
     (0, common_1.Get)('daily-report/:ref'),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.USER),
-    (0, swagger_1.ApiOperation)({ summary: 'get daily activity report, optionally filtered for specific user roles' }),
+    (0, swagger_1.ApiOperation)({ summary: 'Get daily activity report, optionally filtered for specific user roles' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'User daily report retrieved successfully' }),
+    (0, swagger_1.ApiResponse)({ status: 403, description: 'Insufficient permissions' }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: 'User not found' }),
+    (0, swagger_1.ApiResponse)({ status: 500, description: 'Internal server error' }),
     __param(0, (0, common_1.Param)('reference')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], ReportsController.prototype, "userDailyReport", null);
 exports.ReportsController = ReportsController = ReportsController_1 = __decorate([
     (0, swagger_1.ApiTags)('reports'),

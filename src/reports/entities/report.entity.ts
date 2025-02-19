@@ -1,4 +1,4 @@
-import { Column, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, ManyToOne, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { Entity } from 'typeorm';
 import { Branch } from '../../branch/entities/branch.entity';
 import { ReportType } from '../../lib/enums/reports.enums';
@@ -42,4 +42,10 @@ export class Report {
 
     @ManyToOne(() => User, (user) => user?.reports)
     owner: User;
+
+    @Column({ nullable: true })
+    status: 'pending' | 'approved' | 'rejected';
+
+    @Column('decimal', { precision: 10, scale: 2, default: 0 })
+    value: number;
 }

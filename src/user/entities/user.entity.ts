@@ -44,7 +44,7 @@ export class User {
     @Column()
     phone: string;
 
-    @Column()
+    @Column({ default: 'https://cdn-icons-png.flaticon.com/512/3607/3607444.png' })
     photoURL: string;
 
     @Column({ type: 'enum', enum: AccessLevel })

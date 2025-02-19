@@ -65,7 +65,7 @@ __decorate([
     __metadata("design:type", String)
 ], Organisation.prototype, "ref", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => branch_entity_1.Branch, (branch) => branch.ref),
+    (0, typeorm_1.OneToMany)(() => branch_entity_1.Branch, (branch) => branch?.organisation),
     __metadata("design:type", Array)
 ], Organisation.prototype, "branches", void 0);
 exports.Organisation = Organisation = __decorate([

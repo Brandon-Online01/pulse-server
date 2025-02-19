@@ -64,7 +64,7 @@ __decorate([
     __metadata("design:type", String)
 ], User.prototype, "phone", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({ default: 'https://cdn-icons-png.flaticon.com/512/3607/3607444.png' }),
     __metadata("design:type", String)
 ], User.prototype, "photoURL", void 0);
 __decorate([

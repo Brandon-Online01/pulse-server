@@ -62,7 +62,10 @@ let UserService = class UserService {
     }
     async findAll() {
         try {
-            const users = await this.userRepository.find({ where: { isDeleted: false } });
+            const users = await this.userRepository.find({
+                where: { isDeleted: false },
+                relations: ['branch', 'organisation']
+            });
             if (!users) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }

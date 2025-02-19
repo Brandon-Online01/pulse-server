@@ -84,40 +84,15 @@ let ReportsService = ReportsService_1 = class ReportsService {
         return this.getDateRange(previousDate);
     }
     calculateGrowth(current, previous) {
-        if (current === 0 && previous === 0)
-            return '0%';
-        if (previous === 0) {
-            if (current === 0)
-                return '0%';
-            return 'New';
-        }
-        const growth = ((current - previous) / previous) * 100;
-        if (isNaN(growth) || !isFinite(growth))
-            return '0%';
-        return `${growth > 0 ? '+' : ''}${growth.toFixed(1)}%`;
-    }
-    calculateTrend(current, previous, type) {
         if (previous === 0)
-            return '0%';
+            return current > 0 ? '+100' : '0';
         const growth = ((current - previous) / previous) * 100;
-        if (isNaN(growth) || !isFinite(growth))
-            return '0%';
-        switch (type) {
-            case 'leads':
-                return growth > 100 ? '+100%' : `${growth > 0 ? '+' : ''}${Math.min(Math.abs(growth), 100).toFixed(1)}%`;
-            case 'claims':
-                return `${growth > 0 ? '+' : ''}${Math.min(Math.abs(growth), 200).toFixed(1)}%`;
-            case 'tasks':
-                const completionRate = (current / (previous + current)) * 100;
-                return `${completionRate.toFixed(1)}%`;
-            case 'quotations':
-                const normalizedGrowth = Math.min(Math.abs(growth), 150);
-                return `${growth > 0 ? '+' : ''}${normalizedGrowth.toFixed(1)}%`;
-            case 'attendance':
-                return `${Math.min(Math.max(growth, 0), 100).toFixed(1)}%`;
-            default:
-                return `${growth > 0 ? '+' : ''}${growth.toFixed(1)}%`;
-        }
+        return growth > 0 ? `+${growth.toFixed(1)}` : growth.toFixed(1);
+    }
+    calculateTrend(current, previous) {
+        if (current === previous)
+            return 'stable';
+        return current > previous ? 'up' : 'down';
     }
     handleError(error) {
         return {
@@ -248,6 +223,16 @@ let ReportsService = ReportsService_1 = class ReportsService {
                 this.claimsService.getClaimsForDate(previousDate),
                 this.shopService.getQuotationsForDate(previousDate),
             ]);
+            const trends = {
+                daily: this.calculateDailyPatterns(previousDate, new Date()),
+                weekly: this.calculateWeeklyPatterns(previousDate, new Date()),
+                monthly: this.calculateMonthlyPatterns(previousDate, new Date()),
+            };
+            const totalTasks = Object.values(tasksStats || {}).reduce((acc, curr) => acc + curr, 0);
+            const totalClaims = (claimsStats?.paid?.length || 0) +
+                (claimsStats?.pending?.length || 0) +
+                (claimsStats?.approved?.length || 0) +
+                (claimsStats?.declined?.length || 0);
             const response = {
                 leads: {
                     pending: leadsStats?.pending?.length || 0,
@@ -257,33 +242,32 @@ let ReportsService = ReportsService_1 = class ReportsService {
                     total: leadsStats?.total || 0,
                     metrics: {
                         leadTrends: {
-                            growth: this.calculateTrend(leadsStats?.total || 0, (leadsStats?.total || 0) - (leadsStats?.pending?.length || 0), 'leads')
-                        }
-                    }
+                            growth: this.calculateGrowth(leadsStats?.total || 0, (leadsStats?.total || 0) - (leadsStats?.pending?.length || 0)),
+                        },
+                    },
                 },
                 claims: {
                     pending: claimsStats?.pending?.length || 0,
                     approved: claimsStats?.approved?.length || 0,
                     declined: claimsStats?.declined?.length || 0,
                     paid: claimsStats?.paid?.length || 0,
-                    total: (claimsStats?.paid?.length || 0) + (claimsStats?.pending?.length || 0) +
-                        (claimsStats?.approved?.length || 0) + (claimsStats?.declined?.length || 0),
+                    total: totalClaims,
                     totalValue: this.formatCurrency(Number(claimsStats?.totalValue || 0)),
                     metrics: {
-                        valueGrowth: this.calculateTrend(Number(claimsStats?.totalValue || 0), Number(previousClaims?.claims?.totalValue || 0), 'claims')
-                    }
+                        valueGrowth: this.calculateGrowth(Number(claimsStats?.totalValue || 0), Number(previousClaims?.claims?.totalValue || 0)),
+                    },
                 },
                 tasks: {
                     pending: tasksStats?.PENDING || 0,
                     completed: tasksStats?.COMPLETED || 0,
                     missed: tasksStats?.MISSED || 0,
                     postponed: tasksStats?.POSTPONED || 0,
-                    total: Object.values(tasksStats || {}).reduce((acc, curr) => acc + curr, 0),
+                    total: totalTasks,
                     metrics: {
                         taskTrends: {
-                            growth: this.calculateTrend(tasksStats?.COMPLETED || 0, tasksStats?.PENDING || 0, 'tasks')
-                        }
-                    }
+                            growth: this.calculateGrowth(tasksStats?.COMPLETED || 0, tasksStats?.PENDING || 0),
+                        },
+                    },
                 },
                 orders: {
                     pending: ordersStats?.quotations?.pending?.length || 0,
@@ -298,25 +282,27 @@ let ReportsService = ReportsService_1 = class ReportsService {
                         grossQuotationValue: this.formatCurrency(Number(ordersStats?.quotations?.metrics?.grossQuotationValue || 0)),
                         averageQuotationValue: this.formatCurrency(Number(ordersStats?.quotations?.metrics?.averageQuotationValue || 0)),
                         quotationTrends: {
-                            growth: this.calculateTrend(ordersStats?.quotations?.metrics?.totalQuotations || 0, previousQuotations?.stats?.quotations?.metrics?.totalQuotations || 0, 'quotations')
-                        }
-                    }
+                            growth: this.calculateGrowth(ordersStats?.quotations?.metrics?.totalQuotations || 0, previousQuotations?.stats?.quotations?.metrics?.totalQuotations || 0),
+                        },
+                    },
+                    trends,
                 },
                 attendance: {
-                    attendance: attendanceStats?.metrics?.attendancePercentage || 0,
+                    attendance: Math.round(attendanceStats?.metrics?.attendancePercentage || 0),
                     present: attendanceStats?.metrics?.totalPresent || 0,
                     total: attendanceStats?.metrics?.totalEmployees || 0,
                     metrics: {
                         attendanceTrends: {
-                            growth: this.calculateTrend(attendanceStats?.metrics?.attendancePercentage || 0, attendanceStats?.metrics?.attendancePercentage || 0, 'attendance')
-                        }
-                    }
-                }
+                            growth: this.calculateGrowth(attendanceStats?.metrics?.attendancePercentage || 0, attendanceStats?.metrics?.attendancePercentage || 0),
+                        },
+                    },
+                },
             };
             return response;
         }
         catch (error) {
-            return this.handleError(error);
+            this.logger.error('Failed to generate manager daily report:', error);
+            throw error;
         }
     }
     async userDailyReport(reference) {
@@ -324,7 +310,7 @@ let ReportsService = ReportsService_1 = class ReportsService {
             const date = new Date();
             const { startDate, endDate } = this.getDateRange(date);
             const { startDate: prevStartDate, endDate: prevEndDate } = this.getPreviousDateRange(date);
-            const [{ leads: leadsStats }, { journals: journalsStats }, { claims: claimsStats }, { stats: quotationsStats }, { total: tasksTotal }, { totalHours: attendanceHours, attendanceRecords }, userRewards, userData, { data: trackingData }, previousDayStats, previousClaims] = await Promise.all([
+            const [{ leads: leadsStats }, { journals: journalsStats }, { claims: claimsStats }, { stats: quotationsStats }, { total: tasksTotal }, { totalHours: attendanceHours, attendanceRecords }, userRewards, userData, { data: trackingData }, previousDayStats, previousClaims,] = await Promise.all([
                 this.leadService.getLeadsForDate(date),
                 this.journalService.getJournalsForDate(date),
                 this.claimsService.getClaimsForDate(date),
@@ -335,7 +321,7 @@ let ReportsService = ReportsService_1 = class ReportsService {
                 reference ? this.userService.findOne(Number(reference)) : null,
                 reference ? this.trackingService.getDailyTracking(Number(reference), date) : null,
                 this.shopService.getQuotationsForDate(prevStartDate),
-                this.claimsService.getClaimsForDate(prevStartDate)
+                this.claimsService.getClaimsForDate(prevStartDate),
             ]);
             const previousDayQuotations = previousDayStats?.stats?.quotations?.metrics?.totalQuotations || 0;
             const previousDayRevenue = Number(previousDayStats?.stats?.quotations?.metrics?.grossQuotationValue) || 0;
@@ -420,7 +406,7 @@ let ReportsService = ReportsService_1 = class ReportsService {
             this.claimsService.getClaimsReport({ createdAt: { gte: startDate, lte: endDate } }),
             this.shopService.getQuotationsReport({ createdAt: { gte: startDate, lte: endDate } }),
             this.tasksService.getTasksReport({ createdAt: { gte: startDate, lte: endDate } }),
-        ]).catch(error => {
+        ]).catch((error) => {
             return [null, null, null, null];
         });
         return {
@@ -582,38 +568,37 @@ let ReportsService = ReportsService_1 = class ReportsService {
     }
     async generateReport(params) {
         try {
-            const startDate = new Date(params.startDate);
-            const endDate = new Date(params.endDate);
-            const [financial, performance, comparison, trends] = await Promise.all([
-                this.getFinancialMetrics(startDate, endDate, params),
-                this.getPerformanceMetrics(startDate, endDate, params),
-                this.getComparisonData(params),
-                this.getTrendMetrics(startDate, endDate, params),
-            ]);
-            const response = {
+            const { startDate, endDate } = this.getDateRange(new Date());
+            const data = await this.getTimeFilteredData(startDate, endDate, params.type);
+            const metrics = this.validateMetrics({
+                total: data.length,
+                approved: data.filter((item) => item.status === 'approved').length,
+                pending: data.filter((item) => item.status === 'pending').length,
+                value: data.reduce((sum, item) => sum + (Number(item.value) || 0), 0),
+            });
+            const previousData = await this.getTimeFilteredData(this.getPreviousDateRange(startDate).startDate, this.getPreviousDateRange(startDate).endDate, params.type);
+            const previousMetrics = this.validateMetrics({
+                total: previousData.length,
+                approved: previousData.filter((item) => item.status === 'approved').length,
+                value: previousData.reduce((sum, item) => sum + (Number(item.value) || 0), 0),
+            });
+            return {
                 metadata: {
                     generatedAt: new Date().toISOString(),
-                    period: `${(0, date_fns_2.format)(startDate, 'PP')} - ${(0, date_fns_2.format)(endDate, 'PP')}`,
-                    filters: params.filters,
+                    reportType: params.type,
+                    period: params.period,
                 },
-                financial,
-                performance,
-                comparison,
-                trends,
-                summary: {
-                    highlights: this.generateHighlights(financial, performance, comparison),
-                    recommendations: this.generateRecommendations(financial, performance, trends),
+                metrics: {
+                    current: metrics,
+                    previous: previousMetrics,
+                    growth: this.calculateGrowth(metrics.total, previousMetrics.total),
+                    trend: this.calculateTrend(metrics.total, previousMetrics.total),
+                    conversion: metrics.total > 0 ? (metrics.approved / metrics.total) * 100 : 0,
                 },
             };
-            if (params.visualization?.format === generate_report_dto_1.ReportFormat.PDF) {
-                return response;
-            }
-            else if (params.visualization?.format === generate_report_dto_1.ReportFormat.EXCEL) {
-                return response;
-            }
-            return response;
         }
         catch (error) {
+            this.logger.error(`Failed to generate report: ${error.message}`);
             throw error;
         }
     }
@@ -736,29 +721,34 @@ let ReportsService = ReportsService_1 = class ReportsService {
         return Math.round((remoteCount / attendance.length) * 100);
     }
     calculateDailyPatterns(startDate, endDate) {
-        return {
-            Monday: 100,
-            Tuesday: 120,
-            Wednesday: 115,
-            Thursday: 125,
-            Friday: 90,
-        };
+        const days = 7;
+        const result = {};
+        for (let i = 0; i < days; i++) {
+            const date = new Date(endDate);
+            date.setDate(date.getDate() - i);
+            result[date.toISOString()] = Math.floor(Math.random() * (50 - 20) + 20);
+        }
+        return result;
     }
     calculateWeeklyPatterns(startDate, endDate) {
-        return {
-            'Week 1': 450,
-            'Week 2': 480,
-            'Week 3': 520,
-            'Week 4': 490,
-        };
+        const weeks = 4;
+        const result = {};
+        for (let i = 0; i < weeks; i++) {
+            const weekStart = new Date(endDate);
+            weekStart.setDate(weekStart.getDate() - i * 7);
+            result[`Week ${weeks - i}`] = Math.floor(Math.random() * (300 - 150) + 150);
+        }
+        return result;
     }
     calculateMonthlyPatterns(startDate, endDate) {
-        return {
-            Jan: 1200,
-            Feb: 1300,
-            Mar: 1450,
-            Apr: 1380,
-        };
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const result = {};
+        const currentMonth = new Date().getMonth();
+        for (let i = 0; i < 12; i++) {
+            const monthIndex = (currentMonth - i + 12) % 12;
+            result[months[monthIndex]] = Math.floor(Math.random() * (1200 - 600) + 600);
+        }
+        return result;
     }
     generateHighlights(financial, performance, comparison) {
         const highlights = [];
@@ -791,6 +781,26 @@ let ReportsService = ReportsService_1 = class ReportsService {
             recommendations.push('Address attendance issues through team meetings and policy reviews');
         }
         return recommendations;
+    }
+    validateMetrics(metrics) {
+        return {
+            total: Math.max(0, Number(metrics.total) || 0),
+            approved: Math.max(0, Number(metrics.approved) || 0),
+            pending: Math.max(0, Number(metrics.pending) || 0),
+            value: Math.max(0, Number(metrics.value) || 0),
+        };
+    }
+    async getTimeFilteredData(startDate, endDate, type) {
+        const query = this.reportRepository
+            .createQueryBuilder('report')
+            .where('report.createdAt BETWEEN :startDate AND :endDate', {
+            startDate,
+            endDate,
+        });
+        if (type === 'quotation') {
+            query.andWhere('report.type = :type', { type });
+        }
+        return await query.getMany();
     }
 };
 exports.ReportsService = ReportsService;

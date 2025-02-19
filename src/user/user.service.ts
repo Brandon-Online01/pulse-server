@@ -64,7 +64,10 @@ export class UserService {
 
 	async findAll(): Promise<{ users: Omit<User, 'password'>[] | null; message: string }> {
 		try {
-			const users = await this.userRepository.find({ where: { isDeleted: false } });
+			const users = await this.userRepository.find({ 
+				where: { isDeleted: false },
+				relations: ['branch', 'organisation']
+			});
 
 			if (!users) {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);

@@ -97,18 +97,24 @@ export interface TrendMetrics {
     };
 }
 
+export interface ReportMetrics {
+  total: number;
+  approved: number;
+  pending: number;
+  value: number;
+}
+
 export interface ReportResponse {
-    metadata: {
-        generatedAt: string;
-        period: string;
-        filters: Record<string, unknown>;
-    };
-    financial: FinancialMetrics;
-    performance: PerformanceMetrics;
-    comparison: ComparisonMetrics;
-    trends: TrendMetrics;
-    summary: {
-        highlights: string[];
-        recommendations: string[];
-    };
+  metadata: {
+    generatedAt: string;
+    reportType: string;
+    period: string;
+  };
+  metrics: {
+    current: ReportMetrics;
+    previous: ReportMetrics;
+    growth: string;
+    trend: 'up' | 'down' | 'stable';
+    conversion: number;
+  };
 } 

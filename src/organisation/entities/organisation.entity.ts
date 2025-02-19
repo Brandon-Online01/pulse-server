@@ -40,6 +40,6 @@ export class Organisation {
     @Column({ nullable: false, unique: true })
     ref: string;
 
-    @OneToMany(() => Branch, (branch) => branch.ref)
+    @OneToMany(() => Branch, (branch) => branch?.organisation)
     branches: Branch[];
 }

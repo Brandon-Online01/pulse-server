@@ -43,9 +43,6 @@ export declare class ReportsService {
     private handleError;
     private formatReportData;
     managerDailyReport(): Promise<{
-        message: any;
-        statusCode: any;
-    } | {
         leads: {
             pending: number;
             approved: number;
@@ -97,6 +94,11 @@ export declare class ReportsService {
                     growth: string;
                 };
             };
+            trends: {
+                daily: Record<string, number>;
+                weekly: Record<string, number>;
+                monthly: Record<string, number>;
+            };
         };
         attendance: {
             attendance: number;
@@ -138,4 +140,6 @@ export declare class ReportsService {
     private calculateMonthlyPatterns;
     private generateHighlights;
     private generateRecommendations;
+    private validateMetrics;
+    private getTimeFilteredData;
 }

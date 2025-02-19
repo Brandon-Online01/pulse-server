@@ -65,6 +65,14 @@ __decorate([
     (0, typeorm_1.ManyToOne)(() => user_entity_1.User, (user) => user?.reports),
     __metadata("design:type", user_entity_1.User)
 ], Report.prototype, "owner", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Report.prototype, "status", void 0);
+__decorate([
+    (0, typeorm_1.Column)('decimal', { precision: 10, scale: 2, default: 0 }),
+    __metadata("design:type", Number)
+], Report.prototype, "value", void 0);
 exports.Report = Report = __decorate([
     (0, typeorm_2.Entity)('reports')
 ], Report);

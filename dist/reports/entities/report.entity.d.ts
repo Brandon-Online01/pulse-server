@@ -12,4 +12,6 @@ export declare class Report {
     metadata: Record<string, any>;
     branch: Branch;
     owner: User;
+    status: 'pending' | 'approved' | 'rejected';
+    value: number;
 }

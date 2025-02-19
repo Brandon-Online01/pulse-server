@@ -7,9 +7,6 @@ export declare class ReportsController {
     constructor(reportsService: ReportsService);
     generateReport(generateReportDto: GenerateReportDto): Promise<ReportResponse>;
     managerDailyReport(): Promise<{
-        message: any;
-        statusCode: any;
-    } | {
         leads: {
             pending: number;
             approved: number;
@@ -60,6 +57,11 @@ export declare class ReportsController {
                 quotationTrends: {
                     growth: string;
                 };
+            };
+            trends: {
+                daily: Record<string, number>;
+                weekly: Record<string, number>;
+                monthly: Record<string, number>;
             };
         };
         attendance: {
