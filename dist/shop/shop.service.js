@@ -636,6 +636,61 @@ let ShopService = class ShopService {
             return '6-10 items';
         return '10+ items';
     }
+    async findAll(filters, page = 1, limit = Number(process.env.DEFAULT_PAGE_LIMIT)) {
+        try {
+            const queryBuilder = this.quotationRepository
+                .createQueryBuilder('quotation')
+                .leftJoinAndSelect('quotation.client', 'client')
+                .leftJoinAndSelect('quotation.placedBy', 'placedBy')
+                .leftJoinAndSelect('quotation.quotationItems', 'quotationItems')
+                .where('quotation.isDeleted = :isDeleted', { isDeleted: false });
+            if (filters?.status) {
+                queryBuilder.andWhere('quotation.status = :status', { status: filters.status });
+            }
+            if (filters?.clientId) {
+                queryBuilder.andWhere('client.uid = :clientId', { clientId: filters.clientId });
+            }
+            if (filters?.startDate && filters?.endDate) {
+                queryBuilder.andWhere('quotation.createdAt BETWEEN :startDate AND :endDate', {
+                    startDate: filters.startDate,
+                    endDate: filters.endDate
+                });
+            }
+            if (filters?.search) {
+                queryBuilder.andWhere('(quotation.quotationNumber ILIKE :search OR client.name ILIKE :search)', { search: `%${filters.search}%` });
+            }
+            queryBuilder
+                .skip((page - 1) * limit)
+                .take(limit)
+                .orderBy('quotation.createdAt', 'DESC');
+            const [quotations, total] = await queryBuilder.getManyAndCount();
+            if (!quotations) {
+                throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
+            }
+            return {
+                data: quotations,
+                meta: {
+                    total,
+                    page,
+                    limit,
+                    totalPages: Math.ceil(total / limit),
+                },
+                message: process.env.SUCCESS_MESSAGE,
+            };
+        }
+        catch (error) {
+            return {
+                data: [],
+                meta: {
+                    total: 0,
+                    page,
+                    limit,
+                    totalPages: 0,
+                },
+                message: error?.message,
+            };
+        }
+    }
 };
 exports.ShopService = ShopService;
 exports.ShopService = ShopService = __decorate([

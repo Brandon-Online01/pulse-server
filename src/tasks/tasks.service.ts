@@ -16,6 +16,7 @@ import { Client } from '../clients/entities/client.entity';
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { NotificationType, NotificationStatus } from '../lib/enums/notification.enums';
 import { TaskStatus, TaskPriority, RepetitionType, TaskType } from '../lib/enums/task.enums';
+import { PaginatedResponse } from '../lib/interfaces/product.interfaces';
 
 @Injectable()
 export class TasksService {
@@ -188,15 +189,19 @@ export class TasksService {
 		}
 	}
 
-	async findAll(filters?: {
-		status?: TaskStatus;
-		priority?: TaskPriority;
-		assigneeId?: number;
-		clientId?: number;
-		startDate?: Date;
-		endDate?: Date;
-		isOverdue?: boolean;
-	}): Promise<{ tasks: Task[] | null, message: string }> {
+	async findAll(
+		filters?: {
+			status?: TaskStatus;
+			priority?: TaskPriority;
+			assigneeId?: number;
+			clientId?: number;
+			startDate?: Date;
+			endDate?: Date;
+			isOverdue?: boolean;
+		},
+		page: number = 1,
+		limit: number = Number(process.env.DEFAULT_PAGE_LIMIT)
+	): Promise<PaginatedResponse<Task>> {
 		try {
 			const queryBuilder = this.taskRepository
 				.createQueryBuilder('task')
@@ -233,20 +238,38 @@ export class TasksService {
 				queryBuilder.andWhere('task.isOverdue = :isOverdue', { isOverdue: filters.isOverdue });
 			}
 
-			const tasks = await queryBuilder.getMany();
+			// Add pagination
+			queryBuilder
+				.skip((page - 1) * limit)
+				.take(limit)
+				.orderBy('task.createdAt', 'DESC');
+
+			const [tasks, total] = await queryBuilder.getManyAndCount();
 
 			if (!tasks) {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
 			return {
-				tasks,
+				data: tasks,
+				meta: {
+					total,
+					page,
+					limit,
+					totalPages: Math.ceil(total / limit),
+				},
 				message: process.env.SUCCESS_MESSAGE,
 			};
 		} catch (error) {
 			return {
+				data: [],
+				meta: {
+					total: 0,
+					page,
+					limit,
+					totalPages: 0,
+				},
 				message: error?.message,
-				tasks: null
 			};
 		}
 	}

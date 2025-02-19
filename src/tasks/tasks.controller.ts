@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
@@ -9,6 +9,7 @@ import { AuthGuard } from '../guards/auth.guard';
 import { AccessLevel } from '../lib/enums/user.enums';
 import { UpdateSubtaskDto } from './dto/update-subtask.dto';
 import { EnterpriseOnly } from '../decorators/enterprise-only.decorator';
+import { TaskStatus, TaskPriority } from '../lib/enums/task.enums';
 
 @ApiTags('tasks')
 @Controller('tasks')
@@ -27,8 +28,32 @@ export class TasksController {
   @Get()
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get all tasks' })
-  findAll() {
-    return this.tasksService.findAll();
+  findAll(
+    @Query('status') status?: TaskStatus,
+    @Query('priority') priority?: TaskPriority,
+    @Query('assigneeId') assigneeId?: number,
+    @Query('clientId') clientId?: number,
+    @Query('startDate') startDate?: Date,
+    @Query('endDate') endDate?: Date,
+    @Query('isOverdue') isOverdue?: boolean,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    const filters = {
+      ...(status && { status }),
+      ...(priority && { priority }),
+      ...(assigneeId && { assigneeId: Number(assigneeId) }),
+      ...(clientId && { clientId: Number(clientId) }),
+      ...(startDate && { startDate: new Date(startDate) }),
+      ...(endDate && { endDate: new Date(endDate) }),
+      ...(isOverdue !== undefined && { isOverdue: Boolean(isOverdue) }),
+    };
+
+    return this.tasksService.findAll(
+      filters,
+      page ? Number(page) : 1,
+      limit ? Number(limit) : Number(process.env.DEFAULT_PAGE_LIMIT)
+    );
   }
 
   @Get(':ref')

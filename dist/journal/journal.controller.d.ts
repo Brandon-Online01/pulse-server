@@ -7,11 +7,7 @@ export declare class JournalController {
     create(createJournalDto: CreateJournalDto): Promise<{
         message: string;
     }>;
-    findAll(): Promise<{
-        message: string;
-        journals: import("./entities/journal.entity").Journal[] | null;
-        stats: any;
-    }>;
+    findAll(): Promise<import("../lib/interfaces/product.interfaces").PaginatedResponse<import("./entities/journal.entity").Journal>>;
     findOne(ref: number): Promise<{
         message: string;
         journal: import("./entities/journal.entity").Journal | null;

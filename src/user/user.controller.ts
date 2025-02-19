@@ -7,7 +7,8 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { isPublic } from '../decorators/public.decorator';
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
+import { AccountStatus } from '../lib/enums/status.enums';
 
 @ApiTags('user')
 @Controller('user')
@@ -23,10 +24,30 @@ export class UserController {
   }
 
   @Get()
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER)
   @ApiOperation({ summary: 'get all users' })
-  findAll() {
-    return this.userService.findAll();
+  findAll(
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('status') status?: AccountStatus,
+    @Query('accessLevel') accessLevel?: AccessLevel,
+    @Query('search') search?: string,
+    @Query('branchId') branchId?: number,
+    @Query('organisationId') organisationId?: number,
+  ) {
+    const filters = {
+      ...(status && { status }),
+      ...(accessLevel && { accessLevel }),
+      ...(search && { search }),
+      ...(branchId && { branchId: Number(branchId) }),
+      ...(organisationId && { organisationId: Number(organisationId) }),
+    };
+
+    return this.userService.findAll(
+      filters,
+      page ? Number(page) : 1,
+      limit ? Number(limit) : Number(process.env.DEFAULT_PAGE_LIMIT)
+    );
   }
 
   @Get(':ref')

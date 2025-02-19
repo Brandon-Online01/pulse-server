@@ -22,6 +22,7 @@ const create_user_dto_1 = require("./dto/create-user.dto");
 const update_user_dto_1 = require("./dto/update-user.dto");
 const swagger_1 = require("@nestjs/swagger");
 const common_1 = require("@nestjs/common");
+const status_enums_1 = require("../lib/enums/status.enums");
 let UserController = class UserController {
     constructor(userService) {
         this.userService = userService;
@@ -29,8 +30,15 @@ let UserController = class UserController {
     create(createUserDto) {
         return this.userService.create(createUserDto);
     }
-    findAll() {
-        return this.userService.findAll();
+    findAll(page, limit, status, accessLevel, search, branchId, organisationId) {
+        const filters = {
+            ...(status && { status }),
+            ...(accessLevel && { accessLevel }),
+            ...(search && { search }),
+            ...(branchId && { branchId: Number(branchId) }),
+            ...(organisationId && { organisationId: Number(organisationId) }),
+        };
+        return this.userService.findAll(filters, page ? Number(page) : 1, limit ? Number(limit) : Number(process.env.DEFAULT_PAGE_LIMIT));
     }
     findOne(searchParameter) {
         return this.userService.findOne(searchParameter);
@@ -57,10 +65,17 @@ __decorate([
 ], UserController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)(),
-    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
+    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER),
     (0, swagger_1.ApiOperation)({ summary: 'get all users' }),
+    __param(0, (0, common_1.Query)('page')),
+    __param(1, (0, common_1.Query)('limit')),
+    __param(2, (0, common_1.Query)('status')),
+    __param(3, (0, common_1.Query)('accessLevel')),
+    __param(4, (0, common_1.Query)('search')),
+    __param(5, (0, common_1.Query)('branchId')),
+    __param(6, (0, common_1.Query)('organisationId')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [Number, Number, String, String, String, Number, Number]),
     __metadata("design:returntype", void 0)
 ], UserController.prototype, "findAll", null);
 __decorate([

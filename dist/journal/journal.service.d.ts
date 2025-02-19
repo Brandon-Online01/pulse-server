@@ -2,8 +2,10 @@ import { Repository } from 'typeorm';
 import { Journal } from './entities/journal.entity';
 import { CreateJournalDto } from './dto/create-journal.dto';
 import { UpdateJournalDto } from './dto/update-journal.dto';
+import { JournalStatus } from '../lib/enums/journal.enums';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { RewardsService } from '../rewards/rewards.service';
+import { PaginatedResponse } from '../lib/interfaces/product.interfaces';
 export declare class JournalService {
     private journalRepository;
     private readonly eventEmitter;
@@ -13,11 +15,14 @@ export declare class JournalService {
     create(createJournalDto: CreateJournalDto): Promise<{
         message: string;
     }>;
-    findAll(): Promise<{
-        message: string;
-        journals: Journal[] | null;
-        stats: any;
-    }>;
+    findAll(filters?: {
+        status?: JournalStatus;
+        authorId?: number;
+        startDate?: Date;
+        endDate?: Date;
+        search?: string;
+        categoryId?: number;
+    }, page?: number, limit?: number): Promise<PaginatedResponse<Journal>>;
     findOne(ref: number): Promise<{
         message: string;
         journal: Journal | null;

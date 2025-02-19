@@ -449,7 +449,7 @@ export class AttendanceService {
         }
       });
 
-      const totalUsers = await this.userService.findAll().then(users => users.users.length);
+      const totalUsers = await this.userService.findAll().then(users => users?.data?.length);
 
       const attendancePercentage = totalUsers > 0
         ? Math.round((todayPresent / totalUsers) * 100)

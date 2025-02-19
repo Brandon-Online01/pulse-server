@@ -5,11 +5,13 @@ import { Banners } from './entities/banners.entity';
 import { CreateBannerDto } from './dto/create-banner.dto';
 import { UpdateBannerDto } from './dto/update-banner.dto';
 import { Product } from '../products/entities/product.entity';
+import { OrderStatus } from '../lib/enums/status.enums';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ClientsService } from '../clients/clients.service';
 import { CreateProductDto } from '../products/dto/create-product.dto';
 import { ShopGateway } from './shop.gateway';
+import { PaginatedResponse } from '../lib/interfaces/product.interfaces';
 export declare class ShopService {
     private productRepository;
     private quotationRepository;
@@ -145,4 +147,11 @@ export declare class ShopService {
     private analyzeShops;
     private analyzeBaskets;
     private getBasketSizeRange;
+    findAll(filters?: {
+        status?: OrderStatus;
+        clientId?: number;
+        startDate?: Date;
+        endDate?: Date;
+        search?: string;
+    }, page?: number, limit?: number): Promise<PaginatedResponse<Quotation>>;
 }

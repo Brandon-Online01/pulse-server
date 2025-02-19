@@ -71,34 +71,60 @@ let JournalService = class JournalService {
             return response;
         }
     }
-    async findAll() {
+    async findAll(filters, page = 1, limit = Number(process.env.DEFAULT_PAGE_LIMIT)) {
         try {
-            const journals = await this.journalRepository.find({
-                where: { isDeleted: false },
-                relations: ['owner'],
-                order: {
-                    timestamp: 'DESC'
-                }
-            });
-            if (journals?.length === 0) {
-                return {
-                    message: process.env.NOT_FOUND_MESSAGE,
-                    journals: null,
-                    stats: null
-                };
+            const queryBuilder = this.journalRepository
+                .createQueryBuilder('journal')
+                .leftJoinAndSelect('journal.author', 'author')
+                .leftJoinAndSelect('journal.category', 'category')
+                .where('journal.isDeleted = :isDeleted', { isDeleted: false });
+            if (filters?.status) {
+                queryBuilder.andWhere('journal.status = :status', { status: filters.status });
             }
-            const stats = this.calculateStats(journals);
+            if (filters?.authorId) {
+                queryBuilder.andWhere('author.uid = :authorId', { authorId: filters.authorId });
+            }
+            if (filters?.categoryId) {
+                queryBuilder.andWhere('category.uid = :categoryId', { categoryId: filters.categoryId });
+            }
+            if (filters?.startDate && filters?.endDate) {
+                queryBuilder.andWhere('journal.createdAt BETWEEN :startDate AND :endDate', {
+                    startDate: filters.startDate,
+                    endDate: filters.endDate
+                });
+            }
+            if (filters?.search) {
+                queryBuilder.andWhere('(journal.title ILIKE :search OR journal.content ILIKE :search OR author.name ILIKE :search)', { search: `%${filters.search}%` });
+            }
+            queryBuilder
+                .skip((page - 1) * limit)
+                .take(limit)
+                .orderBy('journal.createdAt', 'DESC');
+            const [journals, total] = await queryBuilder.getManyAndCount();
+            if (!journals) {
+                throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
+            }
             return {
-                journals,
+                data: journals,
+                meta: {
+                    total,
+                    page,
+                    limit,
+                    totalPages: Math.ceil(total / limit),
+                },
                 message: process.env.SUCCESS_MESSAGE,
-                stats
             };
         }
         catch (error) {
             return {
+                data: [],
+                meta: {
+                    total: 0,
+                    page,
+                    limit,
+                    totalPages: 0,
+                },
                 message: error?.message,
-                journals: null,
-                stats: null
             };
         }
     }

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { CreateClaimDto } from './dto/create-claim.dto';
 import { UpdateClaimDto } from './dto/update-claim.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -14,6 +14,7 @@ import { ConfigService } from '@nestjs/config';
 import { RewardsService } from '../rewards/rewards.service';
 import { XP_VALUES_TYPES } from '../lib/constants/constants';
 import { XP_VALUES } from '../lib/constants/constants';
+import { PaginatedResponse } from '../lib/interfaces/product.interfaces';
 
 @Injectable()
 export class ClaimsService {
@@ -103,21 +104,61 @@ export class ClaimsService {
 		}
 	}
 
-	async findAll(): Promise<{
-		message: string, claims: Claim[] | null, stats: any
-	}> {
+	async findAll(
+		filters?: {
+			status?: ClaimStatus;
+			clientId?: number;
+			startDate?: Date;
+			endDate?: Date;
+			search?: string;
+			assigneeId?: number;
+		},
+		page: number = 1,
+		limit: number = Number(process.env.DEFAULT_PAGE_LIMIT)
+	): Promise<PaginatedResponse<Claim>> {
 		try {
-			const claims = await this.claimsRepository.find({
-				where: {
-					isDeleted: false,
-					deletedAt: IsNull(),
-					status: Not(ClaimStatus.DELETED)
-				},
-				relations: ['owner']
-			});
+			const queryBuilder = this.claimsRepository
+				.createQueryBuilder('claim')
+				.leftJoinAndSelect('claim.client', 'client')
+				.leftJoinAndSelect('claim.assignee', 'assignee')
+				.where('claim.isDeleted = :isDeleted', { isDeleted: false });
+
+			if (filters?.status) {
+				queryBuilder.andWhere('claim.status = :status', { status: filters.status });
+			}
+
+			if (filters?.clientId) {
+				queryBuilder.andWhere('client.uid = :clientId', { clientId: filters.clientId });
+			}
+
+			if (filters?.assigneeId) {
+				queryBuilder.andWhere('assignee.uid = :assigneeId', { assigneeId: filters.assigneeId });
+			}
+
+			if (filters?.startDate && filters?.endDate) {
+				queryBuilder.andWhere('claim.createdAt BETWEEN :startDate AND :endDate', {
+					startDate: filters.startDate,
+					endDate: filters.endDate
+				});
+			}
+
+			if (filters?.search) {
+				queryBuilder.andWhere(
+					'((claim.claimNumber ILIKE :search OR client.name ILIKE :search OR claim.description ILIKE :search) OR (claim.claimNumber ILIKE :search OR client.name ILIKE :search OR claim.description ILIKE :search))',
+					{ search: `%${filters.search}%` }
+				);
+			}
+
+			// Add pagination
+			queryBuilder
+				.skip((page - 1) * limit)
+				.take(limit)
+				.orderBy('claim.createdAt', 'DESC');
+
+			const [claims, total] = await queryBuilder.getManyAndCount();
 
 			if (!claims) {
-				throw new NotFoundException(process.env.SEARCH_ERROR_MESSAGE);
+				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
 			const formattedClaims = claims?.map(claim => ({
@@ -127,27 +168,26 @@ export class ClaimsService {
 
 			const stats = this.calculateStats(claims);
 
-			const response = {
-				stats: {
-					total: stats?.total,
-					pending: stats?.pending,
-					approved: stats?.approved,
-					declined: stats?.declined,
-					paid: stats?.paid,
-				},
-				claims: formattedClaims,
-			}
-
 			return {
+				data: formattedClaims,
+				meta: {
+					total,
+					page,
+					limit,
+					totalPages: Math.ceil(total / limit),
+				},
 				message: process.env.SUCCESS_MESSAGE,
-				claims: formattedClaims,
-				stats: response
 			};
 		} catch (error) {
 			return {
+				data: [],
+				meta: {
+					total: 0,
+					page,
+					limit,
+					totalPages: 0,
+				},
 				message: error?.message,
-				claims: null,
-				stats: null
 			};
 		}
 	}

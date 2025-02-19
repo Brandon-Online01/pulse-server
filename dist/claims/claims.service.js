@@ -91,45 +91,65 @@ let ClaimsService = class ClaimsService {
             return response;
         }
     }
-    async findAll() {
+    async findAll(filters, page = 1, limit = Number(process.env.DEFAULT_PAGE_LIMIT)) {
         try {
-            const claims = await this.claimsRepository.find({
-                where: {
-                    isDeleted: false,
-                    deletedAt: (0, typeorm_2.IsNull)(),
-                    status: (0, typeorm_2.Not)(finance_enums_1.ClaimStatus.DELETED)
-                },
-                relations: ['owner']
-            });
+            const queryBuilder = this.claimsRepository
+                .createQueryBuilder('claim')
+                .leftJoinAndSelect('claim.client', 'client')
+                .leftJoinAndSelect('claim.assignee', 'assignee')
+                .where('claim.isDeleted = :isDeleted', { isDeleted: false });
+            if (filters?.status) {
+                queryBuilder.andWhere('claim.status = :status', { status: filters.status });
+            }
+            if (filters?.clientId) {
+                queryBuilder.andWhere('client.uid = :clientId', { clientId: filters.clientId });
+            }
+            if (filters?.assigneeId) {
+                queryBuilder.andWhere('assignee.uid = :assigneeId', { assigneeId: filters.assigneeId });
+            }
+            if (filters?.startDate && filters?.endDate) {
+                queryBuilder.andWhere('claim.createdAt BETWEEN :startDate AND :endDate', {
+                    startDate: filters.startDate,
+                    endDate: filters.endDate
+                });
+            }
+            if (filters?.search) {
+                queryBuilder.andWhere('((claim.claimNumber ILIKE :search OR client.name ILIKE :search OR claim.description ILIKE :search) OR (claim.claimNumber ILIKE :search OR client.name ILIKE :search OR claim.description ILIKE :search))', { search: `%${filters.search}%` });
+            }
+            queryBuilder
+                .skip((page - 1) * limit)
+                .take(limit)
+                .orderBy('claim.createdAt', 'DESC');
+            const [claims, total] = await queryBuilder.getManyAndCount();
             if (!claims) {
-                throw new common_1.NotFoundException(process.env.SEARCH_ERROR_MESSAGE);
+                throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
             const formattedClaims = claims?.map(claim => ({
                 ...claim,
                 amount: this.formatCurrency(Number(claim?.amount) || 0)
             }));
             const stats = this.calculateStats(claims);
-            const response = {
-                stats: {
-                    total: stats?.total,
-                    pending: stats?.pending,
-                    approved: stats?.approved,
-                    declined: stats?.declined,
-                    paid: stats?.paid,
-                },
-                claims: formattedClaims,
-            };
             return {
+                data: formattedClaims,
+                meta: {
+                    total,
+                    page,
+                    limit,
+                    totalPages: Math.ceil(total / limit),
+                },
                 message: process.env.SUCCESS_MESSAGE,
-                claims: formattedClaims,
-                stats: response
             };
         }
         catch (error) {
             return {
+                data: [],
+                meta: {
+                    total: 0,
+                    page,
+                    limit,
+                    totalPages: 0,
+                },
                 message: error?.message,
-                claims: null,
-                stats: null
             };
         }
     }

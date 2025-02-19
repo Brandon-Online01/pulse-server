@@ -3,6 +3,9 @@ import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { NewSignUp } from '../lib/types/user';
+import { AccountStatus } from '../lib/enums/status.enums';
+import { PaginatedResponse } from '../lib/interfaces/product.interfaces';
+import { AccessLevel } from '../lib/enums/user.enums';
 export declare class UserService {
     private userRepository;
     constructor(userRepository: Repository<User>);
@@ -11,10 +14,13 @@ export declare class UserService {
     create(createUserDto: CreateUserDto): Promise<{
         message: string;
     }>;
-    findAll(): Promise<{
-        users: Omit<User, 'password'>[] | null;
-        message: string;
-    }>;
+    findAll(filters?: {
+        status?: AccountStatus;
+        accessLevel?: AccessLevel;
+        search?: string;
+        branchId?: number;
+        organisationId?: number;
+    }, page?: number, limit?: number): Promise<PaginatedResponse<User>>;
     findOne(searchParameter: number): Promise<{
         user: Omit<User, 'password'> | null;
         message: string;

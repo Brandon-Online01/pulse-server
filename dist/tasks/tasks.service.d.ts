@@ -8,6 +8,7 @@ import { RewardsService } from '../rewards/rewards.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { Client } from '../clients/entities/client.entity';
 import { TaskStatus, TaskPriority, TaskType } from '../lib/enums/task.enums';
+import { PaginatedResponse } from '../lib/interfaces/product.interfaces';
 export declare class TasksService {
     private taskRepository;
     private subtaskRepository;
@@ -27,10 +28,7 @@ export declare class TasksService {
         startDate?: Date;
         endDate?: Date;
         isOverdue?: boolean;
-    }): Promise<{
-        tasks: Task[] | null;
-        message: string;
-    }>;
+    }, page?: number, limit?: number): Promise<PaginatedResponse<Task>>;
     findOne(ref: number): Promise<{
         task: Task | null;
         message: string;

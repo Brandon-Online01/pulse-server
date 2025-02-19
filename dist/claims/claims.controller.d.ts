@@ -7,11 +7,7 @@ export declare class ClaimsController {
     create(createClaimDto: CreateClaimDto): Promise<{
         message: string;
     }>;
-    findAll(): Promise<{
-        message: string;
-        claims: import("./entities/claim.entity").Claim[] | null;
-        stats: any;
-    }>;
+    findAll(): Promise<import("../lib/interfaces/product.interfaces").PaginatedResponse<import("./entities/claim.entity").Claim>>;
     findOne(ref: number): Promise<{
         message: string;
         claim: import("./entities/claim.entity").Claim | null;

@@ -3,9 +3,10 @@ import { UpdateClaimDto } from './dto/update-claim.dto';
 import { Claim } from './entities/claim.entity';
 import { Repository } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { ClaimCategory } from '../lib/enums/finance.enums';
+import { ClaimCategory, ClaimStatus } from '../lib/enums/finance.enums';
 import { ConfigService } from '@nestjs/config';
 import { RewardsService } from '../rewards/rewards.service';
+import { PaginatedResponse } from '../lib/interfaces/product.interfaces';
 export declare class ClaimsService {
     private claimsRepository;
     private rewardsService;
@@ -20,11 +21,14 @@ export declare class ClaimsService {
     create(createClaimDto: CreateClaimDto): Promise<{
         message: string;
     }>;
-    findAll(): Promise<{
-        message: string;
-        claims: Claim[] | null;
-        stats: any;
-    }>;
+    findAll(filters?: {
+        status?: ClaimStatus;
+        clientId?: number;
+        startDate?: Date;
+        endDate?: Date;
+        search?: string;
+        assigneeId?: number;
+    }, page?: number, limit?: number): Promise<PaginatedResponse<Claim>>;
     findOne(ref: number): Promise<{
         message: string;
         claim: Claim | null;

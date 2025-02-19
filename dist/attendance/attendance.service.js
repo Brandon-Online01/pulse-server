@@ -367,7 +367,7 @@ let AttendanceService = class AttendanceService {
                     status: attendance_enums_1.AttendanceStatus.PRESENT
                 }
             });
-            const totalUsers = await this.userService.findAll().then(users => users.users.length);
+            const totalUsers = await this.userService.findAll().then(users => users?.data?.length);
             const attendancePercentage = totalUsers > 0
                 ? Math.round((todayPresent / totalUsers) * 100)
                 : 0;

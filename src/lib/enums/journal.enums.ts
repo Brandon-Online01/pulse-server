@@ -1,0 +1,7 @@
+export enum JournalStatus {
+    DRAFT = 'DRAFT',
+    PUBLISHED = 'PUBLISHED',
+    ARCHIVED = 'ARCHIVED',
+    PENDING_REVIEW = 'PENDING_REVIEW',
+    REJECTED = 'REJECTED'
+} 

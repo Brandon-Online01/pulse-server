@@ -60,27 +60,58 @@ let UserService = class UserService {
             return response;
         }
     }
-    async findAll() {
+    async findAll(filters, page = 1, limit = Number(process.env.DEFAULT_PAGE_LIMIT)) {
         try {
-            const users = await this.userRepository.find({
-                where: { isDeleted: false },
-                relations: ['branch', 'organisation']
-            });
+            const queryBuilder = this.userRepository
+                .createQueryBuilder('user')
+                .leftJoinAndSelect('user.branch', 'branch')
+                .leftJoinAndSelect('user.organisation', 'organisation')
+                .where('user.isDeleted = :isDeleted', { isDeleted: false });
+            if (filters?.status) {
+                queryBuilder.andWhere('user.status = :status', { status: filters.status });
+            }
+            if (filters?.accessLevel) {
+                queryBuilder.andWhere('user.accessLevel = :accessLevel', { accessLevel: filters.accessLevel });
+            }
+            if (filters?.branchId) {
+                queryBuilder.andWhere('branch.uid = :branchId', { branchId: filters.branchId });
+            }
+            if (filters?.organisationId) {
+                queryBuilder.andWhere('organisation.uid = :organisationId', { organisationId: filters.organisationId });
+            }
+            if (filters?.search) {
+                queryBuilder.andWhere('(user.name ILIKE :search OR user.surname ILIKE :search OR user.email ILIKE :search OR user.username ILIKE :search)', { search: `%${filters.search}%` });
+            }
+            queryBuilder
+                .skip((page - 1) * limit)
+                .take(limit)
+                .orderBy('user.createdAt', 'DESC');
+            const [users, total] = await queryBuilder.getManyAndCount();
             if (!users) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
-            const response = {
-                users: users.map((user) => this.excludePassword(user)),
+            return {
+                data: users,
+                meta: {
+                    total,
+                    page,
+                    limit,
+                    totalPages: Math.ceil(total / limit),
+                },
                 message: process.env.SUCCESS_MESSAGE,
             };
-            return response;
         }
         catch (error) {
-            const response = {
+            return {
+                data: [],
+                meta: {
+                    total: 0,
+                    page,
+                    limit,
+                    totalPages: 0,
+                },
                 message: error?.message,
-                users: null,
             };
-            return response;
         }
     }
     async findOne(searchParameter) {

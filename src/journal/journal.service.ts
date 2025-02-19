@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, Repository } from 'typeorm';
 import { Journal } from './entities/journal.entity';
@@ -6,10 +6,12 @@ import { CreateJournalDto } from './dto/create-journal.dto';
 import { UpdateJournalDto } from './dto/update-journal.dto';
 import { NotificationType, NotificationStatus } from '../lib/enums/notification.enums';
 import { AccessLevel } from '../lib/enums/user.enums';
+import { JournalStatus } from '../lib/enums/journal.enums';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { endOfDay, startOfDay } from 'date-fns';
 import { RewardsService } from '../rewards/rewards.service';
 import { XP_VALUES, XP_VALUES_TYPES } from '../lib/constants/constants';
+import { PaginatedResponse } from '../lib/interfaces/product.interfaces';
 
 @Injectable()
 export class JournalService {
@@ -73,37 +75,84 @@ export class JournalService {
     }
   }
 
-  async findAll(): Promise<{ message: string, journals: Journal[] | null, stats: any }> {
+  async findAll(
+    filters?: {
+      status?: JournalStatus; 
+      authorId?: number;
+      startDate?: Date;
+      endDate?: Date;
+      search?: string;
+      categoryId?: number;
+    },
+    page: number = 1,
+    limit: number = Number(process.env.DEFAULT_PAGE_LIMIT)
+  ): Promise<PaginatedResponse<Journal>> {
     try {
-      const journals = await this.journalRepository.find({
-        where: { isDeleted: false },
-        relations: ['owner'],
-        order: {
-          timestamp: 'DESC'
-        }
-      });
+      const queryBuilder = this.journalRepository
+        .createQueryBuilder('journal')
+        .leftJoinAndSelect('journal.author', 'author')
+        .leftJoinAndSelect('journal.category', 'category')
+        .where('journal.isDeleted = :isDeleted', { isDeleted: false });
 
-      if (journals?.length === 0) {
-        return {
-          message: process.env.NOT_FOUND_MESSAGE,
-          journals: null,
-          stats: null
-        }
+      if (filters?.status) {
+        queryBuilder.andWhere('journal.status = :status', { status: filters.status });
       }
 
-      const stats = this.calculateStats(journals);
+      if (filters?.authorId) {
+        queryBuilder.andWhere('author.uid = :authorId', { authorId: filters.authorId });
+      }
+
+      if (filters?.categoryId) {
+        queryBuilder.andWhere('category.uid = :categoryId', { categoryId: filters.categoryId });
+      }
+
+      if (filters?.startDate && filters?.endDate) {
+        queryBuilder.andWhere('journal.createdAt BETWEEN :startDate AND :endDate', {
+          startDate: filters.startDate,
+          endDate: filters.endDate
+        });
+      }
+
+      if (filters?.search) {
+        queryBuilder.andWhere(
+          '(journal.title ILIKE :search OR journal.content ILIKE :search OR author.name ILIKE :search)',
+          { search: `%${filters.search}%` }
+        );
+      }
+
+      // Add pagination
+      queryBuilder
+        .skip((page - 1) * limit)
+        .take(limit)
+        .orderBy('journal.createdAt', 'DESC');
+
+      const [journals, total] = await queryBuilder.getManyAndCount();
+
+      if (!journals) {
+        throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
+      }
 
       return {
-        journals,
+        data: journals,
+        meta: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        },
         message: process.env.SUCCESS_MESSAGE,
-        stats
-      }
+      };
     } catch (error) {
       return {
+        data: [],
+        meta: {
+          total: 0,
+          page,
+          limit,
+          totalPages: 0,
+        },
         message: error?.message,
-        journals: null,
-        stats: null
-      }
+      };
     }
   }
 

@@ -4,11 +4,13 @@ import { User } from './entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { NewSignUp } from '../lib/types/user';
 import { AccountStatus } from '../lib/enums/status.enums';
 import { Cron } from '@nestjs/schedule';
 import { CronExpression } from '@nestjs/schedule';
+import { PaginatedResponse } from '../lib/interfaces/product.interfaces';
+import { AccessLevel } from '../lib/enums/user.enums';
 
 @Injectable()
 export class UserService {
@@ -62,30 +64,80 @@ export class UserService {
 		}
 	}
 
-	async findAll(): Promise<{ users: Omit<User, 'password'>[] | null; message: string }> {
+	async findAll(
+		filters?: {
+			status?: AccountStatus;
+			accessLevel?: AccessLevel;
+			search?: string;
+			branchId?: number;
+			organisationId?: number;
+		},
+		page: number = 1,
+		limit: number = Number(process.env.DEFAULT_PAGE_LIMIT)
+	): Promise<PaginatedResponse<User>> {
 		try {
-			const users = await this.userRepository.find({ 
-				where: { isDeleted: false },
-				relations: ['branch', 'organisation']
-			});
+			const queryBuilder = this.userRepository
+				.createQueryBuilder('user')
+				.leftJoinAndSelect('user.branch', 'branch')
+				.leftJoinAndSelect('user.organisation', 'organisation')
+				.where('user.isDeleted = :isDeleted', { isDeleted: false });
+
+			if (filters?.status) {
+				queryBuilder.andWhere('user.status = :status', { status: filters.status });
+			}
+
+			if (filters?.accessLevel) {
+				queryBuilder.andWhere('user.accessLevel = :accessLevel', { accessLevel: filters.accessLevel });
+			}
+
+			if (filters?.branchId) {
+				queryBuilder.andWhere('branch.uid = :branchId', { branchId: filters.branchId });
+			}
+
+			if (filters?.organisationId) {
+				queryBuilder.andWhere('organisation.uid = :organisationId', { organisationId: filters.organisationId });
+			}
+
+			if (filters?.search) {
+				queryBuilder.andWhere(
+					'(user.name ILIKE :search OR user.surname ILIKE :search OR user.email ILIKE :search OR user.username ILIKE :search)',
+					{ search: `%${filters.search}%` }
+				);
+			}
+
+			// Add pagination
+			queryBuilder
+				.skip((page - 1) * limit)
+				.take(limit)
+				.orderBy('user.createdAt', 'DESC');
+
+			const [users, total] = await queryBuilder.getManyAndCount();
 
 			if (!users) {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
-			const response = {
-				users: users.map((user) => this.excludePassword(user)),
+			return {
+				data: users,
+				meta: {
+					total,
+					page,
+					limit,
+					totalPages: Math.ceil(total / limit),
+				},
 				message: process.env.SUCCESS_MESSAGE,
 			};
-
-			return response;
 		} catch (error) {
-			const response = {
+			return {
+				data: [],
+				meta: {
+					total: 0,
+					page,
+					limit,
+					totalPages: 0,
+				},
 				message: error?.message,
-				users: null,
 			};
-
-			return response;
 		}
 	}
 

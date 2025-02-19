@@ -17,6 +17,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ClientsService } from '../clients/clients.service';
 import { CreateProductDto } from '../products/dto/create-product.dto';
 import { ShopGateway } from './shop.gateway';
+import { PaginatedResponse } from '../lib/interfaces/product.interfaces';
 
 @Injectable()
 export class ShopService {
@@ -803,6 +804,83 @@ export class ShopService {
         if (size <= 5) return '4-5 items';
         if (size <= 10) return '6-10 items';
         return '10+ items';
+    }
+
+    async findAll(
+        filters?: {
+            status?: OrderStatus;
+            clientId?: number;
+            startDate?: Date;
+            endDate?: Date;
+            search?: string;
+        },
+        page: number = 1,
+        limit: number = Number(process.env.DEFAULT_PAGE_LIMIT)
+    ): Promise<PaginatedResponse<Quotation>> {
+        try {
+            const queryBuilder = this.quotationRepository
+                .createQueryBuilder('quotation')
+                .leftJoinAndSelect('quotation.client', 'client')
+                .leftJoinAndSelect('quotation.placedBy', 'placedBy')
+                .leftJoinAndSelect('quotation.quotationItems', 'quotationItems')
+                .where('quotation.isDeleted = :isDeleted', { isDeleted: false });
+
+            if (filters?.status) {
+                queryBuilder.andWhere('quotation.status = :status', { status: filters.status });
+            }
+
+            if (filters?.clientId) {
+                queryBuilder.andWhere('client.uid = :clientId', { clientId: filters.clientId });
+            }
+
+            if (filters?.startDate && filters?.endDate) {
+                queryBuilder.andWhere('quotation.createdAt BETWEEN :startDate AND :endDate', {
+                    startDate: filters.startDate,
+                    endDate: filters.endDate
+                });
+            }
+
+            if (filters?.search) {
+                queryBuilder.andWhere(
+                    '(quotation.quotationNumber ILIKE :search OR client.name ILIKE :search)',
+                    { search: `%${filters.search}%` }
+                );
+            }
+
+            // Add pagination
+            queryBuilder
+                .skip((page - 1) * limit)
+                .take(limit)
+                .orderBy('quotation.createdAt', 'DESC');
+
+            const [quotations, total] = await queryBuilder.getManyAndCount();
+
+            if (!quotations) {
+                throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
+            }
+
+            return {
+                data: quotations,
+                meta: {
+                    total,
+                    page,
+                    limit,
+                    totalPages: Math.ceil(total / limit),
+                },
+                message: process.env.SUCCESS_MESSAGE,
+            };
+        } catch (error) {
+            return {
+                data: [],
+                meta: {
+                    total: 0,
+                    page,
+                    limit,
+                    totalPages: 0,
+                },
+                message: error?.message,
+            };
+        }
     }
 }
 

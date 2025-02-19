@@ -161,7 +161,7 @@ let TasksService = class TasksService {
             throw new common_1.BadRequestException(error?.message);
         }
     }
-    async findAll(filters) {
+    async findAll(filters, page = 1, limit = Number(process.env.DEFAULT_PAGE_LIMIT)) {
         try {
             const queryBuilder = this.taskRepository
                 .createQueryBuilder('task')
@@ -191,19 +191,35 @@ let TasksService = class TasksService {
             if (filters?.isOverdue !== undefined) {
                 queryBuilder.andWhere('task.isOverdue = :isOverdue', { isOverdue: filters.isOverdue });
             }
-            const tasks = await queryBuilder.getMany();
+            queryBuilder
+                .skip((page - 1) * limit)
+                .take(limit)
+                .orderBy('task.createdAt', 'DESC');
+            const [tasks, total] = await queryBuilder.getManyAndCount();
             if (!tasks) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
             return {
-                tasks,
+                data: tasks,
+                meta: {
+                    total,
+                    page,
+                    limit,
+                    totalPages: Math.ceil(total / limit),
+                },
                 message: process.env.SUCCESS_MESSAGE,
             };
         }
         catch (error) {
             return {
+                data: [],
+                meta: {
+                    total: 0,
+                    page,
+                    limit,
+                    totalPages: 0,
+                },
                 message: error?.message,
-                tasks: null
             };
         }
     }
