@@ -397,8 +397,8 @@ let TasksService = class TasksService {
             if (!existingTask.task) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
-            if (updateTaskDto.assignees) {
-                const assigneeUsers = await this.userRepository.findByIds(updateTaskDto.assignees.map(a => a.uid));
+            if (updateTaskDto?.assignees) {
+                const assigneeUsers = await this.userRepository.findByIds(updateTaskDto?.assignees?.map(a => a?.uid));
                 existingTask.task.assignees = assigneeUsers;
             }
             Object.assign(existingTask.task, {
@@ -442,18 +442,18 @@ let TasksService = class TasksService {
                         ...notification,
                         owner: assignee,
                         metadata: {
-                            taskId: updatedTask.uid,
-                            deadline: updatedTask.deadline,
-                            priority: updatedTask.priority
+                            taskId: updatedTask?.uid,
+                            deadline: updatedTask?.deadline,
+                            priority: updatedTask?.priority
                         }
                     }, [assignee.uid]);
                     if (assignee.email) {
                         this.eventEmitter.emit('send.email', {
                             type: email_enums_1.EmailType.TASK_UPDATED,
-                            recipient: assignee.email,
+                            recipient: assignee?.email,
                             data: {
                                 ...emailData,
-                                name: assignee.username
+                                name: assignee?.username
                             }
                         });
                     }
@@ -538,7 +538,6 @@ let TasksService = class TasksService {
             return { total: tasks };
         }
         catch (error) {
-            console.error('Error getting tasks for date:', error);
             return { total: 0 };
         }
     }

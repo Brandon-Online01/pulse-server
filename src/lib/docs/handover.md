@@ -14,8 +14,96 @@ This document provides a comprehensive overview of the Enterprise CRM backend se
 -   **Authentication**: JWT
 -   **API Documentation**: Swagger/OpenAPI
 -   **Event Handling**: EventEmitter2
+-   **Caching**: Cache Manager
+-   **Configuration**: NestJS Config
 -   **AI Integration**: TensorFlow.js/OpenAI
 -   **Analytics**: Custom Analytics Engine
+
+## Environment Configuration
+
+The application uses a centralized configuration system through environment variables. Key configurations are stored in `.env`:
+
+```env
+# Server Configuration
+PORT=4400
+
+# Database Configuration
+DATABASE_NAME=pulse
+DATABASE_USER=pulse
+DATABASE_PASSWORD=pulse@2024
+DATABASE_HOST=129.232.204.10
+DATABASE_PORT=3306
+
+# JWT Configuration
+JWT_SECRET=K9HXmP$2vL5nR8qY3wZ7jB4cF6hN9kM@pT2xS5vA8dG4jE7mQ9nU
+JWT_ACCESS_EXPIRES_IN=8h
+JWT_REFRESH_EXPIRES_IN=7d
+
+# Email Configuration
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=example@gmail.com
+SMTP_PASS=your_password
+SMTP_FROM=example@gmail.com
+
+# Cache Configuration
+CACHE_EXPIRATION_TIME=30
+CACHE_MAX_ITEMS=10000
+
+# Other Settings
+DEFAULT_PAGE_LIMIT=10
+CURRENCY_LOCALE=en-ZA
+CURRENCY_CODE=ZAR
+CURRENCY_SYMBOL=R
+```
+
+## Caching Implementation
+
+The system implements a robust caching mechanism using NestJS Cache Manager:
+
+### Cache Configuration
+
+```typescript
+CacheModule.register({
+  ttl: Number(process.env.CACHE_EXPIRATION_TIME) || 30, // Time to live in seconds
+  max: Number(process.env.CACHE_MAX_ITEMS) || 100 // Maximum items in cache
+})
+```
+
+### Service-Level Caching
+
+Services implement caching with the following pattern:
+
+1. **Cache Key Generation**:
+   ```typescript
+   private getCacheKey(key: string | number, user?: any): string {
+     const orgBranchKey = user ? `:org${user?.organisationRef}:branch${user?.branch?.uid}` : '';
+     return `${this.CACHE_PREFIX}${key}${orgBranchKey}`;
+   }
+   ```
+
+2. **Cache Invalidation**:
+   ```typescript
+   private async clearCache(id?: number, user?: any): Promise<void> {
+     if (id) {
+       await this.cacheManager.del(this.getCacheKey(id, user));
+     }
+     await this.cacheManager.del(this.getCacheKey('all', user));
+   }
+   ```
+
+3. **Cache Usage**:
+   ```typescript
+   // Try cache first
+   const cached = await this.cacheManager.get(cacheKey);
+   if (cached) return cached;
+
+   // Get from database
+   const result = await this.repository.find();
+
+   // Store in cache
+   await this.cacheManager.set(cacheKey, result, this.CACHE_TTL);
+   ```
 
 ## System Modules
 
@@ -430,3 +518,190 @@ The application uses the following environment variables:
 -   Real-time socket connections
 -   Enhanced analytics
 -   Mobile API optimization
+
+## Best Practices
+
+### Coding Standards
+
+1. **TypeScript Usage**:
+   - Strict type checking
+   - Interface definitions
+   - Enum usage
+   - Proper type imports
+
+2. **Service Pattern**:
+   - Single responsibility
+   - Dependency injection
+   - Error handling
+   - Cache management
+   - Event emission
+
+3. **Controller Pattern**:
+   - Route definitions
+   - DTO validation
+   - Response formatting
+   - Error handling
+   - Swagger documentation
+
+### Cache Management
+
+1. **Key Generation**:
+   - Unique prefixes per service
+   - User context inclusion
+   - Organization/branch scoping
+
+2. **Invalidation Strategy**:
+   - Targeted invalidation
+   - Bulk invalidation
+   - User-scoped clearing
+
+3. **Performance Optimization**:
+   - TTL configuration
+   - Item limit management
+   - Memory usage control
+
+## Error Handling
+
+The system implements comprehensive error handling:
+
+```typescript
+try {
+  // Operation logic
+} catch (error) {
+  throw new BadRequestException(error?.message);
+}
+```
+
+## Event System
+
+Event-driven architecture for:
+
+- Notifications
+- Email sending
+- Cache invalidation
+- System updates
+
+## Testing Strategy
+
+1. **Unit Tests**:
+   - Service tests
+   - Controller tests
+   - Guard tests
+   - Cache tests
+
+2. **Integration Tests**:
+   - API endpoints
+   - Database operations
+   - Cache operations
+   - Event handling
+
+## Deployment Considerations
+
+1. **Environment Setup**:
+   - Environment variables
+   - Database configuration
+   - Cache configuration
+   - Email settings
+
+2. **Performance Optimization**:
+   - Cache tuning
+   - Database indexing
+   - Query optimization
+   - Connection pooling
+
+## Maintenance
+
+### Regular Tasks
+
+1. **Cache Management**:
+   - Monitor cache hit rates
+   - Adjust TTL values
+   - Review cache size
+   - Clear stale data
+
+2. **Database Maintenance**:
+   - Index optimization
+   - Query performance
+   - Connection management
+   - Backup strategy
+
+### Monitoring
+
+1. **System Health**:
+   - Cache performance
+   - Database metrics
+   - API response times
+   - Error rates
+
+2. **Resource Usage**:
+   - Memory utilization
+   - CPU usage
+   - Network traffic
+   - Storage capacity
+
+## Security Measures
+
+1. **Authentication**:
+   - JWT validation
+   - Token management
+   - Session handling
+   - Rate limiting
+
+2. **Authorization**:
+   - Role-based access
+   - Resource permissions
+   - Data segregation
+   - Cache security
+
+## Known Issues and Limitations
+
+### Current Limitations
+
+1. **Cache Implementation**:
+   - Memory-based storage
+   - No distributed caching
+   - Single instance limitations
+
+2. **Performance**:
+   - Large dataset handling
+   - Complex query optimization
+   - Real-time updates
+
+### Planned Improvements
+
+1. **Caching**:
+   - Redis implementation
+   - Distributed caching
+   - Cache warming
+   - Intelligent invalidation
+
+2. **Performance**:
+   - Query optimization
+   - Index improvements
+   - Connection pooling
+   - Load balancing
+
+## Support and Resources
+
+### Documentation
+
+- API documentation (Swagger)
+- Code documentation (TSDoc)
+- Environment setup guide
+- Deployment guide
+
+### Contact Information
+
+- Development Team
+- System Administrators
+- Support Team
+- Emergency Contacts
+
+## Version Control
+
+- Git repository
+- Branch strategy
+- Release process
+- Version tracking
+
+This documentation provides a comprehensive overview of the system architecture, implementation details, and maintenance procedures. Regular updates should be made to reflect system changes and improvements.
