@@ -10,6 +10,8 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CommunicationLog = void 0;
+const branch_entity_1 = require("../../branch/entities/branch.entity");
+const organisation_entity_1 = require("../../organisation/entities/organisation.entity");
 const typeorm_1 = require("typeorm");
 let CommunicationLog = class CommunicationLog {
 };
@@ -62,6 +64,14 @@ __decorate([
     (0, typeorm_1.Column)({ type: 'timestamp', nullable: false, default: () => 'CURRENT_TIMESTAMP' }),
     __metadata("design:type", Date)
 ], CommunicationLog.prototype, "createdAt", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => branch_entity_1.Branch, (branch) => branch?.communicationLogs),
+    __metadata("design:type", branch_entity_1.Branch)
+], CommunicationLog.prototype, "branch", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => organisation_entity_1.Organisation, (organisation) => organisation?.communicationLogs),
+    __metadata("design:type", organisation_entity_1.Organisation)
+], CommunicationLog.prototype, "organisation", void 0);
 exports.CommunicationLog = CommunicationLog = __decorate([
     (0, typeorm_1.Entity)('communication_logs')
 ], CommunicationLog);

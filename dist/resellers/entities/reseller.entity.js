@@ -10,9 +10,11 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Reseller = void 0;
-const typeorm_1 = require("typeorm");
 const product_entity_1 = require("../../products/entities/product.entity");
 const product_enums_1 = require("../../lib/enums/product.enums");
+const organisation_entity_1 = require("../../organisation/entities/organisation.entity");
+const branch_entity_1 = require("../../branch/entities/branch.entity");
+const typeorm_1 = require("typeorm");
 let Reseller = class Reseller {
 };
 exports.Reseller = Reseller;
@@ -55,7 +57,7 @@ __decorate([
 __decorate([
     (0, typeorm_1.Column)({
         nullable: false,
-        default: () => 'CURRENT_TIMESTAMP'
+        default: () => 'CURRENT_TIMESTAMP',
     }),
     __metadata("design:type", Date)
 ], Reseller.prototype, "createdAt", void 0);
@@ -63,14 +65,10 @@ __decorate([
     (0, typeorm_1.Column)({
         nullable: false,
         default: () => 'CURRENT_TIMESTAMP',
-        onUpdate: 'CURRENT_TIMESTAMP'
+        onUpdate: 'CURRENT_TIMESTAMP',
     }),
     __metadata("design:type", Date)
 ], Reseller.prototype, "updatedAt", void 0);
-__decorate([
-    (0, typeorm_1.OneToMany)(() => product_entity_1.Product, (product) => product?.reseller),
-    __metadata("design:type", Array)
-], Reseller.prototype, "products", void 0);
 __decorate([
     (0, typeorm_1.Column)({ nullable: false, default: false }),
     __metadata("design:type", Boolean)
@@ -79,6 +77,18 @@ __decorate([
     (0, typeorm_1.Column)({ nullable: false, length: 100, type: 'varchar' }),
     __metadata("design:type", String)
 ], Reseller.prototype, "address", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => product_entity_1.Product, (product) => product?.reseller),
+    __metadata("design:type", Array)
+], Reseller.prototype, "products", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => organisation_entity_1.Organisation, (organisation) => organisation?.resellers, { nullable: true }),
+    __metadata("design:type", organisation_entity_1.Organisation)
+], Reseller.prototype, "organisation", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => branch_entity_1.Branch, (branch) => branch?.resellers, { nullable: true }),
+    __metadata("design:type", branch_entity_1.Branch)
+], Reseller.prototype, "branch", void 0);
 exports.Reseller = Reseller = __decorate([
     (0, typeorm_1.Entity)('reseller')
 ], Reseller);

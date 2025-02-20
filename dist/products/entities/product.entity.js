@@ -11,10 +11,12 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var Product_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Product = void 0;
+const organisation_entity_1 = require("../../organisation/entities/organisation.entity");
 const product_enums_1 = require("../../lib/enums/product.enums");
 const quotation_item_entity_1 = require("../../shop/entities/quotation-item.entity");
 const reseller_entity_1 = require("../../resellers/entities/reseller.entity");
 const typeorm_1 = require("typeorm");
+const branch_entity_1 = require("../../branch/entities/branch.entity");
 let Product = Product_1 = class Product {
     static generateSKU(category, name, uid, reseller) {
         const categoryCode = (category || 'XXX').slice(0, 3).toUpperCase();
@@ -100,10 +102,6 @@ __decorate([
     __metadata("design:type", Number)
 ], Product.prototype, "packageQuantity", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
-    __metadata("design:type", String)
-], Product.prototype, "brand", void 0);
-__decorate([
     (0, typeorm_1.Column)({ type: 'decimal', precision: 10, scale: 2, default: 0 }),
     __metadata("design:type", Number)
 ], Product.prototype, "weight", void 0);
@@ -147,6 +145,14 @@ __decorate([
     (0, typeorm_1.Column)({ default: false }),
     __metadata("design:type", Boolean)
 ], Product.prototype, "isDeleted", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => organisation_entity_1.Organisation, (organisation) => organisation?.products, { nullable: true }),
+    __metadata("design:type", organisation_entity_1.Organisation)
+], Product.prototype, "organisation", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => branch_entity_1.Branch, (branch) => branch?.products, { nullable: true }),
+    __metadata("design:type", branch_entity_1.Branch)
+], Product.prototype, "branch", void 0);
 __decorate([
     (0, typeorm_1.BeforeInsert)(),
     __metadata("design:type", Function),

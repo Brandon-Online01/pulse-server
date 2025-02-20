@@ -17,6 +17,7 @@ export declare class TasksService {
     private readonly clientRepository;
     constructor(taskRepository: Repository<Task>, subtaskRepository: Repository<SubTask>, eventEmitter: EventEmitter2, rewardsService: RewardsService, clientRepository: Repository<Client>);
     private createRepeatingTasks;
+    private calculateTotalTasks;
     create(createTaskDto: CreateTaskDto): Promise<{
         message: string;
     }>;

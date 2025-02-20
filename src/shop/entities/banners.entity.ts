@@ -1,5 +1,7 @@
+import { Branch } from "src/branch/entities/branch.entity";
 import { BannerCategory } from "src/lib/enums/category.enum";
-import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
+import { Organisation } from "src/organisation/entities/organisation.entity";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from "typeorm";
 
 @Entity('banners')
 export class Banners {
@@ -33,4 +35,11 @@ export class Banners {
 
     @Column({ nullable: false, type: 'enum', enum: BannerCategory, default: BannerCategory.NEWS })
     category: BannerCategory;
+
+    // Relations
+    @ManyToOne(() => Organisation, (organisation) => organisation?.banners, { nullable: true })
+    organisation: Organisation;
+
+    @ManyToOne(() => Branch, (branch) => branch?.banners, { nullable: true })
+    branch: Branch;
 } 

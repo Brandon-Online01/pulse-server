@@ -15,6 +15,7 @@ const typeorm_2 = require("typeorm");
 const branch_entity_1 = require("../../branch/entities/branch.entity");
 const reports_enums_1 = require("../../lib/enums/reports.enums");
 const user_entity_1 = require("../../user/entities/user.entity");
+const organisation_entity_1 = require("../../organisation/entities/organisation.entity");
 let Report = class Report {
 };
 exports.Report = Report;
@@ -25,7 +26,7 @@ __decorate([
 __decorate([
     (0, typeorm_1.Column)({
         nullable: false,
-        default: () => 'CURRENT_TIMESTAMP'
+        default: () => 'CURRENT_TIMESTAMP',
     }),
     __metadata("design:type", Date)
 ], Report.prototype, "createdAt", void 0);
@@ -33,7 +34,7 @@ __decorate([
     (0, typeorm_1.Column)({
         nullable: false,
         default: () => 'CURRENT_TIMESTAMP',
-        onUpdate: 'CURRENT_TIMESTAMP'
+        onUpdate: 'CURRENT_TIMESTAMP',
     }),
     __metadata("design:type", Date)
 ], Report.prototype, "updatedAt", void 0);
@@ -58,10 +59,6 @@ __decorate([
     __metadata("design:type", Object)
 ], Report.prototype, "metadata", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => branch_entity_1.Branch, (branch) => branch?.reports),
-    __metadata("design:type", branch_entity_1.Branch)
-], Report.prototype, "branch", void 0);
-__decorate([
     (0, typeorm_1.ManyToOne)(() => user_entity_1.User, (user) => user?.reports),
     __metadata("design:type", user_entity_1.User)
 ], Report.prototype, "owner", void 0);
@@ -73,6 +70,14 @@ __decorate([
     (0, typeorm_1.Column)('decimal', { precision: 10, scale: 2, default: 0 }),
     __metadata("design:type", Number)
 ], Report.prototype, "value", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => organisation_entity_1.Organisation, (organisation) => organisation?.reports, { nullable: true }),
+    __metadata("design:type", organisation_entity_1.Organisation)
+], Report.prototype, "organisation", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => branch_entity_1.Branch, (branch) => branch?.reports, { nullable: true }),
+    __metadata("design:type", branch_entity_1.Branch)
+], Report.prototype, "branch", void 0);
 exports.Report = Report = __decorate([
     (0, typeorm_2.Entity)('reports')
 ], Report);

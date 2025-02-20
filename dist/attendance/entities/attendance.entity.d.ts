@@ -1,3 +1,4 @@
+import { Organisation } from 'src/organisation/entities/organisation.entity';
 import { Branch } from '../../branch/entities/branch.entity';
 import { AttendanceStatus } from '../../lib/enums/attendance.enums';
 import { User } from '../../user/entities/user.entity';
@@ -15,8 +16,9 @@ export declare class Attendance {
     checkOutNotes: string;
     createdAt: Date;
     updatedAt: Date;
-    verifiedBy: string;
     verifiedAt: Date;
     owner: User;
+    verifiedBy: User;
+    organisation: Organisation;
     branch: Branch;
 }

@@ -1,6 +1,7 @@
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
 import { Branch } from '../../branch/entities/branch.entity';
+import { Organisation } from 'src/organisation/entities/organisation.entity';
 
 @Entity('journal')
 export class Journal {
@@ -42,4 +43,7 @@ export class Journal {
 
     @ManyToOne(() => Branch, (branch) => branch?.journals)
     branch: Branch;
+
+    @ManyToOne(() => Organisation, (organisation) => organisation?.journals)
+    organisation: Organisation; 
 }

@@ -8,11 +8,18 @@ import {
 	IsDateString,
 	IsString,
 	Min,
+	Max,
 	IsObject,
+	IsUUID,
+	ValidateNested,
+	Validate,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { LicenseType, SubscriptionPlan, BillingCycle } from '../../lib/enums/license.enums';
+import { IsAfterDate } from '../lib/validators/is-after-date.validator';
+import { ILicenseMetrics } from '../lib/interfaces/license-metrics.interface';
 
-export class CreateLicenseDto {
+export class CreateLicenseDto implements Partial<ILicenseMetrics> {
 	@ApiProperty({
 		enum: LicenseType,
 		example: 'PERPETUAL',
@@ -79,10 +86,12 @@ export class CreateLicenseDto {
 			enterprise: { value: 999999, description: 'Enterprise plan (unlimited)' },
 		},
 		minimum: 1,
+		maximum: 1000000,
 	})
 	@IsNotEmpty()
 	@IsNumber()
 	@Min(1)
+	@Max(1000000)
 	maxUsers: number;
 
 	@ApiProperty({
@@ -95,10 +104,12 @@ export class CreateLicenseDto {
 			enterprise: { value: 999999, description: 'Enterprise plan (unlimited)' },
 		},
 		minimum: 1,
+		maximum: 1000000,
 	})
 	@IsNotEmpty()
 	@IsNumber()
 	@Min(1)
+	@Max(1000000)
 	maxBranches: number;
 
 	@ApiProperty({
@@ -111,10 +122,12 @@ export class CreateLicenseDto {
 			enterprise: { value: 5242880, description: 'Enterprise plan: 5TB' },
 		},
 		minimum: 1,
+		maximum: 10485760, // 10TB
 	})
 	@IsNotEmpty()
 	@IsNumber()
 	@Min(1)
+	@Max(10485760)
 	storageLimit: number;
 
 	@ApiProperty({
@@ -127,10 +140,12 @@ export class CreateLicenseDto {
 			enterprise: { value: 10000000, description: 'Enterprise plan: 10M calls' },
 		},
 		minimum: 1,
+		maximum: 100000000,
 	})
 	@IsNotEmpty()
 	@IsNumber()
 	@Min(1)
+	@Max(100000000)
 	apiCallLimit: number;
 
 	@ApiProperty({
@@ -143,10 +158,12 @@ export class CreateLicenseDto {
 			enterprise: { value: 999999, description: 'Enterprise plan (unlimited)' },
 		},
 		minimum: 1,
+		maximum: 1000,
 	})
 	@IsNotEmpty()
 	@IsNumber()
 	@Min(1)
+	@Max(1000)
 	integrationLimit: number;
 
 	@ApiProperty({
@@ -163,6 +180,7 @@ export class CreateLicenseDto {
 	})
 	@IsNotEmpty()
 	@IsDateString()
+	@Validate(IsAfterDate, ['validFrom'])
 	validUntil: Date;
 
 	@ApiProperty({
@@ -184,10 +202,12 @@ export class CreateLicenseDto {
 			enterprise: { value: 999, description: 'Enterprise plan base price' },
 		},
 		minimum: 0,
+		maximum: 1000000,
 	})
 	@IsNotEmpty()
 	@IsNumber()
 	@Min(0)
+	@Max(1000000)
 	price: number;
 
 	@ApiProperty({
@@ -197,13 +217,15 @@ export class CreateLicenseDto {
 	})
 	@IsOptional()
 	@IsObject()
+	@ValidateNested()
+	@Type(() => Object)
 	features?: Record<string, boolean>;
 
 	@ApiProperty({
-		example: '2',
+		example: '123e4567-e89b-12d3-a456-426614174000',
 		description: 'Reference to the organization this license belongs to',
 	})
 	@IsNotEmpty()
-	@IsString()
+	@IsUUID()
 	organisationRef: string;
 }

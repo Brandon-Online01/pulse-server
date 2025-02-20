@@ -10,6 +10,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.News = void 0;
+const organisation_entity_1 = require("../../organisation/entities/organisation.entity");
 const branch_entity_1 = require("../../branch/entities/branch.entity");
 const news_enums_1 = require("../../lib/enums/news.enums");
 const status_enums_1 = require("../../lib/enums/status.enums");
@@ -59,13 +60,9 @@ __decorate([
     __metadata("design:type", user_entity_1.User)
 ], News.prototype, "author", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => branch_entity_1.Branch, (branch) => branch?.news),
-    __metadata("design:type", branch_entity_1.Branch)
-], News.prototype, "branch", void 0);
-__decorate([
     (0, typeorm_1.Column)({
         nullable: false,
-        default: () => 'CURRENT_TIMESTAMP'
+        default: () => 'CURRENT_TIMESTAMP',
     }),
     __metadata("design:type", Date)
 ], News.prototype, "createdAt", void 0);
@@ -73,7 +70,7 @@ __decorate([
     (0, typeorm_1.Column)({
         nullable: false,
         default: () => 'CURRENT_TIMESTAMP',
-        onUpdate: 'CURRENT_TIMESTAMP'
+        onUpdate: 'CURRENT_TIMESTAMP',
     }),
     __metadata("design:type", Date)
 ], News.prototype, "updatedAt", void 0);
@@ -89,6 +86,14 @@ __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
 ], News.prototype, "shareLink", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => branch_entity_1.Branch, (branch) => branch?.news),
+    __metadata("design:type", branch_entity_1.Branch)
+], News.prototype, "branch", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => organisation_entity_1.Organisation, (organisation) => organisation?.news),
+    __metadata("design:type", organisation_entity_1.Organisation)
+], News.prototype, "organisation", void 0);
 exports.News = News = __decorate([
     (0, typeorm_1.Entity)('news')
 ], News);

@@ -15,6 +15,8 @@ const user_entity_1 = require("../../user/entities/user.entity");
 const client_entity_1 = require("../../clients/entities/client.entity");
 const task_enums_1 = require("../../lib/enums/task.enums");
 const typeorm_1 = require("typeorm");
+const organisation_entity_1 = require("../../organisation/entities/organisation.entity");
+const branch_entity_1 = require("../../branch/entities/branch.entity");
 let Task = class Task {
     setInitialStatus() {
         this.status = task_enums_1.TaskStatus.PENDING;
@@ -115,21 +117,29 @@ __decorate([
     __metadata("design:type", Date)
 ], Task.prototype, "updatedAt", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => user_entity_1.User, (user) => user?.userTasks, { onDelete: 'SET NULL' }),
+    (0, typeorm_1.ManyToOne)(() => user_entity_1.User, (user) => user?.userTasks, { onDelete: 'SET NULL', nullable: true }),
     __metadata("design:type", user_entity_1.User)
 ], Task.prototype, "creator", void 0);
 __decorate([
-    (0, typeorm_1.ManyToMany)(() => user_entity_1.User, (user) => user?.tasksAssigned, { cascade: true }),
+    (0, typeorm_1.ManyToMany)(() => user_entity_1.User, (user) => user?.tasksAssigned, { cascade: true, nullable: true }),
     __metadata("design:type", Array)
 ], Task.prototype, "assignees", void 0);
 __decorate([
-    (0, typeorm_1.ManyToMany)(() => client_entity_1.Client, (client) => client?.tasks, { cascade: true }),
+    (0, typeorm_1.ManyToMany)(() => client_entity_1.Client, (client) => client?.tasks, { cascade: true, nullable: true }),
     __metadata("design:type", Array)
 ], Task.prototype, "clients", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => subtask_entity_1.SubTask, (subtask) => subtask?.task, { cascade: true }),
+    (0, typeorm_1.OneToMany)(() => subtask_entity_1.SubTask, (subtask) => subtask?.task, { cascade: true, nullable: true }),
     __metadata("design:type", Array)
 ], Task.prototype, "subtasks", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => organisation_entity_1.Organisation, (organisation) => organisation?.tasks, { nullable: true }),
+    __metadata("design:type", organisation_entity_1.Organisation)
+], Task.prototype, "organisation", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => branch_entity_1.Branch, (branch) => branch?.tasks, { nullable: true }),
+    __metadata("design:type", branch_entity_1.Branch)
+], Task.prototype, "branch", void 0);
 __decorate([
     (0, typeorm_1.BeforeInsert)(),
     __metadata("design:type", Function),

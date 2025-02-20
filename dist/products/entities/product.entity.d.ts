@@ -1,6 +1,8 @@
+import { Organisation } from 'src/organisation/entities/organisation.entity';
 import { ProductStatus } from '../../lib/enums/product.enums';
 import { QuotationItem } from '../../shop/entities/quotation-item.entity';
 import { Reseller } from '../../resellers/entities/reseller.entity';
+import { Branch } from 'src/branch/entities/branch.entity';
 export declare class Product {
     uid: number;
     name: string;
@@ -18,7 +20,6 @@ export declare class Product {
     discount: number;
     barcode: string;
     packageQuantity: number;
-    brand: string;
     weight: number;
     isOnPromotion: boolean;
     packageDetails: string;
@@ -30,6 +31,8 @@ export declare class Product {
     quotationItems: QuotationItem[];
     reseller: Reseller;
     isDeleted: boolean;
+    organisation: Organisation;
+    branch: Branch;
     static generateSKU(category: string, name: string, uid: number, reseller: Reseller): string;
     generateSKUBeforeInsert(): Promise<void>;
     updateSKUWithCorrectUid(): Promise<void>;

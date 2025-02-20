@@ -35,6 +35,7 @@ export declare class ReportsService {
     private readonly currencyCode;
     private readonly currencySymbol;
     constructor(reportRepository: Repository<Report>, checkInRepository: Repository<CheckIn>, leadService: LeadsService, journalService: JournalService, claimsService: ClaimsService, tasksService: TasksService, shopService: ShopService, attendanceService: AttendanceService, newsService: NewsService, userService: UserService, trackingService: TrackingService, eventEmitter: EventEmitter2, configService: ConfigService, rewardsService: RewardsService);
+    private ensureNumber;
     private formatCurrency;
     private getDateRange;
     private getPreviousDateRange;
@@ -142,4 +143,5 @@ export declare class ReportsService {
     private generateRecommendations;
     private validateMetrics;
     private getTimeFilteredData;
+    sendDailyReports(): Promise<void>;
 }

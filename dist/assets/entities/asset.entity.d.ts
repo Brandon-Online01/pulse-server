@@ -1,5 +1,6 @@
-import { Branch } from "../../branch/entities/branch.entity";
-import { User } from "../../user/entities/user.entity";
+import { Organisation } from 'src/organisation/entities/organisation.entity';
+import { Branch } from '../../branch/entities/branch.entity';
+import { User } from '../../user/entities/user.entity';
 export declare class Asset {
     uid: number;
     brand: string;
@@ -12,5 +13,6 @@ export declare class Asset {
     insuranceExpiryDate: Date;
     isDeleted: boolean;
     owner: User;
+    organisation: Organisation;
     branch: Branch;
 }

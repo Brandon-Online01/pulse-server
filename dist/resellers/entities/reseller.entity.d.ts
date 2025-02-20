@@ -1,5 +1,7 @@
-import { Product } from "../../products/entities/product.entity";
-import { ResellerStatus } from "../../lib/enums/product.enums";
+import { Product } from '../../products/entities/product.entity';
+import { ResellerStatus } from '../../lib/enums/product.enums';
+import { Organisation } from 'src/organisation/entities/organisation.entity';
+import { Branch } from 'src/branch/entities/branch.entity';
 export declare class Reseller {
     uid: number;
     name: string;
@@ -12,7 +14,9 @@ export declare class Reseller {
     email: string;
     createdAt: Date;
     updatedAt: Date;
-    products: Product[];
     isDeleted: boolean;
     address: string;
+    products: Product[];
+    organisation: Organisation;
+    branch: Branch;
 }

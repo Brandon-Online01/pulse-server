@@ -20,6 +20,7 @@ import { ConfigService } from '@nestjs/config';
 import { RewardsService } from 'src/rewards/rewards.service';
 import { DailyReportData } from '../lib/types/email-templates.types';
 import { TrackingService } from '../tracking/tracking.service';
+import { OrderStatus } from '../lib/enums/status.enums';
 import {
 	ReportResponse,
 	FinancialMetrics,
@@ -32,6 +33,7 @@ import { differenceInMinutes } from 'date-fns';
 import { CheckIn } from '../check-ins/entities/check-in.entity';
 import { subMonths, subYears } from 'date-fns';
 import { Between } from 'typeorm';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 interface Location {
 	address: string;
@@ -68,13 +70,18 @@ export class ReportsService {
 		this.currencySymbol = this.configService.get<string>('CURRENCY_SYMBOL') || 'R';
 	}
 
+	private ensureNumber(value: any, defaultValue: number = 0): number {
+		const num = Number(value);
+		return isNaN(num) ? defaultValue : num;
+	}
+
 	private formatCurrency(amount: number): string {
-		if (isNaN(amount) || amount === null || amount === undefined) return `${this.currencySymbol}0`;
+		const safeAmount = this.ensureNumber(amount, 0);
 		return new Intl.NumberFormat(this.currencyLocale, {
 			style: 'currency',
 			currency: this.currencyCode,
 		})
-			.format(amount)
+			.format(safeAmount)
 			.replace(this.currencyCode, this.currencySymbol);
 	}
 
@@ -95,8 +102,11 @@ export class ReportsService {
 	}
 
 	private calculateGrowth(current: number, previous: number): string {
-		if (previous === 0) return current > 0 ? '+100' : '0';
-		const growth = ((current - previous) / previous) * 100;
+		const safeCurrent = this.ensureNumber(current);
+		const safePrevious = this.ensureNumber(previous);
+		
+		if (safePrevious === 0) return safeCurrent > 0 ? '+100' : '0';
+		const growth = ((safeCurrent - safePrevious) / safePrevious) * 100;
 		return growth > 0 ? `+${growth.toFixed(1)}` : growth.toFixed(1);
 	}
 
@@ -417,7 +427,7 @@ export class ReportsService {
 			const previousDayQuotations = previousDayStats?.stats?.quotations?.metrics?.totalQuotations || 0;
 			const previousDayRevenue = Number(previousDayStats?.stats?.quotations?.metrics?.grossQuotationValue) || 0;
 
-			const { reportMetadata, emailData } = this.formatReportData(
+			const { reportMetadata } = this.formatReportData(
 				leadsStats,
 				journalsStats,
 				claimsStats,
@@ -436,7 +446,34 @@ export class ReportsService {
 				title: 'Daily Report',
 				description: `Daily report for ${startDate.toLocaleDateString()}`,
 				type: ReportType.DAILY,
-				metadata: reportMetadata,
+				metadata: {
+					generatedAt: new Date().toISOString(),
+					reportType: ReportType.DAILY,
+					period: 'daily',
+					metrics: {
+						current: {
+							total: reportMetadata.metrics?.totalQuotations || 0,
+							approved: reportMetadata.metrics?.userSpecific?.todayQuotations || 0,
+							pending: reportMetadata.metrics?.userSpecific?.todayLeads || 0,
+							value: Number(reportMetadata.metrics?.totalRevenue?.replace(/[^0-9.-]+/g, '')) || 0,
+						},
+						previous: {
+							total: previousDayQuotations,
+							approved: 0,
+							value: previousDayRevenue,
+						},
+						growth: reportMetadata.quotations?.growth || '0',
+						trend: this.calculateTrend(
+							reportMetadata.metrics?.totalQuotations || 0,
+							previousDayQuotations,
+						),
+						conversion: reportMetadata.metrics?.userSpecific?.todayQuotations
+							? (reportMetadata.metrics.userSpecific.todayQuotations /
+									(reportMetadata.metrics?.totalQuotations || 1)) *
+							  100
+							: 0,
+					},
+				},
 				owner: userData?.user,
 				branch: userData?.user?.branch,
 			});
@@ -460,7 +497,21 @@ export class ReportsService {
 				const emailTemplate: DailyReportData = {
 					name: userData.user.username,
 					date: startDate.toLocaleDateString(),
-					...emailData,
+					metrics: {
+						totalQuotations: reportMetadata.metrics?.totalQuotations || 0,
+						totalRevenue: reportMetadata.metrics?.totalRevenue || '0',
+						newCustomers: reportMetadata.metrics?.newCustomers || 0,
+						quotationGrowth: reportMetadata.quotations?.growth || '0',
+						revenueGrowth: '0',
+						customerGrowth: '0',
+						userSpecific: {
+							todayLeads: reportMetadata.metrics?.userSpecific?.todayLeads || 0,
+							todayClaims: reportMetadata.metrics?.userSpecific?.todayClaims || 0,
+							todayTasks: reportMetadata.metrics?.userSpecific?.todayTasks || 0,
+							todayQuotations: reportMetadata.metrics?.userSpecific?.todayQuotations || 0,
+							hoursWorked: reportMetadata.metrics?.userSpecific?.hoursWorked || 0,
+						},
+					},
 				};
 
 				this.eventEmitter.emit('send.email', EmailType.DAILY_REPORT, [userData.user.email], emailTemplate);
@@ -553,98 +604,30 @@ export class ReportsService {
 		params: GenerateReportDto,
 	): Promise<FinancialMetrics> {
 		try {
-			const [currentPeriod, previousPeriod] = await Promise.all([
-				this.getPeriodMetrics(startDate, endDate, params),
-				this.getPeriodMetrics(subMonths(startDate, 1), subMonths(endDate, 1), params),
-			]);
-
-			const claimsData = await this.claimsService.getClaimsReport({
-				createdAt: { gte: startDate, lte: endDate },
+			const quotationsResponse = await this.shopService.findAll({
+				startDate,
+				endDate,
 			});
 
-			const quotationsData = await this.shopService.getQuotationsReport({
-				createdAt: { gte: startDate, lte: endDate },
-			});
+			const quotations = quotationsResponse.data;
+			const revenue = quotations.reduce((sum, q) => sum + Number(q.totalAmount), 0);
+			const expenses = quotations
+				.filter(q => q.status === OrderStatus.COMPLETED)
+				.reduce((sum, q) => sum + (Number(q.resellerCommission) || 0), 0);
 
-			// Calculate claims metrics with null checks
-			const claimsBreakdown = claimsData?.metrics?.categoryBreakdown || [];
-			const paidClaims = claimsBreakdown.reduce(
-				(sum, cat) => (cat?.category?.toString() === 'PAID' ? sum + (cat?.count || 0) : sum),
-				0,
-			);
-			const pendingClaims = claimsBreakdown.reduce(
-				(sum, cat) => (cat?.category?.toString() === 'PENDING' ? sum + (cat?.count || 0) : sum),
-				0,
-			);
-			const largestClaim = claimsData?.metrics?.topClaimants?.[0]?.totalValue
-				? parseFloat(claimsData.metrics.topClaimants[0].totalValue.replace(/[^0-9.-]+/g, ''))
-				: 0;
-
-			// Calculate quotations metrics with null checks
-			const acceptedQuotations = (quotationsData?.metrics?.topProducts || []).reduce(
-				(sum, p) => sum + (p?.totalSold || 0),
-				0,
-			);
-			const totalQuotations = quotationsData?.metrics?.totalQuotations || 0;
-			const pendingQuotations = totalQuotations - acceptedQuotations;
-
-			return {
-				revenue: {
-					current: currentPeriod?.revenue || 0,
-					previous: previousPeriod?.revenue || 0,
-					growth: this.calculateGrowth(currentPeriod?.revenue || 0, previousPeriod?.revenue || 0),
-					trend: (currentPeriod?.revenue || 0) >= (previousPeriod?.revenue || 0) ? 'up' : 'down',
-					breakdown: await this.getRevenueBreakdown(startDate, endDate),
-				},
-				claims: {
-					total: claimsData?.metrics?.totalClaims || 0,
-					paid: paidClaims,
-					pending: pendingClaims,
-					average: parseFloat((claimsData?.metrics?.averageClaimValue || 0).toString()),
-					largestClaim,
-					byType: claimsBreakdown.reduce((acc, cat) => {
-						if (cat?.category) {
-							acc[cat.category.toString()] = cat?.count || 0;
-						}
-						return acc;
-					}, {} as Record<string, number>),
-				},
-				quotations: {
-					total: totalQuotations,
-					accepted: acceptedQuotations,
-					pending: pendingQuotations,
-					conversion: parseFloat((quotationsData?.metrics?.conversionRate || '0%').replace('%', '')),
-					averageValue: parseFloat(
-						(quotationsData?.metrics?.averageQuotationValue || '0').replace(/[^0-9.-]+/g, ''),
-					),
-				},
+			const metrics = {
+				revenue: this.ensureNumber(revenue),
+				expenses: this.ensureNumber(expenses),
+				profit: this.ensureNumber(revenue - expenses),
+				quotations: this.ensureNumber(quotations?.length),
+				averageOrderValue: quotations?.length ? 
+					this.ensureNumber(revenue / quotations.length) : 0,
 			};
+
+			return this.validateMetrics(metrics);
 		} catch (error) {
-			// Return default values if there's an error
-			return {
-				revenue: {
-					current: 0,
-					previous: 0,
-					growth: '0%',
-					trend: 'down',
-					breakdown: [],
-				},
-				claims: {
-					total: 0,
-					paid: 0,
-					pending: 0,
-					average: 0,
-					largestClaim: 0,
-					byType: {},
-				},
-				quotations: {
-					total: 0,
-					accepted: 0,
-					pending: 0,
-					conversion: 0,
-					averageValue: 0,
-				},
-			};
+			this.logger.error('Error calculating financial metrics:', error);
+			throw error;
 		}
 	}
 
@@ -1002,12 +985,42 @@ export class ReportsService {
 	}
 
 	private validateMetrics(metrics: any) {
-		return {
-			total: Math.max(0, Number(metrics.total) || 0),
-			approved: Math.max(0, Number(metrics.approved) || 0),
-			pending: Math.max(0, Number(metrics.pending) || 0),
-			value: Math.max(0, Number(metrics.value) || 0),
+		if (!metrics || typeof metrics !== 'object') {
+			throw new Error('Invalid metrics object');
+		}
+
+		const validateNumber = (value: any, key: string) => {
+			if (value === undefined || value === null || isNaN(Number(value))) {
+				this.logger.warn(`Invalid ${key} value: ${value}, defaulting to 0`);
+				return 0;
+			}
+			return Number(value);
 		};
+
+		// Recursively validate all numeric values in the object
+		const validateObject = (obj: any): any => {
+			if (Array.isArray(obj)) {
+				return obj.map(item => validateObject(item));
+			}
+			
+			if (obj && typeof obj === 'object') {
+				const validated: any = {};
+				for (const [key, value] of Object.entries(obj)) {
+					if (typeof value === 'number') {
+						validated[key] = validateNumber(value, key);
+					} else if (value && typeof value === 'object') {
+						validated[key] = validateObject(value);
+					} else {
+						validated[key] = value;
+					}
+				}
+				return validated;
+			}
+			
+			return obj;
+		};
+
+		return validateObject(metrics);
 	}
 
 	private async getTimeFilteredData(startDate: Date, endDate: Date, type: string) {
@@ -1023,5 +1036,164 @@ export class ReportsService {
 		}
 
 		return await query.getMany();
+	}
+
+	@Cron(CronExpression.EVERY_DAY_AT_5PM)
+	async sendDailyReports() {
+		try {
+			this.logger.log('Starting daily report generation and email distribution');
+
+			// Get all active users
+			const usersResponse = await this.userService.findAll();
+			const users = usersResponse.data;
+			
+			// Generate and send reports for each user
+			await Promise.all(users.map(async (user) => {
+				try {
+					if (!user.email) {
+						this.logger.warn(`No email found for user ${user.uid}`);
+						return;
+					}
+
+					const reportData = await this.userDailyReport(user.userref);
+					const today = new Date();
+					
+					if (!reportData || 'message' in reportData) {
+						this.logger.warn(`No report data generated for user ${user.uid}`);
+						return;
+					}
+
+					const report = reportData as Report;
+					const { reportMetadata } = this.formatReportData(
+						report.metadata.reportMetadata,
+						report.metadata.reportMetadata.journals,
+						report.metadata.reportMetadata.claims,
+						report.metadata.reportMetadata.quotations,
+						report.metadata.reportMetadata.tasks,
+						report.metadata.reportMetadata.attendance.attendanceRecords,
+						report.metadata.reportMetadata.attendance.totalHours,
+						report.metadata.reportMetadata.tracking,
+						report.metadata.reportMetadata.xp,
+						report.metadata.reportMetadata.quotations.totalQuotations || 0,
+						report.metadata.reportMetadata.quotations.grossQuotationValue || 0
+					);
+
+					const emailTemplate: DailyReportData = {
+						name: user.username,
+						date: today.toISOString(),
+						metrics: {
+							totalQuotations: reportMetadata.metrics?.totalQuotations || 0,
+							totalRevenue: reportMetadata.metrics?.totalRevenue || '0',
+							newCustomers: reportMetadata.metrics?.newCustomers || 0,
+							quotationGrowth: reportMetadata.quotations?.growth || '0',
+							revenueGrowth: '0',
+							customerGrowth: '0',
+							userSpecific: {
+								todayLeads: reportMetadata.metrics?.userSpecific?.todayLeads || 0,
+								todayClaims: reportMetadata.metrics?.userSpecific?.todayClaims || 0,
+								todayTasks: reportMetadata.metrics?.userSpecific?.todayTasks || 0,
+								todayQuotations: reportMetadata.metrics?.userSpecific?.todayQuotations || 0,
+								hoursWorked: reportMetadata.metrics?.userSpecific?.hoursWorked || 0,
+							},
+						},
+					};
+
+					// Emit email event
+					this.eventEmitter.emit('email.send', {
+						type: EmailType.DAILY_REPORT,
+						recipient: user.email,
+						data: emailTemplate,
+					});
+
+					this.logger.log(`Daily report sent to ${user.email}`);
+				} catch (error) {
+					this.logger.error(`Failed to send daily report to ${user.email}:`, error);
+				}
+			}));
+
+			// Generate and send manager report
+			const managers = users.filter(user => 
+				user.accessLevel === AccessLevel.MANAGER || 
+				user.accessLevel === AccessLevel.ADMIN
+			);
+
+			await Promise.all(managers.map(async (manager) => {
+				try {
+					if (!manager.email) {
+						this.logger.warn(`No email found for manager ${manager.uid}`);
+						return;
+					}
+
+					const reportData = await this.managerDailyReport();
+					const today = new Date();
+					
+					if (!reportData || 'message' in reportData) {
+						this.logger.warn(`No manager report data generated for ${manager.uid}`);
+						return;
+					}
+
+					const managerReport: ReportResponse = {
+						metadata: {
+							generatedAt: today.toISOString(),
+							reportType: ReportType.DAILY,
+							period: 'daily',
+						},
+						metrics: {
+							current: {
+								total: reportData.orders?.metrics?.totalQuotations || 0,
+								approved: reportData.orders?.approved || 0,
+								pending: reportData.orders?.pending || 0,
+								value: Number(reportData.orders?.metrics?.grossQuotationValue?.replace(/[^0-9.-]+/g, '')) || 0,
+							},
+							previous: {
+								total: reportData.orders?.metrics?.totalQuotations || 0,
+								approved: reportData.orders?.approved || 0,
+								pending: reportData.orders?.pending || 0,
+								value: Number(reportData.orders?.metrics?.grossQuotationValue || 0),
+							},
+							growth: reportData.orders?.metrics?.quotationTrends?.growth || '0',
+							trend: this.calculateTrend(
+								reportData.orders?.metrics?.totalQuotations || 0,
+								reportData.orders?.metrics?.totalQuotations || 0
+							),
+							conversion: reportData.orders?.metrics?.totalQuotations
+								? (reportData.orders.approved / reportData.orders.metrics.totalQuotations) * 100
+								: 0,
+						},
+					};
+
+					// Send email only if manager has email
+					if (manager.email) {
+						const emailTemplate: DailyReportData = {
+							name: manager.username,
+							date: today.toLocaleDateString(),
+							metrics: {
+								totalQuotations: managerReport.metrics.current.total,
+								totalRevenue: this.formatCurrency(managerReport.metrics.current.value),
+								newCustomers: reportData.leads?.total || 0,
+								quotationGrowth: managerReport.metrics.growth,
+								revenueGrowth: '0',
+								customerGrowth: '0',
+							},
+						};
+
+						this.eventEmitter.emit('email.send', {
+							type: EmailType.DAILY_REPORT,
+							recipient: manager.email,
+							data: emailTemplate,
+						});
+					}
+
+					return managerReport;
+				} catch (error) {
+					this.logger.error(`Failed to send manager daily report to ${manager.email}:`, error);
+				}
+			}));
+
+			this.logger.log('Completed daily report distribution');
+		} catch (error) {
+			this.logger.error('Failed to send daily reports:', error);
+			throw error;
+		}
 	}
 }

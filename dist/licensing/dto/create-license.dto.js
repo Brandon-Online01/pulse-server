@@ -12,7 +12,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateLicenseDto = void 0;
 const swagger_1 = require("@nestjs/swagger");
 const class_validator_1 = require("class-validator");
+const class_transformer_1 = require("class-transformer");
 const license_enums_1 = require("../../lib/enums/license.enums");
+const is_after_date_validator_1 = require("../lib/validators/is-after-date.validator");
 class CreateLicenseDto {
 }
 exports.CreateLicenseDto = CreateLicenseDto;
@@ -86,10 +88,12 @@ __decorate([
             enterprise: { value: 999999, description: 'Enterprise plan (unlimited)' },
         },
         minimum: 1,
+        maximum: 1000000,
     }),
     (0, class_validator_1.IsNotEmpty)(),
     (0, class_validator_1.IsNumber)(),
     (0, class_validator_1.Min)(1),
+    (0, class_validator_1.Max)(1000000),
     __metadata("design:type", Number)
 ], CreateLicenseDto.prototype, "maxUsers", void 0);
 __decorate([
@@ -103,10 +107,12 @@ __decorate([
             enterprise: { value: 999999, description: 'Enterprise plan (unlimited)' },
         },
         minimum: 1,
+        maximum: 1000000,
     }),
     (0, class_validator_1.IsNotEmpty)(),
     (0, class_validator_1.IsNumber)(),
     (0, class_validator_1.Min)(1),
+    (0, class_validator_1.Max)(1000000),
     __metadata("design:type", Number)
 ], CreateLicenseDto.prototype, "maxBranches", void 0);
 __decorate([
@@ -120,10 +126,12 @@ __decorate([
             enterprise: { value: 5242880, description: 'Enterprise plan: 5TB' },
         },
         minimum: 1,
+        maximum: 10485760,
     }),
     (0, class_validator_1.IsNotEmpty)(),
     (0, class_validator_1.IsNumber)(),
     (0, class_validator_1.Min)(1),
+    (0, class_validator_1.Max)(10485760),
     __metadata("design:type", Number)
 ], CreateLicenseDto.prototype, "storageLimit", void 0);
 __decorate([
@@ -137,10 +145,12 @@ __decorate([
             enterprise: { value: 10000000, description: 'Enterprise plan: 10M calls' },
         },
         minimum: 1,
+        maximum: 100000000,
     }),
     (0, class_validator_1.IsNotEmpty)(),
     (0, class_validator_1.IsNumber)(),
     (0, class_validator_1.Min)(1),
+    (0, class_validator_1.Max)(100000000),
     __metadata("design:type", Number)
 ], CreateLicenseDto.prototype, "apiCallLimit", void 0);
 __decorate([
@@ -154,10 +164,12 @@ __decorate([
             enterprise: { value: 999999, description: 'Enterprise plan (unlimited)' },
         },
         minimum: 1,
+        maximum: 1000,
     }),
     (0, class_validator_1.IsNotEmpty)(),
     (0, class_validator_1.IsNumber)(),
     (0, class_validator_1.Min)(1),
+    (0, class_validator_1.Max)(1000),
     __metadata("design:type", Number)
 ], CreateLicenseDto.prototype, "integrationLimit", void 0);
 __decorate([
@@ -176,6 +188,7 @@ __decorate([
     }),
     (0, class_validator_1.IsNotEmpty)(),
     (0, class_validator_1.IsDateString)(),
+    (0, class_validator_1.Validate)(is_after_date_validator_1.IsAfterDate, ['validFrom']),
     __metadata("design:type", Date)
 ], CreateLicenseDto.prototype, "validUntil", void 0);
 __decorate([
@@ -199,10 +212,12 @@ __decorate([
             enterprise: { value: 999, description: 'Enterprise plan base price' },
         },
         minimum: 0,
+        maximum: 1000000,
     }),
     (0, class_validator_1.IsNotEmpty)(),
     (0, class_validator_1.IsNumber)(),
     (0, class_validator_1.Min)(0),
+    (0, class_validator_1.Max)(1000000),
     __metadata("design:type", Number)
 ], CreateLicenseDto.prototype, "price", void 0);
 __decorate([
@@ -213,15 +228,17 @@ __decorate([
     }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsObject)(),
+    (0, class_validator_1.ValidateNested)(),
+    (0, class_transformer_1.Type)(() => Object),
     __metadata("design:type", Object)
 ], CreateLicenseDto.prototype, "features", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
-        example: '2',
+        example: '123e4567-e89b-12d3-a456-426614174000',
         description: 'Reference to the organization this license belongs to',
     }),
     (0, class_validator_1.IsNotEmpty)(),
-    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsUUID)(),
     __metadata("design:type", String)
 ], CreateLicenseDto.prototype, "organisationRef", void 0);
 //# sourceMappingURL=create-license.dto.js.map

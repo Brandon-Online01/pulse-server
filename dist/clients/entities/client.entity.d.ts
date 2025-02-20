@@ -4,6 +4,8 @@ import { User } from '../../user/entities/user.entity';
 import { Quotation } from '../../shop/entities/quotation.entity';
 import { Task } from '../../tasks/entities/task.entity';
 import { CheckIn } from '../../check-ins/entities/check-in.entity';
+import { Organisation } from 'src/organisation/entities/organisation.entity';
+import { Branch } from 'src/branch/entities/branch.entity';
 export declare enum CustomerType {
     STANDARD = "standard",
     PREMIUM = "premium",
@@ -42,4 +44,6 @@ export declare class Client {
     tasks: Task[];
     checkIns: CheckIn[];
     type: CustomerType;
+    organisation: Organisation;
+    branch: Branch;
 }

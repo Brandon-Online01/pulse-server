@@ -13,6 +13,23 @@ exports.Organisation = void 0;
 const status_enums_1 = require("../../lib/enums/status.enums");
 const branch_entity_1 = require("../../branch/entities/branch.entity");
 const typeorm_1 = require("typeorm");
+const asset_entity_1 = require("../../assets/entities/asset.entity");
+const client_entity_1 = require("../../clients/entities/client.entity");
+const product_entity_1 = require("../../products/entities/product.entity");
+const user_entity_1 = require("../../user/entities/user.entity");
+const reseller_entity_1 = require("../../resellers/entities/reseller.entity");
+const banners_entity_1 = require("../../shop/entities/banners.entity");
+const news_entity_1 = require("../../news/entities/news.entity");
+const journal_entity_1 = require("../../journal/entities/journal.entity");
+const doc_entity_1 = require("../../docs/entities/doc.entity");
+const attendance_entity_1 = require("../../attendance/entities/attendance.entity");
+const claim_entity_1 = require("../../claims/entities/claim.entity");
+const report_entity_1 = require("../../reports/entities/report.entity");
+const quotation_entity_1 = require("../../shop/entities/quotation.entity");
+const task_entity_1 = require("../../tasks/entities/task.entity");
+const notification_entity_1 = require("../../notifications/entities/notification.entity");
+const tracking_entity_1 = require("../../tracking/entities/tracking.entity");
+const communication_log_entity_1 = require("../../communication/entities/communication-log.entity");
 let Organisation = class Organisation {
 };
 exports.Organisation = Organisation;
@@ -65,9 +82,77 @@ __decorate([
     __metadata("design:type", String)
 ], Organisation.prototype, "ref", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => branch_entity_1.Branch, (branch) => branch?.organisation),
+    (0, typeorm_1.OneToMany)(() => branch_entity_1.Branch, (branch) => branch?.organisation, { nullable: true }),
     __metadata("design:type", Array)
 ], Organisation.prototype, "branches", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => asset_entity_1.Asset, (asset) => asset?.owner, { nullable: true }),
+    __metadata("design:type", Array)
+], Organisation.prototype, "assets", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => product_entity_1.Product, (product) => product?.organisation, { nullable: true }),
+    __metadata("design:type", Array)
+], Organisation.prototype, "products", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => client_entity_1.Client, (client) => client?.organisation, { nullable: true }),
+    __metadata("design:type", Array)
+], Organisation.prototype, "clients", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => user_entity_1.User, (user) => user?.organisation, { nullable: true }),
+    __metadata("design:type", Array)
+], Organisation.prototype, "users", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => reseller_entity_1.Reseller, (reseller) => reseller?.organisation, { nullable: true }),
+    __metadata("design:type", Array)
+], Organisation.prototype, "resellers", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => banners_entity_1.Banners, (banner) => banner?.organisation, { nullable: true }),
+    __metadata("design:type", Array)
+], Organisation.prototype, "banners", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => news_entity_1.News, (news) => news?.organisation, { nullable: true }),
+    __metadata("design:type", Array)
+], Organisation.prototype, "news", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => journal_entity_1.Journal, (journal) => journal?.organisation, { nullable: true }),
+    __metadata("design:type", Array)
+], Organisation.prototype, "journals", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => doc_entity_1.Doc, (doc) => doc?.organisation, { nullable: true }),
+    __metadata("design:type", Array)
+], Organisation.prototype, "docs", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => claim_entity_1.Claim, (claim) => claim?.organisation, { nullable: true }),
+    __metadata("design:type", Array)
+], Organisation.prototype, "claims", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => attendance_entity_1.Attendance, (attendance) => attendance?.organisation, { nullable: true }),
+    __metadata("design:type", Array)
+], Organisation.prototype, "attendances", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => report_entity_1.Report, (report) => report?.organisation, { nullable: true }),
+    __metadata("design:type", Array)
+], Organisation.prototype, "reports", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => quotation_entity_1.Quotation, (quotation) => quotation?.organisation, { nullable: true }),
+    __metadata("design:type", Array)
+], Organisation.prototype, "quotations", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => task_entity_1.Task, (task) => task?.organisation, { nullable: true }),
+    __metadata("design:type", Array)
+], Organisation.prototype, "tasks", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => notification_entity_1.Notification, (notification) => notification?.organisation, { nullable: true }),
+    __metadata("design:type", Array)
+], Organisation.prototype, "notifications", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => tracking_entity_1.Tracking, (tracking) => tracking?.organisation, { nullable: true }),
+    __metadata("design:type", Array)
+], Organisation.prototype, "trackings", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => communication_log_entity_1.CommunicationLog, (communicationLog) => communicationLog?.organisation, { nullable: true }),
+    __metadata("design:type", Array)
+], Organisation.prototype, "communicationLogs", void 0);
 exports.Organisation = Organisation = __decorate([
     (0, typeorm_1.Entity)('organisation')
 ], Organisation);

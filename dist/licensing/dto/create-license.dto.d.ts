@@ -1,5 +1,6 @@
 import { LicenseType, SubscriptionPlan, BillingCycle } from '../../lib/enums/license.enums';
-export declare class CreateLicenseDto {
+import { ILicenseMetrics } from '../lib/interfaces/license-metrics.interface';
+export declare class CreateLicenseDto implements Partial<ILicenseMetrics> {
     type: LicenseType;
     plan: SubscriptionPlan;
     billingCycle: BillingCycle;

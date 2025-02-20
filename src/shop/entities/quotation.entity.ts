@@ -3,6 +3,8 @@ import { Client } from '../../clients/entities/client.entity';
 import { QuotationItem } from './quotation-item.entity';
 import { OrderStatus } from '../../lib/enums/status.enums';
 import { User } from '../../user/entities/user.entity';
+import { Organisation } from 'src/organisation/entities/organisation.entity';
+import { Branch } from 'src/branch/entities/branch.entity';
 
 @Entity('quotation')
 export class Quotation {
@@ -59,4 +61,11 @@ export class Quotation {
 
     @Column({ type: 'timestamp', nullable: true })
     validUntil: Date;
+
+    // Relations
+    @ManyToOne(() => Branch, (branch) => branch?.quotations, { nullable: true })
+    branch: Branch;
+
+    @ManyToOne(() => Organisation, (organisation) => organisation?.quotations, { nullable: true })
+    organisation: Organisation; 
 }

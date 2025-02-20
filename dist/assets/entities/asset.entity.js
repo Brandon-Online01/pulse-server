@@ -10,6 +10,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Asset = void 0;
+const organisation_entity_1 = require("../../organisation/entities/organisation.entity");
 const branch_entity_1 = require("../../branch/entities/branch.entity");
 const user_entity_1 = require("../../user/entities/user.entity");
 const typeorm_1 = require("typeorm");
@@ -61,7 +62,11 @@ __decorate([
     __metadata("design:type", user_entity_1.User)
 ], Asset.prototype, "owner", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => branch_entity_1.Branch, (branch) => branch?.assets),
+    (0, typeorm_1.ManyToOne)(() => organisation_entity_1.Organisation, (organisation) => organisation?.assets, { nullable: true }),
+    __metadata("design:type", organisation_entity_1.Organisation)
+], Asset.prototype, "organisation", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => branch_entity_1.Branch, (branch) => branch?.assets, { nullable: true }),
     __metadata("design:type", branch_entity_1.Branch)
 ], Asset.prototype, "branch", void 0);
 exports.Asset = Asset = __decorate([

@@ -1,6 +1,7 @@
 import { Branch } from '../../branch/entities/branch.entity';
 import { ReportType } from '../../lib/enums/reports.enums';
 import { User } from '../../user/entities/user.entity';
+import { Organisation } from 'src/organisation/entities/organisation.entity';
 export declare class Report {
     uid: number;
     createdAt: Date;
@@ -10,8 +11,9 @@ export declare class Report {
     type: ReportType;
     fileUrl: string;
     metadata: Record<string, any>;
-    branch: Branch;
     owner: User;
     status: 'pending' | 'approved' | 'rejected';
     value: number;
+    organisation: Organisation;
+    branch: Branch;
 }

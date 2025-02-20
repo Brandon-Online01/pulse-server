@@ -1,5 +1,22 @@
-import { GeneralStatus } from "../../lib/enums/status.enums";
-import { Branch } from "../../branch/entities/branch.entity";
+import { GeneralStatus } from '../../lib/enums/status.enums';
+import { Branch } from '../../branch/entities/branch.entity';
+import { Asset } from 'src/assets/entities/asset.entity';
+import { Client } from 'src/clients/entities/client.entity';
+import { Product } from 'src/products/entities/product.entity';
+import { User } from 'src/user/entities/user.entity';
+import { Reseller } from 'src/resellers/entities/reseller.entity';
+import { Banners } from 'src/shop/entities/banners.entity';
+import { News } from 'src/news/entities/news.entity';
+import { Journal } from 'src/journal/entities/journal.entity';
+import { Doc } from 'src/docs/entities/doc.entity';
+import { Attendance } from 'src/attendance/entities/attendance.entity';
+import { Claim } from 'src/claims/entities/claim.entity';
+import { Report } from 'src/reports/entities/report.entity';
+import { Quotation } from 'src/shop/entities/quotation.entity';
+import { Task } from 'src/tasks/entities/task.entity';
+import { Notification } from 'src/notifications/entities/notification.entity';
+import { Tracking } from 'src/tracking/entities/tracking.entity';
+import { CommunicationLog } from 'src/communication/entities/communication-log.entity';
 export declare class Organisation {
     uid: number;
     name: string;
@@ -14,4 +31,21 @@ export declare class Organisation {
     isDeleted: boolean;
     ref: string;
     branches: Branch[];
+    assets: Asset[];
+    products: Product[];
+    clients: Client[];
+    users: User[];
+    resellers: Reseller[];
+    banners: Banners[];
+    news: News[];
+    journals: Journal[];
+    docs: Doc[];
+    claims: Claim[];
+    attendances: Attendance[];
+    reports: Report[];
+    quotations: Quotation[];
+    tasks: Task[];
+    notifications: Notification[];
+    trackings: Tracking[];
+    communicationLogs: CommunicationLog[];
 }

@@ -1,16 +1,24 @@
-import { Organisation } from "../../organisation/entities/organisation.entity";
-import { GeneralStatus } from "../../lib/enums/status.enums";
-import { Tracking } from "../../tracking/entities/tracking.entity";
-import { News } from "../../news/entities/news.entity";
-import { Lead } from "../../leads/entities/lead.entity";
-import { Journal } from "../../journal/entities/journal.entity";
-import { Doc } from "../../docs/entities/doc.entity";
-import { Claim } from "../../claims/entities/claim.entity";
-import { Attendance } from "../../attendance/entities/attendance.entity";
-import { Asset } from "../../assets/entities/asset.entity";
-import { User } from "../../user/entities/user.entity";
-import { CheckIn } from "../../check-ins/entities/check-in.entity";
-import { Report } from "../../reports/entities/report.entity";
+import { Organisation } from '../../organisation/entities/organisation.entity';
+import { GeneralStatus } from '../../lib/enums/status.enums';
+import { Tracking } from '../../tracking/entities/tracking.entity';
+import { News } from '../../news/entities/news.entity';
+import { Lead } from '../../leads/entities/lead.entity';
+import { Journal } from '../../journal/entities/journal.entity';
+import { Doc } from '../../docs/entities/doc.entity';
+import { Claim } from '../../claims/entities/claim.entity';
+import { Attendance } from '../../attendance/entities/attendance.entity';
+import { Asset } from '../../assets/entities/asset.entity';
+import { User } from '../../user/entities/user.entity';
+import { CheckIn } from '../../check-ins/entities/check-in.entity';
+import { Report } from '../../reports/entities/report.entity';
+import { Product } from 'src/products/entities/product.entity';
+import { Client } from 'src/clients/entities/client.entity';
+import { Reseller } from 'src/resellers/entities/reseller.entity';
+import { Banners } from 'src/shop/entities/banners.entity';
+import { Task } from 'src/tasks/entities/task.entity';
+import { Quotation } from 'src/shop/entities/quotation.entity';
+import { Notification } from 'src/notifications/entities/notification.entity';
+import { CommunicationLog } from 'src/communication/entities/communication-log.entity';
 export declare class Branch {
     uid: number;
     name: string;
@@ -26,6 +34,7 @@ export declare class Branch {
     updatedAt: Date;
     organisation: Organisation;
     trackings: Tracking[];
+    banners: Banners[];
     news: News[];
     leads: Lead[];
     journals: Journal[];
@@ -36,4 +45,11 @@ export declare class Branch {
     users: User[];
     checkIns: CheckIn[];
     reports: Report[];
+    products: Product[];
+    clients: Client[];
+    resellers: Reseller[];
+    tasks: Task[];
+    quotations: Quotation[];
+    notifications: Notification[];
+    communicationLogs: CommunicationLog[];
 }

@@ -13,6 +13,7 @@ exports.Tracking = void 0;
 const typeorm_1 = require("typeorm");
 const user_entity_1 = require("../../user/entities/user.entity");
 const branch_entity_1 = require("../../branch/entities/branch.entity");
+const organisation_entity_1 = require("../../organisation/entities/organisation.entity");
 let Tracking = class Tracking {
 };
 exports.Tracking = Tracking;
@@ -66,9 +67,13 @@ __decorate([
     __metadata("design:type", String)
 ], Tracking.prototype, "deletedBy", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => branch_entity_1.Branch, { nullable: true }),
+    (0, typeorm_1.ManyToOne)(() => branch_entity_1.Branch, (branch) => branch?.trackings, { nullable: true }),
     __metadata("design:type", branch_entity_1.Branch)
 ], Tracking.prototype, "branch", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => organisation_entity_1.Organisation, (organisation) => organisation?.trackings, { nullable: true }),
+    __metadata("design:type", organisation_entity_1.Organisation)
+], Tracking.prototype, "organisation", void 0);
 exports.Tracking = Tracking = __decorate([
     (0, typeorm_1.Entity)()
 ], Tracking);

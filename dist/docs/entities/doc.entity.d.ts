@@ -1,3 +1,4 @@
+import { Organisation } from 'src/organisation/entities/organisation.entity';
 import { Branch } from '../../branch/entities/branch.entity';
 import { User } from '../../user/entities/user.entity';
 export declare class Doc {
@@ -23,4 +24,5 @@ export declare class Doc {
     updatedBy?: string;
     owner: User;
     branch: Branch;
+    organisation: Organisation;
 }

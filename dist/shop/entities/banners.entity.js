@@ -10,7 +10,9 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Banners = void 0;
+const branch_entity_1 = require("../../branch/entities/branch.entity");
 const category_enum_1 = require("../../lib/enums/category.enum");
+const organisation_entity_1 = require("../../organisation/entities/organisation.entity");
 const typeorm_1 = require("typeorm");
 let Banners = class Banners {
 };
@@ -54,6 +56,14 @@ __decorate([
     (0, typeorm_1.Column)({ nullable: false, type: 'enum', enum: category_enum_1.BannerCategory, default: category_enum_1.BannerCategory.NEWS }),
     __metadata("design:type", String)
 ], Banners.prototype, "category", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => organisation_entity_1.Organisation, (organisation) => organisation?.banners, { nullable: true }),
+    __metadata("design:type", organisation_entity_1.Organisation)
+], Banners.prototype, "organisation", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => branch_entity_1.Branch, (branch) => branch?.banners, { nullable: true }),
+    __metadata("design:type", branch_entity_1.Branch)
+], Banners.prototype, "branch", void 0);
 exports.Banners = Banners = __decorate([
     (0, typeorm_1.Entity)('banners')
 ], Banners);

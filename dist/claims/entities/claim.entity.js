@@ -14,6 +14,7 @@ const user_entity_1 = require("../../user/entities/user.entity");
 const branch_entity_1 = require("../../branch/entities/branch.entity");
 const finance_enums_1 = require("../../lib/enums/finance.enums");
 const typeorm_1 = require("typeorm");
+const organisation_entity_1 = require("../../organisation/entities/organisation.entity");
 let Claim = class Claim {
 };
 exports.Claim = Claim;
@@ -29,10 +30,6 @@ __decorate([
     (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
     __metadata("design:type", String)
 ], Claim.prototype, "documentUrl", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ type: 'int', nullable: true }),
-    __metadata("design:type", Number)
-], Claim.prototype, "verifiedBy", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'timestamp', nullable: false, default: () => 'CURRENT_TIMESTAMP' }),
     __metadata("design:type", Date)
@@ -70,7 +67,15 @@ __decorate([
     __metadata("design:type", user_entity_1.User)
 ], Claim.prototype, "owner", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => branch_entity_1.Branch, (branch) => branch?.claims),
+    (0, typeorm_1.ManyToOne)(() => user_entity_1.User, (user) => user?.userClaims),
+    __metadata("design:type", user_entity_1.User)
+], Claim.prototype, "verifiedBy", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => organisation_entity_1.Organisation, (organisation) => organisation?.assets, { nullable: true }),
+    __metadata("design:type", organisation_entity_1.Organisation)
+], Claim.prototype, "organisation", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => branch_entity_1.Branch, (branch) => branch?.assets, { nullable: true }),
     __metadata("design:type", branch_entity_1.Branch)
 ], Claim.prototype, "branch", void 0);
 exports.Claim = Claim = __decorate([

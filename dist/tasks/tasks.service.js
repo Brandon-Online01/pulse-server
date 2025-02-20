@@ -43,6 +43,7 @@ let TasksService = class TasksService {
         let currentDate = new Date(createTaskDto.deadline);
         const endDate = new Date(createTaskDto.repetitionEndDate);
         let tasksCreated = 0;
+        const totalTasks = this.calculateTotalTasks(currentDate, endDate, createTaskDto.repetitionType);
         while (currentDate < endDate) {
             let nextDate;
             switch (createTaskDto.repetitionType) {
@@ -65,8 +66,13 @@ let TasksService = class TasksService {
                 break;
             }
             const repeatedTask = new task_entity_1.Task();
-            repeatedTask.title = `${createTaskDto.title} (${tasksCreated + 1} of ${createTaskDto.repetitionType})`;
-            repeatedTask.description = createTaskDto.description;
+            const formattedDate = nextDate.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+            });
+            repeatedTask.title = `${createTaskDto?.title} (${tasksCreated + 1}/${totalTasks}) - ${formattedDate}`;
+            repeatedTask.description = `${createTaskDto.description}\n\nRecurring ${createTaskDto.repetitionType.toLowerCase()} task (Part ${tasksCreated + 1} of ${totalTasks})`;
             repeatedTask.deadline = nextDate;
             repeatedTask.assignees = baseTask.assignees;
             repeatedTask.clients = baseTask.clients;
@@ -78,9 +84,26 @@ let TasksService = class TasksService {
             repeatedTask.repetitionType = task_enums_1.RepetitionType.NONE;
             repeatedTask.repetitionEndDate = null;
             repeatedTask.creator = baseTask.creator;
+            repeatedTask.targetCategory = createTaskDto.targetCategory;
             await this.taskRepository.save(repeatedTask);
             currentDate = nextDate;
             tasksCreated++;
+        }
+    }
+    calculateTotalTasks(startDate, endDate, repetitionType) {
+        const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        switch (repetitionType) {
+            case task_enums_1.RepetitionType.DAILY:
+                return diffDays;
+            case task_enums_1.RepetitionType.WEEKLY:
+                return Math.ceil(diffDays / 7);
+            case task_enums_1.RepetitionType.MONTHLY:
+                return Math.ceil(diffDays / 30);
+            case task_enums_1.RepetitionType.YEARLY:
+                return Math.ceil(diffDays / 365);
+            default:
+                return 0;
         }
     }
     async create(createTaskDto) {

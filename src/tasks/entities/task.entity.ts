@@ -14,6 +14,8 @@ import {
 	BeforeInsert,
 	BeforeUpdate,
 } from 'typeorm';
+import { Organisation } from 'src/organisation/entities/organisation.entity';
+import { Branch } from 'src/branch/entities/branch.entity';
 
 @Entity('tasks')
 export class Task {
@@ -71,17 +73,23 @@ export class Task {
 	@UpdateDateColumn()
 	updatedAt: Date;
 
-	@ManyToOne(() => User, (user) => user?.userTasks, { onDelete: 'SET NULL' })
+	@ManyToOne(() => User, (user) => user?.userTasks, { onDelete: 'SET NULL', nullable: true })
 	creator: User;
 
-	@ManyToMany(() => User, (user) => user?.tasksAssigned, { cascade: true })
+	@ManyToMany(() => User, (user) => user?.tasksAssigned, { cascade: true, nullable: true })
 	assignees: User[];
 
-	@ManyToMany(() => Client, (client) => client?.tasks, { cascade: true })
+	@ManyToMany(() => Client, (client) => client?.tasks, { cascade: true, nullable: true })
 	clients: Client[];
 
-	@OneToMany(() => SubTask, (subtask) => subtask?.task, { cascade: true })
+	@OneToMany(() => SubTask, (subtask) => subtask?.task, { cascade: true, nullable: true })
 	subtasks: SubTask[];
+
+	@ManyToOne(() => Organisation, (organisation) => organisation?.tasks, { nullable: true })
+	organisation: Organisation; 	
+
+	@ManyToOne(() => Branch, (branch) => branch?.tasks, { nullable: true })
+	branch: Branch; 
 
 	@BeforeInsert()
 	setInitialStatus() {

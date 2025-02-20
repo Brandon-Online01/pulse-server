@@ -72,7 +72,7 @@ export class TasksService {
 				year: 'numeric'
 			});
 			
-			repeatedTask.title = `${createTaskDto.title} (${tasksCreated + 1}/${totalTasks}) - ${formattedDate}`;
+			repeatedTask.title = `${createTaskDto?.title} (${tasksCreated + 1}/${totalTasks}) - ${formattedDate}`;
 			repeatedTask.description = `${createTaskDto.description}\n\nRecurring ${createTaskDto.repetitionType.toLowerCase()} task (Part ${tasksCreated + 1} of ${totalTasks})`;
 			repeatedTask.deadline = nextDate;
 			repeatedTask.assignees = baseTask.assignees;

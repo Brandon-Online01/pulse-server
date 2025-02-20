@@ -1,3 +1,4 @@
+import { Organisation } from 'src/organisation/entities/organisation.entity';
 import { Branch } from '../../branch/entities/branch.entity';
 import { User } from '../../user/entities/user.entity';
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
@@ -70,4 +71,7 @@ export class Doc {
 
     @ManyToOne(() => Branch, (branch) => branch?.docs)
     branch: Branch;
+
+    @ManyToOne(() => Organisation, (organisation) => organisation?.docs)
+    organisation: Organisation; 
 }

@@ -5,6 +5,8 @@ import { Quotation } from '../../shop/entities/quotation.entity';
 import { Task } from '../../tasks/entities/task.entity';
 import { Column, Entity, OneToMany, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { CheckIn } from '../../check-ins/entities/check-in.entity';
+import { Organisation } from 'src/organisation/entities/organisation.entity';
+import { Branch } from 'src/branch/entities/branch.entity';
 
 export enum CustomerType {
     STANDARD = 'standard',
@@ -78,6 +80,7 @@ export class Client {
     @Column({ nullable: false })
     ref: string;
 
+    // Relations
     @ManyToOne(() => User, (user) => user?.clients, { nullable: true })
     assignedSalesRep: User;
 
@@ -95,4 +98,11 @@ export class Client {
 
     @Column({ type: 'enum', enum: CustomerType, default: CustomerType.STANDARD })
     type: CustomerType;
+
+    // Relations
+    @ManyToOne(() => Organisation, (organisation) => organisation?.clients, { nullable: true })
+    organisation: Organisation;
+
+    @ManyToOne(() => Branch, (branch) => branch?.clients, { nullable: true })
+    branch: Branch;
 }

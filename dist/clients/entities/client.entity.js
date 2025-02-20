@@ -17,6 +17,8 @@ const quotation_entity_1 = require("../../shop/entities/quotation.entity");
 const task_entity_1 = require("../../tasks/entities/task.entity");
 const typeorm_1 = require("typeorm");
 const check_in_entity_1 = require("../../check-ins/entities/check-in.entity");
+const organisation_entity_1 = require("../../organisation/entities/organisation.entity");
+const branch_entity_1 = require("../../branch/entities/branch.entity");
 var CustomerType;
 (function (CustomerType) {
     CustomerType["STANDARD"] = "standard";
@@ -133,6 +135,14 @@ __decorate([
     (0, typeorm_1.Column)({ type: 'enum', enum: CustomerType, default: CustomerType.STANDARD }),
     __metadata("design:type", String)
 ], Client.prototype, "type", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => organisation_entity_1.Organisation, (organisation) => organisation?.clients, { nullable: true }),
+    __metadata("design:type", organisation_entity_1.Organisation)
+], Client.prototype, "organisation", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => branch_entity_1.Branch, (branch) => branch?.clients, { nullable: true }),
+    __metadata("design:type", branch_entity_1.Branch)
+], Client.prototype, "branch", void 0);
 exports.Client = Client = __decorate([
     (0, typeorm_1.Entity)('client')
 ], Client);

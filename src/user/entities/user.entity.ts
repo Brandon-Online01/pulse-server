@@ -87,54 +87,54 @@ export class User {
     @OneToOne(() => UserEmployeementProfile, (userEmployeementProfile) => userEmployeementProfile?.owner, { nullable: true })
     userEmployeementProfile: UserEmployeementProfile;
 
-    @OneToMany(() => Attendance, (attendance) => attendance?.owner)
+    @OneToMany(() => Attendance, (attendance) => attendance?.owner, { nullable: true })
     userAttendances: Attendance[];
 
-    @OneToMany(() => Claim, (claim) => claim?.owner)
+    @OneToMany(() => Claim, (claim) => claim?.owner, { nullable: true })
     userClaims: Claim[];
 
-    @OneToMany(() => Doc, (doc) => doc?.owner)
+    @OneToMany(() => Doc, (doc) => doc?.owner, { nullable: true })
     userDocs: Doc[];
 
-    @OneToMany(() => Lead, (lead) => lead?.owner)
+    @OneToMany(() => Lead, (lead) => lead?.owner, { nullable: true })
     leads: Lead[];
 
-    @OneToMany(() => Journal, (journal) => journal?.owner)
+    @OneToMany(() => Journal, (journal) => journal?.owner, { nullable: true })
     journals: Journal[];
 
-    @OneToMany(() => Task, (task) => task?.creator)
+    @OneToMany(() => Task, (task) => task?.creator, { nullable: true })
     userTasks: Task[];
 
-    @OneToMany(() => Task, (task) => task?.assignees)
+    @OneToMany(() => Task, (task) => task?.assignees, { nullable: true })
     tasksAssigned: Task[];
 
-    @OneToMany(() => News, (news) => news?.author)
+    @OneToMany(() => News, (news) => news?.author, { nullable: true })
     articles: News[];
 
-    @OneToMany(() => Asset, (asset) => asset?.owner)
+    @OneToMany(() => Asset, (asset) => asset?.owner, { nullable: true })
     assets: Asset[];
 
-    @OneToMany(() => Tracking, (tracking) => tracking?.owner)
+    @OneToMany(() => Tracking, (tracking) => tracking?.owner, { nullable: true })
     trackings: Tracking[];
 
-    @OneToMany(() => Quotation, (quotation) => quotation?.placedBy)
+    @OneToMany(() => Quotation, (quotation) => quotation?.placedBy, { nullable: true })
     quotations: Quotation[];
 
-    @OneToMany(() => Notification, (notification) => notification?.owner)
+    @OneToMany(() => Notification, (notification) => notification?.owner, { nullable: true })
     notifications: Notification[];
 
     @ManyToOne(() => Branch, (branch) => branch?.users)
     branch: Branch;
 
-    @OneToMany(() => Client, (client) => client?.assignedSalesRep)
+    @OneToMany(() => Client, (client) => client?.assignedSalesRep, { nullable: true })
     clients: Client[];
 
-    @OneToMany(() => CheckIn, (checkIn) => checkIn?.owner)
+    @OneToMany(() => CheckIn, (checkIn) => checkIn?.owner, { nullable: true })
     checkIns: CheckIn[];
 
-    @OneToOne(() => UserRewards, (userRewards) => userRewards?.owner)
+    @OneToOne(() => UserRewards, (userRewards) => userRewards?.owner, { nullable: true })
     rewards: UserRewards;
 
-    @OneToMany(() => Report, (report) => report?.owner)
+    @OneToMany(() => Report, (report) => report?.owner, { nullable: true })
     reports: Report[];
 }

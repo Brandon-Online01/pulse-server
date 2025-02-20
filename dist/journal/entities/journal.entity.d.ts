@@ -1,5 +1,6 @@
 import { User } from '../../user/entities/user.entity';
 import { Branch } from '../../branch/entities/branch.entity';
+import { Organisation } from 'src/organisation/entities/organisation.entity';
 export declare class Journal {
     uid: number;
     clientRef: string;
@@ -11,4 +12,5 @@ export declare class Journal {
     isDeleted: boolean;
     owner: User;
     branch: Branch;
+    organisation: Organisation;
 }

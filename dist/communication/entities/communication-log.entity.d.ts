@@ -1,3 +1,5 @@
+import { Branch } from 'src/branch/entities/branch.entity';
+import { Organisation } from 'src/organisation/entities/organisation.entity';
 export declare class CommunicationLog {
     uid: string;
     emailType: string;
@@ -14,4 +16,6 @@ export declare class CommunicationLog {
         to: string[];
     };
     createdAt: Date;
+    branch: Branch;
+    organisation: Organisation;
 }

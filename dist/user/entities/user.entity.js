@@ -121,51 +121,51 @@ __decorate([
     __metadata("design:type", user_employeement_profile_entity_1.UserEmployeementProfile)
 ], User.prototype, "userEmployeementProfile", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => attendance_entity_1.Attendance, (attendance) => attendance?.owner),
+    (0, typeorm_1.OneToMany)(() => attendance_entity_1.Attendance, (attendance) => attendance?.owner, { nullable: true }),
     __metadata("design:type", Array)
 ], User.prototype, "userAttendances", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => claim_entity_1.Claim, (claim) => claim?.owner),
+    (0, typeorm_1.OneToMany)(() => claim_entity_1.Claim, (claim) => claim?.owner, { nullable: true }),
     __metadata("design:type", Array)
 ], User.prototype, "userClaims", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => doc_entity_1.Doc, (doc) => doc?.owner),
+    (0, typeorm_1.OneToMany)(() => doc_entity_1.Doc, (doc) => doc?.owner, { nullable: true }),
     __metadata("design:type", Array)
 ], User.prototype, "userDocs", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => lead_entity_1.Lead, (lead) => lead?.owner),
+    (0, typeorm_1.OneToMany)(() => lead_entity_1.Lead, (lead) => lead?.owner, { nullable: true }),
     __metadata("design:type", Array)
 ], User.prototype, "leads", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => journal_entity_1.Journal, (journal) => journal?.owner),
+    (0, typeorm_1.OneToMany)(() => journal_entity_1.Journal, (journal) => journal?.owner, { nullable: true }),
     __metadata("design:type", Array)
 ], User.prototype, "journals", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => task_entity_1.Task, (task) => task?.creator),
+    (0, typeorm_1.OneToMany)(() => task_entity_1.Task, (task) => task?.creator, { nullable: true }),
     __metadata("design:type", Array)
 ], User.prototype, "userTasks", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => task_entity_1.Task, (task) => task?.assignees),
+    (0, typeorm_1.OneToMany)(() => task_entity_1.Task, (task) => task?.assignees, { nullable: true }),
     __metadata("design:type", Array)
 ], User.prototype, "tasksAssigned", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => news_entity_1.News, (news) => news?.author),
+    (0, typeorm_1.OneToMany)(() => news_entity_1.News, (news) => news?.author, { nullable: true }),
     __metadata("design:type", Array)
 ], User.prototype, "articles", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => asset_entity_1.Asset, (asset) => asset?.owner),
+    (0, typeorm_1.OneToMany)(() => asset_entity_1.Asset, (asset) => asset?.owner, { nullable: true }),
     __metadata("design:type", Array)
 ], User.prototype, "assets", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => tracking_entity_1.Tracking, (tracking) => tracking?.owner),
+    (0, typeorm_1.OneToMany)(() => tracking_entity_1.Tracking, (tracking) => tracking?.owner, { nullable: true }),
     __metadata("design:type", Array)
 ], User.prototype, "trackings", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => quotation_entity_1.Quotation, (quotation) => quotation?.placedBy),
+    (0, typeorm_1.OneToMany)(() => quotation_entity_1.Quotation, (quotation) => quotation?.placedBy, { nullable: true }),
     __metadata("design:type", Array)
 ], User.prototype, "quotations", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => notification_entity_1.Notification, (notification) => notification?.owner),
+    (0, typeorm_1.OneToMany)(() => notification_entity_1.Notification, (notification) => notification?.owner, { nullable: true }),
     __metadata("design:type", Array)
 ], User.prototype, "notifications", void 0);
 __decorate([
@@ -173,19 +173,19 @@ __decorate([
     __metadata("design:type", branch_entity_1.Branch)
 ], User.prototype, "branch", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => client_entity_1.Client, (client) => client?.assignedSalesRep),
+    (0, typeorm_1.OneToMany)(() => client_entity_1.Client, (client) => client?.assignedSalesRep, { nullable: true }),
     __metadata("design:type", Array)
 ], User.prototype, "clients", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => check_in_entity_1.CheckIn, (checkIn) => checkIn?.owner),
+    (0, typeorm_1.OneToMany)(() => check_in_entity_1.CheckIn, (checkIn) => checkIn?.owner, { nullable: true }),
     __metadata("design:type", Array)
 ], User.prototype, "checkIns", void 0);
 __decorate([
-    (0, typeorm_1.OneToOne)(() => user_rewards_entity_1.UserRewards, (userRewards) => userRewards?.owner),
+    (0, typeorm_1.OneToOne)(() => user_rewards_entity_1.UserRewards, (userRewards) => userRewards?.owner, { nullable: true }),
     __metadata("design:type", user_rewards_entity_1.UserRewards)
 ], User.prototype, "rewards", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => report_entity_1.Report, (report) => report?.owner),
+    (0, typeorm_1.OneToMany)(() => report_entity_1.Report, (report) => report?.owner, { nullable: true }),
     __metadata("design:type", Array)
 ], User.prototype, "reports", void 0);
 exports.User = User = __decorate([

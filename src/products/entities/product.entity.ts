@@ -1,7 +1,9 @@
+import { Organisation } from 'src/organisation/entities/organisation.entity';
 import { ProductStatus } from '../../lib/enums/product.enums';
 import { QuotationItem } from '../../shop/entities/quotation-item.entity';
 import { Reseller } from '../../resellers/entities/reseller.entity';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, BeforeInsert, AfterInsert, ManyToOne, getRepository } from 'typeorm';
+import { Branch } from 'src/branch/entities/branch.entity';
 
 @Entity('product')
 export class Product {
@@ -53,9 +55,6 @@ export class Product {
     @Column({ type: 'int', default: 0 })
     packageQuantity: number;
 
-    @Column({ nullable: true })
-    brand: string;
-
     @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
     weight: number;
 
@@ -88,6 +87,13 @@ export class Product {
 
     @Column({ default: false })
     isDeleted: boolean;
+
+    // Relations
+    @ManyToOne(() => Organisation, (organisation) => organisation?.products, { nullable: true })
+    organisation: Organisation;
+
+    @ManyToOne(() => Branch, (branch) => branch?.products, { nullable: true })
+    branch: Branch;
 
     static generateSKU(category: string, name: string, uid: number, reseller: Reseller): string {
         // Get first 3 letters of category (uppercase)
