@@ -39,6 +39,7 @@ export class TasksService {
 		let currentDate = new Date(createTaskDto.deadline);
 		const endDate = new Date(createTaskDto.repetitionEndDate);
 		let tasksCreated = 0;
+		const totalTasks = this.calculateTotalTasks(currentDate, endDate, createTaskDto.repetitionType);
 
 		while (currentDate < endDate) {
 			let nextDate: Date;
@@ -65,8 +66,14 @@ export class TasksService {
 			}
 
 			const repeatedTask = new Task();
-			repeatedTask.title = `${createTaskDto.title} (${tasksCreated + 1} of ${createTaskDto.repetitionType})`;
-			repeatedTask.description = createTaskDto.description;
+			const formattedDate = nextDate.toLocaleDateString('en-US', { 
+				month: 'short', 
+				day: 'numeric',
+				year: 'numeric'
+			});
+			
+			repeatedTask.title = `${createTaskDto.title} (${tasksCreated + 1}/${totalTasks}) - ${formattedDate}`;
+			repeatedTask.description = `${createTaskDto.description}\n\nRecurring ${createTaskDto.repetitionType.toLowerCase()} task (Part ${tasksCreated + 1} of ${totalTasks})`;
 			repeatedTask.deadline = nextDate;
 			repeatedTask.assignees = baseTask.assignees;
 			repeatedTask.clients = baseTask.clients;
@@ -78,11 +85,30 @@ export class TasksService {
 			repeatedTask.repetitionType = RepetitionType.NONE;
 			repeatedTask.repetitionEndDate = null;
 			repeatedTask.creator = baseTask.creator;
+			repeatedTask.targetCategory = createTaskDto.targetCategory;
 
 			await this.taskRepository.save(repeatedTask);
 
 			currentDate = nextDate;
 			tasksCreated++;
+		}
+	}
+
+	private calculateTotalTasks(startDate: Date, endDate: Date, repetitionType: RepetitionType): number {
+		const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+		const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+		
+		switch (repetitionType) {
+			case RepetitionType.DAILY:
+				return diffDays;
+			case RepetitionType.WEEKLY:
+				return Math.ceil(diffDays / 7);
+			case RepetitionType.MONTHLY:
+				return Math.ceil(diffDays / 30);
+			case RepetitionType.YEARLY:
+				return Math.ceil(diffDays / 365);
+			default:
+				return 0;
 		}
 	}
 
