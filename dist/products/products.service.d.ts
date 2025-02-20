@@ -8,6 +8,7 @@ export declare class ProductsService {
     private productRepository;
     private cacheManager;
     constructor(productRepository: Repository<Product>, cacheManager: Cache);
+    private invalidateProductCaches;
     createProduct(createProductDto: CreateProductDto): Promise<{
         product: Product | null;
         message: string;

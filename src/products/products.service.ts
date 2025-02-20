@@ -18,17 +18,25 @@ export class ProductsService {
 		private cacheManager: Cache,
 	) { }
 
+	private async invalidateProductCaches(): Promise<void> {
+		const keys = await this.cacheManager.store.keys();
+		const productKeys = keys.filter(key => 
+			key.startsWith('products_') || 
+			key.startsWith('search_') || 
+			key === 'all_products'
+		);
+		await Promise.all(productKeys.map(key => this.cacheManager.del(key)));
+	}
+
 	async createProduct(createProductDto: CreateProductDto): Promise<{ product: Product | null, message: string }> {
 		try {
 			const product = await this.productRepository.save(createProductDto);
-
-			await this.cacheManager.del('all_products');
 
 			if (!product) {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
-			await this.productRepository.save(product);
+			await this.invalidateProductCaches();
 
 			const response = {
 				product: product,
@@ -54,7 +62,7 @@ export class ProductsService {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
-			await this.cacheManager.del('all_products');
+			await this.invalidateProductCaches();
 
 			const response = {
 				message: process.env.SUCCESS_MESSAGE,
@@ -78,7 +86,7 @@ export class ProductsService {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
-			await this.cacheManager.del('all_products');
+			await this.invalidateProductCaches();
 
 			const response = {
 				message: process.env.SUCCESS_MESSAGE,
@@ -102,7 +110,7 @@ export class ProductsService {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
-			await this.cacheManager.del('all_products');
+			await this.invalidateProductCaches();
 
 			const response = {
 				message: process.env.SUCCESS_MESSAGE
@@ -132,7 +140,8 @@ export class ProductsService {
 
 			const [products, total] = await this.productRepository.findAndCount({
 				where: {
-					status: Not(In([ProductStatus.DISCONTINUED, ProductStatus.HIDDEN, ProductStatus.DELETED]))
+					status: Not(In([ProductStatus.DISCONTINUED, ProductStatus.HIDDEN, ProductStatus.DELETED])),
+					isDeleted: false
 				},
 				skip: (page - 1) * limit,
 				take: limit,
@@ -177,7 +186,8 @@ export class ProductsService {
 		try {
 			const product = await this.productRepository.findOne({
 				where: {
-					uid: ref
+					uid: ref,
+					isDeleted: false
 				}
 			});
 
@@ -217,8 +227,8 @@ export class ProductsService {
 			const searchPattern = `%${searchTerm?.toLowerCase()}%`;
 			const [products, total] = await this.productRepository.findAndCount({
 				where: [
-					{ category: Like(searchPattern) },
-					{ status: Like(searchTerm?.toLowerCase() as ProductStatus) }
+					{ category: Like(searchPattern), isDeleted: false },
+					{ status: Like(searchTerm?.toLowerCase() as ProductStatus), isDeleted: false }
 				],
 				skip: (page - 1) * limit,
 				take: limit,

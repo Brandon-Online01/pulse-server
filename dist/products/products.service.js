@@ -24,14 +24,20 @@ let ProductsService = class ProductsService {
         this.productRepository = productRepository;
         this.cacheManager = cacheManager;
     }
+    async invalidateProductCaches() {
+        const keys = await this.cacheManager.store.keys();
+        const productKeys = keys.filter(key => key.startsWith('products_') ||
+            key.startsWith('search_') ||
+            key === 'all_products');
+        await Promise.all(productKeys.map(key => this.cacheManager.del(key)));
+    }
     async createProduct(createProductDto) {
         try {
             const product = await this.productRepository.save(createProductDto);
-            await this.cacheManager.del('all_products');
             if (!product) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
-            await this.productRepository.save(product);
+            await this.invalidateProductCaches();
             const response = {
                 product: product,
                 message: process.env.SUCCESS_MESSAGE,
@@ -52,7 +58,7 @@ let ProductsService = class ProductsService {
             if (!product) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
-            await this.cacheManager.del('all_products');
+            await this.invalidateProductCaches();
             const response = {
                 message: process.env.SUCCESS_MESSAGE,
             };
@@ -71,7 +77,7 @@ let ProductsService = class ProductsService {
             if (!product) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
-            await this.cacheManager.del('all_products');
+            await this.invalidateProductCaches();
             const response = {
                 message: process.env.SUCCESS_MESSAGE,
             };
@@ -90,7 +96,7 @@ let ProductsService = class ProductsService {
             if (!product) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
-            await this.cacheManager.del('all_products');
+            await this.invalidateProductCaches();
             const response = {
                 message: process.env.SUCCESS_MESSAGE
             };
@@ -112,7 +118,8 @@ let ProductsService = class ProductsService {
             }
             const [products, total] = await this.productRepository.findAndCount({
                 where: {
-                    status: (0, typeorm_1.Not)((0, typeorm_1.In)([product_enums_1.ProductStatus.DISCONTINUED, product_enums_1.ProductStatus.HIDDEN, product_enums_1.ProductStatus.DELETED]))
+                    status: (0, typeorm_1.Not)((0, typeorm_1.In)([product_enums_1.ProductStatus.DISCONTINUED, product_enums_1.ProductStatus.HIDDEN, product_enums_1.ProductStatus.DELETED])),
+                    isDeleted: false
                 },
                 skip: (page - 1) * limit,
                 take: limit,
@@ -153,7 +160,8 @@ let ProductsService = class ProductsService {
         try {
             const product = await this.productRepository.findOne({
                 where: {
-                    uid: ref
+                    uid: ref,
+                    isDeleted: false
                 }
             });
             if (!product) {
@@ -183,8 +191,8 @@ let ProductsService = class ProductsService {
             const searchPattern = `%${searchTerm?.toLowerCase()}%`;
             const [products, total] = await this.productRepository.findAndCount({
                 where: [
-                    { category: (0, typeorm_1.Like)(searchPattern) },
-                    { status: (0, typeorm_1.Like)(searchTerm?.toLowerCase()) }
+                    { category: (0, typeorm_1.Like)(searchPattern), isDeleted: false },
+                    { status: (0, typeorm_1.Like)(searchTerm?.toLowerCase()), isDeleted: false }
                 ],
                 skip: (page - 1) * limit,
                 take: limit,
