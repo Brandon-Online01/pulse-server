@@ -41,6 +41,39 @@ export class Product {
     @Column({ default: 10 })
     reorderPoint: number;
 
+    @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+    salePrice: number;
+
+    @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true })
+    discount: number;
+
+    @Column({ nullable: true })
+    barcode: string;
+
+    @Column({ type: 'int', default: 0 })
+    packageQuantity: number;
+
+    @Column({ nullable: true })
+    brand: string;
+
+    @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+    weight: number;
+
+    @Column({ default: false })
+    isOnPromotion: boolean;
+
+    @Column({ type: 'varchar', nullable: true })
+    packageDetails: string;
+
+    @Column({ type: 'timestamp', nullable: true })
+    promotionStartDate: Date;
+
+    @Column({ type: 'timestamp', nullable: true })
+    promotionEndDate: Date;
+
+    @Column({ type: 'varchar', default: 'unit' })
+    packageUnit: string;
+
     @CreateDateColumn()
     createdAt: Date;
 

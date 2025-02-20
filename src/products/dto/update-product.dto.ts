@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { ProductStatus } from '../../lib/enums/product.enums';
-import { IsString, IsNumber, IsOptional, IsEnum, IsBoolean } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsEnum, IsBoolean, IsDate } from 'class-validator';
 
 export class UpdateProductDto {
     @IsString()
@@ -19,21 +19,85 @@ export class UpdateProductDto {
     })
     description?: string;
 
-    @IsNumber()
-    @IsOptional()
-    @ApiProperty({
-        description: 'The price of the product',
-        example: 10.99
-    })
-    price?: number;
-
     @IsString()
     @IsOptional()
     @ApiProperty({
         description: 'The category of the product',
-        example: 'Electronics'
+        example: 'MEAT_POULTRY'
     })
     category?: string;
+
+    @IsNumber()
+    @IsOptional()
+    @ApiProperty({
+        description: 'The price of the product',
+        example: 1230
+    })
+    price?: number;
+
+    @IsNumber()
+    @IsOptional()
+    @ApiProperty({
+        description: 'The sale price of the product',
+        example: 110
+    })
+    salePrice?: number;
+
+    @IsNumber()
+    @IsOptional()
+    @ApiProperty({
+        description: 'The discount percentage',
+        example: 10
+    })
+    discount?: number;
+
+    @IsString()
+    @IsOptional()
+    @ApiProperty({
+        description: 'The barcode of the product',
+        example: '123213213'
+    })
+    barcode?: string;
+
+    @IsNumber()
+    @IsOptional()
+    @ApiProperty({
+        description: 'The package quantity',
+        example: 20
+    })
+    packageQuantity?: number;
+
+    @IsString()
+    @IsOptional()
+    @ApiProperty({
+        description: 'The brand of the product',
+        example: 'Brand Name'
+    })
+    brand?: string;
+
+    @IsNumber()
+    @IsOptional()
+    @ApiProperty({
+        description: 'The weight of the product',
+        example: 10
+    })
+    weight?: number;
+
+    @IsNumber()
+    @IsOptional()
+    @ApiProperty({
+        description: 'The stock quantity',
+        example: 110
+    })
+    stockQuantity?: number;
+
+    @IsString()
+    @IsOptional()
+    @ApiProperty({
+        description: 'The SKU of the product',
+        example: '09BCL44P09011'
+    })
+    sku?: string;
 
     @IsEnum(ProductStatus)
     @IsOptional()
@@ -54,32 +118,16 @@ export class UpdateProductDto {
     @IsString()
     @IsOptional()
     @ApiProperty({
-        description: 'The SKU of the product',
-        example: 'ELE-PRO-001-000001'
-    })
-    sku?: string;
-
-    @IsString()
-    @IsOptional()
-    @ApiProperty({
         description: 'The warehouse location of the product',
-        example: 'A1-B2-C3'
+        example: '123123'
     })
     warehouseLocation?: string;
-
-    @IsNumber()
-    @IsOptional()
-    @ApiProperty({
-        description: 'The current stock quantity',
-        example: 100
-    })
-    stockQuantity?: number;
 
     @IsString()
     @IsOptional()
     @ApiProperty({
         description: 'The product reference code',
-        example: 'REF-001'
+        example: 'redfe332'
     })
     productReferenceCode?: string;
 
@@ -91,18 +139,59 @@ export class UpdateProductDto {
     })
     reorderPoint?: number;
 
+    @IsBoolean()
     @IsOptional()
     @ApiProperty({
-        description: 'The reseller associated with the product',
-        example: { uid: 1 }
+        description: 'Whether the product is on promotion',
+        example: false
     })
-    reseller?: { uid: number };
+    isOnPromotion?: boolean;
+
+    @IsString()
+    @IsOptional()
+    @ApiProperty({
+        description: 'Additional package details',
+        example: 'extra'
+    })
+    packageDetails?: string;
+
+    @IsString()
+    @IsOptional()
+    @ApiProperty({
+        description: 'The product reference',
+        example: 'redfe332'
+    })
+    productRef?: string;
 
     @IsBoolean()
     @IsOptional()
     @ApiProperty({
-        description: 'Soft delete flag',
+        description: 'Whether the product is deleted',
         example: false
     })
     isDeleted?: boolean;
+
+    @IsDate()
+    @IsOptional()
+    @ApiProperty({
+        description: 'The promotion start date',
+        example: null
+    })
+    promotionStartDate?: Date;
+
+    @IsDate()
+    @IsOptional()
+    @ApiProperty({
+        description: 'The promotion end date',
+        example: null
+    })
+    promotionEndDate?: Date;
+
+    @IsString()
+    @IsOptional()
+    @ApiProperty({
+        description: 'The package unit',
+        example: 'unit'
+    })
+    packageUnit?: string;
 }

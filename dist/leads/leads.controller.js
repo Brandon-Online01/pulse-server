@@ -18,12 +18,12 @@ const leads_service_1 = require("./leads.service");
 const create_lead_dto_1 = require("./dto/create-lead.dto");
 const update_lead_dto_1 = require("./dto/update-lead.dto");
 const swagger_1 = require("@nestjs/swagger");
-const role_guard_1 = require("../guards/role.guard");
 const role_decorator_1 = require("../decorators/role.decorator");
 const user_enums_1 = require("../lib/enums/user.enums");
-const auth_guard_1 = require("../guards/auth.guard");
 const enterprise_only_decorator_1 = require("../decorators/enterprise-only.decorator");
 const lead_enums_1 = require("../lib/enums/lead.enums");
+const auth_guard_1 = require("../guards/auth.guard");
+const role_guard_1 = require("../guards/role.guard");
 let LeadsController = class LeadsController {
     constructor(leadsService) {
         this.leadsService = leadsService;
@@ -31,14 +31,16 @@ let LeadsController = class LeadsController {
     create(createLeadDto) {
         return this.leadsService.create(createLeadDto);
     }
-    findAll(page, limit, status, search, startDate, endDate) {
+    async findAll(page, limit, status, search, startDate, endDate) {
         const filters = {
             ...(status && { status }),
             ...(search && { search }),
-            ...(startDate && { startDate: new Date(startDate) }),
-            ...(endDate && { endDate: new Date(endDate) }),
+            ...(startDate && endDate && {
+                startDate: new Date(startDate),
+                endDate: new Date(endDate)
+            }),
         };
-        return this.leadsService.findAll(filters, page ? Number(page) : 1, limit ? Number(limit) : Number(process.env.DEFAULT_PAGE_LIMIT));
+        return this.leadsService.findAll(filters, page ? Number(page) : 1, limit ? Number(limit) : 25);
     }
     findOne(ref) {
         return this.leadsService.findOne(ref);
@@ -79,7 +81,7 @@ __decorate([
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number, Number, String, String, Date,
         Date]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], LeadsController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)(':ref'),

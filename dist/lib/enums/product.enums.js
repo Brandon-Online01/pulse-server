@@ -12,6 +12,7 @@ var ProductStatus;
     ProductStatus["BEST_SELLER"] = "bestseller";
     ProductStatus["HOTDEALS"] = "hotdeals";
     ProductStatus["OUTOFSTOCK"] = "outofstock";
+    ProductStatus["DELETED"] = "deleted";
 })(ProductStatus || (exports.ProductStatus = ProductStatus = {}));
 var ResellerStatus;
 (function (ResellerStatus) {

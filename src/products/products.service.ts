@@ -132,7 +132,7 @@ export class ProductsService {
 
 			const [products, total] = await this.productRepository.findAndCount({
 				where: {
-					status: Not(In([ProductStatus.DISCONTINUED, ProductStatus.HIDDEN]))
+					status: Not(In([ProductStatus.DISCONTINUED, ProductStatus.HIDDEN, ProductStatus.DELETED]))
 				},
 				skip: (page - 1) * limit,
 				take: limit,

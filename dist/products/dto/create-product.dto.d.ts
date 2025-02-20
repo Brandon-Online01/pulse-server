@@ -1,19 +1,27 @@
+import { ProductStatus } from '../../lib/enums/product.enums';
 export declare class CreateProductDto {
     name: string;
-    description: string;
-    image: string;
-    price: number;
-    salePrice: number;
-    saleStart: Date;
-    saleEnd: Date;
-    discount: number;
-    barcode: number;
-    packageQuantity: number;
+    description?: string;
     category: string;
+    price: number;
+    salePrice?: number;
+    discount?: number;
+    barcode: string;
+    packageQuantity: number;
     brand: string;
     weight: number;
-    reseller: {
-        uid: number;
-    };
-    isOnPromotion: boolean;
+    stockQuantity: number;
+    sku: string;
+    status: ProductStatus;
+    imageUrl?: string;
+    warehouseLocation?: string;
+    productReferenceCode: string;
+    reorderPoint?: number;
+    isOnPromotion?: boolean;
+    packageDetails?: string;
+    productRef?: string;
+    isDeleted?: boolean;
+    promotionStartDate?: Date;
+    promotionEndDate?: Date;
+    packageUnit?: string;
 }

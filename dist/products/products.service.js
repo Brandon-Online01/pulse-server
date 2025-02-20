@@ -112,7 +112,7 @@ let ProductsService = class ProductsService {
             }
             const [products, total] = await this.productRepository.findAndCount({
                 where: {
-                    status: (0, typeorm_1.Not)((0, typeorm_1.In)([product_enums_1.ProductStatus.DISCONTINUED, product_enums_1.ProductStatus.HIDDEN]))
+                    status: (0, typeorm_1.Not)((0, typeorm_1.In)([product_enums_1.ProductStatus.DISCONTINUED, product_enums_1.ProductStatus.HIDDEN, product_enums_1.ProductStatus.DELETED]))
                 },
                 skip: (page - 1) * limit,
                 take: limit,

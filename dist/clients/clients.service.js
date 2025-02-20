@@ -40,28 +40,41 @@ let ClientsService = class ClientsService {
             return response;
         }
     }
-    async findAll() {
+    async findAll(page = 1, limit = Number(process.env.DEFAULT_PAGE_LIMIT)) {
         try {
-            const clients = await this.clientsRepository.find({
-                where: {
-                    isDeleted: false
-                }
-            });
+            const queryBuilder = this.clientsRepository
+                .createQueryBuilder('client')
+                .where('client.isDeleted = :isDeleted', { isDeleted: false });
+            queryBuilder
+                .skip((page - 1) * limit)
+                .take(limit)
+                .orderBy('client.createdAt', 'DESC');
+            const [clients, total] = await queryBuilder.getManyAndCount();
             if (!clients) {
                 throw new common_1.NotFoundException(process.env.SEARCH_ERROR_MESSAGE);
             }
-            const response = {
+            return {
+                data: clients,
+                meta: {
+                    total,
+                    page,
+                    limit,
+                    totalPages: Math.ceil(total / limit),
+                },
                 message: process.env.SUCCESS_MESSAGE,
-                clients: clients
             };
-            return response;
         }
         catch (error) {
-            const response = {
+            return {
+                data: [],
+                meta: {
+                    total: 0,
+                    page,
+                    limit,
+                    totalPages: 0,
+                },
                 message: error?.message,
-                clients: null
             };
-            return response;
         }
     }
     async findOne(ref) {

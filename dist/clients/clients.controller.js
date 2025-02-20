@@ -30,8 +30,8 @@ let ClientsController = class ClientsController {
     create(createClientDto) {
         return this.clientsService.create(createClientDto);
     }
-    findAll() {
-        return this.clientsService.findAll();
+    findAll(page, limit) {
+        return this.clientsService.findAll(page ? Number(page) : 1, limit ? Number(limit) : Number(process.env.DEFAULT_PAGE_LIMIT));
     }
     findOne(ref) {
         return this.clientsService.findOne(ref);
@@ -60,8 +60,10 @@ __decorate([
     (0, common_1.Get)(),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'get all clients' }),
+    __param(0, (0, common_1.Query)('page')),
+    __param(1, (0, common_1.Query)('limit')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [Number, Number]),
     __metadata("design:returntype", void 0)
 ], ClientsController.prototype, "findAll", null);
 __decorate([

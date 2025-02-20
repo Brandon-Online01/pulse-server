@@ -87,8 +87,8 @@ export class LeadsService {
       endDate?: Date;
     },
     page: number = 1,
-    limit: number = Number(process.env.DEFAULT_PAGE_LIMIT)
-  ): Promise<PaginatedResponse<Lead>> { 
+    limit: number = 25
+  ): Promise<PaginatedResponse<Lead>> {
     try {
       const queryBuilder = this.leadRepository
         .createQueryBuilder('lead')
@@ -100,13 +100,6 @@ export class LeadsService {
         queryBuilder.andWhere('lead.status = :status', { status: filters.status });
       }
 
-      if (filters?.search) {
-        queryBuilder.andWhere(
-          '(lead.name ILIKE :search OR lead.email ILIKE :search OR lead.phone ILIKE :search)',
-          { search: `%${filters.search}%` }
-        );
-      }
-
       if (filters?.startDate && filters?.endDate) {
         queryBuilder.andWhere('lead.createdAt BETWEEN :startDate AND :endDate', {
           startDate: filters.startDate,
@@ -114,7 +107,13 @@ export class LeadsService {
         });
       }
 
-      // Add pagination
+      if (filters?.search) {
+        queryBuilder.andWhere(
+          '(lead.name ILIKE :search OR lead.email ILIKE :search OR lead.phone ILIKE :search OR owner.name ILIKE :search OR owner.surname ILIKE :search)',
+          { search: `%${filters.search}%` }
+        );
+      }
+
       queryBuilder
         .skip((page - 1) * limit)
         .take(limit)
@@ -134,7 +133,7 @@ export class LeadsService {
           total,
           page,
           limit,
-          totalPages: Math.ceil(total / limit),
+          totalPages: Math.ceil(total / limit)
         },
         message: process.env.SUCCESS_MESSAGE
       };
@@ -145,7 +144,7 @@ export class LeadsService {
           total: 0,
           page,
           limit,
-          totalPages: 0,
+          totalPages: 0
         },
         message: error?.message
       };

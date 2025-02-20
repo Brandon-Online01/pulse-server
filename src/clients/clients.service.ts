@@ -5,6 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Client } from './entities/client.entity';
 import { Repository, DeepPartial } from 'typeorm';
 import { GeneralStatus } from '../lib/enums/status.enums';
+import { PaginatedResponse } from '../lib/interfaces/product.interfaces';
 
 @Injectable()
 export class ClientsService {
@@ -35,31 +36,48 @@ export class ClientsService {
     }
   }
 
-  async findAll(): Promise<{ message: string, clients: Client[] | null }> {
+  async findAll(
+    page: number = 1,
+    limit: number = Number(process.env.DEFAULT_PAGE_LIMIT)
+  ): Promise<PaginatedResponse<Client>> {
     try {
-      const clients = await this.clientsRepository.find({
-        where: {
-          isDeleted: false
-        }
-      });
+      const queryBuilder = this.clientsRepository
+        .createQueryBuilder('client')
+        .where('client.isDeleted = :isDeleted', { isDeleted: false });
+
+      // Add pagination
+      queryBuilder
+        .skip((page - 1) * limit)
+        .take(limit)
+        .orderBy('client.createdAt', 'DESC');
+
+      const [clients, total] = await queryBuilder.getManyAndCount();
 
       if (!clients) {
         throw new NotFoundException(process.env.SEARCH_ERROR_MESSAGE);
       }
 
-      const response = {
+      return {
+        data: clients,
+        meta: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        },
         message: process.env.SUCCESS_MESSAGE,
-        clients: clients
-      }
-
-      return response;
+      };
     } catch (error) {
-      const response = {
+      return {
+        data: [],
+        meta: {
+          total: 0,
+          page,
+          limit,
+          totalPages: 0,
+        },
         message: error?.message,
-        clients: null
-      }
-
-      return response;
+      };
     }
   }
 

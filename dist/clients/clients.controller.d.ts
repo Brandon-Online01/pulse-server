@@ -7,10 +7,7 @@ export declare class ClientsController {
     create(createClientDto: CreateClientDto): Promise<{
         message: string;
     }>;
-    findAll(): Promise<{
-        message: string;
-        clients: import("./entities/client.entity").Client[] | null;
-    }>;
+    findAll(page?: number, limit?: number): Promise<import("../lib/interfaces/product.interfaces").PaginatedResponse<import("./entities/client.entity").Client>>;
     findOne(ref: number): Promise<{
         message: string;
         client: import("./entities/client.entity").Client | null;

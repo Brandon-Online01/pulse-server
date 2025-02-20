@@ -7,7 +7,8 @@ export declare enum ProductStatus {
     DISCONTINUED = "discontinued",
     BEST_SELLER = "bestseller",
     HOTDEALS = "hotdeals",
-    OUTOFSTOCK = "outofstock"
+    OUTOFSTOCK = "outofstock",
+    DELETED = "deleted"
 }
 export declare enum ResellerStatus {
     ACTIVE = "active",

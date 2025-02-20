@@ -14,6 +14,17 @@ export declare class Product {
     stockQuantity: number;
     productRef: string;
     reorderPoint: number;
+    salePrice: number;
+    discount: number;
+    barcode: string;
+    packageQuantity: number;
+    brand: string;
+    weight: number;
+    isOnPromotion: boolean;
+    packageDetails: string;
+    promotionStartDate: Date;
+    promotionEndDate: Date;
+    packageUnit: string;
     createdAt: Date;
     updatedAt: Date;
     quotationItems: QuotationItem[];

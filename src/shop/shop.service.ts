@@ -194,34 +194,38 @@ export class ShopService {
                 placedBy: { uid: quotationData?.owner?.uid },
                 client: { uid: quotationData?.client?.uid },
                 status: OrderStatus.PENDING,
+                quotationDate: new Date(),
+                createdAt: new Date(),
+                updatedAt: new Date(),
                 quotationItems: quotationData?.items?.map(item => {
                     const product = products.flat().find(p => p.uid === item.uid);
                     return {
                         quantity: Number(item?.quantity),
                         product: { 
                             uid: item?.uid,
-                            name: product?.name || 'N/A',
-                            sku: product?.sku || 'N/A',
-                            barcode: product || 'N/A',
-                            productRef: product?.productRef || 'N/A'
+                            name: product?.name,
+                            sku: product?.sku,
+                            productRef: product?.productRef,
+                            price: product?.price
                         },
                         unitPrice: Number(product?.price || 0),
                         totalPrice: Number(item?.totalPrice),
-                        itemCode: productRefs.get(item?.uid)
+                        createdAt: new Date(),
+                        updatedAt: new Date()
                     };
                 })
-            } as const;
+            };
 
-            await this.quotationRepository.save(newQuotation);
+            const savedQuotation = await this.quotationRepository.save(newQuotation);
 
             // Emit WebSocket event for new quotation
-            this.shopGateway.emitNewQuotation(newQuotation?.quotationNumber);
+            this.shopGateway.emitNewQuotation(savedQuotation?.quotationNumber);
 
             const baseConfig = {
                 name: clientName,
-                quotationId: newQuotation?.quotationNumber,
+                quotationId: savedQuotation?.quotationNumber,
                 validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days validity
-                total: Number(newQuotation?.totalAmount),
+                total: Number(savedQuotation?.totalAmount),
                 currency: this.currencyCode,
                 quotationItems: quotationData?.items?.map(item => {
                     const product = products.flat().find(p => p.uid === item.uid);

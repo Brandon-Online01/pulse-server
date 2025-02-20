@@ -8,6 +8,7 @@ export enum ProductStatus {
     BEST_SELLER = 'bestseller',
     HOTDEALS = 'hotdeals',
     OUTOFSTOCK = 'outofstock',
+    DELETED = 'deleted',
 }
 
 export enum ResellerStatus {
