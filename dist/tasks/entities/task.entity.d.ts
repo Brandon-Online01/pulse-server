@@ -9,9 +9,9 @@ export declare class Task {
     status: TaskStatus;
     taskType: TaskType;
     priority: TaskPriority;
+    repetitionType: RepetitionType;
     progress: number;
     deadline: Date;
-    repetitionType: RepetitionType;
     repetitionEndDate: Date;
     lastCompletedAt: Date;
     startDate: Date;
@@ -21,7 +21,7 @@ export declare class Task {
     targetCategory: string;
     createdAt: Date;
     updatedAt: Date;
-    createdBy: User;
+    creator: User;
     assignees: User[];
     clients: Client[];
     subtasks: SubTask[];

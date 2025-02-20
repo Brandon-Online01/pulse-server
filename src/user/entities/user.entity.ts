@@ -102,8 +102,11 @@ export class User {
     @OneToMany(() => Journal, (journal) => journal?.owner)
     journals: Journal[];
 
-    @OneToMany(() => Task, (task) => task?.createdBy)
-    tasks: Task[];
+    @OneToMany(() => Task, (task) => task?.creator)
+    userTasks: Task[];
+
+    @OneToMany(() => Task, (task) => task?.assignees)
+    tasksAssigned: Task[];
 
     @OneToMany(() => News, (news) => news?.author)
     articles: News[];

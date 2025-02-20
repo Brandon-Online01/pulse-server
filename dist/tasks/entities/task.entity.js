@@ -67,6 +67,10 @@ __decorate([
     __metadata("design:type", String)
 ], Task.prototype, "priority", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ type: 'enum', enum: task_enums_1.RepetitionType, default: task_enums_1.RepetitionType.NONE }),
+    __metadata("design:type", String)
+], Task.prototype, "repetitionType", void 0);
+__decorate([
     (0, typeorm_1.Column)({ type: 'int', default: 0 }),
     __metadata("design:type", Number)
 ], Task.prototype, "progress", void 0);
@@ -74,10 +78,6 @@ __decorate([
     (0, typeorm_1.Column)({ type: 'datetime', nullable: true }),
     __metadata("design:type", Date)
 ], Task.prototype, "deadline", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ type: 'enum', enum: task_enums_1.RepetitionType, default: task_enums_1.RepetitionType.NONE }),
-    __metadata("design:type", String)
-], Task.prototype, "repetitionType", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'datetime', nullable: true }),
     __metadata("design:type", Date)
@@ -115,29 +115,19 @@ __decorate([
     __metadata("design:type", Date)
 ], Task.prototype, "updatedAt", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => user_entity_1.User, { onDelete: 'SET NULL' }),
+    (0, typeorm_1.ManyToOne)(() => user_entity_1.User, (user) => user?.userTasks, { onDelete: 'SET NULL' }),
     __metadata("design:type", user_entity_1.User)
-], Task.prototype, "createdBy", void 0);
+], Task.prototype, "creator", void 0);
 __decorate([
-    (0, typeorm_1.ManyToMany)(() => user_entity_1.User),
-    (0, typeorm_1.JoinTable)({
-        name: 'task_assignees',
-        joinColumn: { name: 'taskUid', referencedColumnName: 'uid' },
-        inverseJoinColumn: { name: 'userUid', referencedColumnName: 'uid' }
-    }),
+    (0, typeorm_1.ManyToMany)(() => user_entity_1.User, (user) => user?.tasksAssigned, { cascade: true }),
     __metadata("design:type", Array)
 ], Task.prototype, "assignees", void 0);
 __decorate([
-    (0, typeorm_1.ManyToMany)(() => client_entity_1.Client),
-    (0, typeorm_1.JoinTable)({
-        name: 'task_clients',
-        joinColumn: { name: 'taskUid', referencedColumnName: 'uid' },
-        inverseJoinColumn: { name: 'clientUid', referencedColumnName: 'uid' }
-    }),
+    (0, typeorm_1.ManyToMany)(() => client_entity_1.Client, (client) => client?.tasks, { cascade: true }),
     __metadata("design:type", Array)
 ], Task.prototype, "clients", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => subtask_entity_1.SubTask, subtask => subtask.task),
+    (0, typeorm_1.OneToMany)(() => subtask_entity_1.SubTask, (subtask) => subtask?.task, { cascade: true }),
     __metadata("design:type", Array)
 ], Task.prototype, "subtasks", void 0);
 __decorate([

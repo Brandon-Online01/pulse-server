@@ -141,9 +141,13 @@ __decorate([
     __metadata("design:type", Array)
 ], User.prototype, "journals", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => task_entity_1.Task, (task) => task?.createdBy),
+    (0, typeorm_1.OneToMany)(() => task_entity_1.Task, (task) => task?.creator),
     __metadata("design:type", Array)
-], User.prototype, "tasks", void 0);
+], User.prototype, "userTasks", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => task_entity_1.Task, (task) => task?.assignees),
+    __metadata("design:type", Array)
+], User.prototype, "tasksAssigned", void 0);
 __decorate([
     (0, typeorm_1.OneToMany)(() => news_entity_1.News, (news) => news?.author),
     __metadata("design:type", Array)

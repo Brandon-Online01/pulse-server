@@ -46,7 +46,8 @@ export declare class User {
     userDocs: Doc[];
     leads: Lead[];
     journals: Journal[];
-    tasks: Task[];
+    userTasks: Task[];
+    tasksAssigned: Task[];
     articles: News[];
     assets: Asset[];
     trackings: Tracking[];

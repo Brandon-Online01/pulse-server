@@ -77,7 +77,7 @@ export class TasksService {
 			repeatedTask.lastCompletedAt = null;
 			repeatedTask.repetitionType = RepetitionType.NONE;
 			repeatedTask.repetitionEndDate = null;
-			repeatedTask.createdBy = baseTask.createdBy;
+			repeatedTask.creator = baseTask.creator;
 
 			await this.taskRepository.save(repeatedTask);
 
@@ -308,7 +308,7 @@ export class TasksService {
 	public async tasksByUser(ref: number): Promise<{ message: string, tasks: Task[] }> {
 		try {
 			const tasks = await this.taskRepository.find({
-				where: { createdBy: { uid: ref }, isDeleted: false },
+				where: { creator: { uid: ref }, isDeleted: false },
 				relations: [
 					'createdBy',
 					'clients',
@@ -401,7 +401,7 @@ export class TasksService {
 
 			// Get all users who should receive the notification
 			const recipientIds = [
-				task.createdBy.uid,
+				task.creator.uid,
 				...(task.assignees?.map(assignee => assignee.uid) || [])
 			];
 
@@ -417,7 +417,7 @@ export class TasksService {
 			});
 
 			await this.rewardsService.awardXP({
-				owner: task.createdBy.uid,
+				owner: task.creator?.uid,
 				amount: XP_VALUES.TASK,
 				action: XP_VALUES_TYPES.TASK,
 				source: {
@@ -612,7 +612,7 @@ export class TasksService {
 				};
 
 				const recipients = [
-					task.createdBy.uid,
+					task.creator.uid,
 					...(task.assignees?.map(assignee => assignee.uid) || [])
 				];
 

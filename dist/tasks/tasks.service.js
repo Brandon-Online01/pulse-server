@@ -77,7 +77,7 @@ let TasksService = class TasksService {
             repeatedTask.lastCompletedAt = null;
             repeatedTask.repetitionType = task_enums_1.RepetitionType.NONE;
             repeatedTask.repetitionEndDate = null;
-            repeatedTask.createdBy = baseTask.createdBy;
+            repeatedTask.creator = baseTask.creator;
             await this.taskRepository.save(repeatedTask);
             currentDate = nextDate;
             tasksCreated++;
@@ -255,7 +255,7 @@ let TasksService = class TasksService {
     async tasksByUser(ref) {
         try {
             const tasks = await this.taskRepository.find({
-                where: { createdBy: { uid: ref }, isDeleted: false },
+                where: { creator: { uid: ref }, isDeleted: false },
                 relations: [
                     'createdBy',
                     'clients',
@@ -330,7 +330,7 @@ let TasksService = class TasksService {
                 owner: null
             };
             const recipientIds = [
-                task.createdBy.uid,
+                task.creator.uid,
                 ...(task.assignees?.map(assignee => assignee.uid) || [])
             ];
             const uniqueRecipientIds = [...new Set(recipientIds)];
@@ -341,7 +341,7 @@ let TasksService = class TasksService {
                 }, [recipientId]);
             });
             await this.rewardsService.awardXP({
-                owner: task.createdBy.uid,
+                owner: task.creator?.uid,
                 amount: constants_1.XP_VALUES.TASK,
                 action: constants_2.XP_VALUES_TYPES.TASK,
                 source: {
@@ -508,7 +508,7 @@ let TasksService = class TasksService {
                     owner: null
                 };
                 const recipients = [
-                    task.createdBy.uid,
+                    task.creator.uid,
                     ...(task.assignees?.map(assignee => assignee.uid) || [])
                 ];
                 const uniqueRecipients = [...new Set(recipients)];
