@@ -18,42 +18,83 @@ const typeorm_1 = require("@nestjs/typeorm");
 const client_entity_1 = require("./entities/client.entity");
 const typeorm_2 = require("typeorm");
 const status_enums_1 = require("../lib/enums/status.enums");
+const cache_manager_1 = require("@nestjs/cache-manager");
+const config_1 = require("@nestjs/config");
 let ClientsService = class ClientsService {
-    constructor(clientsRepository) {
+    constructor(clientsRepository, cacheManager, configService) {
         this.clientsRepository = clientsRepository;
+        this.cacheManager = cacheManager;
+        this.configService = configService;
+        this.CACHE_PREFIX = 'client:';
+        this.CACHE_TTL = this.configService.get('CACHE_EXPIRATION_TIME') || 30;
     }
-    async create(createClientDto) {
+    getCacheKey(key) {
+        return `${this.CACHE_PREFIX}${key}`;
+    }
+    async clearClientCache(clientId) {
+        if (clientId) {
+            await this.cacheManager.del(this.getCacheKey(clientId));
+        }
+        await this.cacheManager.del(this.getCacheKey('all'));
+    }
+    async create(createClientDto, user) {
         try {
-            const client = await this.clientsRepository.save(createClientDto);
+            const clientData = {
+                ...createClientDto,
+                organisation: user?.organisationRef ? { uid: user.organisationRef } : undefined,
+                branch: user?.branch?.uid ? { uid: user.branch.uid } : undefined
+            };
+            const client = await this.clientsRepository.save(clientData);
             if (!client) {
                 throw new common_1.NotFoundException(process.env.CREATE_ERROR_MESSAGE);
             }
-            const response = {
+            await this.clearClientCache();
+            return {
                 message: process.env.SUCCESS_MESSAGE,
             };
-            return response;
         }
         catch (error) {
-            const response = {
+            return {
                 message: error?.message,
             };
-            return response;
         }
     }
-    async findAll(page = 1, limit = Number(process.env.DEFAULT_PAGE_LIMIT)) {
+    async findAll(page = 1, limit = Number(process.env.DEFAULT_PAGE_LIMIT), user, filters) {
         try {
-            const queryBuilder = this.clientsRepository
-                .createQueryBuilder('client')
-                .where('client.isDeleted = :isDeleted', { isDeleted: false });
-            queryBuilder
-                .skip((page - 1) * limit)
-                .take(limit)
-                .orderBy('client.createdAt', 'DESC');
-            const [clients, total] = await queryBuilder.getManyAndCount();
+            const cacheKey = this.getCacheKey(`all:${page}:${limit}:${JSON.stringify(filters)}`);
+            const cached = await this.cacheManager.get(cacheKey);
+            if (cached) {
+                return cached;
+            }
+            const where = {
+                isDeleted: false
+            };
+            if (user?.organisationRef) {
+                where.organisation = { uid: user?.organisationRef };
+            }
+            if (user?.branch?.uid) {
+                where.branch = { uid: user?.branch?.uid };
+            }
+            if (filters?.status) {
+                where.status = filters?.status;
+            }
+            if (filters?.category) {
+                where.category = filters?.category;
+            }
+            if (filters?.search) {
+                where.name = (0, typeorm_2.ILike)(`%${filters.search}%`);
+            }
+            const [clients, total] = await this.clientsRepository.findAndCount({
+                where,
+                relations: ['organisation', 'branch'],
+                skip: (page - 1) * limit,
+                take: limit,
+                order: { createdAt: 'DESC' }
+            });
             if (!clients) {
                 throw new common_1.NotFoundException(process.env.SEARCH_ERROR_MESSAGE);
             }
-            return {
+            const result = {
                 data: clients,
                 meta: {
                     total,
@@ -63,6 +104,8 @@ let ClientsService = class ClientsService {
                 },
                 message: process.env.SUCCESS_MESSAGE,
             };
+            await this.cacheManager.set(cacheKey, result, this.CACHE_TTL);
+            return result;
         }
         catch (error) {
             return {
@@ -77,84 +120,101 @@ let ClientsService = class ClientsService {
             };
         }
     }
-    async findOne(ref) {
+    async findOne(ref, user) {
         try {
+            const cacheKey = this.getCacheKey(ref);
+            const cached = await this.cacheManager.get(cacheKey);
+            if (cached) {
+                return {
+                    message: process.env.SUCCESS_MESSAGE,
+                    client: cached
+                };
+            }
+            const where = {
+                uid: ref,
+                isDeleted: false
+            };
+            if (user?.organisationRef) {
+                where.organisation = { uid: user.organisationRef };
+            }
+            if (user?.branch?.uid) {
+                where.branch = { uid: user.branch.uid };
+            }
             const client = await this.clientsRepository.findOne({
-                where: {
-                    uid: ref,
-                    isDeleted: false
-                },
+                where,
+                relations: ['organisation', 'branch']
             });
             if (!client) {
                 throw new common_1.NotFoundException(process.env.SEARCH_ERROR_MESSAGE);
             }
-            const response = {
+            await this.cacheManager.set(cacheKey, client, this.CACHE_TTL);
+            return {
                 message: process.env.SUCCESS_MESSAGE,
-                client: client
+                client
             };
-            return response;
         }
         catch (error) {
-            const response = {
+            return {
                 message: error?.message,
                 client: null
             };
-            return response;
         }
     }
-    async update(ref, updateClientDto) {
+    async update(ref, updateClientDto, user) {
         try {
+            const existingClient = await this.findOne(ref, user);
+            if (!existingClient.client) {
+                throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
+            }
             await this.clientsRepository.update(ref, updateClientDto);
-            const response = {
+            await this.clearClientCache(ref);
+            return {
                 message: process.env.SUCCESS_MESSAGE,
             };
-            return response;
         }
         catch (error) {
-            const response = {
+            return {
                 message: error?.message,
             };
-            return response;
         }
     }
-    async remove(ref) {
+    async remove(ref, user) {
         try {
-            const client = await this.clientsRepository.findOne({
-                where: { uid: ref, isDeleted: false }
-            });
-            if (!client) {
+            const existingClient = await this.findOne(ref, user);
+            if (!existingClient.client) {
                 throw new common_1.NotFoundException(process.env.DELETE_ERROR_MESSAGE);
             }
-            ;
             await this.clientsRepository.update({ uid: ref }, { isDeleted: true });
-            const response = {
+            await this.clearClientCache(ref);
+            return {
                 message: process.env.SUCCESS_MESSAGE,
             };
-            return response;
         }
         catch (error) {
-            const response = {
+            return {
                 message: error?.message,
             };
-            return response;
         }
     }
-    async restore(ref) {
+    async restore(ref, user) {
         try {
+            const existingClient = await this.findOne(ref, user);
+            if (!existingClient.client) {
+                throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
+            }
             await this.clientsRepository.update({ uid: ref }, {
                 isDeleted: false,
                 status: status_enums_1.GeneralStatus.ACTIVE
             });
-            const response = {
+            await this.clearClientCache(ref);
+            return {
                 message: process.env.SUCCESS_MESSAGE,
             };
-            return response;
         }
         catch (error) {
-            const response = {
+            return {
                 message: error?.message,
             };
-            return response;
         }
     }
 };
@@ -162,6 +222,7 @@ exports.ClientsService = ClientsService;
 exports.ClientsService = ClientsService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(client_entity_1.Client)),
-    __metadata("design:paramtypes", [typeorm_2.Repository])
+    __param(1, (0, common_1.Inject)(cache_manager_1.CACHE_MANAGER)),
+    __metadata("design:paramtypes", [typeorm_2.Repository, Object, config_1.ConfigService])
 ], ClientsService);
 //# sourceMappingURL=clients.service.js.map

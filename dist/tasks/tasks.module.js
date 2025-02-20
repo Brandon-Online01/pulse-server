@@ -16,6 +16,8 @@ const subtask_entity_1 = require("./entities/subtask.entity");
 const rewards_module_1 = require("../rewards/rewards.module");
 const licensing_module_1 = require("../licensing/licensing.module");
 const client_entity_1 = require("../clients/entities/client.entity");
+const user_entity_1 = require("../user/entities/user.entity");
+const config_1 = require("@nestjs/config");
 let TasksModule = class TasksModule {
 };
 exports.TasksModule = TasksModule;
@@ -23,8 +25,9 @@ exports.TasksModule = TasksModule = __decorate([
     (0, common_1.Module)({
         imports: [
             licensing_module_1.LicensingModule,
-            typeorm_1.TypeOrmModule.forFeature([task_entity_1.Task, subtask_entity_1.SubTask, client_entity_1.Client]),
-            rewards_module_1.RewardsModule
+            typeorm_1.TypeOrmModule.forFeature([task_entity_1.Task, subtask_entity_1.SubTask, client_entity_1.Client, user_entity_1.User]),
+            rewards_module_1.RewardsModule,
+            config_1.ConfigModule,
         ],
         controllers: [tasks_controller_1.TasksController],
         providers: [tasks_service_1.TasksService],

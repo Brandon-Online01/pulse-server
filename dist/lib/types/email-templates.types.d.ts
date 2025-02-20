@@ -139,6 +139,28 @@ export interface LicenseTransferEmailData extends BaseEmailData {
     newOrganizationName?: string;
     oldOrganizationName?: string;
 }
+export interface TaskEmailData extends BaseEmailData {
+    taskId: string;
+    title: string;
+    description: string;
+    deadline?: string;
+    priority: string;
+    taskType: string;
+    status: string;
+    assignedBy: string;
+    subtasks?: Array<{
+        title: string;
+        status: string;
+    }>;
+    clients?: Array<{
+        name: string;
+        category?: string;
+    }>;
+    attachments?: Array<{
+        name: string;
+        url: string;
+    }>;
+}
 export interface EmailDataMap {
     [EmailType.SIGNUP]: SignupEmailData;
     [EmailType.VERIFICATION]: VerificationEmailData;
@@ -160,5 +182,7 @@ export interface EmailDataMap {
     [EmailType.LICENSE_ACTIVATED]: LicenseEmailData;
     [EmailType.LICENSE_TRANSFERRED_FROM]: LicenseTransferEmailData;
     [EmailType.LICENSE_TRANSFERRED_TO]: LicenseTransferEmailData;
+    [EmailType.NEW_TASK]: TaskEmailData;
+    [EmailType.TASK_UPDATED]: TaskEmailData;
 }
 export type EmailTemplateData<T extends EmailType> = T extends keyof EmailDataMap ? EmailDataMap[T] : never;

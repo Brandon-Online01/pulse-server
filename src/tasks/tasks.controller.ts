@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, Req } from '@nestjs/common';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
@@ -29,6 +29,7 @@ export class TasksController {
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get all tasks' })
   findAll(
+    @Req() request: any,
     @Query('status') status?: TaskStatus,
     @Query('priority') priority?: TaskPriority,
     @Query('assigneeId') assigneeId?: number,
@@ -52,7 +53,8 @@ export class TasksController {
     return this.tasksService.findAll(
       filters,
       page ? Number(page) : 1,
-      limit ? Number(limit) : Number(process.env.DEFAULT_PAGE_LIMIT)
+      limit ? Number(limit) : Number(process.env.DEFAULT_PAGE_LIMIT),
+      request.user
     );
   }
 

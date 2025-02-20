@@ -9,10 +9,10 @@ export declare class TasksController {
     create(createTaskDto: CreateTaskDto): Promise<{
         message: string;
     }>;
-    findAll(status?: TaskStatus, priority?: TaskPriority, assigneeId?: number, clientId?: number, startDate?: Date, endDate?: Date, isOverdue?: boolean, page?: number, limit?: number): Promise<import("../lib/interfaces/product.interfaces").PaginatedResponse<import("./entities/task.entity").Task>>;
+    findAll(request: any, status?: TaskStatus, priority?: TaskPriority, assigneeId?: number, clientId?: number, startDate?: Date, endDate?: Date, isOverdue?: boolean, page?: number, limit?: number): Promise<import("../lib/interfaces/product.interfaces").PaginatedResponse<import("./entities/task.entity").Task>>;
     findOne(ref: number): Promise<{
-        task: import("./entities/task.entity").Task | null;
         message: string;
+        task: import("./entities/task.entity").Task | null;
     }>;
     tasksByUser(ref: number): Promise<{
         message: string;

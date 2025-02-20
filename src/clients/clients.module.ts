@@ -4,11 +4,13 @@ import { ClientsController } from './clients.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Client } from './entities/client.entity';
 import { LicensingModule } from '../licensing/licensing.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
     LicensingModule,
-    TypeOrmModule.forFeature([Client])
+    TypeOrmModule.forFeature([Client]),
+    ConfigModule,
   ],
   controllers: [ClientsController],
   providers: [ClientsService],

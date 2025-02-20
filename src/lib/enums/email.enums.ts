@@ -21,4 +21,7 @@ export enum EmailType {
     LICENSE_ACTIVATED = 'license_activated',
     LICENSE_TRANSFERRED_FROM = 'license.transferred.from',
     LICENSE_TRANSFERRED_TO = 'license.transferred.to',
+    // Task related emails
+    NEW_TASK = 'new_task',
+    TASK_UPDATED = 'task_updated',
 } 

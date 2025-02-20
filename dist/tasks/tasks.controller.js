@@ -32,7 +32,7 @@ let TasksController = class TasksController {
     create(createTaskDto) {
         return this.tasksService.create(createTaskDto);
     }
-    findAll(status, priority, assigneeId, clientId, startDate, endDate, isOverdue, page, limit) {
+    findAll(request, status, priority, assigneeId, clientId, startDate, endDate, isOverdue, page, limit) {
         const filters = {
             ...(status && { status }),
             ...(priority && { priority }),
@@ -42,7 +42,7 @@ let TasksController = class TasksController {
             ...(endDate && { endDate: new Date(endDate) }),
             ...(isOverdue !== undefined && { isOverdue: Boolean(isOverdue) }),
         };
-        return this.tasksService.findAll(filters, page ? Number(page) : 1, limit ? Number(limit) : Number(process.env.DEFAULT_PAGE_LIMIT));
+        return this.tasksService.findAll(filters, page ? Number(page) : 1, limit ? Number(limit) : Number(process.env.DEFAULT_PAGE_LIMIT), request.user);
     }
     findOne(ref) {
         return this.tasksService.findOne(ref);
@@ -83,17 +83,18 @@ __decorate([
     (0, common_1.Get)(),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'get all tasks' }),
-    __param(0, (0, common_1.Query)('status')),
-    __param(1, (0, common_1.Query)('priority')),
-    __param(2, (0, common_1.Query)('assigneeId')),
-    __param(3, (0, common_1.Query)('clientId')),
-    __param(4, (0, common_1.Query)('startDate')),
-    __param(5, (0, common_1.Query)('endDate')),
-    __param(6, (0, common_1.Query)('isOverdue')),
-    __param(7, (0, common_1.Query)('page')),
-    __param(8, (0, common_1.Query)('limit')),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Query)('status')),
+    __param(2, (0, common_1.Query)('priority')),
+    __param(3, (0, common_1.Query)('assigneeId')),
+    __param(4, (0, common_1.Query)('clientId')),
+    __param(5, (0, common_1.Query)('startDate')),
+    __param(6, (0, common_1.Query)('endDate')),
+    __param(7, (0, common_1.Query)('isOverdue')),
+    __param(8, (0, common_1.Query)('page')),
+    __param(9, (0, common_1.Query)('limit')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, Number, Number, Date,
+    __metadata("design:paramtypes", [Object, String, String, Number, Number, Date,
         Date, Boolean, Number, Number]),
     __metadata("design:returntype", void 0)
 ], TasksController.prototype, "findAll", null);

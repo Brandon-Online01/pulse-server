@@ -1,4 +1,4 @@
-import { SignupEmailData, VerificationEmailData, PasswordResetData, PasswordChangedData, InvoiceData, DailyReportData, LicenseEmailData, LicenseLimitData, QuotationData, QuotationInternalData, QuotationResellerData } from '../types/email-templates.types';
+import { SignupEmailData, VerificationEmailData, PasswordResetData, PasswordChangedData, InvoiceData, DailyReportData, LicenseEmailData, LicenseLimitData, QuotationData, QuotationInternalData, QuotationResellerData, TaskEmailData } from '../types/email-templates.types';
 export declare const Signup: (data: SignupEmailData) => string;
 export declare const Verification: (data: VerificationEmailData) => string;
 export declare const PasswordReset: (data: PasswordResetData) => string;
@@ -14,3 +14,5 @@ export declare const LicenseLimitReached: (data: LicenseLimitData) => string;
 export declare const LicenseRenewed: (data: LicenseEmailData) => string;
 export declare const LicenseSuspended: (data: LicenseEmailData) => string;
 export declare const LicenseActivated: (data: LicenseEmailData) => string;
+export declare const NewTask: (data: TaskEmailData) => string;
+export declare const TaskUpdated: (data: TaskEmailData) => string;

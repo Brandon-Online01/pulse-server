@@ -23,5 +23,7 @@ var EmailType;
     EmailType["LICENSE_ACTIVATED"] = "license_activated";
     EmailType["LICENSE_TRANSFERRED_FROM"] = "license.transferred.from";
     EmailType["LICENSE_TRANSFERRED_TO"] = "license.transferred.to";
+    EmailType["NEW_TASK"] = "new_task";
+    EmailType["TASK_UPDATED"] = "task_updated";
 })(EmailType || (exports.EmailType = EmailType = {}));
 //# sourceMappingURL=email.enums.js.map

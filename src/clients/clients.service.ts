@@ -1,63 +1,127 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject } from '@nestjs/common';
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Client } from './entities/client.entity';
-import { Repository, DeepPartial } from 'typeorm';
+import { Repository, DeepPartial, FindOptionsWhere, ILike } from 'typeorm';
 import { GeneralStatus } from '../lib/enums/status.enums';
 import { PaginatedResponse } from '../lib/interfaces/product.interfaces';
+import { Cache } from 'cache-manager';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class ClientsService {
+  private readonly CACHE_TTL: number;
+  private readonly CACHE_PREFIX = 'client:';
+
   constructor(
     @InjectRepository(Client)
-    private clientsRepository: Repository<Client>
-  ) { }
+    private clientsRepository: Repository<Client>,
+    @Inject(CACHE_MANAGER)
+    private cacheManager: Cache,
+    private readonly configService: ConfigService
+  ) {
+    this.CACHE_TTL = this.configService.get<number>('CACHE_EXPIRATION_TIME') || 30;
+  }
 
-  async create(createClientDto: CreateClientDto): Promise<{ message: string }> {
+  private getCacheKey(key: string | number): string {
+    return `${this.CACHE_PREFIX}${key}`;
+  }
+
+  private async clearClientCache(clientId?: number): Promise<void> {
+    if (clientId) {
+      await this.cacheManager.del(this.getCacheKey(clientId));
+    }
+    await this.cacheManager.del(this.getCacheKey('all'));
+  }
+
+  async create(createClientDto: CreateClientDto, user?: any): Promise<{ message: string }> {
     try {
-      const client = await this.clientsRepository.save(createClientDto as unknown as DeepPartial<Client>);
+      // Add organization and branch from user token
+      const clientData = {
+        ...createClientDto,
+        organisation: user?.organisationRef ? { uid: user.organisationRef } : undefined,
+        branch: user?.branch?.uid ? { uid: user.branch.uid } : undefined
+      } as DeepPartial<Client>;
+
+      const client = await this.clientsRepository.save(clientData);
 
       if (!client) {
         throw new NotFoundException(process.env.CREATE_ERROR_MESSAGE);
       }
 
-      const response = {
+      // Clear cache after creating new client
+      await this.clearClientCache();
+
+      return {
         message: process.env.SUCCESS_MESSAGE,
-      }
-
-      return response;
+      };
     } catch (error) {
-      const response = {
+      return {
         message: error?.message,
-      }
-
-      return response;
+      };
     }
   }
 
   async findAll(
     page: number = 1,
-    limit: number = Number(process.env.DEFAULT_PAGE_LIMIT)
+    limit: number = Number(process.env.DEFAULT_PAGE_LIMIT),
+    user?: any,
+    filters?: {
+      status?: GeneralStatus;
+      category?: string;
+      search?: string;
+    }
   ): Promise<PaginatedResponse<Client>> {
     try {
-      const queryBuilder = this.clientsRepository
-        .createQueryBuilder('client')
-        .where('client.isDeleted = :isDeleted', { isDeleted: false });
+      // Try to get from cache first
+      const cacheKey = this.getCacheKey(`all:${page}:${limit}:${JSON.stringify(filters)}`);
+      const cached = await this.cacheManager.get<PaginatedResponse<Client>>(cacheKey);
+      
+      if (cached) {
+        return cached;
+      }
 
-      // Add pagination
-      queryBuilder
-        .skip((page - 1) * limit)
-        .take(limit)
-        .orderBy('client.createdAt', 'DESC');
+      // Build where conditions
+      const where: FindOptionsWhere<Client> = {
+        isDeleted: false
+      };
 
-      const [clients, total] = await queryBuilder.getManyAndCount();
+      // Security: Always filter by organization and branch
+      if (user?.organisationRef) {
+        where.organisation = { uid: user?.organisationRef };
+      }
+      
+      if (user?.branch?.uid) {
+        where.branch = { uid: user?.branch?.uid };
+      }
+
+      // Add filters
+      if (filters?.status) {
+        where.status = filters?.status;
+      }
+      if (filters?.category) {
+        where.category = filters?.category;
+      }
+      if (filters?.search) {
+        where.name = ILike(`%${filters.search}%`);
+      }
+
+      // Execute query with pagination using TypeORM's built-in methods
+      const [clients, total] = await this.clientsRepository.findAndCount({
+        where,
+        relations: ['organisation', 'branch'],
+        skip: (page - 1) * limit,
+        take: limit,
+        order: { createdAt: 'DESC' }
+      });
 
       if (!clients) {
         throw new NotFoundException(process.env.SEARCH_ERROR_MESSAGE);
       }
 
-      return {
+      const result = {
         data: clients,
         meta: {
           total,
@@ -67,6 +131,11 @@ export class ClientsService {
         },
         message: process.env.SUCCESS_MESSAGE,
       };
+
+      // Cache the result
+      await this.cacheManager.set(cacheKey, result, this.CACHE_TTL);
+
+      return result;
     } catch (error) {
       return {
         data: [],
@@ -81,84 +150,115 @@ export class ClientsService {
     }
   }
 
-  async findOne(ref: number): Promise<{ message: string, client: Client | null }> {
+  async findOne(ref: number, user?: any): Promise<{ message: string, client: Client | null }> {
     try {
+      // Try to get from cache first
+      const cacheKey = this.getCacheKey(ref);
+      const cached = await this.cacheManager.get<Client>(cacheKey);
+      
+      if (cached) {
+        return {
+          message: process.env.SUCCESS_MESSAGE,
+          client: cached
+        };
+      }
+
+      // Build where conditions
+      const where: FindOptionsWhere<Client> = {
+        uid: ref,
+        isDeleted: false
+      };
+
+      // Security: Always filter by organization and branch
+      if (user?.organisationRef) {
+        where.organisation = { uid: user.organisationRef };
+      }
+      
+      if (user?.branch?.uid) {
+        where.branch = { uid: user.branch.uid };
+      }
+
       const client = await this.clientsRepository.findOne({
-        where: {
-          uid: ref,
-          isDeleted: false
-        },
+        where,
+        relations: ['organisation', 'branch']
       });
 
       if (!client) {
         throw new NotFoundException(process.env.SEARCH_ERROR_MESSAGE);
       }
 
-      const response = {
-        message: process.env.SUCCESS_MESSAGE,
-        client: client
-      }
+      // Cache the result
+      await this.cacheManager.set(cacheKey, client, this.CACHE_TTL);
 
-      return response;
+      return {
+        message: process.env.SUCCESS_MESSAGE,
+        client
+      };
     } catch (error) {
-      const response = {
+      return {
         message: error?.message,
         client: null
-      }
-
-      return response;
-    }
-  }
-
-  async update(ref: number, updateClientDto: UpdateClientDto): Promise<{ message: string }> {
-    try {
-      await this.clientsRepository.update(ref, updateClientDto as unknown as DeepPartial<Client>);
-
-      const response = {
-        message: process.env.SUCCESS_MESSAGE,
-      }
-
-      return response;
-    } catch (error) {
-      const response = {
-        message: error?.message,
-      }
-
-      return response;
-    }
-  }
-
-  async remove(ref: number): Promise<{ message: string }> {
-    try {
-      const client = await this.clientsRepository.findOne({
-        where: { uid: ref, isDeleted: false }
-      });
-
-      if (!client) {
-        throw new NotFoundException(process.env.DELETE_ERROR_MESSAGE);
       };
+    }
+  }
+
+  async update(ref: number, updateClientDto: UpdateClientDto, user?: any): Promise<{ message: string }> {
+    try {
+      // First check if client exists and belongs to user's org/branch
+      const existingClient = await this.findOne(ref, user);
+      if (!existingClient.client) {
+        throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
+      }
+
+      await this.clientsRepository.update(ref, updateClientDto as DeepPartial<Client>);
+
+      // Clear cache after update
+      await this.clearClientCache(ref);
+
+      return {
+        message: process.env.SUCCESS_MESSAGE,
+      };
+    } catch (error) {
+      return {
+        message: error?.message,
+      };
+    }
+  }
+
+  async remove(ref: number, user?: any): Promise<{ message: string }> {
+    try {
+      // First check if client exists and belongs to user's org/branch
+      const existingClient = await this.findOne(ref, user);
+      if (!existingClient.client) {
+        throw new NotFoundException(process.env.DELETE_ERROR_MESSAGE);
+      }
 
       await this.clientsRepository.update(
         { uid: ref },
         { isDeleted: true }
       );
 
-      const response = {
+      // Clear cache after deletion
+      await this.clearClientCache(ref);
+
+      return {
         message: process.env.SUCCESS_MESSAGE,
       };
-
-      return response;
     } catch (error) {
-      const response = {
+      return {
         message: error?.message,
-      }
-
-      return response;
+      };
     }
   }
 
-  async restore(ref: number): Promise<{ message: string }> {
+  async restore(ref: number, user?: any): Promise<{ message: string }> {
     try {
+      // First check if client exists and belongs to user's org/branch
+      const existingClient = await this.findOne(ref, user);
+      if (!existingClient.client) {
+        throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
+      }
+
       await this.clientsRepository.update(
         { uid: ref },
         {
@@ -167,17 +267,16 @@ export class ClientsService {
         }
       );
 
-      const response = {
+      // Clear cache after restoration
+      await this.clearClientCache(ref);
+
+      return {
         message: process.env.SUCCESS_MESSAGE,
       };
-
-      return response;
     } catch (error) {
-      const response = {
+      return {
         message: error?.message,
-      }
-
-      return response;
+      };
     }
   }
 }

@@ -84,8 +84,8 @@ exports.AppModule = AppModule = __decorate([
                 isGlobal: true,
             }),
             cache_manager_1.CacheModule.register({
-                ttl: +process.env.CACHE_EXPIRATION_TIME,
-                max: +process.env.CACHE_MAX_ITEMS,
+                ttl: +process.env.CACHE_EXPIRATION_TIME || 300,
+                max: +process.env.CACHE_MAX_ITEMS || 200,
                 isGlobal: true,
             }),
             event_emitter_1.EventEmitterModule.forRoot(),
