@@ -8,9 +8,6 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var __param = (this && this.__param) || function (paramIndex, decorator) {
-    return function (target, key) { decorator(target, key, paramIndex); }
-};
 var ReportsController_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReportsController = void 0;
@@ -18,107 +15,15 @@ const reports_service_1 = require("./reports.service");
 const swagger_1 = require("@nestjs/swagger");
 const auth_guard_1 = require("../guards/auth.guard");
 const role_guard_1 = require("../guards/role.guard");
-const role_decorator_1 = require("../decorators/role.decorator");
 const common_1 = require("@nestjs/common");
-const user_enums_1 = require("../lib/enums/user.enums");
 const enterprise_only_decorator_1 = require("../decorators/enterprise-only.decorator");
-const generate_report_dto_1 = require("./dto/generate-report.dto");
 let ReportsController = ReportsController_1 = class ReportsController {
     constructor(reportsService) {
         this.reportsService = reportsService;
         this.logger = new common_1.Logger(ReportsController_1.name);
     }
-    async generateReport(generateReportDto) {
-        this.logger.log('Received report generation request', generateReportDto);
-        try {
-            const report = await this.reportsService.generateReport(generateReportDto);
-            this.logger.log('Report generated successfully', { reportId: report.metadata.generatedAt });
-            return report;
-        }
-        catch (error) {
-            this.logger.error(`Failed to generate report: ${error.message}`, error.stack);
-            throw new common_1.HttpException({
-                status: common_1.HttpStatus.INTERNAL_SERVER_ERROR,
-                error: 'Failed to generate report',
-                message: error.message
-            }, common_1.HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-    async managerDailyReport() {
-        try {
-            const report = await this.reportsService.managerDailyReport();
-            this.logger.log('Manager daily report generated successfully');
-            return report;
-        }
-        catch (error) {
-            this.logger.error(`Failed to generate manager daily report: ${error.message}`, error.stack);
-            throw new common_1.HttpException({
-                status: common_1.HttpStatus.INTERNAL_SERVER_ERROR,
-                error: 'Failed to generate daily report',
-                message: error.message
-            }, common_1.HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-    async userDailyReport(reference) {
-        try {
-            const report = await this.reportsService.userDailyReport(reference);
-            this.logger.log('User daily report generated successfully', { userRef: reference });
-            return report;
-        }
-        catch (error) {
-            this.logger.error(`Failed to generate user daily report: ${error.message}`, error.stack);
-            if (error.message.includes('not found')) {
-                throw new common_1.HttpException({
-                    status: common_1.HttpStatus.NOT_FOUND,
-                    error: 'User not found',
-                    message: error.message
-                }, common_1.HttpStatus.NOT_FOUND);
-            }
-            throw new common_1.HttpException({
-                status: common_1.HttpStatus.INTERNAL_SERVER_ERROR,
-                error: 'Failed to generate daily report',
-                message: error.message
-            }, common_1.HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
 };
 exports.ReportsController = ReportsController;
-__decorate([
-    (0, common_1.Post)('generate'),
-    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER),
-    (0, swagger_1.ApiOperation)({ summary: 'Generate a report based on type and filters' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Report generated successfully' }),
-    (0, swagger_1.ApiResponse)({ status: 400, description: 'Invalid request parameters' }),
-    (0, swagger_1.ApiResponse)({ status: 500, description: 'Internal server error' }),
-    __param(0, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [generate_report_dto_1.GenerateReportDto]),
-    __metadata("design:returntype", Promise)
-], ReportsController.prototype, "generateReport", null);
-__decorate([
-    (0, common_1.Get)('daily-report'),
-    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT),
-    (0, swagger_1.ApiOperation)({ summary: 'Get a general company overview report with elevated access' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Daily report retrieved successfully' }),
-    (0, swagger_1.ApiResponse)({ status: 403, description: 'Insufficient permissions' }),
-    (0, swagger_1.ApiResponse)({ status: 500, description: 'Internal server error' }),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
-    __metadata("design:returntype", Promise)
-], ReportsController.prototype, "managerDailyReport", null);
-__decorate([
-    (0, common_1.Get)('daily-report/:ref'),
-    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.USER),
-    (0, swagger_1.ApiOperation)({ summary: 'Get daily activity report, optionally filtered for specific user roles' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'User daily report retrieved successfully' }),
-    (0, swagger_1.ApiResponse)({ status: 403, description: 'Insufficient permissions' }),
-    (0, swagger_1.ApiResponse)({ status: 404, description: 'User not found' }),
-    (0, swagger_1.ApiResponse)({ status: 500, description: 'Internal server error' }),
-    __param(0, (0, common_1.Param)('reference')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", Promise)
-], ReportsController.prototype, "userDailyReport", null);
 exports.ReportsController = ReportsController = ReportsController_1 = __decorate([
     (0, swagger_1.ApiTags)('reports'),
     (0, common_1.Controller)('reports'),
