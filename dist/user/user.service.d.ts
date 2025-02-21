@@ -20,7 +20,7 @@ export declare class UserService {
         search?: string;
         branchId?: number;
         organisationId?: number;
-    }, page?: number, limit?: number): Promise<PaginatedResponse<User>>;
+    }, page?: number, limit?: number): Promise<PaginatedResponse<Omit<User, 'password'>>>;
     findOne(searchParameter: number): Promise<{
         user: Omit<User, 'password'> | null;
         message: string;
@@ -38,7 +38,7 @@ export declare class UserService {
         message: string;
     }>;
     getUsersByRole(recipients: string[]): Promise<{
-        users: User[] | null;
+        users: Omit<User, 'password'>[] | null;
         message: string;
     }>;
     update(ref: string, updateUserDto: UpdateUserDto): Promise<{

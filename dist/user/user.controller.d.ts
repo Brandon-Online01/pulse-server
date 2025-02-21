@@ -9,7 +9,7 @@ export declare class UserController {
     create(createUserDto: CreateUserDto): Promise<{
         message: string;
     }>;
-    findAll(page?: number, limit?: number, status?: AccountStatus, accessLevel?: AccessLevel, search?: string, branchId?: number, organisationId?: number): Promise<import("../lib/interfaces/product.interfaces").PaginatedResponse<import("./entities/user.entity").User>>;
+    findAll(page?: number, limit?: number, status?: AccountStatus, accessLevel?: AccessLevel, search?: string, branchId?: number, organisationId?: number): Promise<import("../lib/interfaces/product.interfaces").PaginatedResponse<Omit<import("./entities/user.entity").User, "password">>>;
     findOne(searchParameter: number): Promise<{
         user: Omit<import("./entities/user.entity").User, "password"> | null;
         message: string;

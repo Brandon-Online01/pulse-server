@@ -74,7 +74,7 @@ export class UserService {
 		},
 		page: number = 1,
 		limit: number = Number(process.env.DEFAULT_PAGE_LIMIT)
-	): Promise<PaginatedResponse<User>> {
+	): Promise<PaginatedResponse<Omit<User, 'password'>>> {
 		try {
 			const queryBuilder = this.userRepository
 				.createQueryBuilder('user')
@@ -118,7 +118,7 @@ export class UserService {
 			}
 
 			return {
-				data: users,
+				data: users.map(user => this.excludePassword(user)),
 				meta: {
 					total,
 					page,
@@ -145,16 +145,32 @@ export class UserService {
 		try {
 			const user = await this.userRepository.findOne({
 				where: [{ uid: searchParameter, isDeleted: false }],
+				select: {
+					uid: true,
+					name: true,
+					surname: true,
+					email: true,
+					username: true,
+					accessLevel: true,
+					organisationRef: true,
+					createdAt: true,
+					updatedAt: true,
+					isDeleted: true,
+					status: true,
+					verificationToken: true,
+					resetToken: true,
+					tokenExpires: true
+				},
 				relations: [
 					'userProfile',
-					'userEmployeementProfile',
+					'userEmployeementProfile', 
 					'userAttendances',
 					'userClaims',
 					'userDocs',
 					'leads',
 					'journals',
 					'tasks',
-					'articles',
+					'articles', 
 					'assets',
 					'trackings',
 					'orders',
@@ -164,25 +180,25 @@ export class UserService {
 					'checkIns',
 					'reports',
 					'rewards',
-					'organisation',
-				],
+					'organisation'
+				]
 			});
 
 			if (!user) {
 				return {
 					user: null,
-					message: process.env.NOT_FOUND_MESSAGE,
+					message: process.env.NOT_FOUND_MESSAGE
 				};
 			}
 
 			return {
-				user: this.excludePassword(user),
-				message: process.env.SUCCESS_MESSAGE,
+				user,
+				message: process.env.SUCCESS_MESSAGE
 			};
 		} catch (error) {
 			return {
 				message: error?.message,
-				user: null,
+				user: null
 			};
 		}
 	}
@@ -273,7 +289,7 @@ export class UserService {
 		}
 	}
 
-	async getUsersByRole(recipients: string[]): Promise<{ users: User[] | null; message: string }> {
+	async getUsersByRole(recipients: string[]): Promise<{ users: Omit<User, 'password'>[] | null; message: string }> {
 		try {
 			const users = await this.userRepository.find({
 				where: { email: In(recipients) },
@@ -283,12 +299,10 @@ export class UserService {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
-			const response = {
-				users: users,
+			return {
+				users: users.map(user => this.excludePassword(user)),
 				message: process.env.SUCCESS_MESSAGE,
 			};
-
-			return response;
 		} catch (error) {
 			const response = {
 				message: error?.message,

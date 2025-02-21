@@ -91,7 +91,7 @@ let UserService = class UserService {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
             return {
-                data: users,
+                data: users.map(user => this.excludePassword(user)),
                 meta: {
                     total,
                     page,
@@ -118,6 +118,22 @@ let UserService = class UserService {
         try {
             const user = await this.userRepository.findOne({
                 where: [{ uid: searchParameter, isDeleted: false }],
+                select: {
+                    uid: true,
+                    name: true,
+                    surname: true,
+                    email: true,
+                    username: true,
+                    accessLevel: true,
+                    organisationRef: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    isDeleted: true,
+                    status: true,
+                    verificationToken: true,
+                    resetToken: true,
+                    tokenExpires: true
+                },
                 relations: [
                     'userProfile',
                     'userEmployeementProfile',
@@ -137,24 +153,24 @@ let UserService = class UserService {
                     'checkIns',
                     'reports',
                     'rewards',
-                    'organisation',
-                ],
+                    'organisation'
+                ]
             });
             if (!user) {
                 return {
                     user: null,
-                    message: process.env.NOT_FOUND_MESSAGE,
+                    message: process.env.NOT_FOUND_MESSAGE
                 };
             }
             return {
-                user: this.excludePassword(user),
-                message: process.env.SUCCESS_MESSAGE,
+                user,
+                message: process.env.SUCCESS_MESSAGE
             };
         }
         catch (error) {
             return {
                 message: error?.message,
-                user: null,
+                user: null
             };
         }
     }
@@ -242,11 +258,10 @@ let UserService = class UserService {
             if (!users) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
-            const response = {
-                users: users,
+            return {
+                users: users.map(user => this.excludePassword(user)),
                 message: process.env.SUCCESS_MESSAGE,
             };
-            return response;
         }
         catch (error) {
             const response = {

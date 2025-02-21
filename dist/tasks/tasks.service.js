@@ -244,6 +244,7 @@ let TasksService = TasksService_1 = class TasksService {
             const [tasks] = await this.taskRepository.findAndCount({
                 where,
                 skip: (page - 1) * limit,
+                relations: ['creator', 'subtasks', 'organisation', 'branch'],
                 take: limit,
                 order: {
                     createdAt: 'DESC',
