@@ -2,8 +2,8 @@ import { SubTask } from './subtask.entity';
 import { User } from '../../user/entities/user.entity';
 import { Client } from '../../clients/entities/client.entity';
 import { TaskStatus, TaskPriority, RepetitionType, TaskType } from '../../lib/enums/task.enums';
-import { Organisation } from 'src/organisation/entities/organisation.entity';
-import { Branch } from 'src/branch/entities/branch.entity';
+import { Organisation } from '../../organisation/entities/organisation.entity';
+import { Branch } from '../../branch/entities/branch.entity';
 export declare class Task {
     uid: number;
     title: string;

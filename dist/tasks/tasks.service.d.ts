@@ -21,6 +21,7 @@ export declare class TasksService {
     private readonly configService;
     private readonly CACHE_TTL;
     private readonly CACHE_PREFIX;
+    private readonly logger;
     constructor(taskRepository: Repository<Task>, subtaskRepository: Repository<SubTask>, eventEmitter: EventEmitter2, clientRepository: Repository<Client>, userRepository: Repository<User>, cacheManager: Cache, configService: ConfigService);
     private getCacheKey;
     private clearTaskCache;
@@ -37,8 +38,8 @@ export declare class TasksService {
         startDate?: Date;
         endDate?: Date;
         isOverdue?: boolean;
-    }, page?: number, limit?: number, user?: any): Promise<PaginatedResponse<Task>>;
-    findOne(ref: number, user?: any): Promise<{
+    }, page?: number, limit?: number): Promise<PaginatedResponse<Task>>;
+    findOne(ref: number): Promise<{
         message: string;
         task: Task | null;
     }>;
@@ -46,10 +47,10 @@ export declare class TasksService {
         message: string;
         tasks: Task[];
     }>;
-    update(ref: number, updateTaskDto: UpdateTaskDto, user?: any): Promise<{
+    update(ref: number, updateTaskDto: UpdateTaskDto): Promise<{
         message: string;
     }>;
-    remove(ref: number, user?: any): Promise<{
+    remove(ref: number): Promise<{
         message: string;
     }>;
     getTaskStatusSummary(): Promise<{

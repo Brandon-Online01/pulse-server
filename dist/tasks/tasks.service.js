@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var TasksService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TasksService = void 0;
 const typeorm_1 = require("typeorm");
@@ -25,11 +26,10 @@ const client_entity_1 = require("../clients/entities/client.entity");
 const common_1 = require("@nestjs/common");
 const notification_enums_1 = require("../lib/enums/notification.enums");
 const task_enums_1 = require("../lib/enums/task.enums");
-const email_enums_1 = require("../lib/enums/email.enums");
 const user_entity_1 = require("../user/entities/user.entity");
 const cache_manager_1 = require("@nestjs/cache-manager");
 const config_1 = require("@nestjs/config");
-let TasksService = class TasksService {
+let TasksService = TasksService_1 = class TasksService {
     constructor(taskRepository, subtaskRepository, eventEmitter, clientRepository, userRepository, cacheManager, configService) {
         this.taskRepository = taskRepository;
         this.subtaskRepository = subtaskRepository;
@@ -39,17 +39,22 @@ let TasksService = class TasksService {
         this.cacheManager = cacheManager;
         this.configService = configService;
         this.CACHE_PREFIX = 'task:';
+        this.logger = new common_1.Logger(TasksService_1.name);
         this.CACHE_TTL = this.configService.get('CACHE_EXPIRATION_TIME') || 30;
     }
-    getCacheKey(key, user) {
-        const orgBranchKey = user ? `:org${user?.organisationRef}:branch${user?.branch?.uid}` : '';
-        return `${this.CACHE_PREFIX}${key}${orgBranchKey}`;
+    getCacheKey(key) {
+        return `${this.CACHE_PREFIX}${key}`;
     }
-    async clearTaskCache(taskId, user) {
-        if (taskId) {
-            await this.cacheManager.del(this.getCacheKey(taskId, user));
+    async clearTaskCache(taskId) {
+        try {
+            if (taskId) {
+                await this.cacheManager.del(this.getCacheKey(taskId));
+            }
+            await this.cacheManager.del(this.getCacheKey('all'));
         }
-        await this.cacheManager.del(this.getCacheKey('all', user));
+        catch (error) {
+            this.logger.error('Error clearing cache:', error);
+        }
     }
     async createRepeatingTasks(baseTask, createTaskDto) {
         if (!createTaskDto.repetitionType || createTaskDto.repetitionType === task_enums_1.RepetitionType.NONE || !createTaskDto.deadline || !createTaskDto.repetitionEndDate) {
@@ -133,8 +138,6 @@ let TasksService = class TasksService {
             }
             const taskData = {
                 ...createTaskDto,
-                organisation: user?.organisationRef ? { uid: user.organisationRef } : undefined,
-                branch: user?.branch?.uid ? { uid: user.branch.uid } : undefined,
                 creator: user?.uid ? { uid: user.uid } : undefined,
                 status: task_enums_1.TaskStatus.PENDING,
                 progress: 0,
@@ -187,128 +190,69 @@ let TasksService = class TasksService {
                 }));
                 await this.subtaskRepository.save(subtasks);
             }
-            if (taskData.assignees?.length > 0) {
-                const notification = {
-                    type: notification_enums_1.NotificationType.USER,
-                    title: 'New Task Assignment',
-                    message: `You have been assigned to: ${task.title}`,
-                    status: notification_enums_1.NotificationStatus.UNREAD,
-                    owner: null
-                };
-                const emailData = {
-                    taskId: task?.uid?.toString(),
-                    name: '',
-                    title: task?.title,
-                    description: task?.description,
-                    deadline: task?.deadline ? new Date(task?.deadline).toLocaleDateString() : undefined,
-                    priority: task?.priority,
-                    taskType: task?.taskType,
-                    status: task?.status,
-                    assignedBy: task?.creator?.username || 'System',
-                    subtasks: task?.subtasks?.map(subtask => ({
-                        title: subtask?.title,
-                        status: subtask?.status
-                    })),
-                    clients: task?.clients?.map(client => ({
-                        name: client?.name,
-                        category: client?.category
-                    })),
-                    attachments: task?.attachments?.map(attachment => {
-                        const [name, url] = attachment.split('|');
-                        return { name, url };
-                    })
-                };
-                taskData.assignees.forEach(assignee => {
-                    this.eventEmitter.emit('send.notification', {
-                        ...notification,
-                        owner: assignee,
-                        metadata: {
-                            taskId: task?.uid,
-                            deadline: task?.deadline,
-                            priority: task?.priority
-                        }
-                    }, [assignee.uid]);
-                    if (assignee?.email) {
-                        this.eventEmitter.emit('send.email', {
-                            type: email_enums_1.EmailType.NEW_TASK,
-                            recipient: assignee?.email,
-                            data: {
-                                ...emailData,
-                                name: assignee?.username
-                            }
-                        });
-                    }
-                });
-            }
-            await this.clearTaskCache(undefined, user);
+            await this.clearTaskCache();
             return {
-                message: process.env.SUCCESS_MESSAGE,
+                message: process.env.SUCCESS_MESSAGE
             };
         }
         catch (error) {
-            throw new common_1.BadRequestException(error?.message);
+            return {
+                message: error?.message
+            };
         }
     }
-    async findAll(filters, page = 1, limit = Number(process.env.DEFAULT_PAGE_LIMIT), user) {
+    async findAll(filters, page = 1, limit = Number(process.env.DEFAULT_PAGE_LIMIT)) {
         try {
-            const cacheKey = this.getCacheKey(`all:${page}:${limit}:${JSON.stringify(filters)}`, user);
-            const cached = await this.cacheManager.get(cacheKey);
-            if (cached) {
-                return cached;
+            const cacheKey = this.getCacheKey('all');
+            const cachedTasks = await this.cacheManager.get(cacheKey);
+            if (cachedTasks) {
+                return cachedTasks;
             }
             const where = { isDeleted: false };
-            const relations = ['creator', 'assignees', 'clients', 'subtasks', 'branch', 'organisation'];
-            if (user?.organisationRef) {
-                where.organisation = { uid: user.organisationRef };
-            }
-            if (user?.branch?.uid) {
-                where.branch = { uid: user.branch.uid };
-            }
-            if (user?.role === 'user') {
-                where.assignees = { uid: user.uid };
-            }
-            else if (user?.role === 'manager') {
-                if (!user?.branch?.uid) {
-                    throw new common_1.BadRequestException('Manager must be assigned to a branch');
-                }
-            }
-            if (filters?.status)
+            if (filters?.status) {
                 where.status = filters.status;
-            if (filters?.priority)
+            }
+            if (filters?.priority) {
                 where.priority = filters.priority;
-            if (filters?.isOverdue !== undefined)
-                where.isOverdue = filters.isOverdue;
-            if (filters?.startDate && filters?.endDate) {
-                where.deadline = (0, typeorm_3.Between)(filters.startDate, filters.endDate);
             }
-            if (filters?.assigneeId) {
-                where.assignees = { ...where.assignees, uid: filters.assigneeId };
+            if (filters?.startDate) {
+                where.deadline = (0, typeorm_3.MoreThanOrEqual)(filters.startDate);
             }
-            if (filters?.clientId) {
-                where.clients = { uid: filters.clientId };
+            if (filters?.endDate) {
+                where.deadline = (0, typeorm_3.LessThanOrEqual)(filters.endDate);
+            }
+            if (filters?.isOverdue) {
+                where.deadline = (0, typeorm_3.LessThan)(new Date());
+                where.status = (0, typeorm_3.Not)(task_enums_1.TaskStatus.COMPLETED);
             }
             const [tasks, total] = await this.taskRepository.findAndCount({
                 where,
-                relations,
+                relations: ['subtasks', 'creator',],
                 skip: (page - 1) * limit,
                 take: limit,
-                order: { createdAt: 'DESC' }
+                order: {
+                    createdAt: 'DESC'
+                }
             });
-            if (!tasks) {
-                throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
+            let filteredTasks = tasks;
+            if (filters?.assigneeId) {
+                filteredTasks = filteredTasks?.filter(task => task.assignees?.some(assignee => assignee?.uid === filters?.assigneeId));
             }
-            const result = {
-                data: tasks,
+            if (filters?.clientId) {
+                filteredTasks = filteredTasks?.filter(task => task.clients?.some(client => client?.uid === filters?.clientId));
+            }
+            const response = {
+                data: filteredTasks,
                 meta: {
-                    total,
+                    total: filteredTasks?.length,
                     page,
                     limit,
-                    totalPages: Math.ceil(total / limit),
+                    totalPages: Math.ceil(filteredTasks?.length / limit),
                 },
                 message: process.env.SUCCESS_MESSAGE,
             };
-            await this.cacheManager.set(cacheKey, result, this.CACHE_TTL);
-            return result;
+            await this.cacheManager.set(cacheKey, response, this.CACHE_TTL);
+            return response;
         }
         catch (error) {
             return {
@@ -323,43 +267,36 @@ let TasksService = class TasksService {
             };
         }
     }
-    async findOne(ref, user) {
+    async findOne(ref) {
         try {
-            const cacheKey = this.getCacheKey(ref, user);
-            const cached = await this.cacheManager.get(cacheKey);
-            if (cached) {
+            const cacheKey = this.getCacheKey(ref);
+            const cachedTask = await this.cacheManager.get(cacheKey);
+            if (cachedTask) {
                 return {
-                    message: process.env.SUCCESS_MESSAGE,
-                    task: cached
+                    task: cachedTask,
+                    message: process.env.SUCCESS_MESSAGE
                 };
             }
-            const where = {
-                uid: ref,
-                isDeleted: false
-            };
-            if (user?.organisationRef) {
-                where.organisation = { uid: user.organisationRef };
-            }
-            if (user?.branch?.uid) {
-                where.branch = { uid: user.branch.uid };
-            }
             const task = await this.taskRepository.findOne({
-                where,
-                relations: ['creator', 'assignees', 'clients', 'subtasks', 'branch', 'organisation']
+                where: {
+                    uid: ref,
+                    isDeleted: false
+                },
+                relations: ['assignees', 'clients', 'creator', 'subtasks']
             });
             if (!task) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
             await this.cacheManager.set(cacheKey, task, this.CACHE_TTL);
             return {
-                message: process.env.SUCCESS_MESSAGE,
-                task
+                task,
+                message: process.env.SUCCESS_MESSAGE
             };
         }
         catch (error) {
             return {
-                message: error?.message,
-                task: null
+                task: null,
+                message: error?.message
             };
         }
     }
@@ -367,12 +304,6 @@ let TasksService = class TasksService {
         try {
             const tasks = await this.taskRepository.find({
                 where: { creator: { uid: ref }, isDeleted: false },
-                relations: [
-                    'createdBy',
-                    'clients',
-                    'subtasks',
-                    'assignees'
-                ]
             });
             if (!tasks) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
@@ -391,98 +322,68 @@ let TasksService = class TasksService {
             return response;
         }
     }
-    async update(ref, updateTaskDto, user) {
+    async update(ref, updateTaskDto) {
         try {
-            const existingTask = await this.findOne(ref, user);
-            if (!existingTask.task) {
+            const task = await this.taskRepository.findOne({
+                where: {
+                    uid: ref,
+                    isDeleted: false
+                }
+            });
+            if (!task) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
-            if (updateTaskDto?.assignees) {
-                const assigneeUsers = await this.userRepository.findByIds(updateTaskDto?.assignees?.map(a => a?.uid));
-                existingTask.task.assignees = assigneeUsers;
-            }
-            Object.assign(existingTask.task, {
-                ...updateTaskDto,
-                assignees: existingTask.task.assignees
-            });
-            const updatedTask = await this.taskRepository.save(existingTask.task);
-            if (updatedTask.assignees?.length > 0) {
-                const notification = {
-                    type: notification_enums_1.NotificationType.USER,
-                    title: 'Task Updated',
-                    message: `Task has been updated: ${updatedTask.title}`,
-                    status: notification_enums_1.NotificationStatus.UNREAD,
-                    owner: null
-                };
-                const emailData = {
-                    taskId: updatedTask.uid.toString(),
-                    name: '',
-                    title: updatedTask.title,
-                    description: updatedTask.description,
-                    deadline: updatedTask.deadline ? new Date(updatedTask.deadline).toLocaleDateString() : undefined,
-                    priority: updatedTask.priority,
-                    taskType: updatedTask.taskType,
-                    status: updatedTask.status,
-                    assignedBy: updatedTask.creator?.username || 'System',
-                    subtasks: updatedTask.subtasks?.map(subtask => ({
-                        title: subtask.title,
-                        status: subtask.status
-                    })),
-                    clients: updatedTask.clients?.map(client => ({
-                        name: client.name,
-                        category: client.category
-                    })),
-                    attachments: updatedTask.attachments?.map(attachment => {
-                        const [name, url] = attachment.split('|');
-                        return { name, url };
-                    })
-                };
-                updatedTask.assignees.forEach(assignee => {
-                    this.eventEmitter.emit('send.notification', {
-                        ...notification,
-                        owner: assignee,
-                        metadata: {
-                            taskId: updatedTask?.uid,
-                            deadline: updatedTask?.deadline,
-                            priority: updatedTask?.priority
-                        }
-                    }, [assignee.uid]);
-                    if (assignee.email) {
-                        this.eventEmitter.emit('send.email', {
-                            type: email_enums_1.EmailType.TASK_UPDATED,
-                            recipient: assignee?.email,
-                            data: {
-                                ...emailData,
-                                name: assignee?.username
-                            }
-                        });
+            if (updateTaskDto?.assignees?.length > 0) {
+                const assigneeUsers = [];
+                for (const assignee of updateTaskDto?.assignees) {
+                    const user = await this.userRepository.findOne({
+                        where: { uid: assignee?.uid }
+                    });
+                    if (user) {
+                        assigneeUsers?.push(user);
                     }
-                });
+                }
+                updateTaskDto.assignees = assigneeUsers;
             }
-            await this.clearTaskCache(ref, user);
+            if (updateTaskDto?.clients?.length > 0) {
+                const clients = await this.clientRepository.findByIds(updateTaskDto.clients.map(client => client.uid));
+                updateTaskDto.clients = clients;
+            }
+            await this.taskRepository.save({
+                ...task,
+                ...updateTaskDto
+            });
+            await this.clearTaskCache(ref);
             return {
-                message: process.env.SUCCESS_MESSAGE,
+                message: process.env.SUCCESS_MESSAGE
             };
         }
         catch (error) {
-            throw new common_1.BadRequestException(error?.message);
+            return {
+                message: error?.message
+            };
         }
     }
-    async remove(ref, user) {
+    async remove(ref) {
         try {
-            const existingTask = await this.findOne(ref, user);
-            if (!existingTask.task) {
+            const task = await this.taskRepository.findOne({
+                where: {
+                    uid: ref,
+                    isDeleted: false
+                }
+            });
+            if (!task) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
-            await this.taskRepository.update({ uid: ref }, { isDeleted: true });
-            await this.clearTaskCache(ref, user);
+            await this.taskRepository.update(ref, { isDeleted: true });
+            await this.clearTaskCache(ref);
             return {
-                message: process.env.SUCCESS_MESSAGE,
+                message: process.env.SUCCESS_MESSAGE
             };
         }
         catch (error) {
             return {
-                message: error?.message,
+                message: error?.message
             };
         }
     }
@@ -644,7 +545,6 @@ let TasksService = class TasksService {
                     ...filter,
                     isDeleted: false
                 },
-                relations: ['assignees', 'clients', 'subtasks', 'createdBy']
             });
             if (!tasks) {
                 throw new common_1.NotFoundException('No tasks found for the specified period');
@@ -706,21 +606,18 @@ let TasksService = class TasksService {
             return acc;
         }, {});
         tasks.forEach(task => {
-            if (task.taskType) {
-                distribution[task.taskType]++;
-            }
+            distribution[task.taskType] = (distribution[task.taskType] || 0) + 1;
         });
         return distribution;
     }
     analyzeIncompletionReasons(tasks) {
-        const incompleteTasks = tasks.filter(task => task.status === task_enums_1.TaskStatus.CANCELLED ||
-            task.status === task_enums_1.TaskStatus.MISSED ||
-            task.status === task_enums_1.TaskStatus.OVERDUE);
-        const reasons = incompleteTasks.reduce((acc, task) => {
-            const reason = this.determineIncompletionReason(task);
-            acc[reason] = (acc[reason] || 0) + 1;
-            return acc;
-        }, {});
+        const reasons = {};
+        tasks.forEach(task => {
+            if (task.status !== task_enums_1.TaskStatus.COMPLETED) {
+                const reason = this.determineIncompletionReason(task);
+                reasons[reason] = (reasons[reason] || 0) + 1;
+            }
+        });
         return Object.entries(reasons)
             .map(([reason, count]) => ({ reason, count }))
             .sort((a, b) => b.count - a.count);
@@ -740,76 +637,74 @@ let TasksService = class TasksService {
         return 'Other';
     }
     analyzeClientCompletionRates(tasks) {
-        const clientTasks = new Map();
+        const clientStats = {};
         tasks.forEach(task => {
             task.clients?.forEach(client => {
-                if (!clientTasks.has(client.uid)) {
-                    clientTasks.set(client.uid, {
+                if (!clientStats[client.uid]) {
+                    clientStats[client.uid] = {
                         clientName: client.name,
-                        total: 0,
-                        completed: 0
-                    });
+                        totalTasks: 0,
+                        completedTasks: 0
+                    };
                 }
-                const stats = clientTasks.get(client.uid);
-                stats.total++;
+                clientStats[client.uid].totalTasks++;
                 if (task.status === task_enums_1.TaskStatus.COMPLETED) {
-                    stats.completed++;
+                    clientStats[client.uid].completedTasks++;
                 }
             });
         });
-        return Array.from(clientTasks.entries())
-            .map(([clientId, stats]) => ({
-            clientId,
+        return Object.entries(clientStats).map(([clientId, stats]) => ({
+            clientId: parseInt(clientId),
             clientName: stats.clientName,
-            totalTasks: stats.total,
-            completedTasks: stats.completed,
-            completionRate: `${((stats.completed / stats.total) * 100).toFixed(1)}%`
-        }))
-            .sort((a, b) => (b.completedTasks / b.totalTasks) - (a.completedTasks / a.totalTasks));
+            totalTasks: stats.totalTasks,
+            completedTasks: stats.completedTasks,
+            completionRate: `${((stats.completedTasks / stats.totalTasks) * 100).toFixed(1)}%`
+        }));
     }
     analyzeTaskPriorityDistribution(tasks) {
-        return tasks.reduce((acc, task) => {
-            acc[task.priority] = (acc[task.priority] || 0) + 1;
+        const distribution = Object.values(task_enums_1.TaskPriority).reduce((acc, priority) => {
+            acc[priority] = 0;
             return acc;
         }, {});
+        tasks.forEach(task => {
+            distribution[task.priority] = (distribution[task.priority] || 0) + 1;
+        });
+        return distribution;
     }
     analyzeAssigneePerformance(tasks) {
-        const assigneeStats = new Map();
+        const assigneeStats = {};
         tasks.forEach(task => {
             task.assignees?.forEach(assignee => {
-                if (!assigneeStats.has(assignee.uid)) {
-                    assigneeStats.set(assignee.uid, {
-                        name: assignee.username,
-                        total: 0,
-                        completed: 0,
+                if (!assigneeStats[assignee.uid]) {
+                    assigneeStats[assignee.uid] = {
+                        assigneeName: assignee.username,
+                        totalTasks: 0,
+                        completedTasks: 0,
                         totalCompletionTime: 0
-                    });
+                    };
                 }
-                const stats = assigneeStats.get(assignee.uid);
-                stats.total++;
+                assigneeStats[assignee.uid].totalTasks++;
                 if (task.status === task_enums_1.TaskStatus.COMPLETED && task.lastCompletedAt) {
-                    stats.completed++;
-                    stats.totalCompletionTime +=
-                        task.lastCompletedAt.getTime() - task.createdAt.getTime();
+                    assigneeStats[assignee.uid].completedTasks++;
+                    assigneeStats[assignee.uid].totalCompletionTime +=
+                        new Date(task.lastCompletedAt).getTime() - new Date(task.createdAt).getTime();
                 }
             });
         });
-        return Array.from(assigneeStats.entries())
-            .map(([assigneeId, stats]) => ({
-            assigneeId,
-            assigneeName: stats.name,
-            totalTasks: stats.total,
-            completedTasks: stats.completed,
-            completionRate: `${((stats.completed / stats.total) * 100).toFixed(1)}%`,
-            averageCompletionTime: `${(stats.completed > 0
-                ? (stats.totalCompletionTime / (stats.completed * 60 * 60 * 1000))
-                : 0).toFixed(1)} hours`
-        }))
-            .sort((a, b) => (b.completedTasks / b.totalTasks) - (a.completedTasks / a.totalTasks));
+        return Object.entries(assigneeStats).map(([assigneeId, stats]) => ({
+            assigneeId: parseInt(assigneeId),
+            assigneeName: stats.assigneeName,
+            totalTasks: stats.totalTasks,
+            completedTasks: stats.completedTasks,
+            completionRate: `${((stats.completedTasks / stats.totalTasks) * 100).toFixed(1)}%`,
+            averageCompletionTime: stats.completedTasks > 0
+                ? `${Math.round(stats.totalCompletionTime / stats.completedTasks / (1000 * 60 * 60))} hours`
+                : 'N/A'
+        }));
     }
 };
 exports.TasksService = TasksService;
-exports.TasksService = TasksService = __decorate([
+exports.TasksService = TasksService = TasksService_1 = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_2.InjectRepository)(task_entity_1.Task)),
     __param(1, (0, typeorm_2.InjectRepository)(subtask_entity_1.SubTask)),

@@ -117,27 +117,27 @@ __decorate([
     __metadata("design:type", Date)
 ], Task.prototype, "updatedAt", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => user_entity_1.User, (user) => user?.userTasks, { onDelete: 'SET NULL', nullable: true }),
+    (0, typeorm_1.ManyToOne)(() => user_entity_1.User, (user) => user?.userTasks),
     __metadata("design:type", user_entity_1.User)
 ], Task.prototype, "creator", void 0);
 __decorate([
-    (0, typeorm_1.ManyToMany)(() => user_entity_1.User, (user) => user?.tasksAssigned, { cascade: true, nullable: true }),
+    (0, typeorm_1.ManyToMany)(() => user_entity_1.User, (user) => user?.tasksAssigned),
     __metadata("design:type", Array)
 ], Task.prototype, "assignees", void 0);
 __decorate([
-    (0, typeorm_1.ManyToMany)(() => client_entity_1.Client, (client) => client?.tasks, { cascade: true, nullable: true }),
+    (0, typeorm_1.ManyToMany)(() => client_entity_1.Client, (client) => client?.tasks),
     __metadata("design:type", Array)
 ], Task.prototype, "clients", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => subtask_entity_1.SubTask, (subtask) => subtask?.task, { cascade: true, nullable: true }),
+    (0, typeorm_1.OneToMany)(() => subtask_entity_1.SubTask, (subtask) => subtask?.task),
     __metadata("design:type", Array)
 ], Task.prototype, "subtasks", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => organisation_entity_1.Organisation, (organisation) => organisation?.tasks, { nullable: true }),
+    (0, typeorm_1.ManyToOne)(() => organisation_entity_1.Organisation, (organisation) => organisation?.tasks),
     __metadata("design:type", organisation_entity_1.Organisation)
 ], Task.prototype, "organisation", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => branch_entity_1.Branch, (branch) => branch?.tasks, { nullable: true }),
+    (0, typeorm_1.ManyToOne)(() => branch_entity_1.Branch, (branch) => branch?.tasks),
     __metadata("design:type", branch_entity_1.Branch)
 ], Task.prototype, "branch", void 0);
 __decorate([

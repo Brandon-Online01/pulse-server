@@ -24,7 +24,6 @@ const auth_guard_1 = require("../guards/auth.guard");
 const user_enums_1 = require("../lib/enums/user.enums");
 const update_subtask_dto_1 = require("./dto/update-subtask.dto");
 const enterprise_only_decorator_1 = require("../decorators/enterprise-only.decorator");
-const task_enums_1 = require("../lib/enums/task.enums");
 let TasksController = class TasksController {
     constructor(tasksService) {
         this.tasksService = tasksService;
@@ -32,17 +31,58 @@ let TasksController = class TasksController {
     create(createTaskDto) {
         return this.tasksService.create(createTaskDto);
     }
-    findAll(request, status, priority, assigneeId, clientId, startDate, endDate, isOverdue, page, limit) {
-        const filters = {
-            ...(status && { status }),
-            ...(priority && { priority }),
-            ...(assigneeId && { assigneeId: Number(assigneeId) }),
-            ...(clientId && { clientId: Number(clientId) }),
-            ...(startDate && { startDate: new Date(startDate) }),
-            ...(endDate && { endDate: new Date(endDate) }),
-            ...(isOverdue !== undefined && { isOverdue: Boolean(isOverdue) }),
-        };
-        return this.tasksService.findAll(filters, page ? Number(page) : 1, limit ? Number(limit) : Number(process.env.DEFAULT_PAGE_LIMIT), request.user);
+    findAll(status, priority, assigneeId, clientId, startDate, endDate, isOverdue, page, limit) {
+        try {
+            const pageNum = page ? parseInt(page, 10) : 1;
+            const limitNum = limit ? parseInt(limit, 10) : Number(process.env.DEFAULT_PAGE_LIMIT);
+            const filters = {};
+            if (status && status !== 'undefined' && status !== '') {
+                filters.status = status;
+            }
+            if (priority && priority !== 'undefined' && priority !== '') {
+                filters.priority = priority;
+            }
+            if (assigneeId && assigneeId !== 'undefined' && assigneeId !== '') {
+                const id = parseInt(assigneeId, 10);
+                if (!isNaN(id)) {
+                    filters.assigneeId = id;
+                }
+            }
+            if (clientId && clientId !== 'undefined' && clientId !== '') {
+                const id = parseInt(clientId, 10);
+                if (!isNaN(id)) {
+                    filters.clientId = id;
+                }
+            }
+            if (startDate && startDate !== 'undefined' && startDate !== '') {
+                const date = new Date(startDate);
+                if (!isNaN(date.getTime())) {
+                    filters.startDate = date;
+                }
+            }
+            if (endDate && endDate !== 'undefined' && endDate !== '') {
+                const date = new Date(endDate);
+                if (!isNaN(date.getTime())) {
+                    filters.endDate = date;
+                }
+            }
+            if (isOverdue && isOverdue !== 'undefined' && isOverdue !== '') {
+                filters.isOverdue = isOverdue.toLowerCase() === 'true';
+            }
+            return this.tasksService.findAll(Object.keys(filters).length > 0 ? filters : undefined, pageNum, limitNum);
+        }
+        catch (error) {
+            return {
+                data: [],
+                meta: {
+                    total: 0,
+                    page: parseInt(page, 10) || 1,
+                    limit: parseInt(limit, 10) || Number(process.env.DEFAULT_PAGE_LIMIT),
+                    totalPages: 0,
+                },
+                message: error?.message || 'An error occurred while fetching tasks',
+            };
+        }
     }
     findOne(ref) {
         return this.tasksService.findOne(ref);
@@ -83,19 +123,17 @@ __decorate([
     (0, common_1.Get)(),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({ summary: 'get all tasks' }),
-    __param(0, (0, common_1.Req)()),
-    __param(1, (0, common_1.Query)('status')),
-    __param(2, (0, common_1.Query)('priority')),
-    __param(3, (0, common_1.Query)('assigneeId')),
-    __param(4, (0, common_1.Query)('clientId')),
-    __param(5, (0, common_1.Query)('startDate')),
-    __param(6, (0, common_1.Query)('endDate')),
-    __param(7, (0, common_1.Query)('isOverdue')),
-    __param(8, (0, common_1.Query)('page')),
-    __param(9, (0, common_1.Query)('limit')),
+    __param(0, (0, common_1.Query)('status')),
+    __param(1, (0, common_1.Query)('priority')),
+    __param(2, (0, common_1.Query)('assigneeId')),
+    __param(3, (0, common_1.Query)('clientId')),
+    __param(4, (0, common_1.Query)('startDate')),
+    __param(5, (0, common_1.Query)('endDate')),
+    __param(6, (0, common_1.Query)('isOverdue')),
+    __param(7, (0, common_1.Query)('page')),
+    __param(8, (0, common_1.Query)('limit')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, String, String, Number, Number, Date,
-        Date, Boolean, Number, Number]),
+    __metadata("design:paramtypes", [String, String, String, String, String, String, String, String, String]),
     __metadata("design:returntype", void 0)
 ], TasksController.prototype, "findAll", null);
 __decorate([

@@ -14,8 +14,8 @@ import {
 	BeforeInsert,
 	BeforeUpdate,
 } from 'typeorm';
-import { Organisation } from 'src/organisation/entities/organisation.entity';
-import { Branch } from 'src/branch/entities/branch.entity';
+import { Organisation } from '../../organisation/entities/organisation.entity';
+import { Branch } from '../../branch/entities/branch.entity';
 
 @Entity('tasks')
 export class Task {
@@ -73,22 +73,22 @@ export class Task {
 	@UpdateDateColumn()
 	updatedAt: Date;
 
-	@ManyToOne(() => User, (user) => user?.userTasks, { onDelete: 'SET NULL', nullable: true })
+	@ManyToOne(() => User, (user) => user?.userTasks)
 	creator: User;
 
-	@ManyToMany(() => User, (user) => user?.tasksAssigned, { cascade: true, nullable: true })
+	@ManyToMany(() => User, (user) => user?.tasksAssigned)
 	assignees: User[];
 
-	@ManyToMany(() => Client, (client) => client?.tasks, { cascade: true, nullable: true })
+	@ManyToMany(() => Client, (client) => client?.tasks)
 	clients: Client[];
 
-	@OneToMany(() => SubTask, (subtask) => subtask?.task, { cascade: true, nullable: true })
+	@OneToMany(() => SubTask, (subtask) => subtask?.task)
 	subtasks: SubTask[];
 
-	@ManyToOne(() => Organisation, (organisation) => organisation?.tasks, { nullable: true })
+	@ManyToOne(() => Organisation, (organisation) => organisation?.tasks)
 	organisation: Organisation; 	
 
-	@ManyToOne(() => Branch, (branch) => branch?.tasks, { nullable: true })
+	@ManyToOne(() => Branch, (branch) => branch?.tasks)
 	branch: Branch; 
 
 	@BeforeInsert()

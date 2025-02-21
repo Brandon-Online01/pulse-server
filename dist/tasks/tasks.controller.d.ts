@@ -2,14 +2,22 @@ import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { UpdateSubtaskDto } from './dto/update-subtask.dto';
-import { TaskStatus, TaskPriority } from '../lib/enums/task.enums';
 export declare class TasksController {
     private readonly tasksService;
     constructor(tasksService: TasksService);
     create(createTaskDto: CreateTaskDto): Promise<{
         message: string;
     }>;
-    findAll(request: any, status?: TaskStatus, priority?: TaskPriority, assigneeId?: number, clientId?: number, startDate?: Date, endDate?: Date, isOverdue?: boolean, page?: number, limit?: number): Promise<import("../lib/interfaces/product.interfaces").PaginatedResponse<import("./entities/task.entity").Task>>;
+    findAll(status?: string, priority?: string, assigneeId?: string, clientId?: string, startDate?: string, endDate?: string, isOverdue?: string, page?: string, limit?: string): Promise<import("../lib/interfaces/product.interfaces").PaginatedResponse<import("./entities/task.entity").Task>> | {
+        data: any[];
+        meta: {
+            total: number;
+            page: number;
+            limit: number;
+            totalPages: number;
+        };
+        message: any;
+    };
     findOne(ref: number): Promise<{
         message: string;
         task: import("./entities/task.entity").Task | null;

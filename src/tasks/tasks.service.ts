@@ -2,7 +2,7 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { Between } from 'typeorm';
+import { Between, MoreThanOrEqual, LessThanOrEqual, LessThan, Not } from 'typeorm';
 import { SubTaskStatus } from '../lib/enums/status.enums';
 import { Task } from './entities/task.entity';
 import { SubTask } from './entities/subtask.entity';
@@ -10,12 +10,10 @@ import { UpdateSubtaskDto } from './dto/update-subtask.dto';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { addDays, addWeeks, addMonths, addYears } from 'date-fns';
 import { Client } from '../clients/entities/client.entity';
-import { Injectable, NotFoundException, BadRequestException, Inject } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject, Logger } from '@nestjs/common';
 import { NotificationType, NotificationStatus } from '../lib/enums/notification.enums';
 import { TaskStatus, TaskPriority, RepetitionType, TaskType } from '../lib/enums/task.enums';
 import { PaginatedResponse } from '../lib/interfaces/product.interfaces';
-import { TaskEmailData } from '../lib/types/email-templates.types';
-import { EmailType } from '../lib/enums/email.enums';
 import { User } from '../user/entities/user.entity';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
@@ -25,6 +23,7 @@ import { ConfigService } from '@nestjs/config';
 export class TasksService {
 	private readonly CACHE_TTL: number;
 	private readonly CACHE_PREFIX = 'task:';
+	private readonly logger = new Logger(TasksService.name);
 
 	constructor(
 		@InjectRepository(Task)
@@ -43,16 +42,19 @@ export class TasksService {
 		this.CACHE_TTL = this.configService.get<number>('CACHE_EXPIRATION_TIME') || 30;
 	}
 
-	private getCacheKey(key: string | number, user?: any): string {
-		const orgBranchKey = user ? `:org${user?.organisationRef}:branch${user?.branch?.uid}` : '';
-		return `${this.CACHE_PREFIX}${key}${orgBranchKey}`;
+	private getCacheKey(key: string | number): string {
+		return `${this.CACHE_PREFIX}${key}`;
 	}
 
-	private async clearTaskCache(taskId?: number, user?: any): Promise<void> {
-		if (taskId) {
-			await this.cacheManager.del(this.getCacheKey(taskId, user));
+	private async clearTaskCache(taskId?: number): Promise<void> {
+		try {
+			if (taskId) {
+				await this.cacheManager.del(this.getCacheKey(taskId));
+			}
+			await this.cacheManager.del(this.getCacheKey('all'));
+		} catch (error) {
+			this.logger.error('Error clearing cache:', error);
 		}
-		await this.cacheManager.del(this.getCacheKey('all', user));
 	}
 
 	private async createRepeatingTasks(baseTask: Task, createTaskDto: CreateTaskDto): Promise<void> {
@@ -150,11 +152,9 @@ export class TasksService {
 				throw new BadRequestException('Repetition end date cannot be in the past');
 			}
 
-			// Add organization and branch from user token
+			// Create task data
 			const taskData = {
 				...createTaskDto,
-				organisation: user?.organisationRef ? { uid: user.organisationRef } : undefined,
-				branch: user?.branch?.uid ? { uid: user.branch.uid } : undefined,
 				creator: user?.uid ? { uid: user.uid } : undefined,
 				status: TaskStatus.PENDING,
 				progress: 0,
@@ -229,75 +229,16 @@ export class TasksService {
 				await this.subtaskRepository.save(subtasks);
 			}
 
-			// Send notifications and emails to assignees
-			if (taskData.assignees?.length > 0) {
-				const notification = {
-					type: NotificationType.USER,
-					title: 'New Task Assignment',
-					message: `You have been assigned to: ${task.title}`,
-					status: NotificationStatus.UNREAD,
-					owner: null
-				};
-
-				// Prepare email data
-				const emailData: TaskEmailData = {
-					taskId: task?.uid?.toString(),
-					name: '', // Will be set for each assignee
-					title: task?.title,
-					description: task?.description,
-					deadline: task?.deadline ? new Date(task?.deadline).toLocaleDateString() : undefined,
-					priority: task?.priority,
-					taskType: task?.taskType,
-					status: task?.status,
-					assignedBy: task?.creator?.username || 'System',
-					subtasks: task?.subtasks?.map(subtask => ({
-						title: subtask?.title,
-						status: subtask?.status
-					})),
-					clients: task?.clients?.map(client => ({
-						name: client?.name,
-						category: client?.category
-					})),
-					attachments: task?.attachments?.map(attachment => {
-						const [name, url] = attachment.split('|');
-						return { name, url };
-					})
-				};
-
-				taskData.assignees.forEach(assignee => {
-					// Send notification
-					this.eventEmitter.emit('send.notification', {
-						...notification,
-						owner: assignee,
-						metadata: {
-							taskId: task?.uid,
-							deadline: task?.deadline,
-							priority: task?.priority
-						}
-					}, [assignee.uid]);
-
-					// Send email if assignee has email
-					if (assignee?.email) {
-						this.eventEmitter.emit('send.email', {
-							type: EmailType.NEW_TASK,
-							recipient: assignee?.email,
-							data: {
-								...emailData,
-								name: assignee?.username
-							}
-						});
-					}
-				});
-			}
-
 			// Clear cache after creating new task
-			await this.clearTaskCache(undefined, user);
+			await this.clearTaskCache();
 
 			return {
-				message: process.env.SUCCESS_MESSAGE,
+				message: process.env.SUCCESS_MESSAGE
 			};
 		} catch (error) {
-			throw new BadRequestException(error?.message);
+			return {
+				message: error?.message
+			};
 		}
 	}
 
@@ -312,81 +253,79 @@ export class TasksService {
 			isOverdue?: boolean;
 		},
 		page: number = 1,
-		limit: number = Number(process.env.DEFAULT_PAGE_LIMIT),
-		user?: any
+		limit: number = Number(process.env.DEFAULT_PAGE_LIMIT)
 	): Promise<PaginatedResponse<Task>> {
 		try {
-			// Try to get from cache first
-			const cacheKey = this.getCacheKey(`all:${page}:${limit}:${JSON.stringify(filters)}`, user);
-			const cached = await this.cacheManager.get<PaginatedResponse<Task>>(cacheKey);
-			
-			if (cached) {
-				return cached;
+			const cacheKey = this.getCacheKey('all');
+			const cachedTasks = await this.cacheManager.get<PaginatedResponse<Task>>(cacheKey);
+
+			if (cachedTasks) {
+				return cachedTasks;
 			}
 
-			// Base conditions
+			// Build where conditions
 			const where: any = { isDeleted: false };
-			const relations = ['creator', 'assignees', 'clients', 'subtasks', 'branch', 'organisation'];
-
-			// Security: Always filter by organization and branch
-			if (user?.organisationRef) {
-				where.organisation = { uid: user.organisationRef };
+			
+			if (filters?.status) {
+				where.status = filters.status;
 			}
 			
-			if (user?.branch?.uid) {
-				where.branch = { uid: user.branch.uid };
+			if (filters?.priority) {
+				where.priority = filters.priority;
 			}
 
-			// Handle role-based access
-			if (user?.role === 'user') {
-				where.assignees = { uid: user.uid };
-			} else if (user?.role === 'manager') {
-				if (!user?.branch?.uid) {
-					throw new BadRequestException('Manager must be assigned to a branch');
-				}
+			if (filters?.startDate) {
+				where.deadline = MoreThanOrEqual(filters.startDate);
 			}
 
-			// Apply filters
-			if (filters?.status) where.status = filters.status;
-			if (filters?.priority) where.priority = filters.priority;
-			if (filters?.isOverdue !== undefined) where.isOverdue = filters.isOverdue;
-			if (filters?.startDate && filters?.endDate) {
-				where.deadline = Between(filters.startDate, filters.endDate);
+			if (filters?.endDate) {
+				where.deadline = LessThanOrEqual(filters.endDate);
 			}
-			if (filters?.assigneeId) {
-				where.assignees = { ...where.assignees, uid: filters.assigneeId };
-			}
-			if (filters?.clientId) {
-				where.clients = { uid: filters.clientId };
+
+			if (filters?.isOverdue) {
+				where.deadline = LessThan(new Date());
+				where.status = Not(TaskStatus.COMPLETED);
 			}
 
 			const [tasks, total] = await this.taskRepository.findAndCount({
 				where,
-				relations,
+				relations: ['subtasks', 'creator',],
 				skip: (page - 1) * limit,
 				take: limit,
-				order: { createdAt: 'DESC' }
+				order: {
+					createdAt: 'DESC'
+				}
 			});
 
-			if (!tasks) {
-				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
+			// Post-process for assignee and client filters
+			let filteredTasks = tasks;
+			
+			if (filters?.assigneeId) {
+				filteredTasks = filteredTasks?.filter(task => 
+					task.assignees?.some(assignee => assignee?.uid === filters?.assigneeId)
+				);
 			}
 
-			const result = {
-				data: tasks,
+			if (filters?.clientId) {
+				filteredTasks = filteredTasks?.filter(task => 
+					task.clients?.some(client => client?.uid === filters?.clientId)
+				);
+			}
+
+			const response = {
+				data: filteredTasks,
 				meta: {
-					total,
+					total: filteredTasks?.length,
 					page,
 					limit,
-					totalPages: Math.ceil(total / limit),
+					totalPages: Math.ceil(filteredTasks?.length / limit),
 				},
 				message: process.env.SUCCESS_MESSAGE,
 			};
 
-			// Cache the result
-			await this.cacheManager.set(cacheKey, result, this.CACHE_TTL);
+			await this.cacheManager.set(cacheKey, response, this.CACHE_TTL);
 
-			return result;
+			return response;
 		} catch (error) {
 			return {
 				data: [],
@@ -401,54 +340,40 @@ export class TasksService {
 		}
 	}
 
-	async findOne(ref: number, user?: any): Promise<{ message: string, task: Task | null }> {
+	async findOne(ref: number): Promise<{ message: string, task: Task | null }> {
 		try {
-			// Try to get from cache first
-			const cacheKey = this.getCacheKey(ref, user);
-			const cached = await this.cacheManager.get<Task>(cacheKey);
-			
-			if (cached) {
+			const cacheKey = this.getCacheKey(ref);
+			const cachedTask = await this.cacheManager.get<Task>(cacheKey);
+
+			if (cachedTask) {
 				return {
-					message: process.env.SUCCESS_MESSAGE,
-					task: cached
+					task: cachedTask,
+					message: process.env.SUCCESS_MESSAGE
 				};
 			}
 
-			// Build where conditions
-			const where: any = {
-				uid: ref,
-				isDeleted: false
-			};
-
-			// Security: Always filter by organization and branch
-			if (user?.organisationRef) {
-				where.organisation = { uid: user.organisationRef };
-			}
-			
-			if (user?.branch?.uid) {
-				where.branch = { uid: user.branch.uid };
-			}
-
 			const task = await this.taskRepository.findOne({
-				where,
-				relations: ['creator', 'assignees', 'clients', 'subtasks', 'branch', 'organisation']
+				where: {
+					uid: ref,
+					isDeleted: false
+				},
+				relations: ['assignees', 'clients', 'creator', 'subtasks']
 			});
 
 			if (!task) {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
-			// Cache the result
 			await this.cacheManager.set(cacheKey, task, this.CACHE_TTL);
 
 			return {
-				message: process.env.SUCCESS_MESSAGE,
-				task
+				task,
+				message: process.env.SUCCESS_MESSAGE
 			};
 		} catch (error) {
 			return {
-				message: error?.message,
-				task: null
+				task: null,
+				message: error?.message
 			};
 		}
 	}
@@ -457,12 +382,6 @@ export class TasksService {
 		try {
 			const tasks = await this.taskRepository.find({
 				where: { creator: { uid: ref }, isDeleted: false },
-				relations: [
-					'createdBy',
-					'clients',
-					'subtasks',
-					'assignees'
-				]
 			});
 
 			if (!tasks) {
@@ -485,124 +404,86 @@ export class TasksService {
 		}
 	}
 
-	async update(ref: number, updateTaskDto: UpdateTaskDto, user?: any): Promise<{ message: string }> {
+	async update(ref: number, updateTaskDto: UpdateTaskDto): Promise<{ message: string }> {
 		try {
-			// First check if task exists and belongs to user's org/branch
-			const existingTask = await this.findOne(ref, user);
-			if (!existingTask.task) {
+			const task = await this.taskRepository.findOne({
+				where: {
+					uid: ref,
+					isDeleted: false
+				}
+			});
+
+			if (!task) {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
-			// Handle assignees update
-			if (updateTaskDto?.assignees) {
-				const assigneeUsers = await this.userRepository.findByIds(
-					updateTaskDto?.assignees?.map(a => a?.uid)
-				);
-				existingTask.task.assignees = assigneeUsers;
+			// Handle assignees
+			if (updateTaskDto?.assignees?.length > 0) {
+				const assigneeUsers = [];
+
+				for (const assignee of updateTaskDto?.assignees) {
+					const user = await this.userRepository.findOne({
+						where: { uid: assignee?.uid }
+					});
+
+					if (user) {
+						assigneeUsers?.push(user);
+					}
+				}
+
+				updateTaskDto.assignees = assigneeUsers;
 			}
 
-			// Update task data
-			Object.assign(existingTask.task, {
-				...updateTaskDto,
-				assignees: existingTask.task.assignees // Keep the resolved assignees
+			// Handle client assignments
+			if (updateTaskDto?.clients?.length > 0) {
+				const clients = await this.clientRepository.findByIds(
+					updateTaskDto.clients.map(client => client.uid)
+				);
+				updateTaskDto.clients = clients;
+			}
+
+			await this.taskRepository.save({
+				...task,
+				...updateTaskDto
 			});
 
-			const updatedTask = await this.taskRepository.save(existingTask.task);
-
-			// Send notifications and emails to assignees
-			if (updatedTask.assignees?.length > 0) {
-				const notification = {
-					type: NotificationType.USER,
-					title: 'Task Updated',
-					message: `Task has been updated: ${updatedTask.title}`,
-					status: NotificationStatus.UNREAD,
-					owner: null
-				};
-
-				// Prepare email data
-				const emailData: TaskEmailData = {
-					taskId: updatedTask.uid.toString(),
-					name: '', // Will be set for each assignee
-					title: updatedTask.title,
-					description: updatedTask.description,
-					deadline: updatedTask.deadline ? new Date(updatedTask.deadline).toLocaleDateString() : undefined,
-					priority: updatedTask.priority,
-					taskType: updatedTask.taskType,
-					status: updatedTask.status,
-					assignedBy: updatedTask.creator?.username || 'System',
-					subtasks: updatedTask.subtasks?.map(subtask => ({
-						title: subtask.title,
-						status: subtask.status
-					})),
-					clients: updatedTask.clients?.map(client => ({
-						name: client.name,
-						category: client.category
-					})),
-					attachments: updatedTask.attachments?.map(attachment => {
-						const [name, url] = attachment.split('|');
-						return { name, url };
-					})
-				};
-
-				updatedTask.assignees.forEach(assignee => {
-					// Send notification
-					this.eventEmitter.emit('send.notification', {
-						...notification,
-						owner: assignee,
-						metadata: {
-							taskId: updatedTask?.uid,
-							deadline: updatedTask?.deadline,
-							priority: updatedTask?.priority
-						}
-					}, [assignee.uid]);
-
-					// Send email if assignee has email
-					if (assignee.email) {
-						this.eventEmitter.emit('send.email', {
-							type: EmailType.TASK_UPDATED,
-							recipient: assignee?.email,
-							data: {
-								...emailData,
-								name: assignee?.username
-							}
-						});
-					}
-				});
-			}
-
 			// Clear cache after update
-			await this.clearTaskCache(ref, user);
+			await this.clearTaskCache(ref);
 
 			return {
-				message: process.env.SUCCESS_MESSAGE,
+				message: process.env.SUCCESS_MESSAGE
 			};
 		} catch (error) {
-			throw new BadRequestException(error?.message);
+			return {
+				message: error?.message
+			};
 		}
 	}
 
-	async remove(ref: number, user?: any): Promise<{ message: string }> {
+	async remove(ref: number): Promise<{ message: string }> {
 		try {
-			// First check if task exists and belongs to user's org/branch
-			const existingTask = await this.findOne(ref, user);
-			if (!existingTask.task) {
+			const task = await this.taskRepository.findOne({
+				where: {
+					uid: ref,
+					isDeleted: false
+				}
+			});
+
+			if (!task) {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
-			await this.taskRepository.update(
-				{ uid: ref },
-				{ isDeleted: true }
-			);
+			await this.taskRepository.update(ref, { isDeleted: true });
 
 			// Clear cache after deletion
-			await this.clearTaskCache(ref, user);
+			await this.clearTaskCache(ref);
 
 			return {
-				message: process.env.SUCCESS_MESSAGE,
+				message: process.env.SUCCESS_MESSAGE
 			};
 		} catch (error) {
 			return {
-				message: error?.message,
+				message: error?.message
 			};
 		}
 	}
@@ -788,7 +669,6 @@ export class TasksService {
 					...filter,
 					isDeleted: false
 				},
-				relations: ['assignees', 'clients', 'subtasks', 'createdBy']
 			});
 
 			if (!tasks) {
@@ -855,33 +735,25 @@ export class TasksService {
 	}
 
 	private analyzeTaskDistribution(tasks: Task[]): Record<TaskType, number> {
-		const distribution = Object.values(TaskType).reduce((acc, type) => {
+		const distribution: Record<TaskType, number> = Object.values(TaskType).reduce((acc, type) => {
 			acc[type] = 0;
 			return acc;
 		}, {} as Record<TaskType, number>);
 
 		tasks.forEach(task => {
-			if (task.taskType) {
-				distribution[task.taskType]++;
-			}
+			distribution[task.taskType] = (distribution[task.taskType] || 0) + 1;
 		});
-
 		return distribution;
 	}
 
 	private analyzeIncompletionReasons(tasks: Task[]): Array<{ reason: string; count: number }> {
-		const incompleteTasks = tasks.filter(task =>
-			task.status === TaskStatus.CANCELLED ||
-			task.status === TaskStatus.MISSED ||
-			task.status === TaskStatus.OVERDUE
-		);
-
-		const reasons = incompleteTasks.reduce((acc, task) => {
-			const reason = this.determineIncompletionReason(task);
-			acc[reason] = (acc[reason] || 0) + 1;
-			return acc;
-		}, {} as Record<string, number>);
-
+		const reasons: Record<string, number> = {};
+		tasks.forEach(task => {
+			if (task.status !== TaskStatus.COMPLETED) {
+				const reason = this.determineIncompletionReason(task);
+				reasons[reason] = (reasons[reason] || 0) + 1;
+			}
+		});
 		return Object.entries(reasons)
 			.map(([reason, count]) => ({ reason, count }))
 			.sort((a, b) => b.count - a.count);
@@ -905,48 +777,47 @@ export class TasksService {
 		completedTasks: number;
 		completionRate: string;
 	}> {
-		const clientTasks = new Map<number, {
+		const clientStats: Record<number, {
 			clientName: string;
-			total: number;
-			completed: number;
-		}>();
+			totalTasks: number;
+			completedTasks: number;
+		}> = {};
 
 		tasks.forEach(task => {
 			task.clients?.forEach(client => {
-				if (!clientTasks.has(client.uid)) {
-					clientTasks.set(client.uid, {
+				if (!clientStats[client.uid]) {
+					clientStats[client.uid] = {
 						clientName: client.name,
-						total: 0,
-						completed: 0
-					});
+						totalTasks: 0,
+						completedTasks: 0
+					};
 				}
-
-				const stats = clientTasks.get(client.uid);
-				stats.total++;
+				clientStats[client.uid].totalTasks++;
 				if (task.status === TaskStatus.COMPLETED) {
-					stats.completed++;
+					clientStats[client.uid].completedTasks++;
 				}
 			});
 		});
 
-		return Array.from(clientTasks.entries())
-			.map(([clientId, stats]) => ({
-				clientId,
-				clientName: stats.clientName,
-				totalTasks: stats.total,
-				completedTasks: stats.completed,
-				completionRate: `${((stats.completed / stats.total) * 100).toFixed(1)}%`
-			}))
-			.sort((a, b) =>
-				(b.completedTasks / b.totalTasks) - (a.completedTasks / a.totalTasks)
-			);
+		return Object.entries(clientStats).map(([clientId, stats]) => ({
+			clientId: parseInt(clientId),
+			clientName: stats.clientName,
+			totalTasks: stats.totalTasks,
+			completedTasks: stats.completedTasks,
+			completionRate: `${((stats.completedTasks / stats.totalTasks) * 100).toFixed(1)}%`
+		}));
 	}
 
 	private analyzeTaskPriorityDistribution(tasks: Task[]): Record<TaskPriority, number> {
-		return tasks.reduce((acc, task) => {
-			acc[task.priority] = (acc[task.priority] || 0) + 1;
+		const distribution: Record<TaskPriority, number> = Object.values(TaskPriority).reduce((acc, priority) => {
+			acc[priority] = 0;
 			return acc;
 		}, {} as Record<TaskPriority, number>);
+
+		tasks.forEach(task => {
+			distribution[task.priority] = (distribution[task.priority] || 0) + 1;
+		});
+		return distribution;
 	}
 
 	private analyzeAssigneePerformance(tasks: Task[]): Array<{
@@ -957,50 +828,41 @@ export class TasksService {
 		completionRate: string;
 		averageCompletionTime: string;
 	}> {
-		const assigneeStats = new Map<number, {
-			name: string;
-			total: number;
-			completed: number;
+		const assigneeStats: Record<number, {
+			assigneeName: string;
+			totalTasks: number;
+			completedTasks: number;
 			totalCompletionTime: number;
-		}>();
+		}> = {};
 
 		tasks.forEach(task => {
 			task.assignees?.forEach(assignee => {
-				if (!assigneeStats.has(assignee.uid)) {
-					assigneeStats.set(assignee.uid, {
-						name: assignee.username,
-						total: 0,
-						completed: 0,
+				if (!assigneeStats[assignee.uid]) {
+					assigneeStats[assignee.uid] = {
+						assigneeName: assignee.username,
+						totalTasks: 0,
+						completedTasks: 0,
 						totalCompletionTime: 0
-					});
+					};
 				}
-
-				const stats = assigneeStats.get(assignee.uid);
-				stats.total++;
-
+				assigneeStats[assignee.uid].totalTasks++;
 				if (task.status === TaskStatus.COMPLETED && task.lastCompletedAt) {
-					stats.completed++;
-					stats.totalCompletionTime +=
-						task.lastCompletedAt.getTime() - task.createdAt.getTime();
+					assigneeStats[assignee.uid].completedTasks++;
+					assigneeStats[assignee.uid].totalCompletionTime +=
+						new Date(task.lastCompletedAt).getTime() - new Date(task.createdAt).getTime();
 				}
 			});
 		});
 
-		return Array.from(assigneeStats.entries())
-			.map(([assigneeId, stats]) => ({
-				assigneeId,
-				assigneeName: stats.name,
-				totalTasks: stats.total,
-				completedTasks: stats.completed,
-				completionRate: `${((stats.completed / stats.total) * 100).toFixed(1)}%`,
-				averageCompletionTime: `${(
-					stats.completed > 0
-						? (stats.totalCompletionTime / (stats.completed * 60 * 60 * 1000))
-						: 0
-				).toFixed(1)} hours`
-			}))
-			.sort((a, b) =>
-				(b.completedTasks / b.totalTasks) - (a.completedTasks / a.totalTasks)
-			);
+		return Object.entries(assigneeStats).map(([assigneeId, stats]) => ({
+			assigneeId: parseInt(assigneeId),
+			assigneeName: stats.assigneeName,
+			totalTasks: stats.totalTasks,
+			completedTasks: stats.completedTasks,
+			completionRate: `${((stats.completedTasks / stats.totalTasks) * 100).toFixed(1)}%`,
+			averageCompletionTime: stats.completedTasks > 0
+				? `${Math.round(stats.totalCompletionTime / stats.completedTasks / (1000 * 60 * 60))} hours`
+				: 'N/A'
+		}));
 	}
 }

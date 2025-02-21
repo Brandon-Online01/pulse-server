@@ -107,6 +107,7 @@ export class AuthService {
 					licenseId: String(activeLicense?.uid),
 					licensePlan: activeLicense?.plan,
 					features: activeLicense?.features,
+					branch: restOfUser?.branch?.uid ? { uid: restOfUser.branch.uid } : undefined
 				};
 
 				const accessToken = await this.jwtService.signAsync(payload, { expiresIn: `8h` });
@@ -142,7 +143,11 @@ export class AuthService {
 			};
 
 			const tokenRole = accessLevel?.toLowerCase();
-			const payload = { uid: uid?.toString(), role: tokenRole };
+			const payload = { 
+				uid: uid?.toString(), 
+				role: tokenRole,
+				branch: restOfUser?.branch?.uid ? { uid: restOfUser.branch.uid } : undefined 
+			};
 
 			const accessToken = await this.jwtService.signAsync(payload, { expiresIn: `8h` });
 			const refreshToken = await this.jwtService.signAsync(payload, { expiresIn: `7d` });
@@ -432,6 +437,7 @@ export class AuthService {
 					licenseId: String(activeLicense?.uid),
 					licensePlan: activeLicense?.plan,
 					features: activeLicense?.features,
+					branch: authProfile?.user?.branch?.uid ? { uid: authProfile?.user?.branch.uid } : undefined
 				};
 
 				const accessToken = await this.jwtService.signAsync(newPayload, {
@@ -457,6 +463,7 @@ export class AuthService {
 			const newPayload = {
 				uid: payload.uid,
 				role: authProfile.user.accessLevel?.toLowerCase(),
+				branch: authProfile?.user?.branch?.uid ? { uid: authProfile?.user?.branch.uid } : undefined
 			};
 
 			const accessToken = await this.jwtService.signAsync(newPayload, {

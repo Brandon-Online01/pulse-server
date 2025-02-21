@@ -9,11 +9,13 @@ import { LicensingModule } from '../licensing/licensing.module';
 import { Client } from '../clients/entities/client.entity';
 import { User } from '../user/entities/user.entity';
 import { ConfigModule } from '@nestjs/config';
+import { Organisation } from '../organisation/entities/organisation.entity';
+import { Branch } from '../branch/entities/branch.entity';
 
 @Module({
   imports: [
     LicensingModule,
-    TypeOrmModule.forFeature([Task, SubTask, Client, User]),
+    TypeOrmModule.forFeature([Task, SubTask, Client, User, Organisation, Branch]),
     RewardsModule,
     ConfigModule,
   ],
