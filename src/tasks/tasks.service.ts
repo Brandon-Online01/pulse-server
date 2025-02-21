@@ -484,7 +484,7 @@ export class TasksService {
 		limit: number = Number(process.env.DEFAULT_PAGE_LIMIT),
 	): Promise<PaginatedResponse<Task>> {
 		try {
-			const cacheKey = this.getCacheKey('all');
+			const cacheKey = `tasks_page${page}_limit${limit}_${JSON.stringify(filters)}`;
 			const cachedTasks = await this.cacheManager.get<PaginatedResponse<Task>>(cacheKey);
 
 			if (cachedTasks) {
@@ -514,7 +514,7 @@ export class TasksService {
 				where.status = Not(TaskStatus.COMPLETED);
 			}
 
-			const [tasks] = await this.taskRepository.findAndCount({
+			const [tasks, total] = await this.taskRepository.findAndCount({
 				where,
 				skip: (page - 1) * limit,
 				relations: ['creator', 'subtasks', 'organisation', 'branch'],
@@ -526,6 +526,7 @@ export class TasksService {
 
 			let filteredTasks = await Promise.all(tasks.map(task => this.populateTaskRelations(task)));
 
+			// Apply post-query filters that can't be done in the database
 			if (filters?.assigneeId) {
 				filteredTasks = filteredTasks?.filter((task) =>
 					task.assignees?.some((assignee) => assignee.uid === filters?.assigneeId),
@@ -541,10 +542,10 @@ export class TasksService {
 			const response = {
 				data: filteredTasks,
 				meta: {
-					total: filteredTasks?.length,
+					total,
 					page,
 					limit,
-					totalPages: Math.ceil(filteredTasks?.length / limit),
+					totalPages: Math.ceil(total / limit),
 				},
 				message: process.env.SUCCESS_MESSAGE,
 			};

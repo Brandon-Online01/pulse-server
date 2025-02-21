@@ -363,7 +363,7 @@ let TasksService = class TasksService {
     }
     async findAll(filters, page = 1, limit = Number(process.env.DEFAULT_PAGE_LIMIT)) {
         try {
-            const cacheKey = this.getCacheKey('all');
+            const cacheKey = `tasks_page${page}_limit${limit}_${JSON.stringify(filters)}`;
             const cachedTasks = await this.cacheManager.get(cacheKey);
             if (cachedTasks) {
                 return cachedTasks;
@@ -385,7 +385,7 @@ let TasksService = class TasksService {
                 where.deadline = (0, typeorm_3.LessThan)(new Date());
                 where.status = (0, typeorm_3.Not)(task_enums_1.TaskStatus.COMPLETED);
             }
-            const [tasks] = await this.taskRepository.findAndCount({
+            const [tasks, total] = await this.taskRepository.findAndCount({
                 where,
                 skip: (page - 1) * limit,
                 relations: ['creator', 'subtasks', 'organisation', 'branch'],
@@ -404,10 +404,10 @@ let TasksService = class TasksService {
             const response = {
                 data: filteredTasks,
                 meta: {
-                    total: filteredTasks?.length,
+                    total,
                     page,
                     limit,
-                    totalPages: Math.ceil(filteredTasks?.length / limit),
+                    totalPages: Math.ceil(total / limit),
                 },
                 message: process.env.SUCCESS_MESSAGE,
             };
