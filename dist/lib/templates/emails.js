@@ -3,19 +3,24 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.TaskUpdated = exports.NewTask = exports.LicenseActivated = exports.LicenseSuspended = exports.LicenseRenewed = exports.LicenseLimitReached = exports.LicenseUpdated = exports.LicenseCreated = exports.DailyReport = exports.PasswordChanged = exports.Invoice = exports.NewQuotationReseller = exports.NewQuotationInternal = exports.NewQuotationClient = exports.PasswordReset = exports.Verification = exports.Signup = void 0;
 const date_utils_1 = require("../utils/date.utils");
 const BASE_STYLES = {
-    wrapper: '@media (max-width: 600px) { width: 100% !important; padding: 10px !important; } width: 100%; padding: 20px;',
-    container: 'max-width: 600px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #2d3748; background-color: #ffffff;',
-    button: 'display: inline-block; padding: 14px 28px; background-color: #0066FF; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; text-align: center; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,102,255,0.1);',
-    header: 'background: linear-gradient(135deg, #0066FF, #5B8DEF); color: white; padding: 32px 20px; text-align: center; border-radius: 12px 12px 0 0;',
-    footer: 'background-color: #f8f9fa; padding: 24px 20px; text-align: center; border-radius: 0 0 12px 12px; margin-top: 24px; color: #6c757d;',
-    alert: 'background-color: #fff8f0; border-left: 4px solid #ff9800; padding: 16px; margin: 16px 0; border-radius: 4px;',
-    card: 'background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 20px; margin: 16px 0;',
-    heading: 'margin: 0 0 16px; color: #0066FF; font-size: 20px; font-weight: 600;',
-    text: 'margin: 0 0 16px; color: var(--text-color, #000000); font-size: 16px; line-height: 1.6; font-family: "Unbounded", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;',
-    link: 'color: #6B46C1; text-decoration: none; font-weight: 500; transition: color 0.2s; margin-right: 5px; margin-left: 5px;',
-    grid: 'display: grid; grid-template-columns: 1fr; gap: 16px; @media (min-width: 480px) { grid-template-columns: 1fr 1fr; }',
-    highlight: 'background: #f7fafc; border-radius: 8px; padding: 16px; margin-bottom: 24px;',
-    badge: 'display: inline-block; padding: 4px 12px; border-radius: 16px; font-size: 14px; font-weight: 500;',
+    wrapper: '@media (max-width: 600px) { width: 100% !important; padding: 10px !important; } width: 100%; padding: 20px; background-color: #f9fafb;',
+    container: 'max-width: 600px; margin: 0 auto; font-family: "Unbounded", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #1f2937; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);',
+    button: 'display: inline-block; padding: 16px 32px; background-color: #A855F7; color: white; text-decoration: none; border-radius: 12px; font-weight: 600; text-align: center; transition: all 0.2s; box-shadow: 0 4px 6px rgba(168, 85, 247, 0.2); font-family: "Unbounded", sans-serif;',
+    header: 'background-color: #A855F7; color: white; padding: 40px 20px; text-align: center; border-radius: 0;',
+    footer: 'background-color: #ffffff; padding: 32px 20px; text-align: center; margin-top: 32px; color: #6c757d; border-top: 1px solid #f3f4f6;',
+    alert: 'background-color: #faf5ff; border-left: 4px solid #A855F7; padding: 20px; margin: 24px 0; border-radius: 8px;',
+    card: 'background-color: #ffffff; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); padding: 32px; margin: 24px 0; border: 1px solid #f3f4f6;',
+    heading: 'margin: 0 0 20px; color: #A855F7; font-size: 22px; font-weight: 600; font-family: "Unbounded", sans-serif;',
+    text: 'margin: 0 0 20px; color: #4b5563; font-size: 16px; line-height: 1.8; font-family: "Unbounded", sans-serif;',
+    link: 'color: #A855F7; text-decoration: none; font-weight: 500; transition: color 0.2s; margin: 0 12px; font-family: "Unbounded", sans-serif;',
+    grid: 'display: grid; grid-template-columns: 1fr; gap: 24px; @media (min-width: 480px) { grid-template-columns: 1fr 1fr; }',
+    highlight: 'background: #faf5ff; border-radius: 12px; padding: 24px; margin-bottom: 32px; border: 1px solid #e9d5ff;',
+    badge: 'display: inline-block; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 500; background-color: #A855F7; color: white; font-family: "Unbounded", sans-serif;',
+    divider: 'border: 0; border-top: 1px solid #f3f4f6; margin: 32px 0;',
+    icon: 'display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; background: #faf5ff; border-radius: 50%; margin-right: 16px; font-size: 20px;',
+    flexRow: 'display: flex; align-items: center;',
+    flexColumn: 'display: flex; flex-direction: column; gap: 8px;',
+    tag: 'display: inline-block; padding: 6px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; background: #faf5ff; color: #A855F7; margin: 0 12px 12px 0; font-family: "Unbounded", sans-serif;',
 };
 const createSection = (title, content) => `
   <div style="${BASE_STYLES?.card}">
@@ -1011,77 +1016,133 @@ const LicenseActivated = (data) => `
 `;
 exports.LicenseActivated = LicenseActivated;
 const NewTask = (data) => {
-    const subtasksList = data.subtasks?.map(subtask => `
-    <div style="display: flex; align-items: center; margin: 8px 0;">
-      <span style="color: #0066FF; margin-right: 8px;">•</span>
-      <span>${subtask.title}</span>
-      <span style="margin-left: auto; ${BASE_STYLES.badge}; background: ${subtask.status === 'PENDING' ? '#f0f0f0' : '#e6efff'}">${subtask.status}</span>
-    </div>
-  `).join('') || '';
-    const clientsList = data.clients?.map(client => `
-    <div style="display: flex; align-items: center; margin: 8px 0;">
-      <span style="color: #0066FF; margin-right: 8px;">•</span>
-      <span>${client.name}</span>
-      ${client.category ? `<span style="margin-left: 8px; ${BASE_STYLES.badge}; background: #e6efff">${client.category}</span>` : ''}
-    </div>
-  `).join('') || '';
-    const attachmentsList = data.attachments?.map(attachment => `
-    <div style="display: flex; align-items: center; margin: 8px 0;">
-      <span style="color: #0066FF; margin-right: 8px;">📎</span>
-      <a href="${attachment.url}" style="${BASE_STYLES.link}">${attachment.name}</a>
-    </div>
-  `).join('') || '';
+    const formatDeadline = (date) => {
+        const deadlineDate = new Date(date);
+        return deadlineDate.toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    };
+    const getPriorityEmoji = (priority) => {
+        switch (priority?.toUpperCase()) {
+            case 'HIGH': return '🔴';
+            case 'MEDIUM': return '🟡';
+            case 'LOW': return '🟢';
+            default: return '⚪';
+        }
+    };
+    const getTaskTypeEmoji = (type) => {
+        switch (type?.toUpperCase()) {
+            case 'IN_PERSON_MEETING': return '👥';
+            case 'VIRTUAL_MEETING': return '💻';
+            case 'PHONE_CALL': return '📱';
+            case 'EMAIL': return '📧';
+            case 'DOCUMENT': return '📄';
+            case 'RESEARCH': return '🔍';
+            case 'DEVELOPMENT': return '💻';
+            case 'DESIGN': return '🎨';
+            case 'REVIEW': return '👀';
+            default: return '📋';
+        }
+    };
+    const subtasksList = data.subtasks?.length > 0
+        ? `<div style="${BASE_STYLES.card}">
+        <div style="${BASE_STYLES.flexRow}">
+          <span style="${BASE_STYLES.icon}">📝</span>
+          <h3 style="${BASE_STYLES.heading}">Subtasks</h3>
+        </div>
+        <ul style="list-style: none; padding: 0; margin: 0;">
+          ${data.subtasks.map((subtask, index) => `
+            <li style="margin-bottom: 20px; padding: 20px; background: #faf5ff; border-radius: 12px;">
+              <div style="${BASE_STYLES.flexRow}">
+                <span style="color: #A855F7; margin-right: 16px; font-size: 18px; font-family: Unbounded, sans-serif;">${index + 1}</span>
+                <div style="${BASE_STYLES.flexColumn}">
+                  <strong style="color: #1f2937; font-family: Unbounded, sans-serif; font-size: 16px; margin-bottom: 8px;">${subtask.title}</strong>
+                  ${subtask.description ? `<span style="font-size: 14px; color: #6b7280; font-family: Unbounded, sans-serif; line-height: 1.6;">${subtask.description}</span>` : ''}
+                </div>
+              </div>
+            </li>
+          `).join('')}
+        </ul>
+      </div>`
+        : '';
     return `
     <div style="${BASE_STYLES.wrapper}">
       <div style="${BASE_STYLES.container}">
         <div style="${BASE_STYLES.header}">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="white">
-            <path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1s-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
-          </svg>
-          <h1 style="margin: 16px 0 8px; font-size: 24px;">New Task Assigned</h1>
-          <p style="margin: 0; opacity: 0.9;">Task ID: ${data.taskId}</p>
+          <div style="font-size: 56px; margin-bottom: 24px;">✨</div>
+          <h1 style="margin: 0 0 12px; font-size: 28px; font-family: Unbounded, sans-serif; font-weight: 600;">New Task Assigned</h1>
+          <p style="margin: 0; opacity: 0.9; font-family: Unbounded, sans-serif; font-size: 16px;">Task ID: ${data.taskId}</p>
         </div>
 
-        <div style="padding: 24px 20px;">
+        <div style="padding: 32px 24px;">
           <div style="${BASE_STYLES.card}">
-            <h2 style="${BASE_STYLES.heading}">Hi ${data.name},</h2>
-            <p style="${BASE_STYLES.text}">A new task has been assigned to you by ${data.assignedBy}.</p>
-
-            <div style="${BASE_STYLES.highlight}">
-              <h3 style="margin: 0 0 12px; color: #2d3748;">${data.title}</h3>
-              <p style="margin: 0 0 16px;">${data.description}</p>
-              
-              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 16px;">
-                <div>
-                  <strong>Priority:</strong>
-                  <span style="${BASE_STYLES.badge}; background: ${data.priority === 'HIGH' ? '#fee2e2' :
-        data.priority === 'MEDIUM' ? '#fef3c7' : '#e6efff'}">${data.priority}</span>
-                </div>
-                <div>
-                  <strong>Type:</strong>
-                  <span style="${BASE_STYLES.badge}; background: #e6efff">${data.taskType}</span>
-                </div>
-                <div>
-                  <strong>Status:</strong>
-                  <span style="${BASE_STYLES.badge}; background: #e6efff">${data.status}</span>
-                </div>
-                ${data.deadline ? `
-                <div>
-                  <strong>Deadline:</strong>
-                  <span style="${BASE_STYLES.badge}; background: #e6efff">${data.deadline}</span>
-                </div>
-                ` : ''}
-              </div>
+            <div style="${BASE_STYLES.flexRow}">
+              <div style="${BASE_STYLES.icon}">${getTaskTypeEmoji(data.taskType)}</div>
+              <h2 style="${BASE_STYLES.heading}">${data.title}</h2>
+            </div>
+            
+            <div style="margin: 24px 0;">
+              <span style="${BASE_STYLES.tag}">${getPriorityEmoji(data.priority)} ${data.priority}</span>
+              <span style="${BASE_STYLES.tag}">${getTaskTypeEmoji(data.taskType)} ${data.taskType.replace(/_/g, ' ')}</span>
+              <span style="${BASE_STYLES.tag}">🎯 ${data.status}</span>
             </div>
 
-            ${data.subtasks?.length ? createSection("Subtasks", subtasksList) : ''}
-            ${data.clients?.length ? createSection("Related Clients", clientsList) : ''}
-            ${data.attachments?.length ? createSection("Attachments", attachmentsList) : ''}
+            <div style="${BASE_STYLES.highlight}">
+              <p style="${BASE_STYLES.text}">${data.description}</p>
+            </div>
+
+            <hr style="${BASE_STYLES.divider}" />
+
+            <div style="${BASE_STYLES.grid}">
+              <div style="${BASE_STYLES.flexColumn}">
+                <span style="color: #6b7280; font-size: 14px; font-family: Unbounded, sans-serif;">⏰ Deadline</span>
+                <strong style="color: #1f2937; font-family: Unbounded, sans-serif; font-size: 16px; margin-top: 8px;">${formatDeadline(data.deadline)}</strong>
+              </div>
+              <div style="${BASE_STYLES.flexColumn}">
+                <span style="color: #6b7280; font-size: 14px; font-family: Unbounded, sans-serif;">👤 Assigned by</span>
+                <strong style="color: #1f2937; font-family: Unbounded, sans-serif; font-size: 16px; margin-top: 8px;">${data.assignedBy}</strong>
+              </div>
+            </div>
+          </div>
+
+          ${subtasksList}
+
+          ${data.attachments?.length > 0 ? `
+            <div style="${BASE_STYLES.card}">
+              <div style="${BASE_STYLES.flexRow}">
+                <span style="${BASE_STYLES.icon}">📎</span>
+                <h3 style="${BASE_STYLES.heading}">Attachments</h3>
+              </div>
+              <div style="display: grid; gap: 16px;">
+                ${data.attachments.map(attachment => `
+                  <a href="${attachment.url}" style="${BASE_STYLES.flexRow}; padding: 16px; background: #faf5ff; border-radius: 12px; text-decoration: none;">
+                    <span style="margin-right: 16px; font-size: 20px;">📄</span>
+                    <span style="color: #A855F7; font-family: Unbounded, sans-serif;">${attachment.name}</span>
+                  </a>
+                `).join('')}
+              </div>
+            </div>
+          ` : ''}
+
+          <div style="text-align: center; margin-top: 40px;">
+            <a href="${process.env.FRONTEND_URL}/tasks/${data.taskId}" style="${BASE_STYLES.button}">
+              View Task Details
+            </a>
           </div>
         </div>
 
         <div style="${BASE_STYLES.footer}">
-          <p style="margin: 0;">Please review and start working on this task at your earliest convenience.</p>
+          <p style="margin: 0 0 20px; font-family: Unbounded, sans-serif;">Need help? Contact our support team</p>
+          <div style="${BASE_STYLES.flexRow}; justify-content: center;">
+            <a href="#" style="${BASE_STYLES.link}">Help Center</a>
+            <span style="margin: 0 12px; color: #d1d5db;">•</span>
+            <a href="#" style="${BASE_STYLES.link}">Support</a>
+          </div>
         </div>
       </div>
     </div>
@@ -1089,77 +1150,134 @@ const NewTask = (data) => {
 };
 exports.NewTask = NewTask;
 const TaskUpdated = (data) => {
-    const subtasksList = data.subtasks?.map(subtask => `
-    <div style="display: flex; align-items: center; margin: 8px 0;">
-      <span style="color: #0066FF; margin-right: 8px;">•</span>
-      <span>${subtask.title}</span>
-      <span style="margin-left: auto; ${BASE_STYLES.badge}; background: ${subtask.status === 'PENDING' ? '#f0f0f0' : '#e6efff'}">${subtask.status}</span>
-    </div>
-  `).join('') || '';
-    const clientsList = data.clients?.map(client => `
-    <div style="display: flex; align-items: center; margin: 8px 0;">
-      <span style="color: #0066FF; margin-right: 8px;">•</span>
-      <span>${client.name}</span>
-      ${client.category ? `<span style="margin-left: 8px; ${BASE_STYLES.badge}; background: #e6efff">${client.category}</span>` : ''}
-    </div>
-  `).join('') || '';
-    const attachmentsList = data.attachments?.map(attachment => `
-    <div style="display: flex; align-items: center; margin: 8px 0;">
-      <span style="color: #0066FF; margin-right: 8px;">📎</span>
-      <a href="${attachment.url}" style="${BASE_STYLES.link}">${attachment.name}</a>
-    </div>
-  `).join('') || '';
+    const formatDeadline = (date) => {
+        const deadlineDate = new Date(date);
+        return deadlineDate.toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    };
+    const getPriorityEmoji = (priority) => {
+        switch (priority?.toUpperCase()) {
+            case 'HIGH': return '🔴';
+            case 'MEDIUM': return '🟡';
+            case 'LOW': return '🟢';
+            default: return '⚪';
+        }
+    };
+    const getTaskTypeEmoji = (type) => {
+        switch (type?.toUpperCase()) {
+            case 'IN_PERSON_MEETING': return '👥';
+            case 'VIRTUAL_MEETING': return '💻';
+            case 'PHONE_CALL': return '📱';
+            case 'EMAIL': return '📧';
+            case 'DOCUMENT': return '📄';
+            case 'RESEARCH': return '🔍';
+            case 'DEVELOPMENT': return '💻';
+            case 'DESIGN': return '🎨';
+            case 'REVIEW': return '👀';
+            default: return '📋';
+        }
+    };
+    const subtasksList = data.subtasks?.length > 0
+        ? `<div style="${BASE_STYLES.card}">
+        <div style="${BASE_STYLES.flexRow}">
+          <span style="${BASE_STYLES.icon}">📝</span>
+          <h3 style="${BASE_STYLES.heading}">Subtasks</h3>
+        </div>
+        <ul style="list-style: none; padding: 0; margin: 0;">
+          ${data.subtasks.map((subtask, index) => `
+            <li style="margin-bottom: 12px; padding: 12px; background: #faf5ff; border-radius: 8px;">
+              <div style="${BASE_STYLES.flexRow}">
+                <span style="color: #A855F7; margin-right: 8px;">${index + 1}</span>
+                <div style="${BASE_STYLES.flexColumn}">
+                  <strong style="color: #1f2937;">${subtask.title}</strong>
+                  ${subtask.description ? `<span style="font-size: 14px; color: #6b7280;">${subtask.description}</span>` : ''}
+                  <span style="font-size: 12px; color: #A855F7; margin-top: 4px;">Status: ${subtask.status}</span>
+                </div>
+              </div>
+            </li>
+          `).join('')}
+        </ul>
+      </div>`
+        : '';
     return `
     <div style="${BASE_STYLES.wrapper}">
       <div style="${BASE_STYLES.container}">
         <div style="${BASE_STYLES.header}">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="white">
-            <path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1s-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
-          </svg>
+          <div style="font-size: 48px; margin-bottom: 16px;">🔄</div>
           <h1 style="margin: 16px 0 8px; font-size: 24px;">Task Updated</h1>
           <p style="margin: 0; opacity: 0.9;">Task ID: ${data.taskId}</p>
         </div>
 
         <div style="padding: 24px 20px;">
           <div style="${BASE_STYLES.card}">
-            <h2 style="${BASE_STYLES.heading}">Hi ${data.name},</h2>
-            <p style="${BASE_STYLES.text}">A task assigned to you has been updated by ${data.assignedBy}.</p>
-
-            <div style="${BASE_STYLES.highlight}">
-              <h3 style="margin: 0 0 12px; color: #2d3748;">${data.title}</h3>
-              <p style="margin: 0 0 16px;">${data.description}</p>
-              
-              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 16px;">
-                <div>
-                  <strong>Priority:</strong>
-                  <span style="${BASE_STYLES.badge}; background: ${data.priority === 'HIGH' ? '#fee2e2' :
-        data.priority === 'MEDIUM' ? '#fef3c7' : '#e6efff'}">${data.priority}</span>
-                </div>
-                <div>
-                  <strong>Type:</strong>
-                  <span style="${BASE_STYLES.badge}; background: #e6efff">${data.taskType}</span>
-                </div>
-                <div>
-                  <strong>Status:</strong>
-                  <span style="${BASE_STYLES.badge}; background: #e6efff">${data.status}</span>
-                </div>
-                ${data.deadline ? `
-                <div>
-                  <strong>Deadline:</strong>
-                  <span style="${BASE_STYLES.badge}; background: #e6efff">${data.deadline}</span>
-                </div>
-                ` : ''}
-              </div>
+            <div style="${BASE_STYLES.flexRow}">
+              <div style="${BASE_STYLES.icon}">${getTaskTypeEmoji(data.taskType)}</div>
+              <h2 style="${BASE_STYLES.heading}">${data.title}</h2>
+            </div>
+            
+            <div style="margin: 16px 0;">
+              <span style="${BASE_STYLES.tag}">${getPriorityEmoji(data.priority)} ${data.priority}</span>
+              <span style="${BASE_STYLES.tag}">${getTaskTypeEmoji(data.taskType)} ${data.taskType.replace(/_/g, ' ')}</span>
+              <span style="${BASE_STYLES.tag}">🎯 ${data.status}</span>
             </div>
 
-            ${data.subtasks?.length ? createSection("Subtasks", subtasksList) : ''}
-            ${data.clients?.length ? createSection("Related Clients", clientsList) : ''}
-            ${data.attachments?.length ? createSection("Attachments", attachmentsList) : ''}
+            <div style="${BASE_STYLES.highlight}">
+              <p style="${BASE_STYLES.text}">${data.description}</p>
+            </div>
+
+            <hr style="${BASE_STYLES.divider}" />
+
+            <div style="${BASE_STYLES.grid}">
+              <div style="${BASE_STYLES.flexColumn}">
+                <span style="color: #6b7280; font-size: 14px;">⏰ Deadline</span>
+                <strong style="color: #1f2937;">${data.deadline ? formatDeadline(data.deadline) : 'No deadline set'}</strong>
+              </div>
+              <div style="${BASE_STYLES.flexColumn}">
+                <span style="color: #6b7280; font-size: 14px;">👤 Last updated by</span>
+                <strong style="color: #1f2937;">${data.assignedBy}</strong>
+              </div>
+            </div>
+          </div>
+
+          ${subtasksList}
+
+          ${data.attachments?.length > 0 ? `
+            <div style="${BASE_STYLES.card}">
+              <div style="${BASE_STYLES.flexRow}">
+                <span style="${BASE_STYLES.icon}">📎</span>
+                <h3 style="${BASE_STYLES.heading}">Attachments</h3>
+              </div>
+              <div style="display: grid; gap: 12px;">
+                ${data.attachments.map(attachment => `
+                  <a href="${attachment.url}" style="${BASE_STYLES.flexRow}; padding: 12px; background: #faf5ff; border-radius: 8px; text-decoration: none;">
+                    <span style="margin-right: 8px;">📄</span>
+                    <span style="color: #A855F7;">${attachment.name}</span>
+                  </a>
+                `).join('')}
+              </div>
+            </div>
+          ` : ''}
+
+          <div style="text-align: center; margin-top: 32px;">
+            <a href="${process.env.FRONTEND_URL}/tasks/${data.taskId}" style="${BASE_STYLES.button}">
+              View Updated Task
+            </a>
           </div>
         </div>
 
         <div style="${BASE_STYLES.footer}">
-          <p style="margin: 0;">Please review the updated task details and adjust your work accordingly.</p>
+          <p style="margin: 0 0 16px;">Need help? Contact our support team</p>
+          <div style="${BASE_STYLES.flexRow}; justify-content: center;">
+            <a href="#" style="${BASE_STYLES.link}">Help Center</a>
+            <span style="margin: 0 8px;">•</span>
+            <a href="#" style="${BASE_STYLES.link}">Support</a>
+          </div>
         </div>
       </div>
     </div>

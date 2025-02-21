@@ -11,6 +11,7 @@ import { PaginatedResponse } from '../lib/interfaces/product.interfaces';
 import { User } from '../user/entities/user.entity';
 import { Cache } from 'cache-manager';
 import { ConfigService } from '@nestjs/config';
+import { CommunicationService } from '../communication/communication.service';
 export declare class TasksService {
     private taskRepository;
     private subtaskRepository;
@@ -19,16 +20,26 @@ export declare class TasksService {
     private readonly userRepository;
     private cacheManager;
     private readonly configService;
+    private readonly communicationService;
     private readonly CACHE_TTL;
     private readonly CACHE_PREFIX;
-    private readonly logger;
-    constructor(taskRepository: Repository<Task>, subtaskRepository: Repository<SubTask>, eventEmitter: EventEmitter2, clientRepository: Repository<Client>, userRepository: Repository<User>, cacheManager: Cache, configService: ConfigService);
+    constructor(taskRepository: Repository<Task>, subtaskRepository: Repository<SubTask>, eventEmitter: EventEmitter2, clientRepository: Repository<Client>, userRepository: Repository<User>, cacheManager: Cache, configService: ConfigService, communicationService: CommunicationService);
     private getCacheKey;
     private clearTaskCache;
     private createRepeatingTasks;
+    private createSingleRepeatingTask;
     private calculateTotalTasks;
     create(createTaskDto: CreateTaskDto): Promise<{
         message: string;
+    }>;
+    private populateTaskRelations;
+    findOne(ref: number): Promise<{
+        message: string;
+        task: Task | null;
+    }>;
+    tasksByUser(ref: number): Promise<{
+        message: string;
+        tasks: Task[];
     }>;
     findAll(filters?: {
         status?: TaskStatus;
@@ -39,14 +50,6 @@ export declare class TasksService {
         endDate?: Date;
         isOverdue?: boolean;
     }, page?: number, limit?: number): Promise<PaginatedResponse<Task>>;
-    findOne(ref: number): Promise<{
-        message: string;
-        task: Task | null;
-    }>;
-    tasksByUser(ref: number): Promise<{
-        message: string;
-        tasks: Task[];
-    }>;
     update(ref: number, updateTaskDto: UpdateTaskDto): Promise<{
         message: string;
     }>;
@@ -76,6 +79,7 @@ export declare class TasksService {
     updateProgress(ref: number, progress: number): Promise<{
         message: string;
     }>;
+    private populateTasksForAnalytics;
     getTasksReport(filter: any): Promise<{
         total: number;
         metrics: {
@@ -115,4 +119,5 @@ export declare class TasksService {
     private analyzeClientCompletionRates;
     private analyzeTaskPriorityDistribution;
     private analyzeAssigneePerformance;
+    private getClientNames;
 }

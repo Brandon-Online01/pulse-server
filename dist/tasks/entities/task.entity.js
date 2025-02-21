@@ -109,7 +109,7 @@ __decorate([
     __metadata("design:type", Boolean)
 ], Task.prototype, "isDeleted", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => user_entity_1.User, user => user.tasks),
+    (0, typeorm_1.ManyToOne)(() => user_entity_1.User, (user) => user.tasks),
     __metadata("design:type", user_entity_1.User)
 ], Task.prototype, "creator", void 0);
 __decorate([
@@ -121,15 +121,15 @@ __decorate([
     __metadata("design:type", Array)
 ], Task.prototype, "clients", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => subtask_entity_1.SubTask, subtask => subtask.task),
+    (0, typeorm_1.OneToMany)(() => subtask_entity_1.SubTask, (subtask) => subtask.task),
     __metadata("design:type", Array)
 ], Task.prototype, "subtasks", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => organisation_entity_1.Organisation, organisation => organisation.tasks),
+    (0, typeorm_1.ManyToOne)(() => organisation_entity_1.Organisation, (organisation) => organisation.tasks),
     __metadata("design:type", organisation_entity_1.Organisation)
 ], Task.prototype, "organisation", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => branch_entity_1.Branch, branch => branch.tasks),
+    (0, typeorm_1.ManyToOne)(() => branch_entity_1.Branch, (branch) => branch.tasks),
     __metadata("design:type", branch_entity_1.Branch)
 ], Task.prototype, "branch", void 0);
 __decorate([

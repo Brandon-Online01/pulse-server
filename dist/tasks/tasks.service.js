@@ -11,7 +11,6 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-var TasksService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TasksService = void 0;
 const typeorm_1 = require("typeorm");
@@ -29,8 +28,10 @@ const task_enums_1 = require("../lib/enums/task.enums");
 const user_entity_1 = require("../user/entities/user.entity");
 const cache_manager_1 = require("@nestjs/cache-manager");
 const config_1 = require("@nestjs/config");
-let TasksService = TasksService_1 = class TasksService {
-    constructor(taskRepository, subtaskRepository, eventEmitter, clientRepository, userRepository, cacheManager, configService) {
+const communication_service_1 = require("../communication/communication.service");
+const email_enums_1 = require("../lib/enums/email.enums");
+let TasksService = class TasksService {
+    constructor(taskRepository, subtaskRepository, eventEmitter, clientRepository, userRepository, cacheManager, configService, communicationService) {
         this.taskRepository = taskRepository;
         this.subtaskRepository = subtaskRepository;
         this.eventEmitter = eventEmitter;
@@ -38,8 +39,8 @@ let TasksService = TasksService_1 = class TasksService {
         this.userRepository = userRepository;
         this.cacheManager = cacheManager;
         this.configService = configService;
+        this.communicationService = communicationService;
         this.CACHE_PREFIX = 'task:';
-        this.logger = new common_1.Logger(TasksService_1.name);
         this.CACHE_TTL = this.configService.get('CACHE_EXPIRATION_TIME') || 30;
     }
     getCacheKey(key) {
@@ -53,7 +54,7 @@ let TasksService = TasksService_1 = class TasksService {
             await this.cacheManager.del(this.getCacheKey('all'));
         }
         catch (error) {
-            this.logger.error('Error clearing cache:', error);
+            return error;
         }
     }
     async createRepeatingTasks(baseTask, createTaskDto) {
@@ -63,55 +64,101 @@ let TasksService = TasksService_1 = class TasksService {
             !createTaskDto.repetitionDeadline) {
             return;
         }
-        let currentDate = new Date(createTaskDto?.deadline);
-        const endDate = new Date(createTaskDto?.repetitionDeadline);
+        const startDate = new Date(createTaskDto.deadline);
+        const endDate = new Date(createTaskDto.repetitionDeadline);
+        if (endDate <= startDate) {
+            throw new common_1.BadRequestException('Repetition end date must be after the start date');
+        }
+        let currentDate = new Date(startDate);
+        const totalTasks = this.calculateTotalTasks(startDate, endDate, createTaskDto.repetitionType);
         let tasksCreated = 0;
-        const totalTasks = this.calculateTotalTasks(currentDate, endDate, createTaskDto?.repetitionType);
-        while (currentDate < endDate) {
-            let nextDate;
-            switch (createTaskDto?.repetitionType) {
-                case task_enums_1.RepetitionType.DAILY:
-                    nextDate = (0, date_fns_1.addDays)(currentDate, 1);
-                    break;
-                case task_enums_1.RepetitionType.WEEKLY:
-                    nextDate = (0, date_fns_1.addWeeks)(currentDate, 1);
-                    break;
-                case task_enums_1.RepetitionType.MONTHLY:
-                    nextDate = (0, date_fns_1.addMonths)(currentDate, 1);
-                    break;
-                case task_enums_1.RepetitionType.YEARLY:
-                    nextDate = (0, date_fns_1.addYears)(currentDate, 1);
-                    break;
-                default:
-                    return;
-            }
-            if (nextDate > endDate) {
-                break;
-            }
-            const repeatedTask = new task_entity_1.Task();
-            const formattedDate = nextDate.toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-            });
-            repeatedTask.title = `${createTaskDto?.title} (${tasksCreated + 1}/${totalTasks}) - ${formattedDate}`;
-            repeatedTask.description = `${createTaskDto?.description}\n\nRecurring ${createTaskDto?.repetitionType.toLowerCase()} task (Part ${tasksCreated + 1} of ${totalTasks})`;
-            repeatedTask.deadline = nextDate;
-            repeatedTask.assignees = baseTask?.assignees;
-            repeatedTask.clients = baseTask?.clients;
-            repeatedTask.status = task_enums_1.TaskStatus.PENDING;
-            repeatedTask.taskType = createTaskDto?.taskType || task_enums_1.TaskType.OTHER;
-            repeatedTask.priority = createTaskDto?.priority;
-            repeatedTask.attachments = createTaskDto?.attachments;
-            repeatedTask.completionDate = null;
-            repeatedTask.repetitionType = task_enums_1.RepetitionType.NONE;
-            repeatedTask.repetitionDeadline = null;
-            repeatedTask.creator = baseTask?.creator;
-            repeatedTask.targetCategory = createTaskDto?.targetCategory;
-            await this.taskRepository.save(repeatedTask);
-            currentDate = nextDate;
+        const repetitionTypeDisplay = createTaskDto.repetitionType.toLowerCase();
+        try {
+            const firstTask = await this.createSingleRepeatingTask(baseTask, createTaskDto, startDate, 1, totalTasks, repetitionTypeDisplay, startDate, endDate);
             tasksCreated++;
         }
+        catch (error) {
+            return error;
+        }
+        while (currentDate < endDate) {
+            try {
+                let nextDate;
+                switch (createTaskDto.repetitionType) {
+                    case task_enums_1.RepetitionType.DAILY:
+                        nextDate = (0, date_fns_1.addDays)(currentDate, 1);
+                        break;
+                    case task_enums_1.RepetitionType.WEEKLY:
+                        nextDate = (0, date_fns_1.addWeeks)(currentDate, 1);
+                        break;
+                    case task_enums_1.RepetitionType.MONTHLY:
+                        nextDate = (0, date_fns_1.addMonths)(currentDate, 1);
+                        break;
+                    case task_enums_1.RepetitionType.YEARLY:
+                        nextDate = (0, date_fns_1.addYears)(currentDate, 1);
+                        break;
+                    default:
+                        return;
+                }
+                if (nextDate > endDate) {
+                    break;
+                }
+                await this.createSingleRepeatingTask(baseTask, createTaskDto, nextDate, tasksCreated + 2, totalTasks, repetitionTypeDisplay, startDate, endDate);
+                currentDate = nextDate;
+                tasksCreated++;
+            }
+            catch (error) {
+                return error;
+            }
+        }
+    }
+    async createSingleRepeatingTask(baseTask, createTaskDto, taskDate, sequenceNumber, totalTasks, repetitionTypeDisplay, seriesStart, seriesEnd) {
+        const formattedDate = taskDate.toLocaleDateString('en-US', {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+        });
+        const repeatedTask = this.taskRepository.create({
+            title: `${createTaskDto.title} (#${sequenceNumber}/${totalTasks}) - ${formattedDate}`,
+            description: `${createTaskDto.description}\n\n---\nRecurring Task Information:\n- Part ${sequenceNumber} of ${totalTasks}\n- Repeats: ${repetitionTypeDisplay}\n- Original Task: ${createTaskDto.title}\n- Series Start: ${seriesStart.toLocaleDateString()}\n- Series End: ${seriesEnd.toLocaleDateString()}`,
+            deadline: taskDate,
+            assignees: createTaskDto.assignees?.map(a => ({ uid: a.uid })) || [],
+            clients: createTaskDto.client?.map(c => ({ uid: c.uid })) || [],
+            status: task_enums_1.TaskStatus.PENDING,
+            taskType: createTaskDto.taskType || task_enums_1.TaskType.OTHER,
+            priority: createTaskDto.priority,
+            attachments: createTaskDto.attachments || [],
+            completionDate: null,
+            repetitionType: task_enums_1.RepetitionType.NONE,
+            repetitionDeadline: null,
+            creator: baseTask.creator,
+            targetCategory: createTaskDto.targetCategory,
+            progress: 0,
+            isOverdue: false,
+            isDeleted: false,
+            organisation: baseTask.organisation,
+            branch: baseTask.branch
+        });
+        const savedTask = await this.taskRepository.save(repeatedTask);
+        if (createTaskDto.subtasks?.length > 0) {
+            const subtasks = createTaskDto.subtasks.map(subtask => this.subtaskRepository.create({
+                title: subtask.title,
+                description: subtask.description,
+                status: status_enums_1.SubTaskStatus.PENDING,
+                task: savedTask,
+                isDeleted: false
+            }));
+            await this.subtaskRepository.save(subtasks);
+        }
+        this.eventEmitter.emit('task.created', {
+            task: savedTask,
+            isRecurring: true,
+            sequenceNumber,
+            totalTasks,
+            hasSubtasks: createTaskDto.subtasks?.length > 0
+        });
+        await this.clearTaskCache();
+        return savedTask;
     }
     calculateTotalTasks(startDate, endDate, repetitionType) {
         const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
@@ -175,10 +222,55 @@ let TasksService = TasksService_1 = class TasksService {
                     assignees,
                     clients
                 };
-                let task = this.taskRepository.create(taskData);
+                const task = this.taskRepository.create(taskData);
                 const savedTask = await this.taskRepository.save(task);
                 if (!savedTask) {
                     throw new Error('Failed to save task');
+                }
+                if (createTaskDto.repetitionType && createTaskDto.repetitionType !== task_enums_1.RepetitionType.NONE) {
+                    await this.createRepeatingTasks(savedTask, createTaskDto);
+                }
+                if (assignees.length > 0) {
+                    const assigneeUsers = await this.userRepository.find({
+                        where: { uid: (0, typeorm_3.In)(assignees.map(a => a?.uid)) },
+                        select: ['uid', 'email', 'name', 'surname']
+                    });
+                    const notification = {
+                        type: notification_enums_1.NotificationType.USER,
+                        title: 'New Task Assigned',
+                        message: `You have been assigned a new task: "${savedTask?.title}"`,
+                        status: notification_enums_1.NotificationStatus.UNREAD,
+                        metadata: {
+                            taskId: savedTask?.uid,
+                            priority: savedTask?.priority,
+                            deadline: savedTask?.deadline,
+                            assignedBy: creator ? `${creator?.name} ${creator?.surname}` : 'System',
+                            createdAt: savedTask?.createdAt
+                        }
+                    };
+                    for (const assignee of assigneeUsers) {
+                        this.eventEmitter.emit('send.notification', {
+                            ...notification,
+                            owner: { uid: assignee.uid }
+                        }, [assignee.uid]);
+                        await this.communicationService.sendEmail(email_enums_1.EmailType.NEW_TASK, [assignee.email], {
+                            name: `${assignee?.name} ${assignee?.surname}`,
+                            taskId: savedTask?.uid?.toString(),
+                            title: savedTask?.title,
+                            description: savedTask?.description,
+                            deadline: savedTask?.deadline?.toISOString(),
+                            priority: savedTask?.priority,
+                            taskType: savedTask?.taskType,
+                            status: savedTask?.status,
+                            assignedBy: creator ? `${creator?.name} ${creator?.surname}` : 'System',
+                            subtasks: [],
+                            clients: clients.length > 0 ? await this.getClientNames(clients.map(c => c?.uid)) : [],
+                            attachments: savedTask.attachments?.map(attachment => ({
+                                name: attachment,
+                                url: attachment
+                            }))
+                        });
+                    }
                 }
                 await this.clearTaskCache();
                 return {
@@ -192,6 +284,80 @@ let TasksService = TasksService_1 = class TasksService {
         catch (error) {
             return {
                 message: error?.message,
+            };
+        }
+    }
+    async populateTaskRelations(task) {
+        if (task.assignees?.length > 0) {
+            const assigneeIds = task.assignees.map(a => a.uid);
+            const assigneeProfiles = await this.userRepository.find({
+                where: { uid: (0, typeorm_3.In)(assigneeIds) },
+                select: ['uid', 'username', 'name', 'surname', 'email', 'phone', 'photoURL', 'accessLevel', 'status']
+            });
+            task.assignees = assigneeProfiles;
+        }
+        if (task.clients?.length > 0) {
+            const clientIds = task.clients.map(c => c.uid);
+            const clientProfiles = await this.clientRepository.find({
+                where: { uid: (0, typeorm_3.In)(clientIds) }
+            });
+            task.clients = clientProfiles;
+        }
+        return task;
+    }
+    async findOne(ref) {
+        try {
+            const cacheKey = this.getCacheKey(ref);
+            const cachedTask = await this.cacheManager.get(cacheKey);
+            if (cachedTask) {
+                return {
+                    task: cachedTask,
+                    message: process.env.SUCCESS_MESSAGE,
+                };
+            }
+            const task = await this.taskRepository.findOne({
+                where: {
+                    uid: ref,
+                    isDeleted: false,
+                },
+                relations: ['creator', 'subtasks', 'organisation', 'branch'],
+            });
+            if (!task) {
+                throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
+            }
+            const populatedTask = await this.populateTaskRelations(task);
+            await this.cacheManager.set(cacheKey, populatedTask, this.CACHE_TTL);
+            return {
+                task: populatedTask,
+                message: process.env.SUCCESS_MESSAGE,
+            };
+        }
+        catch (error) {
+            return {
+                task: null,
+                message: error?.message,
+            };
+        }
+    }
+    async tasksByUser(ref) {
+        try {
+            const tasks = await this.taskRepository.find({
+                where: { creator: { uid: ref }, isDeleted: false },
+                relations: ['creator', 'subtasks', 'organisation', 'branch'],
+            });
+            if (!tasks) {
+                throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
+            }
+            const populatedTasks = await Promise.all(tasks.map(task => this.populateTaskRelations(task)));
+            return {
+                message: process.env.SUCCESS_MESSAGE,
+                tasks: populatedTasks,
+            };
+        }
+        catch (error) {
+            return {
+                message: `could not get tasks by user - ${error?.message}`,
+                tasks: null,
             };
         }
     }
@@ -228,7 +394,7 @@ let TasksService = TasksService_1 = class TasksService {
                     createdAt: 'DESC',
                 },
             });
-            let filteredTasks = tasks;
+            let filteredTasks = await Promise.all(tasks.map(task => this.populateTaskRelations(task)));
             if (filters?.assigneeId) {
                 filteredTasks = filteredTasks?.filter((task) => task.assignees?.some((assignee) => assignee.uid === filters?.assigneeId));
             }
@@ -261,63 +427,20 @@ let TasksService = TasksService_1 = class TasksService {
             };
         }
     }
-    async findOne(ref) {
-        try {
-            const cacheKey = this.getCacheKey(ref);
-            const cachedTask = await this.cacheManager.get(cacheKey);
-            if (cachedTask) {
-                return {
-                    task: cachedTask,
-                    message: process.env.SUCCESS_MESSAGE,
-                };
-            }
-            const task = await this.taskRepository.findOne({
-                where: {
-                    uid: ref,
-                    isDeleted: false,
-                },
-                relations: ['assignees', 'clients', 'creator', 'subtasks'],
-            });
-            if (!task) {
-                throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
-            }
-            await this.cacheManager.set(cacheKey, task, this.CACHE_TTL);
-            return {
-                task,
-                message: process.env.SUCCESS_MESSAGE,
-            };
-        }
-        catch (error) {
-            return {
-                task: null,
-                message: error?.message,
-            };
-        }
-    }
-    async tasksByUser(ref) {
-        try {
-            const tasks = await this.taskRepository.find({
-                where: { creator: { uid: ref }, isDeleted: false },
-            });
-            if (!tasks) {
-                throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
-            }
-            const response = {
-                message: process.env.SUCCESS_MESSAGE,
-                tasks,
-            };
-            return response;
-        }
-        catch (error) {
-            const response = {
-                message: `could not get tasks by user - ${error?.message}`,
-                tasks: null,
-            };
-            return response;
-        }
-    }
     async update(ref, updateTaskDto) {
         try {
+            if (updateTaskDto.title) {
+                const existingTask = await this.taskRepository.findOne({
+                    where: {
+                        title: updateTaskDto.title,
+                        uid: (0, typeorm_3.Not)(ref),
+                        isDeleted: false
+                    }
+                });
+                if (existingTask) {
+                    throw new common_1.BadRequestException('A task with this title already exists');
+                }
+            }
             const task = await this.taskRepository.findOne({
                 where: {
                     uid: ref,
@@ -527,6 +650,9 @@ let TasksService = TasksService_1 = class TasksService {
             throw new common_1.BadRequestException(error?.message);
         }
     }
+    async populateTasksForAnalytics(tasks) {
+        return Promise.all(tasks.map(task => this.populateTaskRelations(task)));
+    }
     async getTasksReport(filter) {
         try {
             const tasks = await this.taskRepository.find({
@@ -534,25 +660,27 @@ let TasksService = TasksService_1 = class TasksService {
                     ...filter,
                     isDeleted: false,
                 },
+                relations: ['creator', 'subtasks', 'organisation', 'branch'],
             });
             if (!tasks) {
                 throw new common_1.NotFoundException('No tasks found for the specified period');
             }
+            const populatedTasks = await this.populateTasksForAnalytics(tasks);
             const groupedTasks = {
-                pending: tasks.filter((task) => task.status === task_enums_1.TaskStatus.PENDING),
-                inProgress: tasks.filter((task) => task.status === task_enums_1.TaskStatus.IN_PROGRESS),
-                completed: tasks.filter((task) => task.status === task_enums_1.TaskStatus.COMPLETED),
-                overdue: tasks.filter((task) => task.status === task_enums_1.TaskStatus.OVERDUE),
+                pending: populatedTasks.filter((task) => task.status === task_enums_1.TaskStatus.PENDING),
+                inProgress: populatedTasks.filter((task) => task.status === task_enums_1.TaskStatus.IN_PROGRESS),
+                completed: populatedTasks.filter((task) => task.status === task_enums_1.TaskStatus.COMPLETED),
+                overdue: populatedTasks.filter((task) => task.status === task_enums_1.TaskStatus.OVERDUE),
             };
-            const totalTasks = tasks.length;
+            const totalTasks = populatedTasks.length;
             const completedTasks = groupedTasks.completed.length;
-            const avgCompletionTime = this.calculateAverageCompletionTime(tasks);
-            const overdueRate = this.calculateOverdueRate(tasks);
-            const taskDistribution = this.analyzeTaskDistribution(tasks);
-            const incompletionReasons = this.analyzeIncompletionReasons(tasks);
-            const clientCompletionRates = this.analyzeClientCompletionRates(tasks);
-            const taskPriorityDistribution = this.analyzeTaskPriorityDistribution(tasks);
-            const assigneePerformance = this.analyzeAssigneePerformance(tasks);
+            const avgCompletionTime = this.calculateAverageCompletionTime(populatedTasks);
+            const overdueRate = this.calculateOverdueRate(populatedTasks);
+            const taskDistribution = this.analyzeTaskDistribution(populatedTasks);
+            const incompletionReasons = this.analyzeIncompletionReasons(populatedTasks);
+            const clientCompletionRates = await this.analyzeClientCompletionRates(populatedTasks);
+            const taskPriorityDistribution = this.analyzeTaskPriorityDistribution(populatedTasks);
+            const assigneePerformance = await this.analyzeAssigneePerformance(populatedTasks);
             return {
                 ...groupedTasks,
                 total: totalTasks,
@@ -686,9 +814,16 @@ let TasksService = TasksService_1 = class TasksService {
                 : 'N/A',
         }));
     }
+    async getClientNames(clientIds) {
+        const clients = await this.clientRepository.find({
+            where: { uid: (0, typeorm_3.In)(clientIds) },
+            select: ['name']
+        });
+        return clients.map(client => ({ name: client.name }));
+    }
 };
 exports.TasksService = TasksService;
-exports.TasksService = TasksService = TasksService_1 = __decorate([
+exports.TasksService = TasksService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_2.InjectRepository)(task_entity_1.Task)),
     __param(1, (0, typeorm_2.InjectRepository)(subtask_entity_1.SubTask)),
@@ -699,6 +834,7 @@ exports.TasksService = TasksService = TasksService_1 = __decorate([
         typeorm_1.Repository,
         event_emitter_1.EventEmitter2,
         typeorm_1.Repository,
-        typeorm_1.Repository, Object, config_1.ConfigService])
+        typeorm_1.Repository, Object, config_1.ConfigService,
+        communication_service_1.CommunicationService])
 ], TasksService);
 //# sourceMappingURL=tasks.service.js.map

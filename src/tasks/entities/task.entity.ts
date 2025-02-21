@@ -70,7 +70,7 @@ export class Task {
 	isDeleted: boolean;
 
 	// Relations
-	@ManyToOne(() => User, user => user.tasks)
+	@ManyToOne(() => User, (user) => user.tasks)
 	creator: User;
 
 	@Column({ type: 'json', nullable: true })
@@ -79,13 +79,13 @@ export class Task {
 	@Column({ type: 'json', nullable: true })
 	clients: { uid: number }[];
 
-	@OneToMany(() => SubTask, subtask => subtask.task)
+	@OneToMany(() => SubTask, (subtask) => subtask.task)
 	subtasks: SubTask[];
 
-	@ManyToOne(() => Organisation, organisation => organisation.tasks)
+	@ManyToOne(() => Organisation, (organisation) => organisation.tasks)
 	organisation: Organisation;
 
-	@ManyToOne(() => Branch, branch => branch.tasks)
+	@ManyToOne(() => Branch, (branch) => branch.tasks)
 	branch: Branch;
 
 	@BeforeInsert()

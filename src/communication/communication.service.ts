@@ -13,6 +13,8 @@ import { Repository } from 'typeorm';
 import { CommunicationLog } from './entities/communication-log.entity';
 import { LicenseCreated, LicenseUpdated, LicenseLimitReached, LicenseRenewed, LicenseSuspended, LicenseActivated, NewQuotationClient, NewQuotationInternal, NewQuotationReseller, Signup, Verification, PasswordReset, Invoice, PasswordChanged, DailyReport } from '../lib/templates/emails';
 import { DailyReportData, InvoiceData, PasswordChangedData, PasswordResetData, VerificationEmailData, SignupEmailData, EmailTemplateData, LicenseEmailData, LicenseLimitData, QuotationInternalData, QuotationResellerData, QuotationData } from '../lib/types/email-templates.types';
+import { NewTask, TaskUpdated } from '../lib/templates/emails';
+import { TaskEmailData } from '../lib/types/email-templates.types';
 
 @Injectable()
 export class CommunicationService {
@@ -157,6 +159,16 @@ export class CommunicationService {
 				return {
 					subject: 'License Activated Successfully',
 					body: LicenseActivated(data as LicenseEmailData),
+				};
+			case EmailType.NEW_TASK:
+				return {
+					subject: 'New Task Assigned',
+					body: NewTask(data as TaskEmailData),
+				};
+			case EmailType.TASK_UPDATED:
+				return {
+					subject: 'Task Updated',
+					body: TaskUpdated(data as TaskEmailData),
 				};
 			default:
 				throw new NotFoundException(`Unknown email template type: ${type}`);

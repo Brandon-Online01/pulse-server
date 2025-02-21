@@ -10,7 +10,7 @@ import { UpdateSubtaskDto } from './dto/update-subtask.dto';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { addDays, addWeeks, addMonths, addYears } from 'date-fns';
 import { Client } from '../clients/entities/client.entity';
-import { Injectable, NotFoundException, BadRequestException, Inject, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject } from '@nestjs/common';
 import { NotificationType, NotificationStatus } from '../lib/enums/notification.enums';
 import { TaskStatus, TaskPriority, RepetitionType, TaskType } from '../lib/enums/task.enums';
 import { PaginatedResponse } from '../lib/interfaces/product.interfaces';
@@ -19,12 +19,13 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { ConfigService } from '@nestjs/config';
 import { DeepPartial } from 'typeorm';
+import { CommunicationService } from '../communication/communication.service';
+import { EmailType } from '../lib/enums/email.enums';
 
 @Injectable()
 export class TasksService {
 	private readonly CACHE_TTL: number;
 	private readonly CACHE_PREFIX = 'task:';
-	private readonly logger = new Logger(TasksService.name);
 
 	constructor(
 		@InjectRepository(Task)
@@ -39,6 +40,7 @@ export class TasksService {
 		@Inject(CACHE_MANAGER)
 		private cacheManager: Cache,
 		private readonly configService: ConfigService,
+		private readonly communicationService: CommunicationService,
 	) {
 		this.CACHE_TTL = this.configService.get<number>('CACHE_EXPIRATION_TIME') || 30;
 	}
@@ -54,11 +56,12 @@ export class TasksService {
 			}
 			await this.cacheManager.del(this.getCacheKey('all'));
 		} catch (error) {
-			this.logger.error('Error clearing cache:', error);
+			return error;
 		}
 	}
 
 	private async createRepeatingTasks(baseTask: Task, createTaskDto: CreateTaskDto): Promise<void> {
+		// Early return if no repetition is needed
 		if (
 			!createTaskDto.repetitionType ||
 			createTaskDto.repetitionType === RepetitionType.NONE ||
@@ -68,66 +71,159 @@ export class TasksService {
 			return;
 		}
 
-		let currentDate = new Date(createTaskDto?.deadline);
-		const endDate = new Date(createTaskDto?.repetitionDeadline);
-		let tasksCreated = 0;
-		const totalTasks = this.calculateTotalTasks(currentDate, endDate, createTaskDto?.repetitionType);
-
-		while (currentDate < endDate) {
-			let nextDate: Date;
-			switch (createTaskDto?.repetitionType) {
-				case RepetitionType.DAILY:
-					nextDate = addDays(currentDate, 1);
-					break;
-				case RepetitionType.WEEKLY:
-					nextDate = addWeeks(currentDate, 1);
-					break;
-				case RepetitionType.MONTHLY:
-					nextDate = addMonths(currentDate, 1);
-					break;
-				case RepetitionType.YEARLY:
-					nextDate = addYears(currentDate, 1);
-					break;
-				default:
-					return;
-			}
-
-			// Skip if we've somehow gone past the end date
-			if (nextDate > endDate) {
-				break;
-			}
-
-			const repeatedTask = new Task();
-			const formattedDate = nextDate.toLocaleDateString('en-US', {
-				month: 'short',
-				day: 'numeric',
-				year: 'numeric',
-			});
-
-			repeatedTask.title = `${createTaskDto?.title} (${tasksCreated + 1}/${totalTasks}) - ${formattedDate}`;
-			repeatedTask.description = `${
-				createTaskDto?.description
-			}\n\nRecurring ${createTaskDto?.repetitionType.toLowerCase()} task (Part ${
-				tasksCreated + 1
-			} of ${totalTasks})`;
-			repeatedTask.deadline = nextDate;
-			repeatedTask.assignees = baseTask?.assignees;
-			repeatedTask.clients = baseTask?.clients;
-			repeatedTask.status = TaskStatus.PENDING;
-			repeatedTask.taskType = createTaskDto?.taskType || TaskType.OTHER;
-			repeatedTask.priority = createTaskDto?.priority;
-			repeatedTask.attachments = createTaskDto?.attachments;
-			repeatedTask.completionDate = null;
-			repeatedTask.repetitionType = RepetitionType.NONE;
-			repeatedTask.repetitionDeadline = null;
-			repeatedTask.creator = baseTask?.creator;
-			repeatedTask.targetCategory = createTaskDto?.targetCategory;
-
-			await this.taskRepository.save(repeatedTask);
-
-			currentDate = nextDate;
-			tasksCreated++;
+		// Parse dates properly handling timezone
+		const startDate = new Date(createTaskDto.deadline);
+		const endDate = new Date(createTaskDto.repetitionDeadline);
+		
+		// Validate dates
+		if (endDate <= startDate) {
+			throw new BadRequestException('Repetition end date must be after the start date');
 		}
+
+		// Calculate total tasks and initialize counter
+		let currentDate = new Date(startDate); // Create new date object to avoid reference issues
+		const totalTasks = this.calculateTotalTasks(startDate, endDate, createTaskDto.repetitionType);
+		let tasksCreated = 0;
+
+		// Format the repetition type for display
+		const repetitionTypeDisplay = createTaskDto.repetitionType.toLowerCase();
+		
+		// Create first task (for the start date)
+		try {
+			const firstTask = await this.createSingleRepeatingTask(
+				baseTask,
+				createTaskDto,
+				startDate,
+				1,
+				totalTasks,
+				repetitionTypeDisplay,
+				startDate,
+				endDate
+			);
+			tasksCreated++;
+		} catch (error) {
+			return error;
+		}
+
+		// Now create the remaining tasks
+		while (currentDate < endDate) {
+			try {
+				// Calculate next date based on repetition type
+				let nextDate: Date;
+				switch (createTaskDto.repetitionType) {
+					case RepetitionType.DAILY:
+						nextDate = addDays(currentDate, 1);
+						break;
+					case RepetitionType.WEEKLY:
+						nextDate = addWeeks(currentDate, 1);
+						break;
+					case RepetitionType.MONTHLY:
+						nextDate = addMonths(currentDate, 1);
+						break;
+					case RepetitionType.YEARLY:
+						nextDate = addYears(currentDate, 1);
+						break;
+					default:
+						return;
+				}
+
+				// Break if we've gone past the end date
+				if (nextDate > endDate) {
+					break;
+				}
+
+				// Create the task for this date
+				await this.createSingleRepeatingTask(
+					baseTask,
+					createTaskDto,
+					nextDate,
+					tasksCreated + 2, // +2 because we already created the first task
+					totalTasks,
+					repetitionTypeDisplay,
+					startDate,
+					endDate
+				);
+
+				currentDate = nextDate;
+				tasksCreated++;
+			} catch (error) {
+				return error;
+			}
+		}
+
+	}
+
+	private async createSingleRepeatingTask(
+		baseTask: Task,
+		createTaskDto: CreateTaskDto,
+		taskDate: Date,
+		sequenceNumber: number,
+		totalTasks: number,
+		repetitionTypeDisplay: string,
+		seriesStart: Date,
+		seriesEnd: Date
+	): Promise<Task> {
+		// Format date for display
+		const formattedDate = taskDate.toLocaleDateString('en-US', {
+			weekday: 'short',
+			month: 'short',
+			day: 'numeric',
+			year: 'numeric'
+		});
+
+		// Create the repeated task
+		const repeatedTask = this.taskRepository.create({
+			title: `${createTaskDto.title} (#${sequenceNumber}/${totalTasks}) - ${formattedDate}`,
+			description: `${createTaskDto.description}\n\n---\nRecurring Task Information:\n- Part ${sequenceNumber} of ${totalTasks}\n- Repeats: ${repetitionTypeDisplay}\n- Original Task: ${createTaskDto.title}\n- Series Start: ${seriesStart.toLocaleDateString()}\n- Series End: ${seriesEnd.toLocaleDateString()}`,
+			deadline: taskDate,
+			assignees: createTaskDto.assignees?.map(a => ({ uid: a.uid })) || [],
+			clients: createTaskDto.client?.map(c => ({ uid: c.uid })) || [],
+			status: TaskStatus.PENDING,
+			taskType: createTaskDto.taskType || TaskType.OTHER,
+			priority: createTaskDto.priority,
+			attachments: createTaskDto.attachments || [],
+			completionDate: null,
+			repetitionType: RepetitionType.NONE, // Prevent infinite recursion
+			repetitionDeadline: null,
+			creator: baseTask.creator,
+			targetCategory: createTaskDto.targetCategory,
+			progress: 0,
+			isOverdue: false,
+			isDeleted: false,
+			organisation: baseTask.organisation,
+			branch: baseTask.branch
+		});
+
+		// Save the task
+		const savedTask = await this.taskRepository.save(repeatedTask);
+
+		// Create subtasks if they exist in the DTO
+		if (createTaskDto.subtasks?.length > 0) {
+			const subtasks = createTaskDto.subtasks.map(subtask => 
+				this.subtaskRepository.create({
+					title: subtask.title,
+					description: subtask.description,
+					status: SubTaskStatus.PENDING,
+					task: savedTask,
+					isDeleted: false
+				})
+			);
+			await this.subtaskRepository.save(subtasks);
+		}
+		
+		// Emit event for task creation
+		this.eventEmitter.emit('task.created', {
+			task: savedTask,
+			isRecurring: true,
+			sequenceNumber,
+			totalTasks,
+			hasSubtasks: createTaskDto.subtasks?.length > 0
+		});
+
+		// Clear cache after task creation
+		await this.clearTaskCache();
+
+		return savedTask;
 	}
 
 	private calculateTotalTasks(startDate: Date, endDate: Date, repetitionType: RepetitionType): number {
@@ -180,7 +276,7 @@ export class TasksService {
 				const clients = createTaskDto.client?.map(c => ({ uid: c.uid })) || [];
 
 				// Create base task data with all necessary fields
-				const taskData = {
+				const taskData: DeepPartial<Task> = {
 					title: createTaskDto.title,
 					description: createTaskDto.description,
 					taskType: createTaskDto.taskType,
@@ -205,11 +301,71 @@ export class TasksService {
 				};
 
 				// Create and save the task
-				let task = this.taskRepository.create(taskData);
+				const task = this.taskRepository.create(taskData);
 				const savedTask = await this.taskRepository.save(task);
 
 				if (!savedTask) {
 					throw new Error('Failed to save task');
+				}
+
+				// Create recurring tasks if repetition is specified
+				if (createTaskDto.repetitionType && createTaskDto.repetitionType !== RepetitionType.NONE) {
+					await this.createRepeatingTasks(savedTask, createTaskDto);
+				}
+
+				// Send notifications to assignees
+				if (assignees.length > 0) {
+					const assigneeUsers = await this.userRepository.find({
+						where: { uid: In(assignees.map(a => a?.uid)) },
+						select: ['uid', 'email', 'name', 'surname']
+					});
+
+					// Create notification object
+					const notification = {
+						type: NotificationType.USER,
+						title: 'New Task Assigned',
+						message: `You have been assigned a new task: "${savedTask?.title}"`,
+						status: NotificationStatus.UNREAD,
+						metadata: {
+							taskId: savedTask?.uid,
+							priority: savedTask?.priority,
+							deadline: savedTask?.deadline,
+							assignedBy: creator ? `${creator?.name} ${creator?.surname}` : 'System',
+							createdAt: savedTask?.createdAt
+						}
+					};
+
+					// Send system notification to each assignee
+					for (const assignee of assigneeUsers) {
+						// Send system notification
+						this.eventEmitter.emit('send.notification', {
+							...notification,
+							owner: { uid: assignee.uid }
+						}, [assignee.uid]);
+
+						// Send email notification
+						await this.communicationService.sendEmail(
+							EmailType.NEW_TASK,
+							[assignee.email],
+							{
+								name: `${assignee?.name} ${assignee?.surname}`,
+								taskId: savedTask?.uid?.toString(),
+								title: savedTask?.title,
+								description: savedTask?.description,
+								deadline: savedTask?.deadline?.toISOString(),
+								priority: savedTask?.priority,
+								taskType: savedTask?.taskType,
+								status: savedTask?.status,
+								assignedBy: creator ? `${creator?.name} ${creator?.surname}` : 'System',
+								subtasks: [],
+								clients: clients.length > 0 ? await this.getClientNames(clients.map(c => c?.uid)) : [],
+								attachments: savedTask.attachments?.map(attachment => ({
+									name: attachment,
+									url: attachment
+								}))
+							}
+						);
+					}
 				}
 
 				// Clear cache
@@ -224,6 +380,92 @@ export class TasksService {
 		} catch (error) {
 			return {
 				message: error?.message,
+			};
+		}
+	}
+
+	private async populateTaskRelations(task: Task): Promise<Task> {
+		if (task.assignees?.length > 0) {
+			const assigneeIds = task.assignees.map(a => a.uid);
+			const assigneeProfiles = await this.userRepository.find({
+				where: { uid: In(assigneeIds) },
+				select: ['uid', 'username', 'name', 'surname', 'email', 'phone', 'photoURL', 'accessLevel', 'status']
+			});
+			task.assignees = assigneeProfiles;
+		}
+
+		if (task.clients?.length > 0) {
+			const clientIds = task.clients.map(c => c.uid);
+			const clientProfiles = await this.clientRepository.find({
+				where: { uid: In(clientIds) }
+			});
+			task.clients = clientProfiles;
+		}
+
+		return task;
+	}
+
+	async findOne(ref: number): Promise<{ message: string; task: Task | null }> {
+		try {
+			const cacheKey = this.getCacheKey(ref);
+			const cachedTask = await this.cacheManager.get<Task>(cacheKey);
+
+			if (cachedTask) {
+				return {
+					task: cachedTask,
+					message: process.env.SUCCESS_MESSAGE,
+				};
+			}
+
+			const task = await this.taskRepository.findOne({
+				where: {
+					uid: ref,
+					isDeleted: false,
+				},
+				relations: ['creator', 'subtasks', 'organisation', 'branch'],
+			});
+
+			if (!task) {
+				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
+			}
+
+			const populatedTask = await this.populateTaskRelations(task);
+
+			await this.cacheManager.set(cacheKey, populatedTask, this.CACHE_TTL);
+
+			return {
+				task: populatedTask,
+				message: process.env.SUCCESS_MESSAGE,
+			};
+		} catch (error) {
+			return {
+				task: null,
+				message: error?.message,
+			};
+		}
+	}
+
+	public async tasksByUser(ref: number): Promise<{ message: string; tasks: Task[] }> {
+		try {
+			const tasks = await this.taskRepository.find({
+				where: { creator: { uid: ref }, isDeleted: false },
+				relations: ['creator', 'subtasks', 'organisation', 'branch'],
+			});
+
+			if (!tasks) {
+				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
+			}
+
+			const populatedTasks = await Promise.all(tasks.map(task => this.populateTaskRelations(task)));
+
+			return {
+				message: process.env.SUCCESS_MESSAGE,
+				tasks: populatedTasks,
+			};
+		} catch (error) {
+			return {
+				message: `could not get tasks by user - ${error?.message}`,
+				tasks: null,
 			};
 		}
 	}
@@ -249,7 +491,6 @@ export class TasksService {
 				return cachedTasks;
 			}
 
-			// Build where conditions
 			const where: any = { isDeleted: false };
 
 			if (filters?.status) {
@@ -283,8 +524,7 @@ export class TasksService {
 				},
 			});
 
-			// Post-process for assignee and client filters
-			let filteredTasks = tasks;
+			let filteredTasks = await Promise.all(tasks.map(task => this.populateTaskRelations(task)));
 
 			if (filters?.assigneeId) {
 				filteredTasks = filteredTasks?.filter((task) =>
@@ -326,72 +566,23 @@ export class TasksService {
 		}
 	}
 
-	async findOne(ref: number): Promise<{ message: string; task: Task | null }> {
-		try {
-			const cacheKey = this.getCacheKey(ref);
-			const cachedTask = await this.cacheManager.get<Task>(cacheKey);
-
-			if (cachedTask) {
-				return {
-					task: cachedTask,
-					message: process.env.SUCCESS_MESSAGE,
-				};
-			}
-
-			const task = await this.taskRepository.findOne({
-				where: {
-					uid: ref,
-					isDeleted: false,
-				},
-				relations: ['assignees', 'clients', 'creator', 'subtasks'],
-			});
-
-			if (!task) {
-				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
-			}
-
-			await this.cacheManager.set(cacheKey, task, this.CACHE_TTL);
-
-			return {
-				task,
-				message: process.env.SUCCESS_MESSAGE,
-			};
-		} catch (error) {
-			return {
-				task: null,
-				message: error?.message,
-			};
-		}
-	}
-
-	public async tasksByUser(ref: number): Promise<{ message: string; tasks: Task[] }> {
-		try {
-			const tasks = await this.taskRepository.find({
-				where: { creator: { uid: ref }, isDeleted: false },
-			});
-
-			if (!tasks) {
-				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
-			}
-
-			const response = {
-				message: process.env.SUCCESS_MESSAGE,
-				tasks,
-			};
-
-			return response;
-		} catch (error) {
-			const response = {
-				message: `could not get tasks by user - ${error?.message}`,
-				tasks: null,
-			};
-
-			return response;
-		}
-	}
-
 	async update(ref: number, updateTaskDto: UpdateTaskDto): Promise<{ message: string }> {
 		try {
+			// If title is being updated, check for duplicates
+			if (updateTaskDto.title) {
+				const existingTask = await this.taskRepository.findOne({
+					where: { 
+						title: updateTaskDto.title,
+						uid: Not(ref), // Exclude current task
+						isDeleted: false 
+					}
+				});
+
+				if (existingTask) {
+					throw new BadRequestException('A task with this title already exists');
+				}
+			}
+
 			const task = await this.taskRepository.findOne({
 				where: {
 					uid: ref,
@@ -648,6 +839,10 @@ export class TasksService {
 		}
 	}
 
+	private async populateTasksForAnalytics(tasks: Task[]): Promise<Task[]> {
+		return Promise.all(tasks.map(task => this.populateTaskRelations(task)));
+	}
+
 	async getTasksReport(filter: any) {
 		try {
 			const tasks = await this.taskRepository.find({
@@ -655,28 +850,31 @@ export class TasksService {
 					...filter,
 					isDeleted: false,
 				},
+				relations: ['creator', 'subtasks', 'organisation', 'branch'],
 			});
 
 			if (!tasks) {
 				throw new NotFoundException('No tasks found for the specified period');
 			}
 
+			const populatedTasks = await this.populateTasksForAnalytics(tasks);
+
 			const groupedTasks = {
-				pending: tasks.filter((task) => task.status === TaskStatus.PENDING),
-				inProgress: tasks.filter((task) => task.status === TaskStatus.IN_PROGRESS),
-				completed: tasks.filter((task) => task.status === TaskStatus.COMPLETED),
-				overdue: tasks.filter((task) => task.status === TaskStatus.OVERDUE),
+				pending: populatedTasks.filter((task) => task.status === TaskStatus.PENDING),
+				inProgress: populatedTasks.filter((task) => task.status === TaskStatus.IN_PROGRESS),
+				completed: populatedTasks.filter((task) => task.status === TaskStatus.COMPLETED),
+				overdue: populatedTasks.filter((task) => task.status === TaskStatus.OVERDUE),
 			};
 
-			const totalTasks = tasks.length;
+			const totalTasks = populatedTasks.length;
 			const completedTasks = groupedTasks.completed.length;
-			const avgCompletionTime = this.calculateAverageCompletionTime(tasks);
-			const overdueRate = this.calculateOverdueRate(tasks);
-			const taskDistribution = this.analyzeTaskDistribution(tasks);
-			const incompletionReasons = this.analyzeIncompletionReasons(tasks);
-			const clientCompletionRates = this.analyzeClientCompletionRates(tasks);
-			const taskPriorityDistribution = this.analyzeTaskPriorityDistribution(tasks);
-			const assigneePerformance = this.analyzeAssigneePerformance(tasks);
+			const avgCompletionTime = this.calculateAverageCompletionTime(populatedTasks);
+			const overdueRate = this.calculateOverdueRate(populatedTasks);
+			const taskDistribution = this.analyzeTaskDistribution(populatedTasks);
+			const incompletionReasons = this.analyzeIncompletionReasons(populatedTasks);
+			const clientCompletionRates = await this.analyzeClientCompletionRates(populatedTasks);
+			const taskPriorityDistribution = this.analyzeTaskPriorityDistribution(populatedTasks);
+			const assigneePerformance = await this.analyzeAssigneePerformance(populatedTasks);
 
 			return {
 				...groupedTasks,
@@ -846,5 +1044,14 @@ export class TasksService {
 					? `${Math.round(stats.totalCompletionTime / stats.completedTasks / (1000 * 60 * 60))} hours`
 					: 'N/A',
 		}));
+	}
+
+	// Helper method to get client names
+	private async getClientNames(clientIds: number[]): Promise<Array<{ name: string }>> {
+		const clients = await this.clientRepository.find({
+			where: { uid: In(clientIds) },
+			select: ['name']
+		});
+		return clients.map(client => ({ name: client.name }));
 	}
 }

@@ -166,6 +166,7 @@ export interface TaskEmailData extends BaseEmailData {
     subtasks?: Array<{
         title: string;
         status: string;
+        description?: string;
     }>;
     clients?: Array<{
         name: string;

@@ -26,6 +26,7 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const communication_log_entity_1 = require("./entities/communication-log.entity");
 const emails_1 = require("../lib/templates/emails");
+const emails_2 = require("../lib/templates/emails");
 let CommunicationService = class CommunicationService {
     constructor(configService, notificationsService, userService, communicationLogRepository) {
         this.configService = configService;
@@ -151,6 +152,16 @@ let CommunicationService = class CommunicationService {
                 return {
                     subject: 'License Activated Successfully',
                     body: (0, emails_1.LicenseActivated)(data),
+                };
+            case email_enums_1.EmailType.NEW_TASK:
+                return {
+                    subject: 'New Task Assigned',
+                    body: (0, emails_2.NewTask)(data),
+                };
+            case email_enums_1.EmailType.TASK_UPDATED:
+                return {
+                    subject: 'Task Updated',
+                    body: (0, emails_2.TaskUpdated)(data),
                 };
             default:
                 throw new common_1.NotFoundException(`Unknown email template type: ${type}`);

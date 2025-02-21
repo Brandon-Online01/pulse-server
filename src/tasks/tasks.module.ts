@@ -11,6 +11,7 @@ import { User } from '../user/entities/user.entity';
 import { ConfigModule } from '@nestjs/config';
 import { Organisation } from '../organisation/entities/organisation.entity';
 import { Branch } from '../branch/entities/branch.entity';
+import { CommunicationModule } from '../communication/communication.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { Branch } from '../branch/entities/branch.entity';
     TypeOrmModule.forFeature([Task, SubTask, Client, User, Organisation, Branch]),
     RewardsModule,
     ConfigModule,
+    CommunicationModule
   ],
   controllers: [TasksController],
   providers: [TasksService],
