@@ -666,16 +666,30 @@ export class TasksService {
 				where: {
 					uid: ref,
 				},
+				relations: ['subtasks'], // Include subtasks relation
 			});
 
 			if (!task) {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
+			// Soft delete all subtasks
+			if (task.subtasks?.length > 0) {
+				await this.subtaskRepository.update(
+					{ task: { uid: ref } },
+					{ isDeleted: true }
+				);
+			}
+
+			// Soft delete the task
 			await this.taskRepository.update(ref, { isDeleted: true });
 
-			// Clear cache after deletion
+			// Clear all related caches
 			await this.clearTaskCache(ref);
+			await this.cacheManager.del('tasks_all'); // Clear tasks list cache
+			const keys = await this.cacheManager.store.keys();
+			const taskKeys = keys.filter(key => key.startsWith('tasks_page')); // Clear pagination caches
+			await Promise.all(taskKeys.map(key => this.cacheManager.del(key)));
 
 			return {
 				message: process.env.SUCCESS_MESSAGE,
