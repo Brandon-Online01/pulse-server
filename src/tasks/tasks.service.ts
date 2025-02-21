@@ -2,7 +2,7 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { Between, MoreThanOrEqual, LessThanOrEqual, LessThan, Not } from 'typeorm';
+import { Between, MoreThanOrEqual, LessThanOrEqual, LessThan, Not, In } from 'typeorm';
 import { SubTaskStatus } from '../lib/enums/status.enums';
 import { Task } from './entities/task.entity';
 import { SubTask } from './entities/subtask.entity';
@@ -18,6 +18,7 @@ import { User } from '../user/entities/user.entity';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { ConfigService } from '@nestjs/config';
+import { DeepPartial } from 'typeorm';
 
 @Injectable()
 export class TasksService {
@@ -37,7 +38,7 @@ export class TasksService {
 		private readonly userRepository: Repository<User>,
 		@Inject(CACHE_MANAGER)
 		private cacheManager: Cache,
-		private readonly configService: ConfigService
+		private readonly configService: ConfigService,
 	) {
 		this.CACHE_TTL = this.configService.get<number>('CACHE_EXPIRATION_TIME') || 30;
 	}
@@ -58,12 +59,17 @@ export class TasksService {
 	}
 
 	private async createRepeatingTasks(baseTask: Task, createTaskDto: CreateTaskDto): Promise<void> {
-		if (!createTaskDto.repetitionType || createTaskDto.repetitionType === RepetitionType.NONE || !createTaskDto.deadline || !createTaskDto.repetitionEndDate) {
+		if (
+			!createTaskDto.repetitionType ||
+			createTaskDto.repetitionType === RepetitionType.NONE ||
+			!createTaskDto.deadline ||
+			!createTaskDto.repetitionDeadline
+		) {
 			return;
 		}
 
 		let currentDate = new Date(createTaskDto?.deadline);
-		const endDate = new Date(createTaskDto?.repetitionEndDate);
+		const endDate = new Date(createTaskDto?.repetitionDeadline);
 		let tasksCreated = 0;
 		const totalTasks = this.calculateTotalTasks(currentDate, endDate, createTaskDto?.repetitionType);
 
@@ -92,14 +98,18 @@ export class TasksService {
 			}
 
 			const repeatedTask = new Task();
-			const formattedDate = nextDate.toLocaleDateString('en-US', { 
-				month: 'short', 
+			const formattedDate = nextDate.toLocaleDateString('en-US', {
+				month: 'short',
 				day: 'numeric',
-				year: 'numeric'
+				year: 'numeric',
 			});
-			
+
 			repeatedTask.title = `${createTaskDto?.title} (${tasksCreated + 1}/${totalTasks}) - ${formattedDate}`;
-			repeatedTask.description = `${createTaskDto?.description}\n\nRecurring ${createTaskDto?.repetitionType.toLowerCase()} task (Part ${tasksCreated + 1} of ${totalTasks})`;
+			repeatedTask.description = `${
+				createTaskDto?.description
+			}\n\nRecurring ${createTaskDto?.repetitionType.toLowerCase()} task (Part ${
+				tasksCreated + 1
+			} of ${totalTasks})`;
 			repeatedTask.deadline = nextDate;
 			repeatedTask.assignees = baseTask?.assignees;
 			repeatedTask.clients = baseTask?.clients;
@@ -107,9 +117,9 @@ export class TasksService {
 			repeatedTask.taskType = createTaskDto?.taskType || TaskType.OTHER;
 			repeatedTask.priority = createTaskDto?.priority;
 			repeatedTask.attachments = createTaskDto?.attachments;
-			repeatedTask.lastCompletedAt = null;
+			repeatedTask.completionDate = null;
 			repeatedTask.repetitionType = RepetitionType.NONE;
-			repeatedTask.repetitionEndDate = null;
+			repeatedTask.repetitionDeadline = null;
 			repeatedTask.creator = baseTask?.creator;
 			repeatedTask.targetCategory = createTaskDto?.targetCategory;
 
@@ -123,7 +133,7 @@ export class TasksService {
 	private calculateTotalTasks(startDate: Date, endDate: Date, repetitionType: RepetitionType): number {
 		const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
 		const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-		
+
 		switch (repetitionType) {
 			case RepetitionType.DAILY:
 				return diffDays;
@@ -138,106 +148,114 @@ export class TasksService {
 		}
 	}
 
-	async create(createTaskDto: CreateTaskDto, user?: any): Promise<{ message: string }> {
+	async create(createTaskDto: CreateTaskDto): Promise<{ message: string }> {
 		try {
-			// Set default values and validate dates
 			const now = new Date();
 			const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-			if (createTaskDto?.deadline && new Date(createTaskDto?.deadline) < startOfToday) {
+			if (createTaskDto.deadline && new Date(createTaskDto.deadline) < startOfToday) {
 				throw new BadRequestException('Task deadline cannot be in the past');
 			}
 
-			if (createTaskDto?.repetitionEndDate && new Date(createTaskDto?.repetitionEndDate) < startOfToday) {
+			if (createTaskDto.repetitionDeadline && new Date(createTaskDto.repetitionDeadline) < startOfToday) {
 				throw new BadRequestException('Repetition end date cannot be in the past');
 			}
 
-			// Create task data
-			const taskData = {
-				...createTaskDto,
-				creator: user?.uid ? { uid: user.uid } : undefined,
-				status: TaskStatus.PENDING,
-				progress: 0,
-				assignees: [],
-				clients: [],
-				attachments: createTaskDto?.attachments || []
-			};
-
-			// Handle assignees
-			if (createTaskDto?.assignees?.length > 0) {
-				const assigneeUsers = [];
-
-				for (const assignee of createTaskDto?.assignees) {
-					const user = await this.userRepository.findOne({
-						where: { uid: assignee?.uid }
+			try {
+				// First get the creator to access organization and branch
+				let creator = null;
+				if (createTaskDto.creators?.length > 0) {
+					creator = await this.userRepository.findOne({
+						where: { uid: createTaskDto.creators[0].uid },
+						relations: ['organisation', 'branch'],
 					});
 
-					if (user) {
-						assigneeUsers?.push(user);
+					if (!creator) {
+						throw new BadRequestException(`Creator with ID ${createTaskDto.creators[0].uid} not found`);
 					}
 				}
 
-				taskData.assignees = assigneeUsers;
+				// Create base task data with all necessary fields
+				const taskData: DeepPartial<Task> = {
+					title: createTaskDto.title,
+					description: createTaskDto.description,
+					taskType: createTaskDto.taskType,
+					priority: createTaskDto.priority,
+					status: createTaskDto.status || TaskStatus.PENDING,
+					progress: createTaskDto.progress || 0,
+					deadline: createTaskDto.deadline ? new Date(createTaskDto.deadline) : null,
+					repetitionType: createTaskDto.repetitionType || RepetitionType.NONE,
+					repetitionDeadline: createTaskDto.repetitionDeadline
+						? new Date(createTaskDto.repetitionDeadline)
+						: null,
+					attachments: createTaskDto.attachments || [],
+					targetCategory: createTaskDto.targetCategory,
+					isDeleted: false,
+					isOverdue: false,
+					completionDate: null,
+					creator: creator,
+					organisation: creator?.organisation || null,
+					branch: creator?.branch || null,
+				};
+
+				// Create and save the initial task
+				let task = this.taskRepository.create(taskData);
+				task = await this.taskRepository.save(task);
+
+				// Handle assignees
+				if (createTaskDto?.assignees?.length > 0) {
+					const assignees = await this.userRepository.find({
+						where: {
+							uid: In(createTaskDto.assignees.map((a) => a.uid)),
+							isDeleted: false,
+						},
+					});
+
+					if (assignees.length !== createTaskDto.assignees.length) {
+						throw new BadRequestException('One or more assignees not found');
+					}
+
+					task.assignees = assignees;
+				}
+
+				// Handle clients
+				if (createTaskDto.client?.length > 0) {
+					const clients = await this.clientRepository.find({
+						where: {
+							uid: In(createTaskDto.client.map((c) => c.uid)),
+							isDeleted: false,
+						},
+					});
+
+					if (clients.length !== createTaskDto.client.length) {
+						throw new BadRequestException('One or more clients not found');
+					}
+
+					task.clients = clients;
+				}
+
+				// Save the task with all relationships
+				const savedTask = await this.taskRepository.save(task);
+
+				if (!savedTask) {
+					throw new Error('Failed to save task');
+				}
+
+				// Clear cache
+				await this.clearTaskCache();
+
+				console.log(savedTask, 'saved task');
+
+				// Return success response with created task
+				return {
+					message: process.env.SUCCESS_MESSAGE,
+				};
+			} catch (error) {
+				return error;
 			}
-
-			// Handle client assignments
-			const clientUids = new Set();
-
-			// Case 1: Specific client selected
-			if (createTaskDto?.client?.uid) {
-				clientUids.add(createTaskDto?.client?.uid);
-			}
-
-			// Case 2: Target category specified
-			if (createTaskDto?.targetCategory) {
-				const categoryClients = await this.clientRepository.find({
-					where: {
-						category: createTaskDto?.targetCategory,
-						isDeleted: false
-					},
-					select: ['uid']
-				});
-
-				categoryClients.forEach(client => clientUids.add(client.uid));
-			}
-
-			// Convert client UIDs to the correct format for ManyToMany relationship
-			if (clientUids.size > 0) {
-				const clients = await this.clientRepository.findByIds(Array.from(clientUids));
-				taskData.clients = clients;
-			}
-
-			const task = await this.taskRepository.save(taskData);
-
-			if (!task) {
-				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
-			}
-
-			// Create future instances if task is repeating
-			if (createTaskDto?.repetitionType !== RepetitionType.NONE) {
-				await this.createRepeatingTasks(task, createTaskDto);
-			}
-
-			// Create subtasks if provided
-			if (createTaskDto?.subtasks?.length > 0) {
-				const subtasks = createTaskDto?.subtasks?.map(subtask => ({
-					...subtask,
-					task: { uid: task.uid },
-					status: SubTaskStatus.PENDING
-				}));
-
-				await this.subtaskRepository.save(subtasks);
-			}
-
-			// Clear cache after creating new task
-			await this.clearTaskCache();
-
-			return {
-				message: process.env.SUCCESS_MESSAGE
-			};
 		} catch (error) {
 			return {
-				message: error?.message
+				message: error?.message,
 			};
 		}
 	}
@@ -253,7 +271,7 @@ export class TasksService {
 			isOverdue?: boolean;
 		},
 		page: number = 1,
-		limit: number = Number(process.env.DEFAULT_PAGE_LIMIT)
+		limit: number = Number(process.env.DEFAULT_PAGE_LIMIT),
 	): Promise<PaginatedResponse<Task>> {
 		try {
 			const cacheKey = this.getCacheKey('all');
@@ -265,11 +283,11 @@ export class TasksService {
 
 			// Build where conditions
 			const where: any = { isDeleted: false };
-			
+
 			if (filters?.status) {
 				where.status = filters.status;
 			}
-			
+
 			if (filters?.priority) {
 				where.priority = filters.priority;
 			}
@@ -287,28 +305,27 @@ export class TasksService {
 				where.status = Not(TaskStatus.COMPLETED);
 			}
 
-			const [tasks, total] = await this.taskRepository.findAndCount({
+			const [tasks] = await this.taskRepository.findAndCount({
 				where,
-				relations: ['subtasks', 'creator',],
 				skip: (page - 1) * limit,
 				take: limit,
 				order: {
-					createdAt: 'DESC'
-				}
+					createdAt: 'DESC',
+				},
 			});
 
 			// Post-process for assignee and client filters
 			let filteredTasks = tasks;
-			
+
 			if (filters?.assigneeId) {
-				filteredTasks = filteredTasks?.filter(task => 
-					task.assignees?.some(assignee => assignee?.uid === filters?.assigneeId)
+				filteredTasks = filteredTasks?.filter((task) =>
+					task.assignees?.some((assignee) => assignee?.uid === filters?.assigneeId),
 				);
 			}
 
 			if (filters?.clientId) {
-				filteredTasks = filteredTasks?.filter(task => 
-					task.clients?.some(client => client?.uid === filters?.clientId)
+				filteredTasks = filteredTasks?.filter((task) =>
+					task.clients?.some((client) => client?.uid === filters?.clientId),
 				);
 			}
 
@@ -340,7 +357,7 @@ export class TasksService {
 		}
 	}
 
-	async findOne(ref: number): Promise<{ message: string, task: Task | null }> {
+	async findOne(ref: number): Promise<{ message: string; task: Task | null }> {
 		try {
 			const cacheKey = this.getCacheKey(ref);
 			const cachedTask = await this.cacheManager.get<Task>(cacheKey);
@@ -348,16 +365,16 @@ export class TasksService {
 			if (cachedTask) {
 				return {
 					task: cachedTask,
-					message: process.env.SUCCESS_MESSAGE
+					message: process.env.SUCCESS_MESSAGE,
 				};
 			}
 
 			const task = await this.taskRepository.findOne({
 				where: {
 					uid: ref,
-					isDeleted: false
+					isDeleted: false,
 				},
-				relations: ['assignees', 'clients', 'creator', 'subtasks']
+				relations: ['assignees', 'clients', 'creator', 'subtasks'],
 			});
 
 			if (!task) {
@@ -368,17 +385,17 @@ export class TasksService {
 
 			return {
 				task,
-				message: process.env.SUCCESS_MESSAGE
+				message: process.env.SUCCESS_MESSAGE,
 			};
 		} catch (error) {
 			return {
 				task: null,
-				message: error?.message
+				message: error?.message,
 			};
 		}
 	}
 
-	public async tasksByUser(ref: number): Promise<{ message: string, tasks: Task[] }> {
+	public async tasksByUser(ref: number): Promise<{ message: string; tasks: Task[] }> {
 		try {
 			const tasks = await this.taskRepository.find({
 				where: { creator: { uid: ref }, isDeleted: false },
@@ -390,15 +407,15 @@ export class TasksService {
 
 			const response = {
 				message: process.env.SUCCESS_MESSAGE,
-				tasks
+				tasks,
 			};
 
 			return response;
 		} catch (error) {
 			const response = {
 				message: `could not get tasks by user - ${error?.message}`,
-				tasks: null
-			}
+				tasks: null,
+			};
 
 			return response;
 		}
@@ -409,53 +426,53 @@ export class TasksService {
 			const task = await this.taskRepository.findOne({
 				where: {
 					uid: ref,
-					isDeleted: false
-				}
+					isDeleted: false,
+				},
 			});
 
 			if (!task) {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
+			const taskData: DeepPartial<Task> = {
+				...updateTaskDto,
+			};
+
 			// Handle assignees
-			if (updateTaskDto?.assignees?.length > 0) {
-				const assigneeUsers = [];
-
-				for (const assignee of updateTaskDto?.assignees) {
-					const user = await this.userRepository.findOne({
-						where: { uid: assignee?.uid }
-					});
-
-					if (user) {
-						assigneeUsers?.push(user);
-					}
-				}
-
-				updateTaskDto.assignees = assigneeUsers;
+			if (updateTaskDto?.assignees) {
+				taskData.assignees = updateTaskDto.assignees.map((assignee) => ({
+					uid: assignee.uid,
+				}));
 			}
 
-			// Handle client assignments
-			if (updateTaskDto?.clients?.length > 0) {
-				const clients = await this.clientRepository.findByIds(
-					updateTaskDto.clients.map(client => client.uid)
-				);
-				updateTaskDto.clients = clients;
+			// Handle clients
+			if (updateTaskDto?.client) {
+				taskData.clients = updateTaskDto.client.map((client) => ({
+					uid: client.uid,
+				}));
 			}
 
-			await this.taskRepository.save({
+			// Handle creator
+			if (updateTaskDto?.creators) {
+				taskData.creator = { uid: updateTaskDto.creators[0].uid };
+			}
+
+			const entityToSave = this.taskRepository.create({
 				...task,
-				...updateTaskDto
+				...taskData,
 			});
+
+			await this.taskRepository.save(entityToSave);
 
 			// Clear cache after update
 			await this.clearTaskCache(ref);
 
 			return {
-				message: process.env.SUCCESS_MESSAGE
+				message: process.env.SUCCESS_MESSAGE,
 			};
 		} catch (error) {
 			return {
-				message: error?.message
+				message: error?.message,
 			};
 		}
 	}
@@ -465,8 +482,7 @@ export class TasksService {
 			const task = await this.taskRepository.findOne({
 				where: {
 					uid: ref,
-					isDeleted: false
-				}
+				},
 			});
 
 			if (!task) {
@@ -479,11 +495,11 @@ export class TasksService {
 			await this.clearTaskCache(ref);
 
 			return {
-				message: process.env.SUCCESS_MESSAGE
+				message: process.env.SUCCESS_MESSAGE,
 			};
 		} catch (error) {
 			return {
-				message: error?.message
+				message: error?.message,
 			};
 		}
 	}
@@ -499,8 +515,7 @@ export class TasksService {
 
 			const tasks = await this.taskRepository.find({
 				where: {
-					isDeleted: false,
-					deadline: Between(startOfDay, endOfDay)
+					deadline: Between(startOfDay, endOfDay),
 				},
 			});
 
@@ -511,22 +526,24 @@ export class TasksService {
 				[TaskStatus.CANCELLED]: 0,
 				[TaskStatus.OVERDUE]: 0,
 				[TaskStatus.POSTPONED]: 0,
-				[TaskStatus.MISSED]: 0
+				[TaskStatus.MISSED]: 0,
 			};
 
-			tasks.forEach(task => {
+			tasks.forEach((task) => {
 				if (task.status) byStatus[task.status]++;
 			});
 
 			return {
 				byStatus,
-				total: tasks.length
+				total: tasks.length,
 			};
-
 		} catch (error) {
 			return {
-				byStatus: Object.values(TaskStatus).reduce((acc, status) => ({ ...acc, [status]: 0 }), {} as Record<TaskStatus, number>),
-				total: 0
+				byStatus: Object.values(TaskStatus).reduce(
+					(acc, status) => ({ ...acc, [status]: 0 }),
+					{} as Record<TaskStatus, number>,
+				),
+				total: 0,
 			};
 		}
 	}
@@ -543,9 +560,8 @@ export class TasksService {
 			const tasks = await this.taskRepository.count({
 				where: {
 					createdAt: Between(startOfDay, endOfDay),
-					isDeleted: false
 				},
-				relations: ['subtasks']
+				relations: ['subtasks'],
 			});
 
 			return { total: tasks };
@@ -554,7 +570,7 @@ export class TasksService {
 		}
 	}
 
-	async findOneSubTask(ref: number): Promise<{ tasks: SubTask | null, message: string }> {
+	async findOneSubTask(ref: number): Promise<{ tasks: SubTask | null; message: string }> {
 		try {
 			const subtask = await this.subtaskRepository.findOne({
 				where: { uid: ref, isDeleted: false },
@@ -574,7 +590,7 @@ export class TasksService {
 		} catch (error) {
 			return {
 				message: error?.message,
-				tasks: null
+				tasks: null,
 			};
 		}
 	}
@@ -609,8 +625,8 @@ export class TasksService {
 	async updateProgress(ref: number, progress: number): Promise<{ message: string }> {
 		try {
 			const task = await this.taskRepository.findOne({
-				where: { uid: ref, isDeleted: false },
-				relations: ['assignees', 'createdBy']
+				where: { uid: ref },
+				relations: ['assignees', 'createdBy'],
 			});
 
 			if (!task) {
@@ -633,24 +649,25 @@ export class TasksService {
 					title: 'Task Completed',
 					message: `Task "${task.title}" has been marked as complete`,
 					status: NotificationStatus.UNREAD,
-					owner: null
+					owner: null,
 				};
 
-				const recipients = [
-					task.creator.uid,
-					...(task.assignees?.map(assignee => assignee.uid) || [])
-				];
+				const recipients = [task.creator[0]?.uid, ...(task.assignees?.map((assignee) => assignee.uid) || [])];
 
 				const uniqueRecipients = [...new Set(recipients)];
-				uniqueRecipients.forEach(recipientId => {
-					this.eventEmitter.emit('send.notification', {
-						...notification,
-						owner: { uid: recipientId },
-						metadata: {
-							taskId: task.uid,
-							completedAt: new Date()
-						}
-					}, [recipientId]);
+				uniqueRecipients.forEach((recipientId) => {
+					this.eventEmitter.emit(
+						'send.notification',
+						{
+							...notification,
+							owner: { uid: recipientId },
+							metadata: {
+								taskId: task.uid,
+								completedAt: new Date(),
+							},
+						},
+						[recipientId],
+					);
 				});
 			}
 
@@ -667,7 +684,7 @@ export class TasksService {
 			const tasks = await this.taskRepository.find({
 				where: {
 					...filter,
-					isDeleted: false
+					isDeleted: false,
 				},
 			});
 
@@ -676,10 +693,10 @@ export class TasksService {
 			}
 
 			const groupedTasks = {
-				pending: tasks.filter(task => task.status === TaskStatus.PENDING),
-				inProgress: tasks.filter(task => task.status === TaskStatus.IN_PROGRESS),
-				completed: tasks.filter(task => task.status === TaskStatus.COMPLETED),
-				overdue: tasks.filter(task => task.status === TaskStatus.OVERDUE)
+				pending: tasks.filter((task) => task.status === TaskStatus.PENDING),
+				inProgress: tasks.filter((task) => task.status === TaskStatus.IN_PROGRESS),
+				completed: tasks.filter((task) => task.status === TaskStatus.COMPLETED),
+				overdue: tasks.filter((task) => task.status === TaskStatus.OVERDUE),
 			};
 
 			const totalTasks = tasks.length;
@@ -703,8 +720,8 @@ export class TasksService {
 					incompletionReasons,
 					clientCompletionRates,
 					taskPriorityDistribution,
-					assigneePerformance
-				}
+					assigneePerformance,
+				},
 			};
 		} catch (error) {
 			return null;
@@ -712,15 +729,12 @@ export class TasksService {
 	}
 
 	private calculateAverageCompletionTime(tasks: Task[]): number {
-		const completedTasks = tasks.filter(task =>
-			task.status === TaskStatus.COMPLETED &&
-			task.lastCompletedAt
-		);
+		const completedTasks = tasks.filter((task) => task.status === TaskStatus.COMPLETED && task.completionDate);
 
 		if (completedTasks.length === 0) return 0;
 
 		const totalCompletionTime = completedTasks.reduce((sum, task) => {
-			const completionTime = task.lastCompletedAt.getTime() - task.createdAt.getTime();
+			const completionTime = task.completionDate.getTime() - task.createdAt.getTime();
 			return sum + completionTime;
 		}, 0);
 
@@ -730,7 +744,7 @@ export class TasksService {
 
 	private calculateOverdueRate(tasks: Task[]): number {
 		if (tasks.length === 0) return 0;
-		const overdueTasks = tasks.filter(task => task.isOverdue || task.status === TaskStatus.OVERDUE).length;
+		const overdueTasks = tasks.filter((task) => task.isOverdue || task.status === TaskStatus.OVERDUE).length;
 		return Number(((overdueTasks / tasks.length) * 100).toFixed(1));
 	}
 
@@ -740,7 +754,7 @@ export class TasksService {
 			return acc;
 		}, {} as Record<TaskType, number>);
 
-		tasks.forEach(task => {
+		tasks.forEach((task) => {
 			distribution[task.taskType] = (distribution[task.taskType] || 0) + 1;
 		});
 		return distribution;
@@ -748,7 +762,7 @@ export class TasksService {
 
 	private analyzeIncompletionReasons(tasks: Task[]): Array<{ reason: string; count: number }> {
 		const reasons: Record<string, number> = {};
-		tasks.forEach(task => {
+		tasks.forEach((task) => {
 			if (task.status !== TaskStatus.COMPLETED) {
 				const reason = this.determineIncompletionReason(task);
 				reasons[reason] = (reasons[reason] || 0) + 1;
@@ -763,7 +777,7 @@ export class TasksService {
 		if (task.status === TaskStatus.OVERDUE) return 'Deadline Missed';
 		if (task.status === TaskStatus.CANCELLED) return 'Cancelled';
 		if (task.status === TaskStatus.MISSED) {
-			if (!task.lastCompletedAt) return 'Never Started';
+			if (!task.completionDate) return 'Never Started';
 			if (task.progress < 50) return 'Insufficient Progress';
 			return 'Incomplete Work';
 		}
@@ -777,19 +791,22 @@ export class TasksService {
 		completedTasks: number;
 		completionRate: string;
 	}> {
-		const clientStats: Record<number, {
-			clientName: string;
-			totalTasks: number;
-			completedTasks: number;
-		}> = {};
+		const clientStats: Record<
+			number,
+			{
+				clientName: string;
+				totalTasks: number;
+				completedTasks: number;
+			}
+		> = {};
 
-		tasks.forEach(task => {
-			task.clients?.forEach(client => {
+		tasks.forEach((task) => {
+			task.clients?.forEach((client) => {
 				if (!clientStats[client.uid]) {
 					clientStats[client.uid] = {
 						clientName: client.name,
 						totalTasks: 0,
-						completedTasks: 0
+						completedTasks: 0,
 					};
 				}
 				clientStats[client.uid].totalTasks++;
@@ -804,7 +821,7 @@ export class TasksService {
 			clientName: stats.clientName,
 			totalTasks: stats.totalTasks,
 			completedTasks: stats.completedTasks,
-			completionRate: `${((stats.completedTasks / stats.totalTasks) * 100).toFixed(1)}%`
+			completionRate: `${((stats.completedTasks / stats.totalTasks) * 100).toFixed(1)}%`,
 		}));
 	}
 
@@ -814,7 +831,7 @@ export class TasksService {
 			return acc;
 		}, {} as Record<TaskPriority, number>);
 
-		tasks.forEach(task => {
+		tasks.forEach((task) => {
 			distribution[task.priority] = (distribution[task.priority] || 0) + 1;
 		});
 		return distribution;
@@ -828,28 +845,31 @@ export class TasksService {
 		completionRate: string;
 		averageCompletionTime: string;
 	}> {
-		const assigneeStats: Record<number, {
-			assigneeName: string;
-			totalTasks: number;
-			completedTasks: number;
-			totalCompletionTime: number;
-		}> = {};
+		const assigneeStats: Record<
+			number,
+			{
+				assigneeName: string;
+				totalTasks: number;
+				completedTasks: number;
+				totalCompletionTime: number;
+			}
+		> = {};
 
-		tasks.forEach(task => {
-			task.assignees?.forEach(assignee => {
+		tasks.forEach((task) => {
+			task.assignees?.forEach((assignee) => {
 				if (!assigneeStats[assignee.uid]) {
 					assigneeStats[assignee.uid] = {
-						assigneeName: assignee.username,
+						assigneeName: `${assignee.name} ${assignee.surname}`,
 						totalTasks: 0,
 						completedTasks: 0,
-						totalCompletionTime: 0
+						totalCompletionTime: 0,
 					};
 				}
 				assigneeStats[assignee.uid].totalTasks++;
-				if (task.status === TaskStatus.COMPLETED && task.lastCompletedAt) {
+				if (task.status === TaskStatus.COMPLETED && task.completionDate) {
 					assigneeStats[assignee.uid].completedTasks++;
 					assigneeStats[assignee.uid].totalCompletionTime +=
-						new Date(task.lastCompletedAt).getTime() - new Date(task.createdAt).getTime();
+						new Date(task.completionDate).getTime() - new Date(task.createdAt).getTime();
 				}
 			});
 		});
@@ -860,9 +880,10 @@ export class TasksService {
 			totalTasks: stats.totalTasks,
 			completedTasks: stats.completedTasks,
 			completionRate: `${((stats.completedTasks / stats.totalTasks) * 100).toFixed(1)}%`,
-			averageCompletionTime: stats.completedTasks > 0
-				? `${Math.round(stats.totalCompletionTime / stats.completedTasks / (1000 * 60 * 60))} hours`
-				: 'N/A'
+			averageCompletionTime:
+				stats.completedTasks > 0
+					? `${Math.round(stats.totalCompletionTime / stats.completedTasks / (1000 * 60 * 60))} hours`
+					: 'N/A',
 		}));
 	}
 }

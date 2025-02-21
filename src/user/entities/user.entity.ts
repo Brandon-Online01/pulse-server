@@ -106,7 +106,7 @@ export class User {
     userTasks: Task[];
 
     @OneToMany(() => Task, (task) => task?.assignees, { nullable: true })
-    tasksAssigned: Task[];
+    assignedTasks: Task[];
 
     @OneToMany(() => News, (news) => news?.author, { nullable: true })
     articles: News[];
@@ -137,4 +137,7 @@ export class User {
 
     @OneToMany(() => Report, (report) => report?.owner, { nullable: true })
     reports: Report[];
+
+    @OneToMany(() => Task, (task) => task?.creator, { nullable: true })
+    tasks: Task[];
 }

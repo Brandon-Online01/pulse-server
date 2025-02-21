@@ -1,14 +1,13 @@
+import { IsString, IsOptional, IsEnum, IsArray, IsDate, IsNumber, ValidateNested } from 'class-validator';
+import { TaskStatus, TaskPriority, RepetitionType, TaskType } from '../../lib/enums/task.enums';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
-import { CreateSubtaskDto } from './create-subtask.dto';
-import { IsString, IsOptional, IsEnum, IsNumber, IsArray, IsDate } from 'class-validator';
-import { TaskStatus, TaskPriority, RepetitionType, TaskType } from '../../lib/enums/task.enums';
+import { AssigneeDto, ClientDto, CreatorDto, SubtaskDto } from './create-task.dto';
 
 export class UpdateTaskDto {
     @ApiProperty({
         description: 'The title of the task',
-        example: 'Client Meeting - Q1 Review (Updated)',
-        required: false
+        example: 'Test Task'
     })
     @IsString()
     @IsOptional()
@@ -16,8 +15,7 @@ export class UpdateTaskDto {
 
     @ApiProperty({
         description: 'The description of the task',
-        example: 'Updated quarterly review meeting details and agenda',
-        required: false
+        example: 'Test description'
     })
     @IsString()
     @IsOptional()
@@ -26,8 +24,7 @@ export class UpdateTaskDto {
     @ApiProperty({
         description: 'The current status of the task',
         enum: TaskStatus,
-        example: TaskStatus.IN_PROGRESS,
-        required: false
+        example: TaskStatus.IN_PROGRESS
     })
     @IsEnum(TaskStatus)
     @IsOptional()
@@ -36,8 +33,7 @@ export class UpdateTaskDto {
     @ApiProperty({
         description: 'The type of task',
         enum: TaskType,
-        example: TaskType.IN_PERSON_MEETING,
-        required: false
+        example: TaskType.IN_PERSON_MEETING
     })
     @IsEnum(TaskType)
     @IsOptional()
@@ -46,8 +42,7 @@ export class UpdateTaskDto {
     @ApiProperty({
         description: 'The priority level of the task',
         enum: TaskPriority,
-        example: TaskPriority.HIGH,
-        required: false
+        example: TaskPriority.HIGH
     })
     @IsEnum(TaskPriority)
     @IsOptional()
@@ -55,8 +50,7 @@ export class UpdateTaskDto {
 
     @ApiProperty({
         description: 'The deadline for the task completion',
-        example: '2024-02-28T16:00:00.000Z',
-        required: false
+        example: new Date().toISOString()
     })
     @Type(() => Date)
     @IsDate()
@@ -66,27 +60,32 @@ export class UpdateTaskDto {
     @ApiProperty({
         description: 'How often the task should repeat',
         enum: RepetitionType,
-        example: RepetitionType.WEEKLY,
-        required: false
+        example: RepetitionType.MONTHLY
     })
     @IsEnum(RepetitionType)
     @IsOptional()
     repetitionType?: RepetitionType;
 
     @ApiProperty({
-        description: 'The date until which the task should repeat',
-        example: '2024-03-28T16:00:00.000Z',
-        required: false
+        description: 'The deadline for task repetition',
+        example: new Date().toISOString()
     })
     @Type(() => Date)
     @IsDate()
     @IsOptional()
-    repetitionEndDate?: Date;
+    repetitionDeadline?: Date;
+
+    @ApiProperty({
+        description: 'Task progress percentage',
+        example: 50
+    })
+    @IsNumber()
+    @IsOptional()
+    progress?: number;
 
     @ApiProperty({
         description: 'Array of file attachments for the task',
-        example: ['updated-report.pdf', 'final-presentation.pptx'],
-        required: false,
+        example: ['https://cdn-icons-png.flaticon.com/512/3607/3607444.png'],
         type: [String]
     })
     @IsArray()
@@ -94,41 +93,28 @@ export class UpdateTaskDto {
     attachments?: string[];
 
     @ApiProperty({
-        description: 'Array of user objects assigned to the task',
-        example: [{ uid: 1 }, { uid: 2 }],
-        required: false,
-        type: 'array',
-        items: {
-            type: 'object',
-            properties: {
-                uid: { type: 'number' }
-            }
-        }
+        description: 'Array of assignees',
+        type: [AssigneeDto]
     })
     @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => AssigneeDto)
     @IsOptional()
-    assignees?: any[];
+    assignees?: AssigneeDto[];
 
     @ApiProperty({
-        description: 'Array of client objects associated with the task',
-        example: [{ uid: 1 }, { uid: 2 }],
-        required: false,
-        type: 'array',
-        items: {
-            type: 'object',
-            properties: {
-                uid: { type: 'number' }
-            }
-        }
+        description: 'Array of clients',
+        type: [ClientDto]
     })
     @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => ClientDto)
     @IsOptional()
-    clients?: any[];
+    client?: ClientDto[];
 
     @ApiProperty({
-        description: 'Target category for bulk client assignment. If provided, task will be assigned to all clients in this category',
-        example: 'premium',
-        required: false
+        description: 'Target category for bulk client assignment',
+        example: 'enterprise'
     })
     @IsString()
     @IsOptional()
@@ -136,10 +122,29 @@ export class UpdateTaskDto {
 
     @ApiProperty({
         description: 'Array of subtasks',
-        type: [CreateSubtaskDto],
-        required: false
+        type: [SubtaskDto]
     })
     @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => SubtaskDto)
     @IsOptional()
-    subtasks?: CreateSubtaskDto[];
+    subtasks?: SubtaskDto[];
+
+    @ApiProperty({
+        description: 'Array of creators',
+        type: [CreatorDto]
+    })
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => CreatorDto)
+    @IsOptional()
+    creators?: CreatorDto[];
+
+    @ApiProperty({
+        description: 'Comments',
+        example: 'Just a testing task'
+    })
+    @IsString()
+    @IsOptional()
+    comment?: string;
 }

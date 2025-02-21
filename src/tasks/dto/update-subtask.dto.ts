@@ -1,12 +1,11 @@
-import { ApiProperty, PartialType } from '@nestjs/swagger';
-import { CreateSubtaskDto } from './create-subtask.dto';
+import { ApiProperty } from '@nestjs/swagger';
 import { IsBoolean, IsEnum, IsOptional, IsString } from 'class-validator';
 import { SubTaskStatus } from '../../lib/enums/status.enums';
 
-export class UpdateSubtaskDto extends PartialType(CreateSubtaskDto) {
+export class UpdateSubtaskDto {
     @ApiProperty({
         description: 'The title of the subtask',
-        example: 'Updated Meeting Agenda',
+        example: 'Sub Task One',
         required: false
     })
     @IsString()
@@ -15,7 +14,7 @@ export class UpdateSubtaskDto extends PartialType(CreateSubtaskDto) {
 
     @ApiProperty({
         description: 'Detailed description of the subtask',
-        example: 'Updated agenda with new discussion points and revised time allocations',
+        example: 'Sub task description',
         required: false
     })
     @IsString()
@@ -36,7 +35,8 @@ export class UpdateSubtaskDto extends PartialType(CreateSubtaskDto) {
     @IsOptional()
     @ApiProperty({
         example: false,
-        description: 'Is the subtask deleted'
+        description: 'Is the subtask deleted',
+        required: false
     })
     isDeleted?: boolean;
 } 

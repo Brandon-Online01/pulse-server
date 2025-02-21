@@ -1,9 +1,9 @@
 import { SubTask } from './subtask.entity';
-import { User } from '../../user/entities/user.entity';
 import { Client } from '../../clients/entities/client.entity';
 import { TaskStatus, TaskPriority, RepetitionType, TaskType } from '../../lib/enums/task.enums';
 import { Organisation } from '../../organisation/entities/organisation.entity';
 import { Branch } from '../../branch/entities/branch.entity';
+import { User } from 'src/user/entities/user.entity';
 export declare class Task {
     uid: number;
     title: string;
@@ -14,15 +14,14 @@ export declare class Task {
     repetitionType: RepetitionType;
     progress: number;
     deadline: Date;
-    repetitionEndDate: Date;
-    lastCompletedAt: Date;
-    startDate: Date;
+    repetitionDeadline: Date;
+    completionDate: Date;
     attachments: string[];
-    isDeleted: boolean;
     isOverdue: boolean;
     targetCategory: string;
     createdAt: Date;
     updatedAt: Date;
+    isDeleted: boolean;
     creator: User;
     assignees: User[];
     clients: Client[];

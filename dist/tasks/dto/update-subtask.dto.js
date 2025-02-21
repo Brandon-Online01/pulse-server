@@ -11,16 +11,15 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UpdateSubtaskDto = void 0;
 const swagger_1 = require("@nestjs/swagger");
-const create_subtask_dto_1 = require("./create-subtask.dto");
 const class_validator_1 = require("class-validator");
 const status_enums_1 = require("../../lib/enums/status.enums");
-class UpdateSubtaskDto extends (0, swagger_1.PartialType)(create_subtask_dto_1.CreateSubtaskDto) {
+class UpdateSubtaskDto {
 }
 exports.UpdateSubtaskDto = UpdateSubtaskDto;
 __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'The title of the subtask',
-        example: 'Updated Meeting Agenda',
+        example: 'Sub Task One',
         required: false
     }),
     (0, class_validator_1.IsString)(),
@@ -30,7 +29,7 @@ __decorate([
 __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'Detailed description of the subtask',
-        example: 'Updated agenda with new discussion points and revised time allocations',
+        example: 'Sub task description',
         required: false
     }),
     (0, class_validator_1.IsString)(),
@@ -53,7 +52,8 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, swagger_1.ApiProperty)({
         example: false,
-        description: 'Is the subtask deleted'
+        description: 'Is the subtask deleted',
+        required: false
     }),
     __metadata("design:type", Boolean)
 ], UpdateSubtaskDto.prototype, "isDeleted", void 0);

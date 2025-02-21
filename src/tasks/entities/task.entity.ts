@@ -1,21 +1,20 @@
 import { SubTask } from './subtask.entity';
-import { User } from '../../user/entities/user.entity';
 import { Client } from '../../clients/entities/client.entity';
 import { TaskStatus, TaskPriority, RepetitionType, TaskType } from '../../lib/enums/task.enums';
 import {
 	Column,
 	Entity,
-	ManyToMany,
-	ManyToOne,
-	OneToMany,
 	PrimaryGeneratedColumn,
 	CreateDateColumn,
 	UpdateDateColumn,
 	BeforeInsert,
 	BeforeUpdate,
+	ManyToOne,
+	OneToMany,
 } from 'typeorm';
 import { Organisation } from '../../organisation/entities/organisation.entity';
 import { Branch } from '../../branch/entities/branch.entity';
+import { User } from 'src/user/entities/user.entity';
 
 @Entity('tasks')
 export class Task {
@@ -25,7 +24,7 @@ export class Task {
 	@Column({ type: 'varchar', length: 255 })
 	title: string;
 
-	@Column({ type: 'text' })
+	@Column({ type: 'varchar', length: 255 })
 	description: string;
 
 	@Column({ type: 'enum', enum: TaskStatus, default: TaskStatus.PENDING })
@@ -47,19 +46,13 @@ export class Task {
 	deadline: Date;
 
 	@Column({ type: 'datetime', nullable: true })
-	repetitionEndDate: Date;
+	repetitionDeadline: Date;
 
 	@Column({ type: 'datetime', nullable: true })
-	lastCompletedAt: Date;
-
-	@Column({ type: 'datetime', nullable: true })
-	startDate: Date;
+	completionDate: Date;
 
 	@Column({ type: 'json', nullable: true })
 	attachments: string[];
-
-	@Column({ type: 'boolean', default: false })
-	isDeleted: boolean;
 
 	@Column({ type: 'boolean', default: false })
 	isOverdue: boolean;
@@ -73,31 +66,32 @@ export class Task {
 	@UpdateDateColumn()
 	updatedAt: Date;
 
-	@ManyToOne(() => User, (user) => user?.userTasks)
+	@Column({ type: 'boolean', default: false })
+	isDeleted: boolean;
+
+	// Relations
+	@ManyToOne(() => User, user => user.tasks)
 	creator: User;
 
-	@ManyToMany(() => User, (user) => user?.tasksAssigned)
+	@OneToMany(() => User, user => user.assignedTasks)
 	assignees: User[];
 
-	@ManyToMany(() => Client, (client) => client?.tasks)
+	@OneToMany(() => Client, client => client.tasks)
 	clients: Client[];
 
-	@OneToMany(() => SubTask, (subtask) => subtask?.task)
+	@OneToMany(() => SubTask, subtask => subtask.task)
 	subtasks: SubTask[];
 
-	@ManyToOne(() => Organisation, (organisation) => organisation?.tasks)
-	organisation: Organisation; 	
+	@ManyToOne(() => Organisation, organisation => organisation.tasks)
+	organisation: Organisation;
 
-	@ManyToOne(() => Branch, (branch) => branch?.tasks)
-	branch: Branch; 
+	@ManyToOne(() => Branch, branch => branch.tasks)
+	branch: Branch;
 
 	@BeforeInsert()
 	setInitialStatus() {
 		this.status = TaskStatus.PENDING;
 		this.progress = 0;
-		if (!this.startDate) {
-			this.startDate = new Date();
-		}
 	}
 
 	@BeforeUpdate()
@@ -113,7 +107,7 @@ export class Task {
 		// Update status based on progress
 		if (this.progress === 100 && this.status !== TaskStatus.COMPLETED) {
 			this.status = TaskStatus.COMPLETED;
-			this.lastCompletedAt = now;
+			this.completionDate = now;
 		} else if (this.progress > 0 && this.progress < 100 && this.status === TaskStatus.PENDING) {
 			this.status = TaskStatus.IN_PROGRESS;
 		}

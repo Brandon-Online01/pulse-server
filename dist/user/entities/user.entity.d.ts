@@ -47,7 +47,7 @@ export declare class User {
     leads: Lead[];
     journals: Journal[];
     userTasks: Task[];
-    tasksAssigned: Task[];
+    assignedTasks: Task[];
     articles: News[];
     assets: Asset[];
     trackings: Tracking[];
@@ -58,4 +58,5 @@ export declare class User {
     checkIns: CheckIn[];
     rewards: UserRewards;
     reports: Report[];
+    tasks: Task[];
 }

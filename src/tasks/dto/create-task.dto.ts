@@ -1,126 +1,229 @@
-import { IsString, IsOptional, IsEnum, IsArray, IsDate, IsNotEmpty, IsBoolean } from 'class-validator';
-import { TaskPriority, RepetitionType, TaskType } from '../../lib/enums/task.enums';
+import { IsString, IsOptional, IsEnum, IsArray, IsDate, IsNotEmpty, IsNumber, ValidateNested, ArrayMinSize } from 'class-validator';
+import { TaskStatus, TaskPriority, RepetitionType, TaskType } from '../../lib/enums/task.enums';
 import { Type } from 'class-transformer';
-import { CreateSubtaskDto } from './create-subtask.dto';
 import { ApiProperty } from '@nestjs/swagger';
+import { SubTaskStatus } from '../../lib/enums/status.enums';
+
+export class AssigneeDto {
+	@ApiProperty({ description: 'User ID', example: 1 })
+	@IsNumber()
+	@IsNotEmpty()
+	uid: number;
+}
+
+export class CreatorDto {
+	@ApiProperty({ description: 'Creator ID', example: 1 })
+	@IsNumber()
+	@IsNotEmpty()
+	uid: number;
+}
+
+export class ClientDto {
+	@ApiProperty({ description: 'Client ID', example: 1 })
+	@IsNumber()
+	@IsNotEmpty()
+	uid: number;
+
+	@ApiProperty({ description: 'Client name', example: 'John Doe' })
+	@IsString()
+	@IsOptional()
+	name?: string;
+
+	@ApiProperty({ description: 'Client email', example: 'john@example.com' })
+	@IsString()
+	@IsOptional()
+	email?: string;
+
+	@ApiProperty({ description: 'Client address' })
+	@IsString()
+	@IsOptional()
+	address?: string;
+
+	@ApiProperty({ description: 'Client phone' })
+	@IsString()
+	@IsOptional()
+	phone?: string;
+
+	@ApiProperty({ description: 'Client contact person' })
+	@IsString()
+	@IsOptional()
+	contactPerson?: string;
+}
+
+export class SubtaskDto {
+	@ApiProperty({ description: 'Subtask title', example: 'Sub Task One' })
+	@IsString()
+	@IsNotEmpty()
+	title: string;
+
+	@ApiProperty({ description: 'Subtask description', example: 'Sub task description' })
+	@IsString()
+	@IsNotEmpty()
+	description: string;
+
+	@ApiProperty({ description: 'Subtask status', enum: SubTaskStatus, example: SubTaskStatus.PENDING })
+	@IsEnum(SubTaskStatus)
+	@IsOptional()
+	status?: SubTaskStatus;
+}
 
 export class CreateTaskDto {
-    @ApiProperty({
-        description: 'The title of the task',
-        example: 'Client Meeting - Q1 Review',
-        required: true
-    })
-    @IsString()
-    @IsNotEmpty()
-    title: string;
+	@ApiProperty({
+		description: 'The title of the task',
+		example: 'Test Task',
+	})
+	@IsString()
+	@IsNotEmpty()
+	title: string;
 
-    @ApiProperty({
-        description: 'The description of the task',
-        example: 'Quarterly review meeting with client to discuss progress and future plans',
-        required: true
-    })
-    @IsString()
-    @IsNotEmpty()
-    description: string;
+	@ApiProperty({
+		description: 'The description of the task',
+		example: 'Test description',
+	})
+	@IsString()
+	@IsNotEmpty()
+	description: string;
 
-    @ApiProperty({
-        description: 'The type of task',
-        enum: TaskType,
-        example: TaskType.IN_PERSON_MEETING,
-        required: true
-    })
-    @IsEnum(TaskType)
-    @IsNotEmpty()
-    taskType: TaskType;
+	@ApiProperty({
+		description: 'The type of task',
+		enum: TaskType,
+		example: TaskType.IN_PERSON_MEETING,
+	})
+	@IsEnum(TaskType)
+	@IsNotEmpty()
+	taskType: TaskType;
 
-    @ApiProperty({
-        description: 'The priority level of the task',
-        enum: TaskPriority,
-        example: TaskPriority.HIGH,
-        required: true
-    })
-    @IsEnum(TaskPriority)
-    @IsNotEmpty()
-    priority: TaskPriority;
+	@ApiProperty({
+		description: 'The priority level of the task',
+		enum: TaskPriority,
+		example: TaskPriority.HIGH,
+	})
+	@IsEnum(TaskPriority)
+	@IsNotEmpty()
+	priority: TaskPriority;
 
-    @ApiProperty({
-        description: 'The deadline for the task completion',
-        example: '2024-02-28T16:00:00.000Z',
-        required: true
-    })
-    @Type(() => Date)
-    @IsDate()
-    @IsNotEmpty()
-    deadline: Date;
+	@ApiProperty({
+		description: 'The current status of the task',
+		enum: TaskStatus,
+		example: TaskStatus.PENDING,
+	})
+	@IsEnum(TaskStatus)
+	@IsOptional()
+	status?: TaskStatus;
 
-    @ApiProperty({
-        description: 'How often the task should repeat',
-        enum: RepetitionType,
-        example: RepetitionType.WEEKLY,
-        required: true
-    })
-    @IsEnum(RepetitionType)
-    @IsNotEmpty()
-    repetitionType: RepetitionType;
+	@ApiProperty({
+		description: 'Task progress percentage',
+		example: 0,
+	})
+	@IsNumber()
+	@IsOptional()
+	progress?: number;
 
-    @ApiProperty({
-        description: 'The date until which the task should repeat',
-        example: '2024-03-28T16:00:00.000Z',
-        required: false
-    })
-    @Type(() => Date)
-    @IsDate()
-    @IsOptional()
-    repetitionEndDate?: Date;
+	@ApiProperty({
+		description: 'The deadline for the task completion',
+		example: `${new Date()}`,
+	})
+	@Type(() => Date)
+	@IsDate()
+	@IsOptional()
+	deadline?: Date;
 
-    @ApiProperty({
-        description: 'Array of file attachments for the task',
-        example: ['report.pdf', 'presentation.pptx'],
-        required: false,
-        type: [String]
-    })
-    @IsArray()
-    @IsOptional()
-    attachments?: string[];
+	@ApiProperty({
+		description: 'How often the task should repeat',
+		enum: RepetitionType,
+		example: RepetitionType.MONTHLY,
+	})
+	@IsEnum(RepetitionType)
+	@IsOptional()
+	repetitionType?: RepetitionType;
 
-    @ApiProperty({
-        description: 'Array of user objects assigned to the task',
-        example: [{ uid: 1 }, { uid: 2 }],
-        required: true,
-        type: 'array',
-        items: {
-            type: 'object',
-            properties: {
-                uid: { type: 'number' }
-            }
-        }
-    })
-    @IsArray()
-    @IsNotEmpty()
-    assignees: { uid: number }[];
+	@ApiProperty({
+		description: 'The deadline for task repetition',
+		example: `${new Date()}`,
+	})
+	@Type(() => Date)
+	@IsDate()
+	@IsOptional()
+	repetitionDeadline?: Date;
 
-    @ApiProperty({
-        description: 'Client object associated with the task (optional if targetCategory is provided)',
-        example: { uid: 1 },
-    })
-    @IsOptional()
-    client?: { uid: number };
+	@ApiProperty({
+		description: 'Array of file attachments for the task',
+		example: ['https://cdn-icons-png.flaticon.com/512/3607/3607444.png'],
+		type: [String],
+	})
+	@IsArray()
+	@IsOptional()
+	attachments?: string[];
 
-    @ApiProperty({
-        description: 'Target category for bulk client assignment. If provided, task will be assigned to all clients in this category',
-        example: 'premium',
-        required: false
-    })
-    @IsString()
-    @IsOptional()
-    targetCategory?: string;
+	@ApiProperty({
+		description: 'Array of assignees',
+		type: [AssigneeDto],
+	})
+	@IsArray()
+	@ValidateNested({ each: true })
+	@Type(() => AssigneeDto)
+	@IsOptional()
+	assignees?: AssigneeDto[];
 
-    @ApiProperty({
-        description: 'Array of subtasks',
-        type: [CreateSubtaskDto],
-        required: false
-    })
-    @IsArray()
-    @IsOptional()
-    subtasks?: CreateSubtaskDto[];
+	@ApiProperty({
+		description: 'Array of clients',
+		type: [ClientDto],
+	})
+	@IsArray()
+	@ValidateNested({ each: true })
+	@Type(() => ClientDto)
+	@IsOptional()
+	client?: ClientDto[];
+
+	@ApiProperty({
+		description: 'Target category for bulk client assignment',
+		example: 'enterprise',
+	})
+	@IsString()
+	@IsOptional()
+	targetCategory?: string;
+
+	@ApiProperty({
+		description: 'Array of subtasks',
+		type: [SubtaskDto],
+	})
+	@IsArray()
+	@ValidateNested({ each: true })
+	@Type(() => SubtaskDto)
+	@IsOptional()
+	subtasks?: SubtaskDto[];
+
+	@ApiProperty({
+		description: 'Array of creators',
+		type: [CreatorDto],
+	})
+	@IsArray()
+	@ValidateNested({ each: true })
+	@Type(() => CreatorDto)
+	@ArrayMinSize(1)
+	creators: CreatorDto[];
+
+	@ApiProperty({
+		description: 'Comments',
+		example: 'Just a testing task',
+	})
+	@IsString()
+	@IsOptional()
+	comment?: string;
+
+	@ApiProperty({
+		description: 'Organisation ID',
+		example: 1,
+	})
+	@IsNumber()
+	@IsOptional()
+	organisationId?: number;
+
+	@ApiProperty({
+		description: 'Branch ID',
+		example: 1,
+	})
+	@IsNumber()
+	@IsOptional()
+	branchId?: number;
 }

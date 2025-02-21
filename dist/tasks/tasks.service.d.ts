@@ -27,7 +27,7 @@ export declare class TasksService {
     private clearTaskCache;
     private createRepeatingTasks;
     private calculateTotalTasks;
-    create(createTaskDto: CreateTaskDto, user?: any): Promise<{
+    create(createTaskDto: CreateTaskDto): Promise<{
         message: string;
     }>;
     findAll(filters?: {

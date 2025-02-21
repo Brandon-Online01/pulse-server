@@ -147,7 +147,7 @@ __decorate([
 __decorate([
     (0, typeorm_1.OneToMany)(() => task_entity_1.Task, (task) => task?.assignees, { nullable: true }),
     __metadata("design:type", Array)
-], User.prototype, "tasksAssigned", void 0);
+], User.prototype, "assignedTasks", void 0);
 __decorate([
     (0, typeorm_1.OneToMany)(() => news_entity_1.News, (news) => news?.author, { nullable: true }),
     __metadata("design:type", Array)
@@ -188,6 +188,10 @@ __decorate([
     (0, typeorm_1.OneToMany)(() => report_entity_1.Report, (report) => report?.owner, { nullable: true }),
     __metadata("design:type", Array)
 ], User.prototype, "reports", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => task_entity_1.Task, (task) => task?.creator, { nullable: true }),
+    __metadata("design:type", Array)
+], User.prototype, "tasks", void 0);
 exports.User = User = __decorate([
     (0, typeorm_1.Entity)('users')
 ], User);
