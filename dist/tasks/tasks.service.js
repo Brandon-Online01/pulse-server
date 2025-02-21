@@ -48,10 +48,16 @@ let TasksService = class TasksService {
     }
     async clearTaskCache(taskId) {
         try {
+            const keys = await this.cacheManager.store.keys();
+            const keysToDelete = [];
             if (taskId) {
-                await this.cacheManager.del(this.getCacheKey(taskId));
+                keysToDelete.push(this.getCacheKey(taskId));
             }
-            await this.cacheManager.del(this.getCacheKey('all'));
+            const taskListCaches = keys.filter(key => key.startsWith('tasks_page') ||
+                key.startsWith('task:all') ||
+                key.includes('_limit'));
+            keysToDelete.push(...taskListCaches);
+            await Promise.all(keysToDelete.map(key => this.cacheManager.del(key)));
         }
         catch (error) {
             return error;
@@ -429,18 +435,6 @@ let TasksService = class TasksService {
     }
     async update(ref, updateTaskDto) {
         try {
-            if (updateTaskDto.title) {
-                const existingTask = await this.taskRepository.findOne({
-                    where: {
-                        title: updateTaskDto.title,
-                        uid: (0, typeorm_3.Not)(ref),
-                        isDeleted: false
-                    }
-                });
-                if (existingTask) {
-                    throw new common_1.BadRequestException('A task with this title already exists');
-                }
-            }
             const task = await this.taskRepository.findOne({
                 where: {
                     uid: ref,
@@ -512,10 +506,6 @@ let TasksService = class TasksService {
             }
             await this.taskRepository.update(ref, { isDeleted: true });
             await this.clearTaskCache(ref);
-            await this.cacheManager.del('tasks_all');
-            const keys = await this.cacheManager.store.keys();
-            const taskKeys = keys.filter(key => key.startsWith('tasks_page'));
-            await Promise.all(taskKeys.map(key => this.cacheManager.del(key)));
             return {
                 message: process.env.SUCCESS_MESSAGE,
             };

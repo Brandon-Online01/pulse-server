@@ -51,10 +51,27 @@ export class TasksService {
 
 	private async clearTaskCache(taskId?: number): Promise<void> {
 		try {
+			// Get all cache keys
+			const keys = await this.cacheManager.store.keys();
+			
+			// Keys to clear
+			const keysToDelete = [];
+
+			// If specific task, clear its cache
 			if (taskId) {
-				await this.cacheManager.del(this.getCacheKey(taskId));
+				keysToDelete.push(this.getCacheKey(taskId));
 			}
-			await this.cacheManager.del(this.getCacheKey('all'));
+
+			// Clear all pagination and filtered task list caches
+			const taskListCaches = keys.filter(key => 
+				key.startsWith('tasks_page') || // Pagination caches
+				key.startsWith('task:all') ||   // All tasks cache
+				key.includes('_limit')          // Filtered caches
+			);
+			keysToDelete.push(...taskListCaches);
+
+			// Clear all caches
+			await Promise.all(keysToDelete.map(key => this.cacheManager.del(key)));
 		} catch (error) {
 			return error;
 		}
@@ -569,21 +586,6 @@ export class TasksService {
 
 	async update(ref: number, updateTaskDto: UpdateTaskDto): Promise<{ message: string }> {
 		try {
-			// If title is being updated, check for duplicates
-			if (updateTaskDto.title) {
-				const existingTask = await this.taskRepository.findOne({
-					where: { 
-						title: updateTaskDto.title,
-						uid: Not(ref), // Exclude current task
-						isDeleted: false 
-					}
-				});
-
-				if (existingTask) {
-					throw new BadRequestException('A task with this title already exists');
-				}
-			}
-
 			const task = await this.taskRepository.findOne({
 				where: {
 					uid: ref,
@@ -647,7 +649,7 @@ export class TasksService {
 				await this.subtaskRepository.save(subtasks);
 			}
 
-			// Clear cache after update
+			// Clear all task-related caches
 			await this.clearTaskCache(ref);
 
 			return {
@@ -684,12 +686,8 @@ export class TasksService {
 			// Soft delete the task
 			await this.taskRepository.update(ref, { isDeleted: true });
 
-			// Clear all related caches
+			// Clear all task-related caches
 			await this.clearTaskCache(ref);
-			await this.cacheManager.del('tasks_all'); // Clear tasks list cache
-			const keys = await this.cacheManager.store.keys();
-			const taskKeys = keys.filter(key => key.startsWith('tasks_page')); // Clear pagination caches
-			await Promise.all(taskKeys.map(key => this.cacheManager.del(key)));
 
 			return {
 				message: process.env.SUCCESS_MESSAGE,
