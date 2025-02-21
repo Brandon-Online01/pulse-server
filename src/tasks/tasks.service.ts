@@ -588,6 +588,7 @@ export class TasksService {
 					uid: ref,
 					isDeleted: false,
 				},
+				relations: ['subtasks'], // Include subtasks relation
 			});
 
 			if (!task) {
@@ -617,12 +618,33 @@ export class TasksService {
 				taskData.creator = { uid: updateTaskDto.creators[0].uid };
 			}
 
+			// Save the updated task
 			const entityToSave = this.taskRepository.create({
 				...task,
 				...taskData,
 			});
 
-			await this.taskRepository.save(entityToSave);
+			const savedTask = await this.taskRepository.save(entityToSave);
+
+			// Handle subtasks if they exist in the DTO
+			if (updateTaskDto.subtasks?.length > 0) {
+				// Delete existing subtasks
+				if (task.subtasks?.length > 0) {
+					await this.subtaskRepository.delete({ task: { uid: ref } });
+				}
+
+				// Create new subtasks
+				const subtasks = updateTaskDto.subtasks.map(subtask => 
+					this.subtaskRepository.create({
+						title: subtask.title,
+						description: subtask.description,
+						status: subtask.status || SubTaskStatus.PENDING,
+						task: savedTask,
+						isDeleted: false
+					})
+				);
+				await this.subtaskRepository.save(subtasks);
+			}
 
 			// Clear cache after update
 			await this.clearTaskCache(ref);

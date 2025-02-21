@@ -446,6 +446,7 @@ let TasksService = class TasksService {
                     uid: ref,
                     isDeleted: false,
                 },
+                relations: ['subtasks'],
             });
             if (!task) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
@@ -470,7 +471,20 @@ let TasksService = class TasksService {
                 ...task,
                 ...taskData,
             });
-            await this.taskRepository.save(entityToSave);
+            const savedTask = await this.taskRepository.save(entityToSave);
+            if (updateTaskDto.subtasks?.length > 0) {
+                if (task.subtasks?.length > 0) {
+                    await this.subtaskRepository.delete({ task: { uid: ref } });
+                }
+                const subtasks = updateTaskDto.subtasks.map(subtask => this.subtaskRepository.create({
+                    title: subtask.title,
+                    description: subtask.description,
+                    status: subtask.status || status_enums_1.SubTaskStatus.PENDING,
+                    task: savedTask,
+                    isDeleted: false
+                }));
+                await this.subtaskRepository.save(subtasks);
+            }
             await this.clearTaskCache(ref);
             return {
                 message: process.env.SUCCESS_MESSAGE,
