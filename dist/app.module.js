@@ -74,6 +74,9 @@ const license_usage_entity_1 = require("./licensing/entities/license-usage.entit
 const license_event_entity_1 = require("./licensing/entities/license-event.entity");
 const licensing_module_1 = require("./licensing/licensing.module");
 const license_usage_interceptor_1 = require("./licensing/license-usage.interceptor");
+const organisation_settings_entity_1 = require("./organisation/entities/organisation-settings.entity");
+const organisation_appearance_entity_1 = require("./organisation/entities/organisation-appearance.entity");
+const organisation_hours_entity_1 = require("./organisation/entities/organisation-hours.entity");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -132,6 +135,9 @@ exports.AppModule = AppModule = __decorate([
                     license_entity_1.License,
                     license_usage_entity_1.LicenseUsage,
                     license_event_entity_1.LicenseEvent,
+                    organisation_settings_entity_1.OrganisationSettings,
+                    organisation_appearance_entity_1.OrganisationAppearance,
+                    organisation_hours_entity_1.OrganisationHours,
                 ],
                 synchronize: true,
                 retryAttempts: 100,

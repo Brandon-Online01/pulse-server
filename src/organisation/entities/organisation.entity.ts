@@ -1,6 +1,6 @@
 import { GeneralStatus } from '../../lib/enums/status.enums';
 import { Branch } from '../../branch/entities/branch.entity';
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Asset } from 'src/assets/entities/asset.entity';
 import { Client } from 'src/clients/entities/client.entity';
 import { Product } from 'src/products/entities/product.entity';
@@ -18,6 +18,9 @@ import { Task } from 'src/tasks/entities/task.entity';
 import { Notification } from 'src/notifications/entities/notification.entity';
 import { Tracking } from 'src/tracking/entities/tracking.entity';
 import { CommunicationLog } from 'src/communication/entities/communication-log.entity';
+import { OrganisationSettings } from './organisation-settings.entity';
+import { OrganisationAppearance } from './organisation-appearance.entity';
+import { OrganisationHours } from './organisation-hours.entity';
 
 @Entity('organisation')
 export class Organisation {
@@ -57,7 +60,17 @@ export class Organisation {
 	@Column({ nullable: false, unique: true })
 	ref: string;
 
-	// Relations
+	// Settings Relations
+	@OneToOne(() => OrganisationSettings, settings => settings.organisation)
+	settings: OrganisationSettings;
+
+	@OneToOne(() => OrganisationAppearance, appearance => appearance.organisation)
+	appearance: OrganisationAppearance;
+
+	@OneToMany(() => OrganisationHours, hours => hours.organisation)
+	hours: OrganisationHours[];
+
+	// Other Relations
 	@OneToMany(() => Branch, (branch) => branch?.organisation, { nullable: true })
 	branches: Branch[];
 

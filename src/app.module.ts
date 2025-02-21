@@ -65,6 +65,9 @@ import { LicenseUsage } from './licensing/entities/license-usage.entity';
 import { LicenseEvent } from './licensing/entities/license-event.entity';
 import { LicensingModule } from './licensing/licensing.module';
 import { LicenseUsageInterceptor } from './licensing/license-usage.interceptor';
+import { OrganisationSettings } from './organisation/entities/organisation-settings.entity';
+import { OrganisationAppearance } from './organisation/entities/organisation-appearance.entity';
+import { OrganisationHours } from './organisation/entities/organisation-hours.entity';
 
 @Module({
   imports: [
@@ -120,6 +123,9 @@ import { LicenseUsageInterceptor } from './licensing/license-usage.interceptor';
         License,
         LicenseUsage,
         LicenseEvent,
+        OrganisationSettings,
+        OrganisationAppearance,
+        OrganisationHours,
       ],
       synchronize: true,
       retryAttempts: 100,

@@ -61,9 +61,9 @@ export declare class AuthService {
             quotations: import("../shop/entities/quotation.entity").Quotation[];
             checkIns: import("../check-ins/entities/check-in.entity").CheckIn[];
             reports: import("../reports/entities/report.entity").Report[];
+            notifications: import("../notifications/entities/notification.entity").Notification[];
             assets: import("../assets/entities/asset.entity").Asset[];
             journals: import("../journal/entities/journal.entity").Journal[];
-            notifications: import("../notifications/entities/notification.entity").Notification[];
             trackings: import("../tracking/entities/tracking.entity").Tracking[];
             surname: string;
             photoURL: string;

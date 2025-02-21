@@ -30,6 +30,9 @@ const task_entity_1 = require("../../tasks/entities/task.entity");
 const notification_entity_1 = require("../../notifications/entities/notification.entity");
 const tracking_entity_1 = require("../../tracking/entities/tracking.entity");
 const communication_log_entity_1 = require("../../communication/entities/communication-log.entity");
+const organisation_settings_entity_1 = require("./organisation-settings.entity");
+const organisation_appearance_entity_1 = require("./organisation-appearance.entity");
+const organisation_hours_entity_1 = require("./organisation-hours.entity");
 let Organisation = class Organisation {
 };
 exports.Organisation = Organisation;
@@ -81,6 +84,18 @@ __decorate([
     (0, typeorm_1.Column)({ nullable: false, unique: true }),
     __metadata("design:type", String)
 ], Organisation.prototype, "ref", void 0);
+__decorate([
+    (0, typeorm_1.OneToOne)(() => organisation_settings_entity_1.OrganisationSettings, settings => settings.organisation),
+    __metadata("design:type", organisation_settings_entity_1.OrganisationSettings)
+], Organisation.prototype, "settings", void 0);
+__decorate([
+    (0, typeorm_1.OneToOne)(() => organisation_appearance_entity_1.OrganisationAppearance, appearance => appearance.organisation),
+    __metadata("design:type", organisation_appearance_entity_1.OrganisationAppearance)
+], Organisation.prototype, "appearance", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => organisation_hours_entity_1.OrganisationHours, hours => hours.organisation),
+    __metadata("design:type", Array)
+], Organisation.prototype, "hours", void 0);
 __decorate([
     (0, typeorm_1.OneToMany)(() => branch_entity_1.Branch, (branch) => branch?.organisation, { nullable: true }),
     __metadata("design:type", Array)

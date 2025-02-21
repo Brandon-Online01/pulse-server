@@ -17,6 +17,9 @@ import { Task } from 'src/tasks/entities/task.entity';
 import { Notification } from 'src/notifications/entities/notification.entity';
 import { Tracking } from 'src/tracking/entities/tracking.entity';
 import { CommunicationLog } from 'src/communication/entities/communication-log.entity';
+import { OrganisationSettings } from './organisation-settings.entity';
+import { OrganisationAppearance } from './organisation-appearance.entity';
+import { OrganisationHours } from './organisation-hours.entity';
 export declare class Organisation {
     uid: number;
     name: string;
@@ -30,6 +33,9 @@ export declare class Organisation {
     status: GeneralStatus;
     isDeleted: boolean;
     ref: string;
+    settings: OrganisationSettings;
+    appearance: OrganisationAppearance;
+    hours: OrganisationHours[];
     branches: Branch[];
     assets: Asset[];
     products: Product[];
