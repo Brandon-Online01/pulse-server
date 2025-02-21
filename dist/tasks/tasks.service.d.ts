@@ -89,7 +89,6 @@ export declare class TasksService {
             }[];
             clientCompletionRates: {
                 clientId: number;
-                clientName: string;
                 totalTasks: number;
                 completedTasks: number;
                 completionRate: string;
@@ -97,7 +96,6 @@ export declare class TasksService {
             taskPriorityDistribution: Record<TaskPriority, number>;
             assigneePerformance: {
                 assigneeId: number;
-                assigneeName: string;
                 totalTasks: number;
                 completedTasks: number;
                 completionRate: string;

@@ -11,7 +11,6 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Task = void 0;
 const subtask_entity_1 = require("./subtask.entity");
-const client_entity_1 = require("../../clients/entities/client.entity");
 const task_enums_1 = require("../../lib/enums/task.enums");
 const typeorm_1 = require("typeorm");
 const organisation_entity_1 = require("../../organisation/entities/organisation.entity");
@@ -114,11 +113,11 @@ __decorate([
     __metadata("design:type", user_entity_1.User)
 ], Task.prototype, "creator", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => user_entity_1.User, user => user.assignedTasks),
+    (0, typeorm_1.Column)({ type: 'json', nullable: true }),
     __metadata("design:type", Array)
 ], Task.prototype, "assignees", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => client_entity_1.Client, client => client.tasks),
+    (0, typeorm_1.Column)({ type: 'json', nullable: true }),
     __metadata("design:type", Array)
 ], Task.prototype, "clients", void 0);
 __decorate([

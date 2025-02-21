@@ -162,7 +162,7 @@ export class TasksService {
 			}
 
 			try {
-				// First get the creator to access organization and branch
+				// First get the creator
 				let creator = null;
 				if (createTaskDto.creators?.length > 0) {
 					creator = await this.userRepository.findOne({
@@ -175,8 +175,12 @@ export class TasksService {
 					}
 				}
 
+				// Prepare assignees and clients
+				const assignees = createTaskDto.assignees?.map(a => ({ uid: a.uid })) || [];
+				const clients = createTaskDto.client?.map(c => ({ uid: c.uid })) || [];
+
 				// Create base task data with all necessary fields
-				const taskData: DeepPartial<Task> = {
+				const taskData = {
 					title: createTaskDto.title,
 					description: createTaskDto.description,
 					taskType: createTaskDto.taskType,
@@ -196,45 +200,12 @@ export class TasksService {
 					creator: creator,
 					organisation: creator?.organisation || null,
 					branch: creator?.branch || null,
+					assignees,
+					clients
 				};
 
-				// Create and save the initial task
+				// Create and save the task
 				let task = this.taskRepository.create(taskData);
-				task = await this.taskRepository.save(task);
-
-				// Handle assignees
-				if (createTaskDto?.assignees?.length > 0) {
-					const assignees = await this.userRepository.find({
-						where: {
-							uid: In(createTaskDto.assignees.map((a) => a.uid)),
-							isDeleted: false,
-						},
-					});
-
-					if (assignees.length !== createTaskDto.assignees.length) {
-						throw new BadRequestException('One or more assignees not found');
-					}
-
-					task.assignees = assignees;
-				}
-
-				// Handle clients
-				if (createTaskDto.client?.length > 0) {
-					const clients = await this.clientRepository.find({
-						where: {
-							uid: In(createTaskDto.client.map((c) => c.uid)),
-							isDeleted: false,
-						},
-					});
-
-					if (clients.length !== createTaskDto.client.length) {
-						throw new BadRequestException('One or more clients not found');
-					}
-
-					task.clients = clients;
-				}
-
-				// Save the task with all relationships
 				const savedTask = await this.taskRepository.save(task);
 
 				if (!savedTask) {
@@ -244,9 +215,6 @@ export class TasksService {
 				// Clear cache
 				await this.clearTaskCache();
 
-				console.log(savedTask, 'saved task');
-
-				// Return success response with created task
 				return {
 					message: process.env.SUCCESS_MESSAGE,
 				};
@@ -320,13 +288,13 @@ export class TasksService {
 
 			if (filters?.assigneeId) {
 				filteredTasks = filteredTasks?.filter((task) =>
-					task.assignees?.some((assignee) => assignee?.uid === filters?.assigneeId),
+					task.assignees?.some((assignee) => assignee.uid === filters?.assigneeId),
 				);
 			}
 
 			if (filters?.clientId) {
 				filteredTasks = filteredTasks?.filter((task) =>
-					task.clients?.some((client) => client?.uid === filters?.clientId),
+					task.clients?.some((client) => client.uid === filters?.clientId),
 				);
 			}
 
@@ -787,7 +755,6 @@ export class TasksService {
 
 	private analyzeClientCompletionRates(tasks: Task[]): Array<{
 		clientId: number;
-		clientName: string;
 		totalTasks: number;
 		completedTasks: number;
 		completionRate: string;
@@ -795,7 +762,6 @@ export class TasksService {
 		const clientStats: Record<
 			number,
 			{
-				clientName: string;
 				totalTasks: number;
 				completedTasks: number;
 			}
@@ -805,7 +771,6 @@ export class TasksService {
 			task.clients?.forEach((client) => {
 				if (!clientStats[client.uid]) {
 					clientStats[client.uid] = {
-						clientName: client.name,
 						totalTasks: 0,
 						completedTasks: 0,
 					};
@@ -819,7 +784,6 @@ export class TasksService {
 
 		return Object.entries(clientStats).map(([clientId, stats]) => ({
 			clientId: parseInt(clientId),
-			clientName: stats.clientName,
 			totalTasks: stats.totalTasks,
 			completedTasks: stats.completedTasks,
 			completionRate: `${((stats.completedTasks / stats.totalTasks) * 100).toFixed(1)}%`,
@@ -840,7 +804,6 @@ export class TasksService {
 
 	private analyzeAssigneePerformance(tasks: Task[]): Array<{
 		assigneeId: number;
-		assigneeName: string;
 		totalTasks: number;
 		completedTasks: number;
 		completionRate: string;
@@ -849,7 +812,6 @@ export class TasksService {
 		const assigneeStats: Record<
 			number,
 			{
-				assigneeName: string;
 				totalTasks: number;
 				completedTasks: number;
 				totalCompletionTime: number;
@@ -860,7 +822,6 @@ export class TasksService {
 			task.assignees?.forEach((assignee) => {
 				if (!assigneeStats[assignee.uid]) {
 					assigneeStats[assignee.uid] = {
-						assigneeName: `${assignee.name} ${assignee.surname}`,
 						totalTasks: 0,
 						completedTasks: 0,
 						totalCompletionTime: 0,
@@ -877,7 +838,6 @@ export class TasksService {
 
 		return Object.entries(assigneeStats).map(([assigneeId, stats]) => ({
 			assigneeId: parseInt(assigneeId),
-			assigneeName: stats.assigneeName,
 			totalTasks: stats.totalTasks,
 			completedTasks: stats.completedTasks,
 			completionRate: `${((stats.completedTasks / stats.totalTasks) * 100).toFixed(1)}%`,

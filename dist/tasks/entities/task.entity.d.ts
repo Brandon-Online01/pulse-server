@@ -1,5 +1,4 @@
 import { SubTask } from './subtask.entity';
-import { Client } from '../../clients/entities/client.entity';
 import { TaskStatus, TaskPriority, RepetitionType, TaskType } from '../../lib/enums/task.enums';
 import { Organisation } from '../../organisation/entities/organisation.entity';
 import { Branch } from '../../branch/entities/branch.entity';
@@ -23,8 +22,12 @@ export declare class Task {
     updatedAt: Date;
     isDeleted: boolean;
     creator: User;
-    assignees: User[];
-    clients: Client[];
+    assignees: {
+        uid: number;
+    }[];
+    clients: {
+        uid: number;
+    }[];
     subtasks: SubTask[];
     organisation: Organisation;
     branch: Branch;

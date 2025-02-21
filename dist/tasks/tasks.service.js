@@ -150,6 +150,8 @@ let TasksService = TasksService_1 = class TasksService {
                         throw new common_1.BadRequestException(`Creator with ID ${createTaskDto.creators[0].uid} not found`);
                     }
                 }
+                const assignees = createTaskDto.assignees?.map(a => ({ uid: a.uid })) || [];
+                const clients = createTaskDto.client?.map(c => ({ uid: c.uid })) || [];
                 const taskData = {
                     title: createTaskDto.title,
                     description: createTaskDto.description,
@@ -170,39 +172,15 @@ let TasksService = TasksService_1 = class TasksService {
                     creator: creator,
                     organisation: creator?.organisation || null,
                     branch: creator?.branch || null,
+                    assignees,
+                    clients
                 };
                 let task = this.taskRepository.create(taskData);
-                task = await this.taskRepository.save(task);
-                if (createTaskDto?.assignees?.length > 0) {
-                    const assignees = await this.userRepository.find({
-                        where: {
-                            uid: (0, typeorm_3.In)(createTaskDto.assignees.map((a) => a.uid)),
-                            isDeleted: false,
-                        },
-                    });
-                    if (assignees.length !== createTaskDto.assignees.length) {
-                        throw new common_1.BadRequestException('One or more assignees not found');
-                    }
-                    task.assignees = assignees;
-                }
-                if (createTaskDto.client?.length > 0) {
-                    const clients = await this.clientRepository.find({
-                        where: {
-                            uid: (0, typeorm_3.In)(createTaskDto.client.map((c) => c.uid)),
-                            isDeleted: false,
-                        },
-                    });
-                    if (clients.length !== createTaskDto.client.length) {
-                        throw new common_1.BadRequestException('One or more clients not found');
-                    }
-                    task.clients = clients;
-                }
                 const savedTask = await this.taskRepository.save(task);
                 if (!savedTask) {
                     throw new Error('Failed to save task');
                 }
                 await this.clearTaskCache();
-                console.log(savedTask, 'saved task');
                 return {
                     message: process.env.SUCCESS_MESSAGE,
                 };
@@ -252,10 +230,10 @@ let TasksService = TasksService_1 = class TasksService {
             });
             let filteredTasks = tasks;
             if (filters?.assigneeId) {
-                filteredTasks = filteredTasks?.filter((task) => task.assignees?.some((assignee) => assignee?.uid === filters?.assigneeId));
+                filteredTasks = filteredTasks?.filter((task) => task.assignees?.some((assignee) => assignee.uid === filters?.assigneeId));
             }
             if (filters?.clientId) {
-                filteredTasks = filteredTasks?.filter((task) => task.clients?.some((client) => client?.uid === filters?.clientId));
+                filteredTasks = filteredTasks?.filter((task) => task.clients?.some((client) => client.uid === filters?.clientId));
             }
             const response = {
                 data: filteredTasks,
@@ -652,7 +630,6 @@ let TasksService = TasksService_1 = class TasksService {
             task.clients?.forEach((client) => {
                 if (!clientStats[client.uid]) {
                     clientStats[client.uid] = {
-                        clientName: client.name,
                         totalTasks: 0,
                         completedTasks: 0,
                     };
@@ -665,7 +642,6 @@ let TasksService = TasksService_1 = class TasksService {
         });
         return Object.entries(clientStats).map(([clientId, stats]) => ({
             clientId: parseInt(clientId),
-            clientName: stats.clientName,
             totalTasks: stats.totalTasks,
             completedTasks: stats.completedTasks,
             completionRate: `${((stats.completedTasks / stats.totalTasks) * 100).toFixed(1)}%`,
@@ -687,7 +663,6 @@ let TasksService = TasksService_1 = class TasksService {
             task.assignees?.forEach((assignee) => {
                 if (!assigneeStats[assignee.uid]) {
                     assigneeStats[assignee.uid] = {
-                        assigneeName: `${assignee.name} ${assignee.surname}`,
                         totalTasks: 0,
                         completedTasks: 0,
                         totalCompletionTime: 0,
@@ -703,7 +678,6 @@ let TasksService = TasksService_1 = class TasksService {
         });
         return Object.entries(assigneeStats).map(([assigneeId, stats]) => ({
             assigneeId: parseInt(assigneeId),
-            assigneeName: stats.assigneeName,
             totalTasks: stats.totalTasks,
             completedTasks: stats.completedTasks,
             completionRate: `${((stats.completedTasks / stats.totalTasks) * 100).toFixed(1)}%`,

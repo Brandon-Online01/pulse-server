@@ -73,11 +73,11 @@ export class Task {
 	@ManyToOne(() => User, user => user.tasks)
 	creator: User;
 
-	@OneToMany(() => User, user => user.assignedTasks)
-	assignees: User[];
+	@Column({ type: 'json', nullable: true })
+	assignees: { uid: number }[];
 
-	@OneToMany(() => Client, client => client.tasks)
-	clients: Client[];
+	@Column({ type: 'json', nullable: true })
+	clients: { uid: number }[];
 
 	@OneToMany(() => SubTask, subtask => subtask.task)
 	subtasks: SubTask[];
