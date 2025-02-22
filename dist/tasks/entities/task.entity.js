@@ -109,7 +109,7 @@ __decorate([
     __metadata("design:type", Boolean)
 ], Task.prototype, "isDeleted", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => user_entity_1.User, (user) => user.tasks),
+    (0, typeorm_1.ManyToOne)(() => user_entity_1.User, (user) => user?.tasks),
     __metadata("design:type", user_entity_1.User)
 ], Task.prototype, "creator", void 0);
 __decorate([

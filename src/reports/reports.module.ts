@@ -13,14 +13,38 @@ import { NewsModule } from '../news/news.module';
 import { UserModule } from '../user/user.module';
 import { RewardsModule } from '../rewards/rewards.module';
 import { CheckInsModule } from '../check-ins/check-ins.module';
-import { LicensingModule } from '../licensing/licensing.module';
 import { TrackingModule } from '../tracking/tracking.module';
 import { CheckIn } from '../check-ins/entities/check-in.entity';
+import { Task } from '../tasks/entities/task.entity';
+import { Claim } from '../claims/entities/claim.entity';
+import { Lead } from '../leads/entities/lead.entity';
+import { ConfigModule } from '@nestjs/config';
+import { LicensingModule } from '../licensing/licensing.module';
+import { Journal } from '../journal/entities/journal.entity';
+import { User } from '../user/entities/user.entity';
+import { Achievement } from '../rewards/entities/achievement.entity';
+import { Client } from '../clients/entities/client.entity';
+import { Attendance } from '../attendance/entities/attendance.entity';
+import { Organisation } from '../organisation/entities/organisation.entity';
+import { Branch } from '../branch/entities/branch.entity';
 
 @Module({
   imports: [
     LicensingModule,
-    TypeOrmModule.forFeature([Report, CheckIn]),
+    TypeOrmModule.forFeature([
+      Report,
+      CheckIn,
+      Task,
+      Claim,
+      Lead,
+      Journal,
+      User,
+      Achievement,
+      Client,
+      Attendance,
+      Organisation,
+      Branch,
+    ]),
     LeadsModule,
     JournalModule,
     ClaimsModule,
@@ -32,6 +56,7 @@ import { CheckIn } from '../check-ins/entities/check-in.entity';
     RewardsModule,
     CheckInsModule,
     TrackingModule,
+    ConfigModule
   ],
   controllers: [ReportsController],
   providers: [ReportsService],

@@ -11,13 +11,11 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.User = void 0;
 const user_enums_1 = require("../../lib/enums/user.enums");
-const status_enums_1 = require("../../lib/enums/status.enums");
 const user_profile_entity_1 = require("./user.profile.entity");
 const branch_entity_1 = require("../../branch/entities/branch.entity");
 const claim_entity_1 = require("../../claims/entities/claim.entity");
 const lead_entity_1 = require("../../leads/entities/lead.entity");
 const doc_entity_1 = require("../../docs/entities/doc.entity");
-const journal_entity_1 = require("../../journal/entities/journal.entity");
 const news_entity_1 = require("../../news/entities/news.entity");
 const task_entity_1 = require("../../tasks/entities/task.entity");
 const client_entity_1 = require("../../clients/entities/client.entity");
@@ -32,7 +30,9 @@ const user_employeement_profile_entity_1 = require("./user.employeement.profile.
 const organisation_entity_1 = require("../../organisation/entities/organisation.entity");
 const notification_entity_1 = require("../../notifications/entities/notification.entity");
 const typeorm_1 = require("typeorm");
+const journal_entity_1 = require("../../journal/entities/journal.entity");
 let User = class User {
+    ;
 };
 exports.User = User;
 __decorate([
@@ -60,13 +60,33 @@ __decorate([
     __metadata("design:type", String)
 ], User.prototype, "email", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
 ], User.prototype, "phone", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ default: 'https://cdn-icons-png.flaticon.com/512/3607/3607444.png' }),
+    (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
 ], User.prototype, "photoURL", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: 'user' }),
+    __metadata("design:type", String)
+], User.prototype, "role", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: 'active' }),
+    __metadata("design:type", String)
+], User.prototype, "status", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", Number)
+], User.prototype, "departmentId", void 0);
+__decorate([
+    (0, typeorm_1.CreateDateColumn)(),
+    __metadata("design:type", Date)
+], User.prototype, "createdAt", void 0);
+__decorate([
+    (0, typeorm_1.UpdateDateColumn)(),
+    __metadata("design:type", Date)
+], User.prototype, "updatedAt", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'enum', enum: user_enums_1.AccessLevel }),
     __metadata("design:type", String)
@@ -84,22 +104,6 @@ __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
 ], User.prototype, "organisationRef", void 0);
-__decorate([
-    (0, typeorm_1.CreateDateColumn)(),
-    __metadata("design:type", Date)
-], User.prototype, "createdAt", void 0);
-__decorate([
-    (0, typeorm_1.UpdateDateColumn)(),
-    __metadata("design:type", Date)
-], User.prototype, "updatedAt", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ type: 'boolean', default: false }),
-    __metadata("design:type", Boolean)
-], User.prototype, "isDeleted", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ type: 'enum', enum: status_enums_1.AccountStatus, default: status_enums_1.AccountStatus.PENDING }),
-    __metadata("design:type", String)
-], User.prototype, "status", void 0);
 __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
@@ -121,9 +125,13 @@ __decorate([
     __metadata("design:type", user_employeement_profile_entity_1.UserEmployeementProfile)
 ], User.prototype, "userEmployeementProfile", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => attendance_entity_1.Attendance, (attendance) => attendance?.owner, { nullable: true }),
+    (0, typeorm_1.OneToMany)(() => attendance_entity_1.Attendance, (attendance) => attendance.owner),
     __metadata("design:type", Array)
-], User.prototype, "userAttendances", void 0);
+], User.prototype, "attendance", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => report_entity_1.Report, (report) => report.owner),
+    __metadata("design:type", Array)
+], User.prototype, "reports", void 0);
 __decorate([
     (0, typeorm_1.OneToMany)(() => claim_entity_1.Claim, (claim) => claim?.owner, { nullable: true }),
     __metadata("design:type", Array)
@@ -136,18 +144,6 @@ __decorate([
     (0, typeorm_1.OneToMany)(() => lead_entity_1.Lead, (lead) => lead?.owner, { nullable: true }),
     __metadata("design:type", Array)
 ], User.prototype, "leads", void 0);
-__decorate([
-    (0, typeorm_1.OneToMany)(() => journal_entity_1.Journal, (journal) => journal?.owner, { nullable: true }),
-    __metadata("design:type", Array)
-], User.prototype, "journals", void 0);
-__decorate([
-    (0, typeorm_1.OneToMany)(() => task_entity_1.Task, (task) => task?.creator, { nullable: true }),
-    __metadata("design:type", Array)
-], User.prototype, "userTasks", void 0);
-__decorate([
-    (0, typeorm_1.OneToMany)(() => task_entity_1.Task, (task) => task?.assignees, { nullable: true }),
-    __metadata("design:type", Array)
-], User.prototype, "assignedTasks", void 0);
 __decorate([
     (0, typeorm_1.OneToMany)(() => news_entity_1.News, (news) => news?.author, { nullable: true }),
     __metadata("design:type", Array)
@@ -185,11 +181,15 @@ __decorate([
     __metadata("design:type", user_rewards_entity_1.UserRewards)
 ], User.prototype, "rewards", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => report_entity_1.Report, (report) => report?.owner, { nullable: true }),
+    (0, typeorm_1.OneToMany)(() => journal_entity_1.Journal, (journal) => journal.owner),
     __metadata("design:type", Array)
-], User.prototype, "reports", void 0);
+], User.prototype, "journals", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => task_entity_1.Task, (task) => task?.creator, { nullable: true }),
+    (0, typeorm_1.Column)({ default: false }),
+    __metadata("design:type", Boolean)
+], User.prototype, "isDeleted", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => task_entity_1.Task, (task) => task?.creator),
     __metadata("design:type", Array)
 ], User.prototype, "tasks", void 0);
 exports.User = User = __decorate([

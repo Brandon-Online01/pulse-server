@@ -231,7 +231,7 @@ export class ClaimsService {
 	}> {
 		try {
 			const claims = await this.claimsRepository.find({
-				where: { owner: { uid: ref, isDeleted: false } }
+				where: { owner: { uid: ref } }
 			});
 
 			if (!claims) {

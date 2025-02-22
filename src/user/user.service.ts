@@ -4,11 +4,9 @@ import { User } from './entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { NewSignUp } from '../lib/types/user';
 import { AccountStatus } from '../lib/enums/status.enums';
-import { Cron } from '@nestjs/schedule';
-import { CronExpression } from '@nestjs/schedule';
 import { PaginatedResponse } from '../lib/interfaces/product.interfaces';
 import { AccessLevel } from '../lib/enums/user.enums';
 
@@ -22,20 +20,6 @@ export class UserService {
 	private excludePassword(user: User): Omit<User, 'password'> {
 		const { password, ...userWithoutPassword } = user;
 		return userWithoutPassword;
-	}
-
-	//TODO: Remove this cron job after testing and proper setup
-	@Cron(CronExpression.EVERY_10_MINUTES)
-	async assignOrganisationToUser(): Promise<void> {
-		const users = await this.userRepository.find({ where: { isDeleted: false } });
-
-		users?.forEach(async (user) => {
-			await this.userRepository.update(user.uid, {
-				organisation: {
-					uid: 2,
-				},
-			});
-		});
 	}
 
 	async create(createUserDto: CreateUserDto): Promise<{ message: string }> {

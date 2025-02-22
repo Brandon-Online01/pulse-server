@@ -22,9 +22,20 @@ const news_module_1 = require("../news/news.module");
 const user_module_1 = require("../user/user.module");
 const rewards_module_1 = require("../rewards/rewards.module");
 const check_ins_module_1 = require("../check-ins/check-ins.module");
-const licensing_module_1 = require("../licensing/licensing.module");
 const tracking_module_1 = require("../tracking/tracking.module");
 const check_in_entity_1 = require("../check-ins/entities/check-in.entity");
+const task_entity_1 = require("../tasks/entities/task.entity");
+const claim_entity_1 = require("../claims/entities/claim.entity");
+const lead_entity_1 = require("../leads/entities/lead.entity");
+const config_1 = require("@nestjs/config");
+const licensing_module_1 = require("../licensing/licensing.module");
+const journal_entity_1 = require("../journal/entities/journal.entity");
+const user_entity_1 = require("../user/entities/user.entity");
+const achievement_entity_1 = require("../rewards/entities/achievement.entity");
+const client_entity_1 = require("../clients/entities/client.entity");
+const attendance_entity_1 = require("../attendance/entities/attendance.entity");
+const organisation_entity_1 = require("../organisation/entities/organisation.entity");
+const branch_entity_1 = require("../branch/entities/branch.entity");
 let ReportsModule = class ReportsModule {
 };
 exports.ReportsModule = ReportsModule;
@@ -32,7 +43,20 @@ exports.ReportsModule = ReportsModule = __decorate([
     (0, common_1.Module)({
         imports: [
             licensing_module_1.LicensingModule,
-            typeorm_1.TypeOrmModule.forFeature([report_entity_1.Report, check_in_entity_1.CheckIn]),
+            typeorm_1.TypeOrmModule.forFeature([
+                report_entity_1.Report,
+                check_in_entity_1.CheckIn,
+                task_entity_1.Task,
+                claim_entity_1.Claim,
+                lead_entity_1.Lead,
+                journal_entity_1.Journal,
+                user_entity_1.User,
+                achievement_entity_1.Achievement,
+                client_entity_1.Client,
+                attendance_entity_1.Attendance,
+                organisation_entity_1.Organisation,
+                branch_entity_1.Branch,
+            ]),
             leads_module_1.LeadsModule,
             journal_module_1.JournalModule,
             claims_module_1.ClaimsModule,
@@ -44,6 +68,7 @@ exports.ReportsModule = ReportsModule = __decorate([
             rewards_module_1.RewardsModule,
             check_ins_module_1.CheckInsModule,
             tracking_module_1.TrackingModule,
+            config_1.ConfigModule
         ],
         controllers: [reports_controller_1.ReportsController],
         providers: [reports_service_1.ReportsService],

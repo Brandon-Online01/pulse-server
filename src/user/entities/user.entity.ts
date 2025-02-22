@@ -5,7 +5,6 @@ import { Branch } from '../../branch/entities/branch.entity';
 import { Claim } from '../../claims/entities/claim.entity';
 import { Lead } from '../../leads/entities/lead.entity';
 import { Doc } from '../../docs/entities/doc.entity';
-import { Journal } from '../../journal/entities/journal.entity';
 import { News } from '../../news/entities/news.entity';
 import { Task } from '../../tasks/entities/task.entity';
 import { Client } from '../../clients/entities/client.entity';
@@ -20,6 +19,7 @@ import { UserEmployeementProfile } from './user.employeement.profile.entity';
 import { Organisation } from '../../organisation/entities/organisation.entity';
 import { Notification } from '../../notifications/entities/notification.entity';
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToOne, OneToMany } from 'typeorm';
+import { Journal } from 'src/journal/entities/journal.entity';
 
 @Entity('users')
 export class User {
@@ -41,11 +41,26 @@ export class User {
     @Column({ unique: true })
     email: string;
 
-    @Column()
+    @Column({ nullable: true })
     phone: string;
 
-    @Column({ default: 'https://cdn-icons-png.flaticon.com/512/3607/3607444.png' })
+    @Column({ nullable: true })
     photoURL: string;
+
+    @Column({ default: 'user' })
+    role: string;
+
+    @Column({ default: 'active' })
+    status: string;
+
+    @Column({ nullable: true })
+    departmentId: number;
+
+    @CreateDateColumn()
+    createdAt: Date;
+
+    @UpdateDateColumn()
+    updatedAt: Date;
 
     @Column({ type: 'enum', enum: AccessLevel })
     accessLevel: AccessLevel;
@@ -60,18 +75,6 @@ export class User {
     @Column({ nullable: true })
     organisationRef: string;
 
-    @CreateDateColumn()
-    createdAt: Date;
-
-    @UpdateDateColumn()
-    updatedAt: Date;
-
-    @Column({ type: 'boolean', default: false })
-    isDeleted: boolean;
-
-    @Column({ type: 'enum', enum: AccountStatus, default: AccountStatus.PENDING })
-    status: AccountStatus;
-
     @Column({ nullable: true })
     verificationToken: string;
 
@@ -85,10 +88,13 @@ export class User {
     userProfile: UserProfile;
 
     @OneToOne(() => UserEmployeementProfile, (userEmployeementProfile) => userEmployeementProfile?.owner, { nullable: true })
-    userEmployeementProfile: UserEmployeementProfile;
+    userEmployeementProfile: UserEmployeementProfile;;
 
-    @OneToMany(() => Attendance, (attendance) => attendance?.owner, { nullable: true })
-    userAttendances: Attendance[];
+    @OneToMany(() => Attendance, (attendance) => attendance.owner)
+    attendance: Attendance[];
+
+    @OneToMany(() => Report, (report) => report.owner)
+    reports: Report[];
 
     @OneToMany(() => Claim, (claim) => claim?.owner, { nullable: true })
     userClaims: Claim[];
@@ -98,15 +104,6 @@ export class User {
 
     @OneToMany(() => Lead, (lead) => lead?.owner, { nullable: true })
     leads: Lead[];
-
-    @OneToMany(() => Journal, (journal) => journal?.owner, { nullable: true })
-    journals: Journal[];
-
-    @OneToMany(() => Task, (task) => task?.creator, { nullable: true })
-    userTasks: Task[];
-
-    @OneToMany(() => Task, (task) => task?.assignees, { nullable: true })
-    assignedTasks: Task[];
 
     @OneToMany(() => News, (news) => news?.author, { nullable: true })
     articles: News[];
@@ -135,9 +132,12 @@ export class User {
     @OneToOne(() => UserRewards, (userRewards) => userRewards?.owner, { nullable: true })
     rewards: UserRewards;
 
-    @OneToMany(() => Report, (report) => report?.owner, { nullable: true })
-    reports: Report[];
+    @OneToMany(() => Journal, (journal) => journal.owner)
+    journals: Journal[];
 
-    @OneToMany(() => Task, (task) => task?.creator, { nullable: true })
+    @Column({ default: false })
+    isDeleted: boolean; 
+
+    @OneToMany(() => Task, (task) => task?.creator)
     tasks: Task[];
 }

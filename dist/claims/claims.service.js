@@ -181,7 +181,7 @@ let ClaimsService = class ClaimsService {
     async claimsByUser(ref) {
         try {
             const claims = await this.claimsRepository.find({
-                where: { owner: { uid: ref, isDeleted: false } }
+                where: { owner: { uid: ref } }
             });
             if (!claims) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);

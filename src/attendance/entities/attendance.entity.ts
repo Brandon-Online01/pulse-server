@@ -53,10 +53,10 @@ export class Attendance {
 	verifiedAt: Date;
 
 	// Relations
-	@ManyToOne(() => User, (user) => user?.userAttendances)
+	@ManyToOne(() => User, (user) => user?.attendance)
 	owner: User;
 
-	@ManyToOne(() => User, (user) => user?.userAttendances, { nullable: true })
+	@ManyToOne(() => User, (user) => user?.attendance, { nullable: true })
 	verifiedBy: User;
 
 	@ManyToOne(() => Organisation, (organisation) => organisation?.attendances, { nullable: true })

@@ -19,8 +19,6 @@ const user_entity_1 = require("./entities/user.entity");
 const typeorm_2 = require("@nestjs/typeorm");
 const common_1 = require("@nestjs/common");
 const status_enums_1 = require("../lib/enums/status.enums");
-const schedule_1 = require("@nestjs/schedule");
-const schedule_2 = require("@nestjs/schedule");
 let UserService = class UserService {
     constructor(userRepository) {
         this.userRepository = userRepository;
@@ -28,16 +26,6 @@ let UserService = class UserService {
     excludePassword(user) {
         const { password, ...userWithoutPassword } = user;
         return userWithoutPassword;
-    }
-    async assignOrganisationToUser() {
-        const users = await this.userRepository.find({ where: { isDeleted: false } });
-        users?.forEach(async (user) => {
-            await this.userRepository.update(user.uid, {
-                organisation: {
-                    uid: 2,
-                },
-            });
-        });
     }
     async create(createUserDto) {
         try {
@@ -402,12 +390,6 @@ let UserService = class UserService {
     }
 };
 exports.UserService = UserService;
-__decorate([
-    (0, schedule_1.Cron)(schedule_2.CronExpression.EVERY_10_MINUTES),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
-    __metadata("design:returntype", Promise)
-], UserService.prototype, "assignOrganisationToUser", null);
 exports.UserService = UserService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_2.InjectRepository)(user_entity_1.User)),

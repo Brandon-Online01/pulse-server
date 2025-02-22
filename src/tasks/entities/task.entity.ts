@@ -70,7 +70,7 @@ export class Task {
 	isDeleted: boolean;
 
 	// Relations
-	@ManyToOne(() => User, (user) => user.tasks)
+	@ManyToOne(() => User, (user) => user?.tasks)
 	creator: User;
 
 	@Column({ type: 'json', nullable: true })

@@ -10,7 +10,6 @@ export declare class UserService {
     private userRepository;
     constructor(userRepository: Repository<User>);
     private excludePassword;
-    assignOrganisationToUser(): Promise<void>;
     create(createUserDto: CreateUserDto): Promise<{
         message: string;
     }>;
