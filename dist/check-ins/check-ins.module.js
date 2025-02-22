@@ -14,19 +14,16 @@ const check_in_entity_1 = require("./entities/check-in.entity");
 const typeorm_1 = require("@nestjs/typeorm");
 const rewards_module_1 = require("../rewards/rewards.module");
 const licensing_module_1 = require("../licensing/licensing.module");
+const user_entity_1 = require("../user/entities/user.entity");
 let CheckInsModule = class CheckInsModule {
 };
 exports.CheckInsModule = CheckInsModule;
 exports.CheckInsModule = CheckInsModule = __decorate([
     (0, common_1.Module)({
-        imports: [
-            licensing_module_1.LicensingModule,
-            typeorm_1.TypeOrmModule.forFeature([check_in_entity_1.CheckIn]),
-            rewards_module_1.RewardsModule
-        ],
+        imports: [licensing_module_1.LicensingModule, typeorm_1.TypeOrmModule.forFeature([check_in_entity_1.CheckIn, user_entity_1.User]), rewards_module_1.RewardsModule],
         controllers: [check_ins_controller_1.CheckInsController],
         providers: [check_ins_service_1.CheckInsService],
-        exports: [check_ins_service_1.CheckInsService]
+        exports: [check_ins_service_1.CheckInsService],
     })
 ], CheckInsModule);
 //# sourceMappingURL=check-ins.module.js.map

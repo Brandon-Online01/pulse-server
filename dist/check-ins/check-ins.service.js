@@ -21,10 +21,12 @@ const date_fns_1 = require("date-fns");
 const rewards_service_1 = require("../rewards/rewards.service");
 const constants_1 = require("../lib/constants/constants");
 const constants_2 = require("../lib/constants/constants");
+const user_entity_1 = require("../user/entities/user.entity");
 let CheckInsService = class CheckInsService {
-    constructor(checkInRepository, rewardsService) {
+    constructor(checkInRepository, rewardsService, userRepository) {
         this.checkInRepository = checkInRepository;
         this.rewardsService = rewardsService;
+        this.userRepository = userRepository;
     }
     async checkIn(createCheckInDto) {
         try {
@@ -34,7 +36,21 @@ let CheckInsService = class CheckInsService {
             if (!createCheckInDto?.branch) {
                 throw new common_1.BadRequestException(process.env.NOT_FOUND_MESSAGE);
             }
-            await this.checkInRepository.save(createCheckInDto);
+            const ownerInformation = await this.userRepository.findOne({
+                where: {
+                    uid: createCheckInDto?.owner?.uid,
+                },
+                relations: ['organisation'],
+            });
+            if (!ownerInformation?.organisation) {
+                throw new common_1.BadRequestException('User organization not found');
+            }
+            await this.checkInRepository.save({
+                ...createCheckInDto,
+                organization: {
+                    uid: ownerInformation.organisation.uid,
+                },
+            });
             const response = {
                 message: process.env.SUCCESS_MESSAGE,
             };
@@ -45,8 +61,8 @@ let CheckInsService = class CheckInsService {
                 source: {
                     id: String(createCheckInDto.owner),
                     type: constants_1.XP_VALUES_TYPES.CHECK_IN_CLIENT,
-                    details: 'Check-in reward'
-                }
+                    details: 'Check-in reward',
+                },
             });
             return response;
         }
@@ -68,12 +84,12 @@ let CheckInsService = class CheckInsService {
             const checkIn = await this.checkInRepository.findOne({
                 where: {
                     owner: {
-                        uid: createCheckOutDto.owner.uid
-                    }
+                        uid: createCheckOutDto.owner.uid,
+                    },
                 },
                 order: {
-                    checkInTime: 'DESC'
-                }
+                    checkInTime: 'DESC',
+                },
             });
             if (!checkIn) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
@@ -100,8 +116,8 @@ let CheckInsService = class CheckInsService {
                 source: {
                     id: createCheckOutDto.owner.toString(),
                     type: 'check-in',
-                    details: 'Check-out reward'
-                }
+                    details: 'Check-out reward',
+                },
             });
             return response;
         }
@@ -117,25 +133,23 @@ let CheckInsService = class CheckInsService {
             const [checkIn] = await this.checkInRepository.find({
                 where: {
                     owner: {
-                        uid: reference
-                    }
+                        uid: reference,
+                    },
                 },
                 order: {
-                    checkInTime: 'DESC'
+                    checkInTime: 'DESC',
                 },
-                relations: ['owner', 'client']
+                relations: ['owner', 'client'],
             });
             if (!checkIn) {
                 throw new common_1.NotFoundException('Check-in not found');
             }
-            const nextAction = checkIn.checkInTime && checkIn.checkInLocation && !checkIn.checkOutTime
-                ? 'checkOut'
-                : 'checkIn';
+            const nextAction = checkIn.checkInTime && checkIn.checkInLocation && !checkIn.checkOutTime ? 'checkOut' : 'checkIn';
             const response = {
                 message: process.env.SUCCESS_MESSAGE,
                 nextAction,
                 checkedIn: nextAction === 'checkOut',
-                ...checkIn
+                ...checkIn,
             };
             return response;
         }
@@ -143,7 +157,7 @@ let CheckInsService = class CheckInsService {
             const response = {
                 message: error?.message,
                 nextAction: 'Check In',
-                checkedIn: false
+                checkedIn: false,
             };
             return response;
         }
@@ -153,7 +167,9 @@ exports.CheckInsService = CheckInsService;
 exports.CheckInsService = CheckInsService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_2.InjectRepository)(check_in_entity_1.CheckIn)),
+    __param(2, (0, typeorm_2.InjectRepository)(user_entity_1.User)),
     __metadata("design:paramtypes", [typeorm_1.Repository,
-        rewards_service_1.RewardsService])
+        rewards_service_1.RewardsService,
+        typeorm_1.Repository])
 ], CheckInsService);
 //# sourceMappingURL=check-ins.service.js.map

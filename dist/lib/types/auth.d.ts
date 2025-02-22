@@ -14,6 +14,9 @@ export interface ProfileData {
         status: LicenseStatus;
         features: Record<string, boolean>;
     };
+    branch?: {
+        uid: string;
+    };
 }
 export interface SignInResponse {
     message: string;

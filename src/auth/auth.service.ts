@@ -95,6 +95,9 @@ export class AuthService {
 						features: activeLicense?.features,
 					},
 					...restOfUser,
+					branch: {
+						uid: restOfUser?.branch?.uid,
+					}
 				};
 
 				const tokenRole = accessLevel?.toLowerCase();
