@@ -12,7 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateLeadDto = void 0;
 const swagger_1 = require("@nestjs/swagger");
 const class_validator_1 = require("class-validator");
-const status_enums_1 = require("../../lib/enums/status.enums");
+const lead_enums_1 = require("../../lib/enums/lead.enums");
 class CreateLeadDto {
 }
 exports.CreateLeadDto = CreateLeadDto;
@@ -57,7 +57,7 @@ __decorate([
     (0, class_validator_1.IsString)(),
     (0, swagger_1.ApiProperty)({
         description: 'Status of the lead',
-        example: status_enums_1.GeneralStatus.PENDING,
+        example: lead_enums_1.LeadStatus.PENDING,
     }),
     __metadata("design:type", String)
 ], CreateLeadDto.prototype, "status", void 0);

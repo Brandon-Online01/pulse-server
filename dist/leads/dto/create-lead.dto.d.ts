@@ -1,10 +1,10 @@
-import { GeneralStatus } from "../../lib/enums/status.enums";
+import { LeadStatus } from "src/lib/enums/lead.enums";
 export declare class CreateLeadDto {
     name: string;
     email: string;
     phone: string;
     notes: string;
-    status: GeneralStatus;
+    status: LeadStatus;
     isDeleted: boolean;
     owner: {
         uid: number;

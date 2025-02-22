@@ -219,7 +219,7 @@ export class LeadsService {
 
   async update(ref: number, updateLeadDto: UpdateLeadDto): Promise<{ message: string }> {
     try {
-      await this.leadRepository.update(ref, updateLeadDto as unknown as Lead);
+      await this.leadRepository.update(ref, updateLeadDto);
 
       const updatedLead = await this.leadRepository.findOne({
         where: { uid: ref, isDeleted: false },
@@ -249,11 +249,11 @@ export class LeadsService {
       this.eventEmitter.emit('send.notification', notification, recipients);
 
       await this.rewardsService.awardXP({
-        owner: updateLeadDto.owner.uid,
+        owner: updatedLead?.owner?.uid,
         amount: XP_VALUES.LEAD,
         action: XP_VALUES_TYPES.LEAD,
         source: {
-          id: updateLeadDto.owner.uid.toString(),
+          id: updatedLead?.owner?.uid.toString(),
           type: XP_VALUES_TYPES.LEAD,
           details: 'Lead reward'
         }

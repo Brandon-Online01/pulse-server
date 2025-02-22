@@ -201,6 +201,7 @@ let LeadsService = class LeadsService {
             const response = {
                 message: process.env.SUCCESS_MESSAGE,
             };
+            console.log(updatedLead);
             const notification = {
                 type: notification_enums_1.NotificationType.USER,
                 title: 'Lead Updated',
@@ -211,11 +212,11 @@ let LeadsService = class LeadsService {
             const recipients = [user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.OWNER, user_enums_1.AccessLevel.SUPERVISOR, user_enums_1.AccessLevel.USER];
             this.eventEmitter.emit('send.notification', notification, recipients);
             await this.rewardsService.awardXP({
-                owner: updateLeadDto.owner.uid,
+                owner: updatedLead?.owner?.uid,
                 amount: constants_1.XP_VALUES.LEAD,
                 action: constants_2.XP_VALUES_TYPES.LEAD,
                 source: {
-                    id: updateLeadDto.owner.uid.toString(),
+                    id: updatedLead?.owner?.uid.toString(),
                     type: constants_2.XP_VALUES_TYPES.LEAD,
                     details: 'Lead reward'
                 }
