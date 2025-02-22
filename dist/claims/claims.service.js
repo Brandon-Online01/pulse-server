@@ -27,12 +27,14 @@ const config_1 = require("@nestjs/config");
 const rewards_service_1 = require("../rewards/rewards.service");
 const constants_1 = require("../lib/constants/constants");
 const constants_2 = require("../lib/constants/constants");
+const user_entity_1 = require("../user/entities/user.entity");
 let ClaimsService = class ClaimsService {
-    constructor(claimsRepository, rewardsService, eventEmitter, configService) {
+    constructor(claimsRepository, rewardsService, eventEmitter, configService, userRepository) {
         this.claimsRepository = claimsRepository;
         this.rewardsService = rewardsService;
         this.eventEmitter = eventEmitter;
         this.configService = configService;
+        this.userRepository = userRepository;
         this.currencyLocale = this.configService.get('CURRENCY_LOCALE') || 'en-ZA';
         this.currencyCode = this.configService.get('CURRENCY_CODE') || 'ZAR';
         this.currencySymbol = this.configService.get('CURRENCY_SYMBOL') || 'R';
@@ -56,7 +58,20 @@ let ClaimsService = class ClaimsService {
     }
     async create(createClaimDto) {
         try {
-            const claim = await this.claimsRepository.save(createClaimDto);
+            const user = await this.userRepository.findOne({
+                where: { uid: createClaimDto.owner.uid },
+                relations: ['organisation', 'branch']
+            });
+            if (!user) {
+                throw new common_1.NotFoundException('User not found');
+            }
+            const claimData = {
+                ...createClaimDto,
+                amount: createClaimDto.amount.toString(),
+                organisation: user.organisation,
+                branch: user.branch
+            };
+            const claim = await this.claimsRepository.save(claimData);
             if (!claim) {
                 throw new common_1.NotFoundException(process.env.CREATE_ERROR_MESSAGE);
             }
@@ -581,9 +596,11 @@ exports.ClaimsService = ClaimsService;
 exports.ClaimsService = ClaimsService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(claim_entity_1.Claim)),
+    __param(4, (0, typeorm_1.InjectRepository)(user_entity_1.User)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
         rewards_service_1.RewardsService,
         event_emitter_1.EventEmitter2,
-        config_1.ConfigService])
+        config_1.ConfigService,
+        typeorm_2.Repository])
 ], ClaimsService);
 //# sourceMappingURL=claims.service.js.map

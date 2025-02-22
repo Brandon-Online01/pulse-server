@@ -201,7 +201,6 @@ let LeadsService = class LeadsService {
             const response = {
                 message: process.env.SUCCESS_MESSAGE,
             };
-            console.log(updatedLead);
             const notification = {
                 type: notification_enums_1.NotificationType.USER,
                 title: 'Lead Updated',

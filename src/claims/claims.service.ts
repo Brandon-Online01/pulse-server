@@ -15,6 +15,7 @@ import { RewardsService } from '../rewards/rewards.service';
 import { XP_VALUES_TYPES } from '../lib/constants/constants';
 import { XP_VALUES } from '../lib/constants/constants';
 import { PaginatedResponse } from '../lib/interfaces/product.interfaces';
+import { User } from '../user/entities/user.entity';
 
 @Injectable()
 export class ClaimsService {
@@ -28,6 +29,8 @@ export class ClaimsService {
 		private rewardsService: RewardsService,
 		private eventEmitter: EventEmitter2,
 		private readonly configService: ConfigService,
+		@InjectRepository(User)
+		private userRepository: Repository<User>,
 	) {
 		this.currencyLocale = this.configService.get<string>('CURRENCY_LOCALE') || 'en-ZA';
 		this.currencyCode = this.configService.get<string>('CURRENCY_CODE') || 'ZAR';
@@ -61,7 +64,25 @@ export class ClaimsService {
 
 	async create(createClaimDto: CreateClaimDto): Promise<{ message: string }> {
 		try {
-			const claim = await this.claimsRepository.save(createClaimDto as unknown as DeepPartial<Claim>);
+			// Get user with organization and branch info
+			const user = await this.userRepository.findOne({
+				where: { uid: createClaimDto.owner.uid },
+				relations: ['organisation', 'branch']
+			});
+
+			if (!user) {
+				throw new NotFoundException('User not found');
+			}
+
+			// Append organization and branch to claim data
+			const claimData = {
+				...createClaimDto,
+				amount: createClaimDto.amount.toString(),
+				organisation: user.organisation,
+				branch: user.branch
+			} as DeepPartial<Claim>;
+
+			const claim = await this.claimsRepository.save(claimData);
 
 			if (!claim) {
 				throw new NotFoundException(process.env.CREATE_ERROR_MESSAGE);

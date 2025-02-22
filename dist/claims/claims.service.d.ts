@@ -7,15 +7,17 @@ import { ClaimCategory, ClaimStatus } from '../lib/enums/finance.enums';
 import { ConfigService } from '@nestjs/config';
 import { RewardsService } from '../rewards/rewards.service';
 import { PaginatedResponse } from '../lib/interfaces/product.interfaces';
+import { User } from '../user/entities/user.entity';
 export declare class ClaimsService {
     private claimsRepository;
     private rewardsService;
     private eventEmitter;
     private readonly configService;
+    private userRepository;
     private readonly currencyLocale;
     private readonly currencyCode;
     private readonly currencySymbol;
-    constructor(claimsRepository: Repository<Claim>, rewardsService: RewardsService, eventEmitter: EventEmitter2, configService: ConfigService);
+    constructor(claimsRepository: Repository<Claim>, rewardsService: RewardsService, eventEmitter: EventEmitter2, configService: ConfigService, userRepository: Repository<User>);
     private formatCurrency;
     private calculateStats;
     create(createClaimDto: CreateClaimDto): Promise<{
