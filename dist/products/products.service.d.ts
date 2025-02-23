@@ -4,11 +4,16 @@ import { Product } from './entities/product.entity';
 import { Repository } from 'typeorm';
 import { Cache } from 'cache-manager';
 import { PaginatedResponse } from '../lib/interfaces/product.interfaces';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 export declare class ProductsService {
     private productRepository;
     private cacheManager;
-    constructor(productRepository: Repository<Product>, cacheManager: Cache);
-    private invalidateProductCaches;
+    private readonly eventEmitter;
+    private readonly CACHE_PREFIX;
+    private readonly CACHE_TTL;
+    constructor(productRepository: Repository<Product>, cacheManager: Cache, eventEmitter: EventEmitter2);
+    private getCacheKey;
+    private invalidateProductCache;
     createProduct(createProductDto: CreateProductDto): Promise<{
         product: Product | null;
         message: string;

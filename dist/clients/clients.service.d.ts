@@ -6,15 +6,17 @@ import { GeneralStatus } from '../lib/enums/status.enums';
 import { PaginatedResponse } from '../lib/interfaces/product.interfaces';
 import { Cache } from 'cache-manager';
 import { ConfigService } from '@nestjs/config';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 export declare class ClientsService {
     private clientsRepository;
     private cacheManager;
     private readonly configService;
+    private readonly eventEmitter;
     private readonly CACHE_TTL;
     private readonly CACHE_PREFIX;
-    constructor(clientsRepository: Repository<Client>, cacheManager: Cache, configService: ConfigService);
+    constructor(clientsRepository: Repository<Client>, cacheManager: Cache, configService: ConfigService, eventEmitter: EventEmitter2);
     private getCacheKey;
-    private clearClientCache;
+    private invalidateClientCache;
     create(createClientDto: CreateClientDto, user?: any): Promise<{
         message: string;
     }>;
@@ -36,4 +38,5 @@ export declare class ClientsService {
     restore(ref: number, user?: any): Promise<{
         message: string;
     }>;
+    clientsBySearchTerm(searchTerm: string, page?: number, limit?: number, user?: any): Promise<PaginatedResponse<Client>>;
 }

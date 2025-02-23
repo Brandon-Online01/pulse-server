@@ -8,24 +8,71 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { PaginatedResponse } from '../lib/interfaces/product.interfaces';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class ProductsService {
+	private readonly CACHE_PREFIX = 'products:';
+	private readonly CACHE_TTL: number;
+
 	constructor(
 		@InjectRepository(Product)
 		private productRepository: Repository<Product>,
 		@Inject(CACHE_MANAGER)
 		private cacheManager: Cache,
-	) { }
+		private readonly eventEmitter: EventEmitter2,
+	) {
+		this.CACHE_TTL = Number(process.env.CACHE_EXPIRATION_TIME) || 30;
+	}
 
-	private async invalidateProductCaches(): Promise<void> {
-		const keys = await this.cacheManager.store.keys();
-		const productKeys = keys.filter(key => 
-			key.startsWith('products_') || 
-			key.startsWith('search_') || 
-			key === 'all_products'
-		);
-		await Promise.all(productKeys.map(key => this.cacheManager.del(key)));
+	private getCacheKey(key: string | number): string {
+		return `${this.CACHE_PREFIX}${key}`;
+	}
+
+	private async invalidateProductCache(product: Product) {
+		try {
+			// Get all cache keys
+			const keys = await this.cacheManager.store.keys();
+			
+			// Keys to clear
+			const keysToDelete = [];
+
+			// Add product-specific keys
+			keysToDelete.push(
+				this.getCacheKey(product.uid),
+				`${this.CACHE_PREFIX}all`,
+				`${this.CACHE_PREFIX}stats`
+			);
+
+			// Add category-specific keys
+			if (product.category) {
+				keysToDelete.push(`${this.CACHE_PREFIX}category_${product.category}`);
+			}
+
+			// Add status-specific keys
+			if (product.status) {
+				keysToDelete.push(`${this.CACHE_PREFIX}status_${product.status}`);
+			}
+
+			// Clear all pagination and search caches
+			const productListCaches = keys.filter(key => 
+				key.startsWith(`${this.CACHE_PREFIX}page`) || 
+				key.startsWith(`${this.CACHE_PREFIX}search`) ||
+				key.includes('_limit')
+			);
+			keysToDelete.push(...productListCaches);
+
+			// Clear all caches
+			await Promise.all(keysToDelete.map(key => this.cacheManager.del(key)));
+
+			// Emit event for other services that might be caching product data
+			this.eventEmitter.emit('products.cache.invalidate', {
+				productId: product.uid,
+				keys: keysToDelete
+			});
+		} catch (error) {
+			console.error('Error invalidating product cache:', error);
+		}
 	}
 
 	async createProduct(createProductDto: CreateProductDto): Promise<{ product: Product | null, message: string }> {
@@ -36,7 +83,8 @@ export class ProductsService {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
-			await this.invalidateProductCaches();
+			// Invalidate cache after creation
+			await this.invalidateProductCache(product);
 
 			const response = {
 				product: product,
@@ -56,13 +104,18 @@ export class ProductsService {
 
 	async updateProduct(ref: number, updateProductDto: UpdateProductDto): Promise<{ message: string }> {
 		try {
-			const product = await this.productRepository.update(ref, updateProductDto);
+			const existingProduct = await this.productRepository.findOne({
+				where: { uid: ref }
+			});
 
-			if (!product) {
+			if (!existingProduct) {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
-			await this.invalidateProductCaches();
+			await this.productRepository.update(ref, updateProductDto);
+
+			// Invalidate cache after update using the existing product
+			await this.invalidateProductCache(existingProduct);
 
 			const response = {
 				message: process.env.SUCCESS_MESSAGE,
@@ -80,13 +133,18 @@ export class ProductsService {
 
 	async deleteProduct(ref: number): Promise<{ message: string }> {
 		try {
-			const product = await this.productRepository.update(ref, { isDeleted: true });
+			const product = await this.productRepository.findOne({
+				where: { uid: ref }
+			});
 
 			if (!product) {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
-			await this.invalidateProductCaches();
+			await this.productRepository.update(ref, { isDeleted: true });
+
+			// Invalidate cache after deletion
+			await this.invalidateProductCache(product);
 
 			const response = {
 				message: process.env.SUCCESS_MESSAGE,
@@ -104,13 +162,18 @@ export class ProductsService {
 
 	async restoreProduct(ref: number): Promise<{ message: string }> {
 		try {
-			const product = await this.productRepository.update(ref, { isDeleted: false });
+			const product = await this.productRepository.findOne({
+				where: { uid: ref }
+			});
 
 			if (!product) {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
-			await this.invalidateProductCaches();
+			await this.productRepository.update(ref, { isDeleted: false });
+
+			// Invalidate cache after restoration
+			await this.invalidateProductCache(product);
 
 			const response = {
 				message: process.env.SUCCESS_MESSAGE

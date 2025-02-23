@@ -6,9 +6,19 @@ import { NewSignUp } from '../lib/types/user';
 import { AccountStatus } from '../lib/enums/status.enums';
 import { PaginatedResponse } from '../lib/interfaces/product.interfaces';
 import { AccessLevel } from '../lib/enums/user.enums';
+import { Cache } from 'cache-manager';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { ConfigService } from '@nestjs/config';
 export declare class UserService {
     private userRepository;
-    constructor(userRepository: Repository<User>);
+    private cacheManager;
+    private readonly eventEmitter;
+    private readonly configService;
+    private readonly CACHE_PREFIX;
+    private readonly CACHE_TTL;
+    constructor(userRepository: Repository<User>, cacheManager: Cache, eventEmitter: EventEmitter2, configService: ConfigService);
+    private getCacheKey;
+    private invalidateUserCache;
     private excludePassword;
     create(createUserDto: CreateUserDto): Promise<{
         message: string;

@@ -19,9 +19,51 @@ const user_entity_1 = require("./entities/user.entity");
 const typeorm_2 = require("@nestjs/typeorm");
 const common_1 = require("@nestjs/common");
 const status_enums_1 = require("../lib/enums/status.enums");
+const cache_manager_1 = require("@nestjs/cache-manager");
+const event_emitter_1 = require("@nestjs/event-emitter");
+const config_1 = require("@nestjs/config");
 let UserService = class UserService {
-    constructor(userRepository) {
+    constructor(userRepository, cacheManager, eventEmitter, configService) {
         this.userRepository = userRepository;
+        this.cacheManager = cacheManager;
+        this.eventEmitter = eventEmitter;
+        this.configService = configService;
+        this.CACHE_PREFIX = 'users:';
+        this.CACHE_TTL = this.configService.get('CACHE_EXPIRATION_TIME') || 30;
+    }
+    getCacheKey(key) {
+        return `${this.CACHE_PREFIX}${key}`;
+    }
+    async invalidateUserCache(user) {
+        try {
+            const keys = await this.cacheManager.store.keys();
+            const keysToDelete = [];
+            keysToDelete.push(this.getCacheKey(user.uid), this.getCacheKey(user.email), this.getCacheKey(user.username), `${this.CACHE_PREFIX}all`, `${this.CACHE_PREFIX}stats`);
+            if (user.organisation?.uid) {
+                keysToDelete.push(`${this.CACHE_PREFIX}org_${user.organisation.uid}`);
+            }
+            if (user.branch?.uid) {
+                keysToDelete.push(`${this.CACHE_PREFIX}branch_${user.branch.uid}`);
+            }
+            if (user.accessLevel) {
+                keysToDelete.push(`${this.CACHE_PREFIX}access_${user.accessLevel}`);
+            }
+            if (user.status) {
+                keysToDelete.push(`${this.CACHE_PREFIX}status_${user.status}`);
+            }
+            const userListCaches = keys.filter(key => key.startsWith(`${this.CACHE_PREFIX}page`) ||
+                key.includes('_limit') ||
+                key.includes('_filter'));
+            keysToDelete.push(...userListCaches);
+            await Promise.all(keysToDelete.map(key => this.cacheManager.del(key)));
+            this.eventEmitter.emit('users.cache.invalidate', {
+                userId: user.uid,
+                keys: keysToDelete
+            });
+        }
+        catch (error) {
+            console.error('Error invalidating user cache:', error);
+        }
     }
     excludePassword(user) {
         const { password, ...userWithoutPassword } = user;
@@ -36,6 +78,7 @@ let UserService = class UserService {
             if (!user) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
+            await this.invalidateUserCache(user);
             const response = {
                 message: process.env.SUCCESS_MESSAGE,
             };
@@ -261,13 +304,15 @@ let UserService = class UserService {
     }
     async update(ref, updateUserDto) {
         try {
-            await this.userRepository.update(ref, updateUserDto);
-            const updatedUser = await this.userRepository.findOne({
+            const user = await this.userRepository.findOne({
                 where: { userref: ref, isDeleted: false },
+                relations: ['organisation', 'branch']
             });
-            if (!updatedUser) {
+            if (!user) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
+            await this.userRepository.update(ref, updateUserDto);
+            await this.invalidateUserCache(user);
             return {
                 message: process.env.SUCCESS_MESSAGE,
             };
@@ -282,6 +327,7 @@ let UserService = class UserService {
         try {
             const user = await this.userRepository.findOne({
                 where: { userref: ref, isDeleted: false },
+                relations: ['organisation', 'branch']
             });
             if (!user) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
@@ -290,6 +336,7 @@ let UserService = class UserService {
                 isDeleted: true,
                 status: status_enums_1.AccountStatus.INACTIVE,
             });
+            await this.invalidateUserCache(user);
             return {
                 message: process.env.SUCCESS_MESSAGE,
             };
@@ -305,10 +352,11 @@ let UserService = class UserService {
             if (userData?.password) {
                 userData.password = await bcrypt.hash(userData.password, 10);
             }
-            await this.userRepository.save({
+            const user = await this.userRepository.save({
                 ...userData,
                 status: userData?.status,
             });
+            await this.invalidateUserCache(user);
             this.schedulePendingUserCleanup(userData?.email, userData?.tokenExpires);
         }
         catch (error) {
@@ -326,10 +374,18 @@ let UserService = class UserService {
     }
     async restore(ref) {
         try {
+            const user = await this.userRepository.findOne({
+                where: { uid: ref },
+                relations: ['organisation', 'branch']
+            });
+            if (!user) {
+                throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
+            }
             await this.userRepository.update({ uid: ref }, {
                 isDeleted: false,
                 status: status_enums_1.AccountStatus.ACTIVE,
             });
+            await this.invalidateUserCache(user);
             return {
                 message: process.env.SUCCESS_MESSAGE,
             };
@@ -361,38 +417,68 @@ let UserService = class UserService {
         }
     }
     async markEmailAsVerified(uid) {
-        await this.userRepository.update({ uid }, {
-            status: status_enums_1.AccountStatus.ACTIVE,
-            verificationToken: null,
-            tokenExpires: null,
+        const user = await this.userRepository.findOne({
+            where: { uid },
+            relations: ['organisation', 'branch']
         });
+        if (user) {
+            await this.userRepository.update({ uid }, {
+                status: status_enums_1.AccountStatus.ACTIVE,
+                verificationToken: null,
+                tokenExpires: null,
+            });
+            await this.invalidateUserCache(user);
+        }
     }
     async setPassword(uid, hashedPassword) {
-        await this.userRepository.update({ uid }, {
-            password: hashedPassword,
-            verificationToken: null,
-            tokenExpires: null,
-            status: status_enums_1.AccountStatus.ACTIVE,
+        const user = await this.userRepository.findOne({
+            where: { uid },
+            relations: ['organisation', 'branch']
         });
+        if (user) {
+            await this.userRepository.update({ uid }, {
+                password: hashedPassword,
+                verificationToken: null,
+                tokenExpires: null,
+                status: status_enums_1.AccountStatus.ACTIVE,
+            });
+            await this.invalidateUserCache(user);
+        }
     }
     async setResetToken(uid, token) {
-        await this.userRepository.update({ uid }, {
-            resetToken: token,
-            tokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        const user = await this.userRepository.findOne({
+            where: { uid },
+            relations: ['organisation', 'branch']
         });
+        if (user) {
+            await this.userRepository.update({ uid }, {
+                resetToken: token,
+                tokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000),
+            });
+            await this.invalidateUserCache(user);
+        }
     }
     async resetPassword(uid, hashedPassword) {
-        await this.userRepository.update({ uid }, {
-            password: hashedPassword,
-            resetToken: null,
-            tokenExpires: null,
+        const user = await this.userRepository.findOne({
+            where: { uid },
+            relations: ['organisation', 'branch']
         });
+        if (user) {
+            await this.userRepository.update({ uid }, {
+                password: hashedPassword,
+                resetToken: null,
+                tokenExpires: null,
+            });
+            await this.invalidateUserCache(user);
+        }
     }
 };
 exports.UserService = UserService;
 exports.UserService = UserService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_2.InjectRepository)(user_entity_1.User)),
-    __metadata("design:paramtypes", [typeorm_1.Repository])
+    __param(1, (0, common_1.Inject)(cache_manager_1.CACHE_MANAGER)),
+    __metadata("design:paramtypes", [typeorm_1.Repository, Object, event_emitter_1.EventEmitter2,
+        config_1.ConfigService])
 ], UserService);
 //# sourceMappingURL=user.service.js.map

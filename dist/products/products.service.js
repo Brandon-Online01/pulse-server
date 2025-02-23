@@ -19,17 +19,42 @@ const typeorm_1 = require("typeorm");
 const product_enums_1 = require("../lib/enums/product.enums");
 const typeorm_2 = require("@nestjs/typeorm");
 const cache_manager_1 = require("@nestjs/cache-manager");
+const event_emitter_1 = require("@nestjs/event-emitter");
 let ProductsService = class ProductsService {
-    constructor(productRepository, cacheManager) {
+    constructor(productRepository, cacheManager, eventEmitter) {
         this.productRepository = productRepository;
         this.cacheManager = cacheManager;
+        this.eventEmitter = eventEmitter;
+        this.CACHE_PREFIX = 'products:';
+        this.CACHE_TTL = Number(process.env.CACHE_EXPIRATION_TIME) || 30;
     }
-    async invalidateProductCaches() {
-        const keys = await this.cacheManager.store.keys();
-        const productKeys = keys.filter(key => key.startsWith('products_') ||
-            key.startsWith('search_') ||
-            key === 'all_products');
-        await Promise.all(productKeys.map(key => this.cacheManager.del(key)));
+    getCacheKey(key) {
+        return `${this.CACHE_PREFIX}${key}`;
+    }
+    async invalidateProductCache(product) {
+        try {
+            const keys = await this.cacheManager.store.keys();
+            const keysToDelete = [];
+            keysToDelete.push(this.getCacheKey(product.uid), `${this.CACHE_PREFIX}all`, `${this.CACHE_PREFIX}stats`);
+            if (product.category) {
+                keysToDelete.push(`${this.CACHE_PREFIX}category_${product.category}`);
+            }
+            if (product.status) {
+                keysToDelete.push(`${this.CACHE_PREFIX}status_${product.status}`);
+            }
+            const productListCaches = keys.filter(key => key.startsWith(`${this.CACHE_PREFIX}page`) ||
+                key.startsWith(`${this.CACHE_PREFIX}search`) ||
+                key.includes('_limit'));
+            keysToDelete.push(...productListCaches);
+            await Promise.all(keysToDelete.map(key => this.cacheManager.del(key)));
+            this.eventEmitter.emit('products.cache.invalidate', {
+                productId: product.uid,
+                keys: keysToDelete
+            });
+        }
+        catch (error) {
+            console.error('Error invalidating product cache:', error);
+        }
     }
     async createProduct(createProductDto) {
         try {
@@ -37,7 +62,7 @@ let ProductsService = class ProductsService {
             if (!product) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
-            await this.invalidateProductCaches();
+            await this.invalidateProductCache(product);
             const response = {
                 product: product,
                 message: process.env.SUCCESS_MESSAGE,
@@ -54,11 +79,14 @@ let ProductsService = class ProductsService {
     }
     async updateProduct(ref, updateProductDto) {
         try {
-            const product = await this.productRepository.update(ref, updateProductDto);
-            if (!product) {
+            const existingProduct = await this.productRepository.findOne({
+                where: { uid: ref }
+            });
+            if (!existingProduct) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
-            await this.invalidateProductCaches();
+            await this.productRepository.update(ref, updateProductDto);
+            await this.invalidateProductCache(existingProduct);
             const response = {
                 message: process.env.SUCCESS_MESSAGE,
             };
@@ -73,11 +101,14 @@ let ProductsService = class ProductsService {
     }
     async deleteProduct(ref) {
         try {
-            const product = await this.productRepository.update(ref, { isDeleted: true });
+            const product = await this.productRepository.findOne({
+                where: { uid: ref }
+            });
             if (!product) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
-            await this.invalidateProductCaches();
+            await this.productRepository.update(ref, { isDeleted: true });
+            await this.invalidateProductCache(product);
             const response = {
                 message: process.env.SUCCESS_MESSAGE,
             };
@@ -92,11 +123,14 @@ let ProductsService = class ProductsService {
     }
     async restoreProduct(ref) {
         try {
-            const product = await this.productRepository.update(ref, { isDeleted: false });
+            const product = await this.productRepository.findOne({
+                where: { uid: ref }
+            });
             if (!product) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
-            await this.invalidateProductCaches();
+            await this.productRepository.update(ref, { isDeleted: false });
+            await this.invalidateProductCache(product);
             const response = {
                 message: process.env.SUCCESS_MESSAGE
             };
@@ -235,6 +269,6 @@ exports.ProductsService = ProductsService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_2.InjectRepository)(product_entity_1.Product)),
     __param(1, (0, common_1.Inject)(cache_manager_1.CACHE_MANAGER)),
-    __metadata("design:paramtypes", [typeorm_1.Repository, Object])
+    __metadata("design:paramtypes", [typeorm_1.Repository, Object, event_emitter_1.EventEmitter2])
 ], ProductsService);
 //# sourceMappingURL=products.service.js.map

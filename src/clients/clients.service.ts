@@ -3,280 +3,398 @@ import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Client } from './entities/client.entity';
-import { Repository, DeepPartial, FindOptionsWhere, ILike } from 'typeorm';
+import { Repository, DeepPartial } from 'typeorm';
 import { GeneralStatus } from '../lib/enums/status.enums';
 import { PaginatedResponse } from '../lib/interfaces/product.interfaces';
 import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { ConfigService } from '@nestjs/config';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class ClientsService {
-  private readonly CACHE_TTL: number;
-  private readonly CACHE_PREFIX = 'client:';
+	private readonly CACHE_TTL: number;
+	private readonly CACHE_PREFIX = 'clients:';
 
-  constructor(
-    @InjectRepository(Client)
-    private clientsRepository: Repository<Client>,
-    @Inject(CACHE_MANAGER)
-    private cacheManager: Cache,
-    private readonly configService: ConfigService
-  ) {
-    this.CACHE_TTL = this.configService.get<number>('CACHE_EXPIRATION_TIME') || 30;
-  }
+	constructor(
+		@InjectRepository(Client)
+		private clientsRepository: Repository<Client>,
+		@Inject(CACHE_MANAGER)
+		private cacheManager: Cache,
+		private readonly configService: ConfigService,
+		private readonly eventEmitter: EventEmitter2,
+	) {
+		this.CACHE_TTL = this.configService.get<number>('CACHE_EXPIRATION_TIME') || 30;
+	}
 
-  private getCacheKey(key: string | number): string {
-    return `${this.CACHE_PREFIX}${key}`;
-  }
+	private getCacheKey(key: string | number): string {
+		return `${this.CACHE_PREFIX}${key}`;
+	}
 
-  private async clearClientCache(clientId?: number): Promise<void> {
-    if (clientId) {
-      await this.cacheManager.del(this.getCacheKey(clientId));
-    }
-    await this.cacheManager.del(this.getCacheKey('all'));
-  }
+	private async invalidateClientCache(client: Client) {
+		try {
+			// Get all cache keys
+			const keys = await this.cacheManager.store.keys();
 
-  async create(createClientDto: CreateClientDto, user?: any): Promise<{ message: string }> {
-    try {
-      // Add organization and branch from user token
-      const clientData = {
-        ...createClientDto,
-        organisation: user?.organisationRef ? { uid: user.organisationRef } : undefined,
-        branch: user?.branch?.uid ? { uid: user.branch.uid } : undefined
-      } as DeepPartial<Client>;
+			// Keys to clear
+			const keysToDelete = [];
 
-      const client = await this.clientsRepository.save(clientData);
+			// Add client-specific keys
+			keysToDelete.push(
+				this.getCacheKey(client.uid),
+				this.getCacheKey(client.email),
+				this.getCacheKey(client.name),
+				`${this.CACHE_PREFIX}all`,
+				`${this.CACHE_PREFIX}stats`,
+			);
 
-      if (!client) {
-        throw new NotFoundException(process.env.CREATE_ERROR_MESSAGE);
-      }
+			// Add organization and branch specific keys
+			if (client.organisation?.uid) {
+				keysToDelete.push(`${this.CACHE_PREFIX}org_${client.organisation.uid}`);
+			}
+			if (client.branch?.uid) {
+				keysToDelete.push(`${this.CACHE_PREFIX}branch_${client.branch.uid}`);
+			}
 
-      // Clear cache after creating new client
-      await this.clearClientCache();
+			// Add status specific keys
+			if (client.status) {
+				keysToDelete.push(`${this.CACHE_PREFIX}status_${client.status}`);
+			}
 
-      return {
-        message: process.env.SUCCESS_MESSAGE,
-      };
-    } catch (error) {
-      return {
-        message: error?.message,
-      };
-    }
-  }
+			// Add category specific keys
+			if (client.category) {
+				keysToDelete.push(`${this.CACHE_PREFIX}category_${client.category}`);
+			}
 
-  async findAll(
-    page: number = 1,
-    limit: number = Number(process.env.DEFAULT_PAGE_LIMIT),
-    user?: any,
-    filters?: {
-      status?: GeneralStatus;
-      category?: string;
-      search?: string;
-    }
-  ): Promise<PaginatedResponse<Client>> {
-    try {
-      // Try to get from cache first
-      const cacheKey = this.getCacheKey(`all:${page}:${limit}:${JSON.stringify(filters)}`);
-      const cached = await this.cacheManager.get<PaginatedResponse<Client>>(cacheKey);
-      
-      if (cached) {
-        return cached;
-      }
+			// Clear all pagination and filtered client list caches
+			const clientListCaches = keys.filter(
+				(key) =>
+					key.startsWith(`${this.CACHE_PREFIX}page`) ||
+					key.includes('_limit') ||
+					key.includes('_filter') ||
+					key.includes('search_'),
+			);
+			keysToDelete.push(...clientListCaches);
 
-      // Build where conditions
-      const where: FindOptionsWhere<Client> = {
-        isDeleted: false
-      };
+			// Clear all caches
+			await Promise.all(keysToDelete.map((key) => this.cacheManager.del(key)));
 
-      // Security: Always filter by organization and branch
-      if (user?.organisationRef) {
-        where.organisation = { uid: user?.organisationRef };
-      }
-      
-      if (user?.branch?.uid) {
-        where.branch = { uid: user?.branch?.uid };
-      }
+			// Emit event for other services that might be caching client data
+			this.eventEmitter.emit('clients.cache.invalidate', {
+				clientId: client.uid,
+				keys: keysToDelete,
+			});
+		} catch (error) {
+			console.error('Error invalidating client cache:', error);
+		}
+	}
 
-      // Add filters
-      if (filters?.status) {
-        where.status = filters?.status;
-      }
-      if (filters?.category) {
-        where.category = filters?.category;
-      }
-      if (filters?.search) {
-        where.name = ILike(`%${filters.search}%`);
-      }
+	async create(createClientDto: CreateClientDto, user?: any): Promise<{ message: string }> {
+		try {
+			// Add organization and branch from user token
+			const clientData = {
+				...createClientDto,
+				organisation: user?.organisationRef ? { uid: user.organisationRef } : undefined,
+				branch: user?.branch?.uid ? { uid: user.branch.uid } : undefined,
+			} as DeepPartial<Client>;
 
-      // Execute query with pagination using TypeORM's built-in methods
-      const [clients, total] = await this.clientsRepository.findAndCount({
-        where,
-        relations: ['organisation', 'branch'],
-        skip: (page - 1) * limit,
-        take: limit,
-        order: { createdAt: 'DESC' }
-      });
+			const client = await this.clientsRepository.save(clientData);
 
-      if (!clients) {
-        throw new NotFoundException(process.env.SEARCH_ERROR_MESSAGE);
-      }
+			if (!client) {
+				throw new NotFoundException(process.env.CREATE_ERROR_MESSAGE);
+			}
 
-      const result = {
-        data: clients,
-        meta: {
-          total,
-          page,
-          limit,
-          totalPages: Math.ceil(total / limit),
-        },
-        message: process.env.SUCCESS_MESSAGE,
-      };
+			// Invalidate cache after creation
+			await this.invalidateClientCache(client);
 
-      // Cache the result
-      await this.cacheManager.set(cacheKey, result, this.CACHE_TTL);
+			return {
+				message: process.env.SUCCESS_MESSAGE,
+			};
+		} catch (error) {
+			return {
+				message: error?.message,
+			};
+		}
+	}
 
-      return result;
-    } catch (error) {
-      return {
-        data: [],
-        meta: {
-          total: 0,
-          page,
-          limit,
-          totalPages: 0,
-        },
-        message: error?.message,
-      };
-    }
-  }
+	async findAll(
+		page: number = 1,
+		limit: number = Number(process.env.DEFAULT_PAGE_LIMIT),
+		user?: any,
+		filters?: {
+			status?: GeneralStatus;
+			category?: string;
+			search?: string;
+		},
+	): Promise<PaginatedResponse<Client>> {
+		try {
+			const cacheKey = `${this.CACHE_PREFIX}page${page}_limit${limit}_${JSON.stringify(filters)}`;
+			const cachedClients = await this.cacheManager.get<PaginatedResponse<Client>>(cacheKey);
 
-  async findOne(ref: number, user?: any): Promise<{ message: string, client: Client | null }> {
-    try {
-      // Try to get from cache first
-      const cacheKey = this.getCacheKey(ref);
-      const cached = await this.cacheManager.get<Client>(cacheKey);
-      
-      if (cached) {
-        return {
-          message: process.env.SUCCESS_MESSAGE,
-          client: cached
-        };
-      }
+			if (cachedClients) {
+				return cachedClients;
+			}
 
-      // Build where conditions
-      const where: FindOptionsWhere<Client> = {
-        uid: ref,
-        isDeleted: false
-      };
+			const queryBuilder = this.clientsRepository
+				.createQueryBuilder('client')
+				.leftJoinAndSelect('client.branch', 'branch')
+				.leftJoinAndSelect('client.organisation', 'organisation')
+				.where('client.isDeleted = :isDeleted', { isDeleted: false });
 
-      // Security: Always filter by organization and branch
-      if (user?.organisationRef) {
-        where.organisation = { uid: user.organisationRef };
-      }
-      
-      if (user?.branch?.uid) {
-        where.branch = { uid: user.branch.uid };
-      }
+			// Security: Always filter by organization and branch
+			if (user?.organisationRef) {
+				queryBuilder.andWhere('organisation.uid = :orgId', { orgId: user.organisationRef });
+			}
 
-      const client = await this.clientsRepository.findOne({
-        where,
-        relations: ['organisation', 'branch']
-      });
+			if (user?.branch?.uid) {
+				queryBuilder.andWhere('branch.uid = :branchId', { branchId: user.branch.uid });
+			}
 
-      if (!client) {
-        throw new NotFoundException(process.env.SEARCH_ERROR_MESSAGE);
-      }
+			if (filters?.status) {
+				queryBuilder.andWhere('client.status = :status', { status: filters.status });
+			}
 
-      // Cache the result
-      await this.cacheManager.set(cacheKey, client, this.CACHE_TTL);
+			if (filters?.category) {
+				queryBuilder.andWhere('client.category = :category', { category: filters.category });
+			}
 
-      return {
-        message: process.env.SUCCESS_MESSAGE,
-        client
-      };
-    } catch (error) {
-      return {
-        message: error?.message,
-        client: null
-      };
-    }
-  }
+			if (filters?.search) {
+				queryBuilder.andWhere(
+					'(client.name ILIKE :search OR client.email ILIKE :search OR client.phone ILIKE :search)',
+					{ search: `%${filters.search}%` },
+				);
+			}
 
-  async update(ref: number, updateClientDto: UpdateClientDto, user?: any): Promise<{ message: string }> {
-    try {
-      // First check if client exists and belongs to user's org/branch
-      const existingClient = await this.findOne(ref, user);
-      if (!existingClient.client) {
-        throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
-      }
+			// Add pagination
+			queryBuilder
+				.skip((page - 1) * limit)
+				.take(limit)
+				.orderBy('client.createdAt', 'DESC');
 
-      await this.clientsRepository.update(ref, updateClientDto as DeepPartial<Client>);
+			const [clients, total] = await queryBuilder.getManyAndCount();
 
-      // Clear cache after update
-      await this.clearClientCache(ref);
+			if (!clients) {
+				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
+			}
 
-      return {
-        message: process.env.SUCCESS_MESSAGE,
-      };
-    } catch (error) {
-      return {
-        message: error?.message,
-      };
-    }
-  }
+			const response = {
+				data: clients,
+				meta: {
+					total,
+					page,
+					limit,
+					totalPages: Math.ceil(total / limit),
+				},
+				message: process.env.SUCCESS_MESSAGE,
+			};
 
-  async remove(ref: number, user?: any): Promise<{ message: string }> {
-    try {
-      // First check if client exists and belongs to user's org/branch
-      const existingClient = await this.findOne(ref, user);
-      if (!existingClient.client) {
-        throw new NotFoundException(process.env.DELETE_ERROR_MESSAGE);
-      }
+			await this.cacheManager.set(cacheKey, response, this.CACHE_TTL);
 
-      await this.clientsRepository.update(
-        { uid: ref },
-        { isDeleted: true }
-      );
+			return response;
+		} catch (error) {
+			return {
+				data: [],
+				meta: {
+					total: 0,
+					page,
+					limit,
+					totalPages: 0,
+				},
+				message: error?.message,
+			};
+		}
+	}
 
-      // Clear cache after deletion
-      await this.clearClientCache(ref);
+	async findOne(ref: number, user?: any): Promise<{ message: string; client: Client | null }> {
+		try {
+			const cacheKey = this.getCacheKey(ref);
+			const cachedClient = await this.cacheManager.get<Client>(cacheKey);
 
-      return {
-        message: process.env.SUCCESS_MESSAGE,
-      };
-    } catch (error) {
-      return {
-        message: error?.message,
-      };
-    }
-  }
+			if (cachedClient) {
+				return {
+					client: cachedClient,
+					message: process.env.SUCCESS_MESSAGE,
+				};
+			}
 
-  async restore(ref: number, user?: any): Promise<{ message: string }> {
-    try {
-      // First check if client exists and belongs to user's org/branch
-      const existingClient = await this.findOne(ref, user);
-      if (!existingClient.client) {
-        throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
-      }
+			const queryBuilder = this.clientsRepository
+				.createQueryBuilder('client')
+				.leftJoinAndSelect('client.branch', 'branch')
+				.leftJoinAndSelect('client.organisation', 'organisation')
+				.where('client.uid = :ref', { ref })
+				.andWhere('client.isDeleted = :isDeleted', { isDeleted: false });
 
-      await this.clientsRepository.update(
-        { uid: ref },
-        {
-          isDeleted: false,
-          status: GeneralStatus.ACTIVE
-        }
-      );
+			// Security: Always filter by organization and branch
+			if (user?.organisationRef) {
+				queryBuilder.andWhere('organisation.uid = :orgId', { orgId: user.organisationRef });
+			}
 
-      // Clear cache after restoration
-      await this.clearClientCache(ref);
+			if (user?.branch?.uid) {
+				queryBuilder.andWhere('branch.uid = :branchId', { branchId: user.branch.uid });
+			}
 
-      return {
-        message: process.env.SUCCESS_MESSAGE,
-      };
-    } catch (error) {
-      return {
-        message: error?.message,
-      };
-    }
-  }
+			const client = await queryBuilder.getOne();
+
+			if (!client) {
+				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
+			}
+
+			await this.cacheManager.set(cacheKey, client, this.CACHE_TTL);
+
+			return {
+				client,
+				message: process.env.SUCCESS_MESSAGE,
+			};
+		} catch (error) {
+			return {
+				message: error?.message,
+				client: null,
+			};
+		}
+	}
+
+	async update(ref: number, updateClientDto: UpdateClientDto, user?: any): Promise<{ message: string }> {
+		try {
+			const existingClient = await this.findOne(ref, user);
+			if (!existingClient.client) {
+				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
+			}
+
+			await this.clientsRepository.update(ref, updateClientDto as DeepPartial<Client>);
+
+			// Invalidate cache after update
+			await this.invalidateClientCache(existingClient.client);
+
+			return {
+				message: process.env.SUCCESS_MESSAGE,
+			};
+		} catch (error) {
+			return {
+				message: error?.message,
+			};
+		}
+	}
+
+	async remove(ref: number, user?: any): Promise<{ message: string }> {
+		try {
+			const existingClient = await this.findOne(ref, user);
+			if (!existingClient.client) {
+				throw new NotFoundException(process.env.DELETE_ERROR_MESSAGE);
+			}
+
+			await this.clientsRepository.update({ uid: ref }, { isDeleted: true });
+
+			// Invalidate cache after deletion
+			await this.invalidateClientCache(existingClient.client);
+
+			return {
+				message: process.env.SUCCESS_MESSAGE,
+			};
+		} catch (error) {
+			return {
+				message: error?.message,
+			};
+		}
+	}
+
+	async restore(ref: number, user?: any): Promise<{ message: string }> {
+		try {
+			const existingClient = await this.findOne(ref, user);
+			if (!existingClient.client) {
+				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
+			}
+
+			await this.clientsRepository.update(
+				{ uid: ref },
+				{
+					isDeleted: false,
+					status: GeneralStatus.ACTIVE,
+				},
+			);
+
+			// Invalidate cache after restoration
+			await this.invalidateClientCache(existingClient.client);
+
+			return {
+				message: process.env.SUCCESS_MESSAGE,
+			};
+		} catch (error) {
+			return {
+				message: error?.message,
+			};
+		}
+	}
+
+	async clientsBySearchTerm(
+		searchTerm: string,
+		page: number = 1,
+		limit: number = 10,
+		user?: any,
+	): Promise<PaginatedResponse<Client>> {
+		try {
+			const cacheKey = `${this.CACHE_PREFIX}search_${searchTerm?.toLowerCase()}_page${page}_limit${limit}`;
+			const cachedResults = await this.cacheManager.get<PaginatedResponse<Client>>(cacheKey);
+
+			if (cachedResults) {
+				return cachedResults;
+			}
+
+			const queryBuilder = this.clientsRepository
+				.createQueryBuilder('client')
+				.leftJoinAndSelect('client.branch', 'branch')
+				.leftJoinAndSelect('client.organisation', 'organisation')
+				.where('client.isDeleted = :isDeleted', { isDeleted: false });
+
+			// Security: Always filter by organization and branch
+			if (user?.organisationRef) {
+				queryBuilder.andWhere('organisation.uid = :orgId', { orgId: user.organisationRef });
+			}
+
+			if (user?.branch?.uid) {
+				queryBuilder.andWhere('branch.uid = :branchId', { branchId: user.branch.uid });
+			}
+
+			queryBuilder.andWhere(
+				'(client.name ILIKE :search OR client.email ILIKE :search OR client.phone ILIKE :search)',
+				{ search: `%${searchTerm?.toLowerCase()}%` },
+			);
+
+			queryBuilder
+				.skip((page - 1) * limit)
+				.take(limit)
+				.orderBy('client.createdAt', 'DESC');
+
+			const [clients, total] = await queryBuilder.getManyAndCount();
+
+			if (!clients) {
+				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
+			}
+
+			const response = {
+				data: clients,
+				meta: {
+					total,
+					page,
+					limit,
+					totalPages: Math.ceil(total / limit),
+				},
+				message: process.env.SUCCESS_MESSAGE,
+			};
+
+			await this.cacheManager.set(cacheKey, response, this.CACHE_TTL);
+
+			return response;
+		} catch (error) {
+			return {
+				data: [],
+				meta: {
+					total: 0,
+					page,
+					limit,
+					totalPages: 0,
+				},
+				message: error?.message,
+			};
+		}
+	}
 }
