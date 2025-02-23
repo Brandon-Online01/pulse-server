@@ -12,9 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateClaimDto = void 0;
 const class_validator_1 = require("class-validator");
 const swagger_1 = require("@nestjs/swagger");
-const class_transformer_1 = require("class-transformer");
 const finance_enums_1 = require("../../lib/enums/finance.enums");
-const user_entity_1 = require("../../user/entities/user.entity");
 class CreateClaimDto {
     constructor() {
         this.status = finance_enums_1.ClaimStatus.PENDING;
@@ -22,17 +20,11 @@ class CreateClaimDto {
 }
 exports.CreateClaimDto = CreateClaimDto;
 __decorate([
-    (0, swagger_1.ApiProperty)({ description: 'Title of the claim' }),
-    (0, class_validator_1.IsNotEmpty)(),
-    (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
-], CreateClaimDto.prototype, "title", void 0);
-__decorate([
     (0, swagger_1.ApiProperty)({ description: 'Description of the claim' }),
     (0, class_validator_1.IsNotEmpty)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
-], CreateClaimDto.prototype, "description", void 0);
+], CreateClaimDto.prototype, "comment", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({ description: 'Amount being claimed' }),
     (0, class_validator_1.IsNotEmpty)(),
@@ -57,9 +49,9 @@ __decorate([
     __metadata("design:type", String)
 ], CreateClaimDto.prototype, "status", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ type: () => user_entity_1.User }),
-    (0, class_validator_1.ValidateNested)(),
-    (0, class_transformer_1.Type)(() => user_entity_1.User),
-    __metadata("design:type", user_entity_1.User)
+    (0, swagger_1.ApiProperty)({ description: 'UID of the owner of the claim' }),
+    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.IsNumber)(),
+    __metadata("design:type", Number)
 ], CreateClaimDto.prototype, "owner", void 0);
 //# sourceMappingURL=create-claim.dto.js.map

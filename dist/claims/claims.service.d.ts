@@ -18,6 +18,7 @@ export declare class ClaimsService {
     private readonly currencyCode;
     private readonly currencySymbol;
     constructor(claimsRepository: Repository<Claim>, rewardsService: RewardsService, eventEmitter: EventEmitter2, configService: ConfigService, userRepository: Repository<User>);
+    private invalidateClaimsCache;
     private formatCurrency;
     private calculateStats;
     create(createClaimDto: CreateClaimDto): Promise<{

@@ -39,10 +39,21 @@ let ClaimsService = class ClaimsService {
         this.currencyCode = this.configService.get('CURRENCY_CODE') || 'ZAR';
         this.currencySymbol = this.configService.get('CURRENCY_SYMBOL') || 'R';
     }
+    invalidateClaimsCache(claim) {
+        this.eventEmitter.emit('claims.cache.invalidate', {
+            keys: [
+                'claims.all',
+                `claims.single.${claim.uid}`,
+                `claims.user.${claim.owner?.uid}`,
+                'claims.stats',
+                'claims.report',
+            ],
+        });
+    }
     formatCurrency(amount) {
         return new Intl.NumberFormat(this.currencyLocale, {
             style: 'currency',
-            currency: this.currencyCode
+            currency: this.currencyCode,
         })
             .format(amount)
             .replace(this.currencyCode, this.currencySymbol);
@@ -50,17 +61,17 @@ let ClaimsService = class ClaimsService {
     calculateStats(claims) {
         return {
             total: claims?.length || 0,
-            pending: claims?.filter(claim => claim?.status === finance_enums_1.ClaimStatus.PENDING)?.length || 0,
-            approved: claims?.filter(claim => claim?.status === finance_enums_1.ClaimStatus.APPROVED)?.length || 0,
-            declined: claims?.filter(claim => claim?.status === finance_enums_1.ClaimStatus.DECLINED)?.length || 0,
-            paid: claims?.filter(claim => claim?.status === finance_enums_1.ClaimStatus.PAID)?.length || 0,
+            pending: claims?.filter((claim) => claim?.status === finance_enums_1.ClaimStatus.PENDING)?.length || 0,
+            approved: claims?.filter((claim) => claim?.status === finance_enums_1.ClaimStatus.APPROVED)?.length || 0,
+            declined: claims?.filter((claim) => claim?.status === finance_enums_1.ClaimStatus.DECLINED)?.length || 0,
+            paid: claims?.filter((claim) => claim?.status === finance_enums_1.ClaimStatus.PAID)?.length || 0,
         };
     }
     async create(createClaimDto) {
         try {
             const user = await this.userRepository.findOne({
-                where: { uid: createClaimDto.owner.uid },
-                relations: ['organisation', 'branch']
+                where: { uid: createClaimDto.owner },
+                relations: ['organisation', 'branch'],
             });
             if (!user) {
                 throw new common_1.NotFoundException('User not found');
@@ -69,12 +80,13 @@ let ClaimsService = class ClaimsService {
                 ...createClaimDto,
                 amount: createClaimDto.amount.toString(),
                 organisation: user.organisation,
-                branch: user.branch
+                branch: user.branch,
             };
             const claim = await this.claimsRepository.save(claimData);
             if (!claim) {
                 throw new common_1.NotFoundException(process.env.CREATE_ERROR_MESSAGE);
             }
+            this.invalidateClaimsCache(claim);
             const response = {
                 message: process.env.SUCCESS_MESSAGE,
             };
@@ -83,19 +95,25 @@ let ClaimsService = class ClaimsService {
                 title: 'New Claim',
                 message: `A new claim has been created`,
                 status: notification_enums_1.NotificationStatus.UNREAD,
-                owner: claim?.owner
+                owner: claim?.owner,
             };
-            const recipients = [user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.OWNER, user_enums_1.AccessLevel.SUPERVISOR, user_enums_1.AccessLevel.USER];
+            const recipients = [
+                user_enums_1.AccessLevel.ADMIN,
+                user_enums_1.AccessLevel.MANAGER,
+                user_enums_1.AccessLevel.OWNER,
+                user_enums_1.AccessLevel.SUPERVISOR,
+                user_enums_1.AccessLevel.USER,
+            ];
             this.eventEmitter.emit('send.notification', notification, recipients);
             await this.rewardsService.awardXP({
-                owner: createClaimDto.owner.uid,
+                owner: createClaimDto.owner,
                 amount: constants_2.XP_VALUES.CLAIM,
                 action: constants_1.XP_VALUES_TYPES.CLAIM,
                 source: {
-                    id: String(createClaimDto?.owner?.uid),
+                    id: String(createClaimDto?.owner),
                     type: constants_1.XP_VALUES_TYPES.CLAIM,
-                    details: 'Claim reward'
-                }
+                    details: 'Claim reward',
+                },
             });
             return response;
         }
@@ -119,7 +137,7 @@ let ClaimsService = class ClaimsService {
             if (filters?.startDate && filters?.endDate) {
                 queryBuilder.andWhere('claim.createdAt BETWEEN :startDate AND :endDate', {
                     startDate: filters.startDate,
-                    endDate: filters.endDate
+                    endDate: filters.endDate,
                 });
             }
             if (filters?.search) {
@@ -133,9 +151,9 @@ let ClaimsService = class ClaimsService {
             if (!claims) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
-            const formattedClaims = claims?.map(claim => ({
+            const formattedClaims = claims?.map((claim) => ({
                 ...claim,
-                amount: this.formatCurrency(Number(claim?.amount) || 0)
+                amount: this.formatCurrency(Number(claim?.amount) || 0),
             }));
             return {
                 data: formattedClaims,
@@ -166,9 +184,9 @@ let ClaimsService = class ClaimsService {
             const claim = await this.claimsRepository.findOne({
                 where: {
                     uid: ref,
-                    isDeleted: false
+                    isDeleted: false,
                 },
-                relations: ['owner']
+                relations: ['owner'],
             });
             if (!claim) {
                 throw new common_1.NotFoundException(process.env.SEARCH_ERROR_MESSAGE);
@@ -177,75 +195,75 @@ let ClaimsService = class ClaimsService {
             const stats = this.calculateStats(allClaims);
             const formattedClaim = {
                 ...claim,
-                amount: this.formatCurrency(Number(claim?.amount) || 0)
+                amount: this.formatCurrency(Number(claim?.amount) || 0),
             };
             return {
                 message: process.env.SUCCESS_MESSAGE,
                 claim: formattedClaim,
-                stats
+                stats,
             };
         }
         catch (error) {
             return {
                 message: error?.message,
                 claim: null,
-                stats: null
+                stats: null,
             };
         }
     }
     async claimsByUser(ref) {
         try {
             const claims = await this.claimsRepository.find({
-                where: { owner: { uid: ref } }
+                where: { owner: { uid: ref } },
             });
             if (!claims) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
-            const formattedClaims = claims?.map(claim => ({
+            const formattedClaims = claims?.map((claim) => ({
                 ...claim,
-                amount: this.formatCurrency(Number(claim?.amount) || 0)
+                amount: this.formatCurrency(Number(claim?.amount) || 0),
             }));
             const stats = this.calculateStats(claims);
             return {
                 message: process.env.SUCCESS_MESSAGE,
                 claims: formattedClaims,
-                stats
+                stats,
             };
         }
         catch (error) {
             return {
                 message: `could not get claims by user - ${error?.message}`,
                 claims: null,
-                stats: null
+                stats: null,
             };
         }
     }
     async getClaimsForDate(date) {
         try {
             const claims = await this.claimsRepository.find({
-                where: { createdAt: (0, typeorm_2.Between)((0, date_fns_2.startOfDay)(date), (0, date_fns_1.endOfDay)(date)) }
+                where: { createdAt: (0, typeorm_2.Between)((0, date_fns_2.startOfDay)(date), (0, date_fns_1.endOfDay)(date)) },
             });
             if (!claims) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
             const groupedClaims = {
-                pending: claims.filter(claim => claim.status === finance_enums_1.ClaimStatus.PENDING),
-                approved: claims.filter(claim => claim.status === finance_enums_1.ClaimStatus.APPROVED),
-                declined: claims.filter(claim => claim.status === finance_enums_1.ClaimStatus.DECLINED),
-                paid: claims.filter(claim => claim.status === finance_enums_1.ClaimStatus.PAID),
+                pending: claims.filter((claim) => claim.status === finance_enums_1.ClaimStatus.PENDING),
+                approved: claims.filter((claim) => claim.status === finance_enums_1.ClaimStatus.APPROVED),
+                declined: claims.filter((claim) => claim.status === finance_enums_1.ClaimStatus.DECLINED),
+                paid: claims.filter((claim) => claim.status === finance_enums_1.ClaimStatus.PAID),
             };
             return {
                 message: process.env.SUCCESS_MESSAGE,
                 claims: {
                     ...groupedClaims,
-                    totalValue: this.formatCurrency(claims?.reduce((sum, claim) => sum + (Number(claim?.amount) || 0), 0))
-                }
+                    totalValue: this.formatCurrency(claims?.reduce((sum, claim) => sum + (Number(claim?.amount) || 0), 0)),
+                },
             };
         }
         catch (error) {
             return {
                 message: error?.message,
-                claims: null
+                claims: null,
             };
         }
     }
@@ -253,12 +271,20 @@ let ClaimsService = class ClaimsService {
         try {
             const claim = await this.claimsRepository.findOne({
                 where: { uid: ref, isDeleted: false },
-                relations: ['owner']
+                relations: ['owner', 'branch'],
             });
             if (!claim) {
                 throw new common_1.NotFoundException(process.env.SEARCH_ERROR_MESSAGE);
             }
-            await this.claimsRepository.update(ref, updateClaimDto);
+            const baseData = {
+                comments: updateClaimDto.comment,
+                amount: updateClaimDto.amount?.toString(),
+                category: updateClaimDto.category,
+                status: updateClaimDto.status,
+                documentUrl: updateClaimDto.documentUrl,
+            };
+            const updatedClaim = await this.claimsRepository.update(ref, baseData);
+            this.invalidateClaimsCache(claim);
             const response = {
                 message: process.env.SUCCESS_MESSAGE,
             };
@@ -267,25 +293,31 @@ let ClaimsService = class ClaimsService {
                 title: 'Claim Updated',
                 message: `A claim has been updated`,
                 status: notification_enums_1.NotificationStatus.UNREAD,
-                owner: claim?.owner
+                owner: claim.owner,
             };
-            const recipients = [user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.OWNER, user_enums_1.AccessLevel.SUPERVISOR, user_enums_1.AccessLevel.USER];
+            const recipients = [
+                user_enums_1.AccessLevel.ADMIN,
+                user_enums_1.AccessLevel.MANAGER,
+                user_enums_1.AccessLevel.OWNER,
+                user_enums_1.AccessLevel.SUPERVISOR,
+                user_enums_1.AccessLevel.USER,
+            ];
             this.eventEmitter.emit('send.notification', notification, recipients);
             await this.rewardsService.awardXP({
-                owner: updateClaimDto?.owner?.uid,
+                owner: claim.owner.uid,
                 amount: constants_2.XP_VALUES.CLAIM,
                 action: constants_1.XP_VALUES_TYPES.CLAIM,
                 source: {
-                    id: String(updateClaimDto?.owner?.uid),
+                    id: String(claim.owner.uid),
                     type: constants_1.XP_VALUES_TYPES.CLAIM,
-                    details: 'Claim reward'
-                }
+                    details: 'Claim reward',
+                },
             });
             return response;
         }
         catch (error) {
             const response = {
-                message: error?.message,
+                message: error?.message || 'Failed to update claim',
             };
             return response;
         }
@@ -293,13 +325,14 @@ let ClaimsService = class ClaimsService {
     async remove(ref) {
         try {
             const claim = await this.claimsRepository.findOne({
-                where: { uid: ref, isDeleted: false }
+                where: { uid: ref, isDeleted: false },
+                relations: ['owner'],
             });
             if (!claim) {
                 throw new common_1.NotFoundException(process.env.DELETE_ERROR_MESSAGE);
             }
-            ;
             await this.claimsRepository.update({ uid: ref }, { isDeleted: true });
+            this.invalidateClaimsCache(claim);
             const response = {
                 message: process.env.SUCCESS_MESSAGE,
             };
@@ -314,10 +347,18 @@ let ClaimsService = class ClaimsService {
     }
     async restore(ref) {
         try {
+            const claim = await this.claimsRepository.findOne({
+                where: { uid: ref },
+                relations: ['owner'],
+            });
+            if (!claim) {
+                throw new common_1.NotFoundException(process.env.SEARCH_ERROR_MESSAGE);
+            }
             await this.claimsRepository.update({ uid: ref }, {
                 isDeleted: false,
-                status: finance_enums_1.ClaimStatus.DELETED
+                status: finance_enums_1.ClaimStatus.DELETED,
             });
+            this.invalidateClaimsCache(claim);
             const response = {
                 message: process.env.SUCCESS_MESSAGE,
             };
@@ -335,8 +376,8 @@ let ClaimsService = class ClaimsService {
             const claims = await this.claimsRepository.find({
                 where: {
                     deletedAt: (0, typeorm_2.IsNull)(),
-                    status: (0, typeorm_2.Not)(finance_enums_1.ClaimStatus.DELETED)
-                }
+                    status: (0, typeorm_2.Not)(finance_enums_1.ClaimStatus.DELETED),
+                },
             });
             const byCategory = {
                 [finance_enums_1.ClaimCategory.GENERAL]: 0,
@@ -351,16 +392,16 @@ let ClaimsService = class ClaimsService {
                 [finance_enums_1.ClaimCategory.ACCOMMODATION]: 0,
                 [finance_enums_1.ClaimCategory.MEALS]: 0,
                 [finance_enums_1.ClaimCategory.TRANSPORTATION]: 0,
-                [finance_enums_1.ClaimCategory.ENTERTAINMENT]: 0
+                [finance_enums_1.ClaimCategory.ENTERTAINMENT]: 0,
             };
-            claims.forEach(claim => {
+            claims.forEach((claim) => {
                 if (claim?.category)
                     byCategory[claim?.category]++;
             });
             return {
                 totalClaims: claims.length,
                 totalValue: this.formatCurrency(claims.reduce((sum, claim) => sum + (Number(claim.amount) || 0), 0)),
-                byCategory
+                byCategory,
             };
         }
         catch (error) {
@@ -380,8 +421,8 @@ let ClaimsService = class ClaimsService {
                     [finance_enums_1.ClaimCategory.ACCOMMODATION]: 0,
                     [finance_enums_1.ClaimCategory.MEALS]: 0,
                     [finance_enums_1.ClaimCategory.TRANSPORTATION]: 0,
-                    [finance_enums_1.ClaimCategory.ENTERTAINMENT]: 0
-                }
+                    [finance_enums_1.ClaimCategory.ENTERTAINMENT]: 0,
+                },
             };
         }
     }
@@ -392,20 +433,20 @@ let ClaimsService = class ClaimsService {
                     ...filter,
                     isDeleted: false,
                     deletedAt: (0, typeorm_2.IsNull)(),
-                    status: (0, typeorm_2.Not)(finance_enums_1.ClaimStatus.DELETED)
+                    status: (0, typeorm_2.Not)(finance_enums_1.ClaimStatus.DELETED),
                 },
-                relations: ['owner', 'branch']
+                relations: ['owner', 'branch'],
             });
             if (!claims) {
                 throw new common_1.NotFoundException('No claims found for the specified period');
             }
             const groupedClaims = {
-                paid: claims.filter(claim => claim.status === finance_enums_1.ClaimStatus.PAID),
-                pending: claims.filter(claim => claim.status === finance_enums_1.ClaimStatus.PENDING),
-                approved: claims.filter(claim => claim.status === finance_enums_1.ClaimStatus.APPROVED),
-                declined: claims.filter(claim => claim.status === finance_enums_1.ClaimStatus.DECLINED)
+                paid: claims.filter((claim) => claim?.status === finance_enums_1.ClaimStatus.PAID),
+                pending: claims.filter((claim) => claim?.status === finance_enums_1.ClaimStatus.PENDING),
+                approved: claims.filter((claim) => claim?.status === finance_enums_1.ClaimStatus.APPROVED),
+                declined: claims.filter((claim) => claim?.status === finance_enums_1.ClaimStatus.DECLINED),
             };
-            const totalValue = claims.reduce((sum, claim) => sum + Number(claim.amount), 0);
+            const totalValue = claims.reduce((sum, claim) => sum + Number(claim?.amount), 0);
             const totalClaims = claims.length;
             const approvedClaims = groupedClaims.approved.length;
             const avgProcessingTime = this.calculateAverageProcessingTime(claims);
@@ -424,8 +465,8 @@ let ClaimsService = class ClaimsService {
                     topClaimants,
                     claimValueDistribution: this.analyzeClaimValueDistribution(claims),
                     monthlyTrends: this.analyzeMonthlyTrends(claims),
-                    branchPerformance: this.analyzeBranchPerformance(claims)
-                }
+                    branchPerformance: this.analyzeBranchPerformance(claims),
+                },
             };
         }
         catch (error) {
@@ -433,24 +474,24 @@ let ClaimsService = class ClaimsService {
         }
     }
     calculateAverageProcessingTime(claims) {
-        const processedClaims = claims.filter(claim => claim.status === finance_enums_1.ClaimStatus.PAID ||
-            claim.status === finance_enums_1.ClaimStatus.APPROVED ||
-            claim.status === finance_enums_1.ClaimStatus.DECLINED);
+        const processedClaims = claims.filter((claim) => claim?.status === finance_enums_1.ClaimStatus.PAID ||
+            claim?.status === finance_enums_1.ClaimStatus.APPROVED ||
+            claim?.status === finance_enums_1.ClaimStatus.DECLINED);
         if (processedClaims.length === 0)
             return 0;
         const totalProcessingTime = processedClaims.reduce((sum, claim) => {
-            const processingTime = claim.updatedAt.getTime() - claim.createdAt.getTime();
+            const processingTime = claim.updatedAt.getTime() - claim?.createdAt?.getTime();
             return sum + processingTime;
         }, 0);
         return Number((totalProcessingTime / (processedClaims.length * 24 * 60 * 60 * 1000)).toFixed(1));
     }
     analyzeCategoryBreakdown(claims) {
         const categoryStats = new Map();
-        claims.forEach(claim => {
+        claims.forEach((claim) => {
             if (!categoryStats.has(claim.category)) {
                 categoryStats.set(claim.category, {
                     count: 0,
-                    totalValue: 0
+                    totalValue: 0,
                 });
             }
             const stats = categoryStats.get(claim.category);
@@ -462,13 +503,13 @@ let ClaimsService = class ClaimsService {
             category,
             count: stats.count,
             totalValue: this.formatCurrency(stats.totalValue),
-            averageValue: this.formatCurrency(stats.totalValue / stats.count)
+            averageValue: this.formatCurrency(stats.totalValue / stats.count),
         }))
             .sort((a, b) => b.count - a.count);
     }
     analyzeTopClaimants(claims) {
         const claimantStats = new Map();
-        claims.forEach(claim => {
+        claims.forEach((claim) => {
             const userId = claim.owner?.uid;
             const userName = claim.owner?.username;
             if (userId && userName) {
@@ -477,7 +518,7 @@ let ClaimsService = class ClaimsService {
                         name: userName,
                         claims: 0,
                         totalValue: 0,
-                        approved: 0
+                        approved: 0,
                     });
                 }
                 const stats = claimantStats.get(userId);
@@ -494,7 +535,7 @@ let ClaimsService = class ClaimsService {
             userName: stats.name,
             totalClaims: stats.claims,
             totalValue: this.formatCurrency(stats.totalValue),
-            approvalRate: `${((stats.approved / stats.claims) * 100).toFixed(1)}%`
+            approvalRate: `${((stats.approved / stats.claims) * 100).toFixed(1)}%`,
         }))
             .sort((a, b) => b.totalClaims - a.totalClaims)
             .slice(0, 10);
@@ -505,9 +546,9 @@ let ClaimsService = class ClaimsService {
             '1000-5000': 0,
             '5000-10000': 0,
             '10000-50000': 0,
-            'Over 50000': 0
+            'Over 50000': 0,
         };
-        claims.forEach(claim => {
+        claims.forEach((claim) => {
             const amount = Number(claim.amount);
             if (amount < 1000)
                 ranges['Under 1000']++;
@@ -524,13 +565,13 @@ let ClaimsService = class ClaimsService {
     }
     analyzeMonthlyTrends(claims) {
         const monthlyStats = new Map();
-        claims.forEach(claim => {
+        claims.forEach((claim) => {
             const month = claim.createdAt.toISOString().slice(0, 7);
             if (!monthlyStats.has(month)) {
                 monthlyStats.set(month, {
                     claims: 0,
                     totalValue: 0,
-                    approved: 0
+                    approved: 0,
                 });
             }
             const stats = monthlyStats.get(month);
@@ -545,13 +586,13 @@ let ClaimsService = class ClaimsService {
             month,
             totalClaims: stats.claims,
             totalValue: this.formatCurrency(stats.totalValue),
-            approvalRate: `${((stats.approved / stats.claims) * 100).toFixed(1)}%`
+            approvalRate: `${((stats.approved / stats.claims) * 100).toFixed(1)}%`,
         }))
             .sort((a, b) => a.month.localeCompare(b.month));
     }
     analyzeBranchPerformance(claims) {
         const branchStats = new Map();
-        claims.forEach(claim => {
+        claims.forEach((claim) => {
             const branchId = claim.branch?.uid;
             const branchName = claim.branch?.name;
             if (branchId && branchName) {
@@ -562,7 +603,7 @@ let ClaimsService = class ClaimsService {
                         totalValue: 0,
                         approved: 0,
                         totalProcessingTime: 0,
-                        processedClaims: 0
+                        processedClaims: 0,
                     });
                 }
                 const stats = branchStats.get(branchId);
@@ -573,8 +614,7 @@ let ClaimsService = class ClaimsService {
                 }
                 if (claim.status !== finance_enums_1.ClaimStatus.PENDING) {
                     stats.processedClaims++;
-                    stats.totalProcessingTime +=
-                        claim.updatedAt.getTime() - claim.createdAt.getTime();
+                    stats.totalProcessingTime += claim.updatedAt.getTime() - claim.createdAt.getTime();
                 }
             }
         });
@@ -587,7 +627,7 @@ let ClaimsService = class ClaimsService {
             averageProcessingTime: `${(stats.processedClaims > 0
                 ? stats.totalProcessingTime / (stats.processedClaims * 24 * 60 * 60 * 1000)
                 : 0).toFixed(1)} days`,
-            approvalRate: `${((stats.approved / stats.claims) * 100).toFixed(1)}%`
+            approvalRate: `${((stats.approved / stats.claims) * 100).toFixed(1)}%`,
         }))
             .sort((a, b) => b.totalClaims - a.totalClaims);
     }

@@ -1,19 +1,12 @@
-import { IsNotEmpty, IsNumber, IsString, IsEnum, ValidateNested, IsOptional } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsString, IsEnum, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
 import { ClaimCategory, ClaimStatus } from '../../lib/enums/finance.enums';
-import { User } from '../../user/entities/user.entity';
 
 export class CreateClaimDto {
-    @ApiProperty({ description: 'Title of the claim' })
-    @IsNotEmpty()
-    @IsString()
-    title: string;
-
     @ApiProperty({ description: 'Description of the claim' })
     @IsNotEmpty()
     @IsString()
-    description: string;
+    comment: string;
 
     @ApiProperty({ description: 'Amount being claimed' })
     @IsNotEmpty()
@@ -34,8 +27,8 @@ export class CreateClaimDto {
     @IsEnum(ClaimStatus)
     status: ClaimStatus = ClaimStatus.PENDING;
 
-    @ApiProperty({ type: () => User })
-    @ValidateNested()
-    @Type(() => User)
-    owner: User;
+    @ApiProperty({ description: 'UID of the owner of the claim' })
+    @IsNotEmpty()
+    @IsNumber()
+    owner: number;
 }
