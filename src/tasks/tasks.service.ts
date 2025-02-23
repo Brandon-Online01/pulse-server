@@ -53,7 +53,7 @@ export class TasksService {
 		try {
 			// Get all cache keys
 			const keys = await this.cacheManager.store.keys();
-			
+
 			// Keys to clear
 			const keysToDelete = [];
 
@@ -63,15 +63,16 @@ export class TasksService {
 			}
 
 			// Clear all pagination and filtered task list caches
-			const taskListCaches = keys.filter(key => 
-				key.startsWith('tasks_page') || // Pagination caches
-				key.startsWith('task:all') ||   // All tasks cache
-				key.includes('_limit')          // Filtered caches
+			const taskListCaches = keys.filter(
+				(key) =>
+					key.startsWith('tasks_page') || // Pagination caches
+					key.startsWith('task:all') || // All tasks cache
+					key.includes('_limit'), // Filtered caches
 			);
 			keysToDelete.push(...taskListCaches);
 
 			// Clear all caches
-			await Promise.all(keysToDelete.map(key => this.cacheManager.del(key)));
+			await Promise.all(keysToDelete.map((key) => this.cacheManager.del(key)));
 		} catch (error) {
 			return error;
 		}
@@ -91,7 +92,7 @@ export class TasksService {
 		// Parse dates properly handling timezone
 		const startDate = new Date(createTaskDto.deadline);
 		const endDate = new Date(createTaskDto.repetitionDeadline);
-		
+
 		// Validate dates
 		if (endDate <= startDate) {
 			throw new BadRequestException('Repetition end date must be after the start date');
@@ -104,7 +105,7 @@ export class TasksService {
 
 		// Format the repetition type for display
 		const repetitionTypeDisplay = createTaskDto.repetitionType.toLowerCase();
-		
+
 		// Create first task (for the start date)
 		try {
 			const firstTask = await this.createSingleRepeatingTask(
@@ -115,7 +116,7 @@ export class TasksService {
 				totalTasks,
 				repetitionTypeDisplay,
 				startDate,
-				endDate
+				endDate,
 			);
 			tasksCreated++;
 		} catch (error) {
@@ -158,7 +159,7 @@ export class TasksService {
 					totalTasks,
 					repetitionTypeDisplay,
 					startDate,
-					endDate
+					endDate,
 				);
 
 				currentDate = nextDate;
@@ -167,7 +168,6 @@ export class TasksService {
 				return error;
 			}
 		}
-
 	}
 
 	private async createSingleRepeatingTask(
@@ -178,23 +178,27 @@ export class TasksService {
 		totalTasks: number,
 		repetitionTypeDisplay: string,
 		seriesStart: Date,
-		seriesEnd: Date
+		seriesEnd: Date,
 	): Promise<Task> {
 		// Format date for display
 		const formattedDate = taskDate.toLocaleDateString('en-US', {
 			weekday: 'short',
 			month: 'short',
 			day: 'numeric',
-			year: 'numeric'
+			year: 'numeric',
 		});
 
 		// Create the repeated task
 		const repeatedTask = this.taskRepository.create({
 			title: `${createTaskDto.title} (#${sequenceNumber}/${totalTasks}) - ${formattedDate}`,
-			description: `${createTaskDto.description}\n\n---\nRecurring Task Information:\n- Part ${sequenceNumber} of ${totalTasks}\n- Repeats: ${repetitionTypeDisplay}\n- Original Task: ${createTaskDto.title}\n- Series Start: ${seriesStart.toLocaleDateString()}\n- Series End: ${seriesEnd.toLocaleDateString()}`,
+			description: `${
+				createTaskDto.description
+			}\n\n---\nRecurring Task Information:\n- Part ${sequenceNumber} of ${totalTasks}\n- Repeats: ${repetitionTypeDisplay}\n- Original Task: ${
+				createTaskDto.title
+			}\n- Series Start: ${seriesStart.toLocaleDateString()}\n- Series End: ${seriesEnd.toLocaleDateString()}`,
 			deadline: taskDate,
-			assignees: createTaskDto.assignees?.map(a => ({ uid: a.uid })) || [],
-			clients: createTaskDto.client?.map(c => ({ uid: c.uid })) || [],
+			assignees: createTaskDto.assignees?.map((a) => ({ uid: a.uid })) || [],
+			clients: createTaskDto.client?.map((c) => ({ uid: c.uid })) || [],
 			status: TaskStatus.PENDING,
 			taskType: createTaskDto.taskType || TaskType.OTHER,
 			priority: createTaskDto.priority,
@@ -208,7 +212,7 @@ export class TasksService {
 			isOverdue: false,
 			isDeleted: false,
 			organisation: baseTask.organisation,
-			branch: baseTask.branch
+			branch: baseTask.branch,
 		});
 
 		// Save the task
@@ -216,25 +220,40 @@ export class TasksService {
 
 		// Create subtasks if they exist in the DTO
 		if (createTaskDto.subtasks?.length > 0) {
-			const subtasks = createTaskDto.subtasks.map(subtask => 
-				this.subtaskRepository.create({
+			try {
+				// Create subtasks with proper task relation
+				const subtasks = createTaskDto.subtasks.map((subtask) => ({
 					title: subtask.title,
 					description: subtask.description,
 					status: SubTaskStatus.PENDING,
-					task: savedTask,
-					isDeleted: false
-				})
-			);
-			await this.subtaskRepository.save(subtasks);
+					task: { uid: savedTask.uid }, // Properly reference the parent task
+					isDeleted: false,
+					createdAt: new Date(),
+					updatedAt: new Date()
+				}));
+
+				// Save all subtasks
+				const savedSubtasks = await this.subtaskRepository.save(subtasks);
+				
+				if (!savedSubtasks) {
+					throw new Error('Failed to save subtasks');
+				}
+
+				// Update the task with subtasks relation
+				savedTask.subtasks = savedSubtasks;
+				await this.taskRepository.save(savedTask);
+			} catch (error) {
+				throw new Error(`Failed to create subtasks: ${error.message}`);
+			}
 		}
-		
+
 		// Emit event for task creation
 		this.eventEmitter.emit('task.created', {
 			task: savedTask,
 			isRecurring: true,
 			sequenceNumber,
 			totalTasks,
-			hasSubtasks: createTaskDto.subtasks?.length > 0
+			hasSubtasks: createTaskDto.subtasks?.length > 0,
 		});
 
 		// Clear cache after task creation
@@ -289,8 +308,8 @@ export class TasksService {
 				}
 
 				// Prepare assignees and clients
-				const assignees = createTaskDto.assignees?.map(a => ({ uid: a.uid })) || [];
-				const clients = createTaskDto.client?.map(c => ({ uid: c.uid })) || [];
+				const assignees = createTaskDto.assignees?.map((a) => ({ uid: a.uid })) || [];
+				const clients = createTaskDto.client?.map((c) => ({ uid: c.uid })) || [];
 
 				// Create base task data with all necessary fields
 				const taskData: DeepPartial<Task> = {
@@ -314,7 +333,7 @@ export class TasksService {
 					organisation: creator?.organisation || null,
 					branch: creator?.branch || null,
 					assignees,
-					clients
+					clients,
 				};
 
 				// Create and save the task
@@ -325,6 +344,35 @@ export class TasksService {
 					throw new Error('Failed to save task');
 				}
 
+				// Create subtasks if they exist in the DTO
+				if (createTaskDto.subtasks?.length > 0) {
+					try {
+						// Create subtasks with proper task relation
+						const subtasks = createTaskDto.subtasks.map((subtask) => ({
+							title: subtask.title,
+							description: subtask.description,
+							status: SubTaskStatus.PENDING,
+							task: { uid: savedTask.uid }, // Properly reference the parent task
+							isDeleted: false,
+							createdAt: new Date(),
+							updatedAt: new Date()
+						}));
+
+						// Save all subtasks
+						const savedSubtasks = await this.subtaskRepository.save(subtasks);
+						
+						if (!savedSubtasks) {
+							throw new Error('Failed to save subtasks');
+						}
+
+						// Update the task with subtasks relation
+						savedTask.subtasks = savedSubtasks;
+						await this.taskRepository.save(savedTask);
+					} catch (error) {
+						throw new Error(`Failed to create subtasks: ${error.message}`);
+					}
+				}
+
 				// Create recurring tasks if repetition is specified
 				if (createTaskDto.repetitionType && createTaskDto.repetitionType !== RepetitionType.NONE) {
 					await this.createRepeatingTasks(savedTask, createTaskDto);
@@ -333,8 +381,8 @@ export class TasksService {
 				// Send notifications to assignees
 				if (assignees.length > 0) {
 					const assigneeUsers = await this.userRepository.find({
-						where: { uid: In(assignees.map(a => a?.uid)) },
-						select: ['uid', 'email', 'name', 'surname']
+						where: { uid: In(assignees.map((a) => a?.uid)) },
+						select: ['uid', 'email', 'name', 'surname'],
 					});
 
 					// Create notification object
@@ -348,40 +396,40 @@ export class TasksService {
 							priority: savedTask?.priority,
 							deadline: savedTask?.deadline,
 							assignedBy: creator ? `${creator?.name} ${creator?.surname}` : 'System',
-							createdAt: savedTask?.createdAt
-						}
+							createdAt: savedTask?.createdAt,
+						},
 					};
 
 					// Send system notification to each assignee
 					for (const assignee of assigneeUsers) {
 						// Send system notification
-						this.eventEmitter.emit('send.notification', {
-							...notification,
-							owner: { uid: assignee.uid }
-						}, [assignee.uid]);
+						this.eventEmitter.emit(
+							'send.notification',
+							{
+								...notification,
+								owner: { uid: assignee?.uid },
+							},
+							[assignee.uid],
+						);
 
 						// Send email notification
-						await this.communicationService.sendEmail(
-							EmailType.NEW_TASK,
-							[assignee.email],
-							{
-								name: `${assignee?.name} ${assignee?.surname}`,
-								taskId: savedTask?.uid?.toString(),
-								title: savedTask?.title,
-								description: savedTask?.description,
-								deadline: savedTask?.deadline?.toISOString(),
-								priority: savedTask?.priority,
-								taskType: savedTask?.taskType,
-								status: savedTask?.status,
-								assignedBy: creator ? `${creator?.name} ${creator?.surname}` : 'System',
-								subtasks: [],
-								clients: clients.length > 0 ? await this.getClientNames(clients.map(c => c?.uid)) : [],
-								attachments: savedTask.attachments?.map(attachment => ({
-									name: attachment,
-									url: attachment
-								}))
-							}
-						);
+						await this.communicationService.sendEmail(EmailType.NEW_TASK, [assignee.email], {
+							name: `${assignee?.name} ${assignee?.surname}`,
+							taskId: savedTask?.uid?.toString(),
+							title: savedTask?.title,
+							description: savedTask?.description,
+							deadline: savedTask?.deadline?.toISOString(),
+							priority: savedTask?.priority,
+							taskType: savedTask?.taskType,
+							status: savedTask?.status,
+							assignedBy: creator ? `${creator?.name} ${creator?.surname}` : 'System',
+							subtasks: [],
+							clients: clients.length > 0 ? await this.getClientNames(clients.map((c) => c?.uid)) : [],
+							attachments: savedTask.attachments?.map((attachment) => ({
+								name: attachment,
+								url: attachment,
+							})),
+						});
 					}
 				}
 
@@ -403,18 +451,18 @@ export class TasksService {
 
 	private async populateTaskRelations(task: Task): Promise<Task> {
 		if (task.assignees?.length > 0) {
-			const assigneeIds = task.assignees.map(a => a.uid);
+			const assigneeIds = task.assignees.map((a) => a.uid);
 			const assigneeProfiles = await this.userRepository.find({
 				where: { uid: In(assigneeIds) },
-				select: ['uid', 'username', 'name', 'surname', 'email', 'phone', 'photoURL', 'accessLevel', 'status']
+				select: ['uid', 'username', 'name', 'surname', 'email', 'phone', 'photoURL', 'accessLevel', 'status'],
 			});
 			task.assignees = assigneeProfiles;
 		}
 
 		if (task.clients?.length > 0) {
-			const clientIds = task.clients.map(c => c.uid);
+			const clientIds = task.clients.map((c) => c.uid);
 			const clientProfiles = await this.clientRepository.find({
-				where: { uid: In(clientIds) }
+				where: { uid: In(clientIds) },
 			});
 			task.clients = clientProfiles;
 		}
@@ -473,7 +521,7 @@ export class TasksService {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
-			const populatedTasks = await Promise.all(tasks.map(task => this.populateTaskRelations(task)));
+			const populatedTasks = await Promise.all(tasks.map((task) => this.populateTaskRelations(task)));
 
 			return {
 				message: process.env.SUCCESS_MESSAGE,
@@ -541,7 +589,7 @@ export class TasksService {
 				},
 			});
 
-			let filteredTasks = await Promise.all(tasks.map(task => this.populateTaskRelations(task)));
+			let filteredTasks = await Promise.all(tasks.map((task) => this.populateTaskRelations(task)));
 
 			// Apply post-query filters that can't be done in the database
 			if (filters?.assigneeId) {
@@ -637,14 +685,14 @@ export class TasksService {
 				}
 
 				// Create new subtasks
-				const subtasks = updateTaskDto.subtasks.map(subtask => 
+				const subtasks = updateTaskDto.subtasks.map((subtask) =>
 					this.subtaskRepository.create({
 						title: subtask.title,
 						description: subtask.description,
 						status: subtask.status || SubTaskStatus.PENDING,
 						task: savedTask,
-						isDeleted: false
-					})
+						isDeleted: false,
+					}),
 				);
 				await this.subtaskRepository.save(subtasks);
 			}
@@ -677,10 +725,7 @@ export class TasksService {
 
 			// Soft delete all subtasks
 			if (task.subtasks?.length > 0) {
-				await this.subtaskRepository.update(
-					{ task: { uid: ref } },
-					{ isDeleted: true }
-				);
+				await this.subtaskRepository.update({ task: { uid: ref } }, { isDeleted: true });
 			}
 
 			// Soft delete the task
@@ -794,7 +839,7 @@ export class TasksService {
 		try {
 			const subtask = await this.subtaskRepository.findOne({
 				where: { uid: subtaskId },
-				relations: ['task']
+				relations: ['task'],
 			});
 			return subtask?.task?.uid || null;
 		} catch (error) {
@@ -823,7 +868,7 @@ export class TasksService {
 		try {
 			// Get parent task ID before deletion
 			const parentTaskId = await this.getParentTaskId(ref);
-			
+
 			// Delete the subtask
 			await this.subtaskRepository.delete(ref);
 
@@ -913,7 +958,7 @@ export class TasksService {
 	}
 
 	private async populateTasksForAnalytics(tasks: Task[]): Promise<Task[]> {
-		return Promise.all(tasks.map(task => this.populateTaskRelations(task)));
+		return Promise.all(tasks.map((task) => this.populateTaskRelations(task)));
 	}
 
 	async getTasksReport(filter: any) {
@@ -1123,8 +1168,8 @@ export class TasksService {
 	private async getClientNames(clientIds: number[]): Promise<Array<{ name: string }>> {
 		const clients = await this.clientRepository.find({
 			where: { uid: In(clientIds) },
-			select: ['name']
+			select: ['name'],
 		});
-		return clients.map(client => ({ name: client.name }));
+		return clients.map((client) => ({ name: client.name }));
 	}
 }

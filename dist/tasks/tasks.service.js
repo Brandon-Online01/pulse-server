@@ -53,11 +53,11 @@ let TasksService = class TasksService {
             if (taskId) {
                 keysToDelete.push(this.getCacheKey(taskId));
             }
-            const taskListCaches = keys.filter(key => key.startsWith('tasks_page') ||
+            const taskListCaches = keys.filter((key) => key.startsWith('tasks_page') ||
                 key.startsWith('task:all') ||
                 key.includes('_limit'));
             keysToDelete.push(...taskListCaches);
-            await Promise.all(keysToDelete.map(key => this.cacheManager.del(key)));
+            await Promise.all(keysToDelete.map((key) => this.cacheManager.del(key)));
         }
         catch (error) {
             return error;
@@ -122,14 +122,14 @@ let TasksService = class TasksService {
             weekday: 'short',
             month: 'short',
             day: 'numeric',
-            year: 'numeric'
+            year: 'numeric',
         });
         const repeatedTask = this.taskRepository.create({
             title: `${createTaskDto.title} (#${sequenceNumber}/${totalTasks}) - ${formattedDate}`,
             description: `${createTaskDto.description}\n\n---\nRecurring Task Information:\n- Part ${sequenceNumber} of ${totalTasks}\n- Repeats: ${repetitionTypeDisplay}\n- Original Task: ${createTaskDto.title}\n- Series Start: ${seriesStart.toLocaleDateString()}\n- Series End: ${seriesEnd.toLocaleDateString()}`,
             deadline: taskDate,
-            assignees: createTaskDto.assignees?.map(a => ({ uid: a.uid })) || [],
-            clients: createTaskDto.client?.map(c => ({ uid: c.uid })) || [],
+            assignees: createTaskDto.assignees?.map((a) => ({ uid: a.uid })) || [],
+            clients: createTaskDto.client?.map((c) => ({ uid: c.uid })) || [],
             status: task_enums_1.TaskStatus.PENDING,
             taskType: createTaskDto.taskType || task_enums_1.TaskType.OTHER,
             priority: createTaskDto.priority,
@@ -143,25 +143,37 @@ let TasksService = class TasksService {
             isOverdue: false,
             isDeleted: false,
             organisation: baseTask.organisation,
-            branch: baseTask.branch
+            branch: baseTask.branch,
         });
         const savedTask = await this.taskRepository.save(repeatedTask);
         if (createTaskDto.subtasks?.length > 0) {
-            const subtasks = createTaskDto.subtasks.map(subtask => this.subtaskRepository.create({
-                title: subtask.title,
-                description: subtask.description,
-                status: status_enums_1.SubTaskStatus.PENDING,
-                task: savedTask,
-                isDeleted: false
-            }));
-            await this.subtaskRepository.save(subtasks);
+            try {
+                const subtasks = createTaskDto.subtasks.map((subtask) => ({
+                    title: subtask.title,
+                    description: subtask.description,
+                    status: status_enums_1.SubTaskStatus.PENDING,
+                    task: { uid: savedTask.uid },
+                    isDeleted: false,
+                    createdAt: new Date(),
+                    updatedAt: new Date()
+                }));
+                const savedSubtasks = await this.subtaskRepository.save(subtasks);
+                if (!savedSubtasks) {
+                    throw new Error('Failed to save subtasks');
+                }
+                savedTask.subtasks = savedSubtasks;
+                await this.taskRepository.save(savedTask);
+            }
+            catch (error) {
+                throw new Error(`Failed to create subtasks: ${error.message}`);
+            }
         }
         this.eventEmitter.emit('task.created', {
             task: savedTask,
             isRecurring: true,
             sequenceNumber,
             totalTasks,
-            hasSubtasks: createTaskDto.subtasks?.length > 0
+            hasSubtasks: createTaskDto.subtasks?.length > 0,
         });
         await this.clearTaskCache();
         return savedTask;
@@ -203,8 +215,8 @@ let TasksService = class TasksService {
                         throw new common_1.BadRequestException(`Creator with ID ${createTaskDto.creators[0].uid} not found`);
                     }
                 }
-                const assignees = createTaskDto.assignees?.map(a => ({ uid: a.uid })) || [];
-                const clients = createTaskDto.client?.map(c => ({ uid: c.uid })) || [];
+                const assignees = createTaskDto.assignees?.map((a) => ({ uid: a.uid })) || [];
+                const clients = createTaskDto.client?.map((c) => ({ uid: c.uid })) || [];
                 const taskData = {
                     title: createTaskDto.title,
                     description: createTaskDto.description,
@@ -226,20 +238,42 @@ let TasksService = class TasksService {
                     organisation: creator?.organisation || null,
                     branch: creator?.branch || null,
                     assignees,
-                    clients
+                    clients,
                 };
                 const task = this.taskRepository.create(taskData);
                 const savedTask = await this.taskRepository.save(task);
                 if (!savedTask) {
                     throw new Error('Failed to save task');
                 }
+                if (createTaskDto.subtasks?.length > 0) {
+                    try {
+                        const subtasks = createTaskDto.subtasks.map((subtask) => ({
+                            title: subtask.title,
+                            description: subtask.description,
+                            status: status_enums_1.SubTaskStatus.PENDING,
+                            task: { uid: savedTask.uid },
+                            isDeleted: false,
+                            createdAt: new Date(),
+                            updatedAt: new Date()
+                        }));
+                        const savedSubtasks = await this.subtaskRepository.save(subtasks);
+                        if (!savedSubtasks) {
+                            throw new Error('Failed to save subtasks');
+                        }
+                        savedTask.subtasks = savedSubtasks;
+                        await this.taskRepository.save(savedTask);
+                    }
+                    catch (error) {
+                        throw new Error(`Failed to create subtasks: ${error.message}`);
+                    }
+                }
                 if (createTaskDto.repetitionType && createTaskDto.repetitionType !== task_enums_1.RepetitionType.NONE) {
                     await this.createRepeatingTasks(savedTask, createTaskDto);
                 }
                 if (assignees.length > 0) {
                     const assigneeUsers = await this.userRepository.find({
-                        where: { uid: (0, typeorm_3.In)(assignees.map(a => a?.uid)) },
-                        select: ['uid', 'email', 'name', 'surname']
+                        where: { uid: (0, typeorm_3.In)(assignees.map((a) => a?.uid)) },
+                        select: ['uid', 'email', 'name', 'surname'],
                     });
                     const notification = {
                         type: notification_enums_1.NotificationType.USER,
@@ -251,13 +285,13 @@ let TasksService = class TasksService {
                             priority: savedTask?.priority,
                             deadline: savedTask?.deadline,
                             assignedBy: creator ? `${creator?.name} ${creator?.surname}` : 'System',
-                            createdAt: savedTask?.createdAt
-                        }
+                            createdAt: savedTask?.createdAt,
+                        },
                     };
                     for (const assignee of assigneeUsers) {
                         this.eventEmitter.emit('send.notification', {
                             ...notification,
-                            owner: { uid: assignee.uid }
+                            owner: { uid: assignee?.uid },
                         }, [assignee.uid]);
                         await this.communicationService.sendEmail(email_enums_1.EmailType.NEW_TASK, [assignee.email], {
                             name: `${assignee?.name} ${assignee?.surname}`,
@@ -270,11 +304,11 @@ let TasksService = class TasksService {
                             status: savedTask?.status,
                             assignedBy: creator ? `${creator?.name} ${creator?.surname}` : 'System',
                             subtasks: [],
-                            clients: clients.length > 0 ? await this.getClientNames(clients.map(c => c?.uid)) : [],
-                            attachments: savedTask.attachments?.map(attachment => ({
+                            clients: clients.length > 0 ? await this.getClientNames(clients.map((c) => c?.uid)) : [],
+                            attachments: savedTask.attachments?.map((attachment) => ({
                                 name: attachment,
-                                url: attachment
-                            }))
+                                url: attachment,
+                            })),
                         });
                     }
                 }
@@ -295,17 +329,17 @@ let TasksService = class TasksService {
     }
     async populateTaskRelations(task) {
         if (task.assignees?.length > 0) {
-            const assigneeIds = task.assignees.map(a => a.uid);
+            const assigneeIds = task.assignees.map((a) => a.uid);
             const assigneeProfiles = await this.userRepository.find({
                 where: { uid: (0, typeorm_3.In)(assigneeIds) },
-                select: ['uid', 'username', 'name', 'surname', 'email', 'phone', 'photoURL', 'accessLevel', 'status']
+                select: ['uid', 'username', 'name', 'surname', 'email', 'phone', 'photoURL', 'accessLevel', 'status'],
             });
             task.assignees = assigneeProfiles;
         }
         if (task.clients?.length > 0) {
-            const clientIds = task.clients.map(c => c.uid);
+            const clientIds = task.clients.map((c) => c.uid);
             const clientProfiles = await this.clientRepository.find({
-                where: { uid: (0, typeorm_3.In)(clientIds) }
+                where: { uid: (0, typeorm_3.In)(clientIds) },
             });
             task.clients = clientProfiles;
         }
@@ -354,7 +388,7 @@ let TasksService = class TasksService {
             if (!tasks) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
-            const populatedTasks = await Promise.all(tasks.map(task => this.populateTaskRelations(task)));
+            const populatedTasks = await Promise.all(tasks.map((task) => this.populateTaskRelations(task)));
             return {
                 message: process.env.SUCCESS_MESSAGE,
                 tasks: populatedTasks,
@@ -400,7 +434,7 @@ let TasksService = class TasksService {
                     createdAt: 'DESC',
                 },
             });
-            let filteredTasks = await Promise.all(tasks.map(task => this.populateTaskRelations(task)));
+            let filteredTasks = await Promise.all(tasks.map((task) => this.populateTaskRelations(task)));
             if (filters?.assigneeId) {
                 filteredTasks = filteredTasks?.filter((task) => task.assignees?.some((assignee) => assignee.uid === filters?.assigneeId));
             }
@@ -470,12 +504,12 @@ let TasksService = class TasksService {
                 if (task.subtasks?.length > 0) {
                     await this.subtaskRepository.delete({ task: { uid: ref } });
                 }
-                const subtasks = updateTaskDto.subtasks.map(subtask => this.subtaskRepository.create({
+                const subtasks = updateTaskDto.subtasks.map((subtask) => this.subtaskRepository.create({
                     title: subtask.title,
                     description: subtask.description,
                     status: subtask.status || status_enums_1.SubTaskStatus.PENDING,
                     task: savedTask,
-                    isDeleted: false
+                    isDeleted: false,
                 }));
                 await this.subtaskRepository.save(subtasks);
             }
@@ -596,7 +630,7 @@ let TasksService = class TasksService {
         try {
             const subtask = await this.subtaskRepository.findOne({
                 where: { uid: subtaskId },
-                relations: ['task']
+                relations: ['task'],
             });
             return subtask?.task?.uid || null;
         }
@@ -687,7 +721,7 @@ let TasksService = class TasksService {
         }
     }
     async populateTasksForAnalytics(tasks) {
-        return Promise.all(tasks.map(task => this.populateTaskRelations(task)));
+        return Promise.all(tasks.map((task) => this.populateTaskRelations(task)));
     }
     async getTasksReport(filter) {
         try {
@@ -853,9 +887,9 @@ let TasksService = class TasksService {
     async getClientNames(clientIds) {
         const clients = await this.clientRepository.find({
             where: { uid: (0, typeorm_3.In)(clientIds) },
-            select: ['name']
+            select: ['name'],
         });
-        return clients.map(client => ({ name: client.name }));
+        return clients.map((client) => ({ name: client.name }));
     }
 };
 exports.TasksService = TasksService;
