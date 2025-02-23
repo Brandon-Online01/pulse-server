@@ -67,6 +67,7 @@ export declare class TasksService {
         tasks: SubTask | null;
         message: string;
     }>;
+    private getParentTaskId;
     updateSubTask(ref: number, updateSubTaskDto: UpdateSubtaskDto): Promise<{
         message: string;
     }>;

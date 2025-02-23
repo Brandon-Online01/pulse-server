@@ -790,9 +790,29 @@ export class TasksService {
 		}
 	}
 
+	private async getParentTaskId(subtaskId: number): Promise<number | null> {
+		try {
+			const subtask = await this.subtaskRepository.findOne({
+				where: { uid: subtaskId },
+				relations: ['task']
+			});
+			return subtask?.task?.uid || null;
+		} catch (error) {
+			return null;
+		}
+	}
+
 	async updateSubTask(ref: number, updateSubTaskDto: UpdateSubtaskDto): Promise<{ message: string }> {
 		try {
+			// Update the subtask
 			await this.subtaskRepository.update(ref, updateSubTaskDto);
+
+			// Get parent task ID and clear cache
+			const parentTaskId = await this.getParentTaskId(ref);
+			if (parentTaskId) {
+				await this.clearTaskCache(parentTaskId);
+			}
+
 			return { message: process.env.SUCCESS_MESSAGE };
 		} catch (error) {
 			return { message: error?.message };
@@ -801,7 +821,17 @@ export class TasksService {
 
 	async deleteSubTask(ref: number): Promise<{ message: string }> {
 		try {
+			// Get parent task ID before deletion
+			const parentTaskId = await this.getParentTaskId(ref);
+			
+			// Delete the subtask
 			await this.subtaskRepository.delete(ref);
+
+			// Clear cache if we found the parent task
+			if (parentTaskId) {
+				await this.clearTaskCache(parentTaskId);
+			}
+
 			return { message: process.env.SUCCESS_MESSAGE };
 		} catch (error) {
 			return { message: error?.message };
@@ -810,7 +840,15 @@ export class TasksService {
 
 	async completeSubTask(ref: number): Promise<{ message: string }> {
 		try {
+			// Update the subtask status
 			await this.subtaskRepository.update(ref, { status: SubTaskStatus.COMPLETED });
+
+			// Get parent task ID and clear cache
+			const parentTaskId = await this.getParentTaskId(ref);
+			if (parentTaskId) {
+				await this.clearTaskCache(parentTaskId);
+			}
+
 			return { message: process.env.SUCCESS_MESSAGE };
 		} catch (error) {
 			return { message: error?.message };

@@ -592,9 +592,25 @@ let TasksService = class TasksService {
             };
         }
     }
+    async getParentTaskId(subtaskId) {
+        try {
+            const subtask = await this.subtaskRepository.findOne({
+                where: { uid: subtaskId },
+                relations: ['task']
+            });
+            return subtask?.task?.uid || null;
+        }
+        catch (error) {
+            return null;
+        }
+    }
     async updateSubTask(ref, updateSubTaskDto) {
         try {
             await this.subtaskRepository.update(ref, updateSubTaskDto);
+            const parentTaskId = await this.getParentTaskId(ref);
+            if (parentTaskId) {
+                await this.clearTaskCache(parentTaskId);
+            }
             return { message: process.env.SUCCESS_MESSAGE };
         }
         catch (error) {
@@ -603,7 +619,11 @@ let TasksService = class TasksService {
     }
     async deleteSubTask(ref) {
         try {
+            const parentTaskId = await this.getParentTaskId(ref);
             await this.subtaskRepository.delete(ref);
+            if (parentTaskId) {
+                await this.clearTaskCache(parentTaskId);
+            }
             return { message: process.env.SUCCESS_MESSAGE };
         }
         catch (error) {
@@ -613,6 +633,10 @@ let TasksService = class TasksService {
     async completeSubTask(ref) {
         try {
             await this.subtaskRepository.update(ref, { status: status_enums_1.SubTaskStatus.COMPLETED });
+            const parentTaskId = await this.getParentTaskId(ref);
+            if (parentTaskId) {
+                await this.clearTaskCache(parentTaskId);
+            }
             return { message: process.env.SUCCESS_MESSAGE };
         }
         catch (error) {

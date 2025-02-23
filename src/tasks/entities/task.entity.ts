@@ -1,6 +1,7 @@
 import { SubTask } from './subtask.entity';
 import { Client } from '../../clients/entities/client.entity';
 import { TaskStatus, TaskPriority, RepetitionType, TaskType } from '../../lib/enums/task.enums';
+import { SubTaskStatus } from '../../lib/enums/status.enums';
 import {
 	Column,
 	Entity,
@@ -97,6 +98,15 @@ export class Task {
 	@BeforeUpdate()
 	updateStatus() {
 		const now = new Date();
+
+		// Calculate progress based on subtasks if they exist
+		if (this.subtasks?.length > 0) {
+			const completedSubtasks = this.subtasks.filter(
+				subtask => !subtask.isDeleted && subtask.status === SubTaskStatus.COMPLETED
+			).length;
+			const totalSubtasks = this.subtasks.filter(subtask => !subtask.isDeleted).length;
+			this.progress = totalSubtasks > 0 ? Math.round((completedSubtasks / totalSubtasks) * 100) : this.progress;
+		}
 
 		// Check for overdue
 		if (this.deadline && now > this.deadline && this.status !== TaskStatus.COMPLETED) {

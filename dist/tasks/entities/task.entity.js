@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Task = void 0;
 const subtask_entity_1 = require("./subtask.entity");
 const task_enums_1 = require("../../lib/enums/task.enums");
+const status_enums_1 = require("../../lib/enums/status.enums");
 const typeorm_1 = require("typeorm");
 const organisation_entity_1 = require("../../organisation/entities/organisation.entity");
 const branch_entity_1 = require("../../branch/entities/branch.entity");
@@ -23,6 +24,11 @@ let Task = class Task {
     }
     updateStatus() {
         const now = new Date();
+        if (this.subtasks?.length > 0) {
+            const completedSubtasks = this.subtasks.filter(subtask => !subtask.isDeleted && subtask.status === status_enums_1.SubTaskStatus.COMPLETED).length;
+            const totalSubtasks = this.subtasks.filter(subtask => !subtask.isDeleted).length;
+            this.progress = totalSubtasks > 0 ? Math.round((completedSubtasks / totalSubtasks) * 100) : this.progress;
+        }
         if (this.deadline && now > this.deadline && this.status !== task_enums_1.TaskStatus.COMPLETED) {
             this.status = task_enums_1.TaskStatus.OVERDUE;
             this.isOverdue = true;
