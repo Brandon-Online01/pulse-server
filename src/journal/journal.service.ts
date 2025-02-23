@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, Repository } from 'typeorm';
 import { Journal } from './entities/journal.entity';
@@ -90,8 +90,9 @@ export class JournalService {
     try {
       const queryBuilder = this.journalRepository
         .createQueryBuilder('journal')
-        .leftJoinAndSelect('journal.author', 'author')
-        .leftJoinAndSelect('journal.category', 'category')
+        .leftJoinAndSelect('journal.owner', 'owner')
+        .leftJoinAndSelect('journal.branch', 'branch')
+        .leftJoinAndSelect('journal.organisation', 'organisation')
         .where('journal.isDeleted = :isDeleted', { isDeleted: false });
 
       if (filters?.status) {
@@ -99,11 +100,7 @@ export class JournalService {
       }
 
       if (filters?.authorId) {
-        queryBuilder.andWhere('author.uid = :authorId', { authorId: filters.authorId });
-      }
-
-      if (filters?.categoryId) {
-        queryBuilder.andWhere('category.uid = :categoryId', { categoryId: filters.categoryId });
+        queryBuilder.andWhere('owner.uid = :authorId', { authorId: filters.authorId });
       }
 
       if (filters?.startDate && filters?.endDate) {
@@ -115,7 +112,7 @@ export class JournalService {
 
       if (filters?.search) {
         queryBuilder.andWhere(
-          '(journal.title ILIKE :search OR journal.content ILIKE :search OR author.name ILIKE :search)',
+          '(journal.clientRef ILIKE :search OR journal.comments ILIKE :search OR owner.name ILIKE :search)',
           { search: `%${filters.search}%` }
         );
       }

@@ -75,17 +75,15 @@ let JournalService = class JournalService {
         try {
             const queryBuilder = this.journalRepository
                 .createQueryBuilder('journal')
-                .leftJoinAndSelect('journal.author', 'author')
-                .leftJoinAndSelect('journal.category', 'category')
+                .leftJoinAndSelect('journal.owner', 'owner')
+                .leftJoinAndSelect('journal.branch', 'branch')
+                .leftJoinAndSelect('journal.organisation', 'organisation')
                 .where('journal.isDeleted = :isDeleted', { isDeleted: false });
             if (filters?.status) {
                 queryBuilder.andWhere('journal.status = :status', { status: filters.status });
             }
             if (filters?.authorId) {
-                queryBuilder.andWhere('author.uid = :authorId', { authorId: filters.authorId });
-            }
-            if (filters?.categoryId) {
-                queryBuilder.andWhere('category.uid = :categoryId', { categoryId: filters.categoryId });
+                queryBuilder.andWhere('owner.uid = :authorId', { authorId: filters.authorId });
             }
             if (filters?.startDate && filters?.endDate) {
                 queryBuilder.andWhere('journal.createdAt BETWEEN :startDate AND :endDate', {
@@ -94,7 +92,7 @@ let JournalService = class JournalService {
                 });
             }
             if (filters?.search) {
-                queryBuilder.andWhere('(journal.title ILIKE :search OR journal.content ILIKE :search OR author.name ILIKE :search)', { search: `%${filters.search}%` });
+                queryBuilder.andWhere('(journal.clientRef ILIKE :search OR journal.comments ILIKE :search OR owner.name ILIKE :search)', { search: `%${filters.search}%` });
             }
             queryBuilder
                 .skip((page - 1) * limit)
