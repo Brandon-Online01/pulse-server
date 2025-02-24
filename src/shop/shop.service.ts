@@ -18,6 +18,7 @@ import { ClientsService } from '../clients/clients.service';
 import { CreateProductDto } from '../products/dto/create-product.dto';
 import { ShopGateway } from './shop.gateway';
 import { PaginatedResponse } from '../lib/interfaces/product.interfaces';
+import { ProductsService } from '../products/products.service';
 
 @Injectable()
 export class ShopService {
@@ -36,6 +37,7 @@ export class ShopService {
         private readonly clientsService: ClientsService,
         private readonly eventEmitter: EventEmitter2,
         private readonly shopGateway: ShopGateway,
+        private readonly productsService: ProductsService,
     ) {
         this.currencyLocale = this.configService.get<string>('CURRENCY_LOCALE') || 'en-ZA';
         this.currencyCode = this.configService.get<string>('CURRENCY_CODE') || 'ZAR';
@@ -217,6 +219,35 @@ export class ShopService {
             };
 
             const savedQuotation = await this.quotationRepository.save(newQuotation);
+
+            // Update analytics for each product
+            for (const item of quotationData.items) {
+                const product = products.flat().find(p => p.uid === item.uid);
+                if (product) {
+                    // Record view and cart add
+                    await this.productsService.recordView(product.uid);
+                    await this.productsService.recordCartAdd(product.uid);
+
+                    // If quotation is approved, record the sale
+                    if (savedQuotation.status === OrderStatus.APPROVED) {
+                        await this.productsService.recordSale(
+                            product.uid,
+                            item.quantity,
+                            Number(product.price)
+                        );
+                    }
+
+                    // Update stock history
+                    await this.productsService.updateStockHistory(
+                        product.uid,
+                        item.quantity,
+                        'out'
+                    );
+
+                    // Calculate updated performance metrics
+                    await this.productsService.calculateProductPerformance(product.uid);
+                }
+            }
 
             // Emit WebSocket event for new quotation
             this.shopGateway.emitNewQuotation(savedQuotation?.quotationNumber);
@@ -885,6 +916,30 @@ export class ShopService {
                 message: error?.message,
             };
         }
+    }
+
+    // Add method to handle quotation status changes
+    async updateQuotationStatus(quotationId: number, status: OrderStatus): Promise<void> {
+        const quotation = await this.quotationRepository.findOne({
+            where: { uid: quotationId },
+            relations: ['quotationItems', 'quotationItems.product']
+        });
+
+        if (!quotation) return;
+
+        // If quotation is approved, update product analytics
+        if (status === OrderStatus.APPROVED) {
+            for (const item of quotation?.quotationItems) {
+                await this.productsService?.recordSale(
+                    item?.product?.uid,
+                    item?.quantity,
+                    Number(item?.totalPrice)
+                );
+                await this.productsService?.calculateProductPerformance(item?.product?.uid);
+            }
+        }
+
+        await this.quotationRepository.update(quotationId, { status });
     }
 }
 

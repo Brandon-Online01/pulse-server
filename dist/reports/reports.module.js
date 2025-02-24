@@ -36,6 +36,7 @@ const client_entity_1 = require("../clients/entities/client.entity");
 const attendance_entity_1 = require("../attendance/entities/attendance.entity");
 const organisation_entity_1 = require("../organisation/entities/organisation.entity");
 const branch_entity_1 = require("../branch/entities/branch.entity");
+const communication_module_1 = require("../communication/communication.module");
 let ReportsModule = class ReportsModule {
 };
 exports.ReportsModule = ReportsModule;
@@ -68,7 +69,8 @@ exports.ReportsModule = ReportsModule = __decorate([
             rewards_module_1.RewardsModule,
             check_ins_module_1.CheckInsModule,
             tracking_module_1.TrackingModule,
-            config_1.ConfigModule
+            config_1.ConfigModule,
+            communication_module_1.CommunicationModule
         ],
         controllers: [reports_controller_1.ReportsController],
         providers: [reports_service_1.ReportsService],

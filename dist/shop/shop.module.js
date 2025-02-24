@@ -19,6 +19,7 @@ const notifications_module_1 = require("../notifications/notifications.module");
 const communication_module_1 = require("../communication/communication.module");
 const licensing_module_1 = require("../licensing/licensing.module");
 const shop_gateway_1 = require("./shop.gateway");
+const products_module_1 = require("../products/products.module");
 let ShopModule = class ShopModule {
 };
 exports.ShopModule = ShopModule;
@@ -29,6 +30,7 @@ exports.ShopModule = ShopModule = __decorate([
             clients_module_1.ClientsModule,
             notifications_module_1.NotificationsModule,
             communication_module_1.CommunicationModule,
+            products_module_1.ProductsModule,
             typeorm_1.TypeOrmModule.forFeature([quotation_entity_1.Quotation, product_entity_1.Product, banners_entity_1.Banners])
         ],
         controllers: [shop_controller_1.ShopController],

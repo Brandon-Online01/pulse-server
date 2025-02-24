@@ -58,6 +58,10 @@ __decorate([
     (0, typeorm_1.ManyToOne)(() => branch_entity_1.Branch, branch => branch?.notifications),
     __metadata("design:type", branch_entity_1.Branch)
 ], Notification.prototype, "branch", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true, type: 'enum', enum: notification_enums_1.NotificationPriority, default: notification_enums_1.NotificationPriority.MEDIUM }),
+    __metadata("design:type", String)
+], Notification.prototype, "priority", void 0);
 exports.Notification = Notification = __decorate([
     (0, typeorm_1.Entity)('notification')
 ], Notification);

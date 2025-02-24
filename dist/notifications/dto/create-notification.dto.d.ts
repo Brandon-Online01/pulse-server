@@ -1,4 +1,4 @@
-import { NotificationStatus, NotificationType } from "../../lib/enums/notification.enums";
+import { NotificationStatus, NotificationType } from '../../lib/enums/notification.enums';
 export declare class CreateNotificationDto {
     type: NotificationType;
     title: string;

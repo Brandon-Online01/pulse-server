@@ -24,6 +24,7 @@ const user_enums_1 = require("../lib/enums/user.enums");
 const create_banner_dto_1 = require("./dto/create-banner.dto");
 const update_banner_dto_1 = require("./dto/update-banner.dto");
 const enterprise_only_decorator_1 = require("../decorators/enterprise-only.decorator");
+const status_enums_1 = require("../lib/enums/status.enums");
 let ShopController = class ShopController {
     constructor(shopService) {
         this.shopService = shopService;
@@ -54,6 +55,12 @@ let ShopController = class ShopController {
     }
     getQuotationsByUser(ref) {
         return this.shopService.getQuotationsByUser(ref);
+    }
+    async updateQuotationStatus(ref, status) {
+        await this.shopService.updateQuotationStatus(ref, status);
+        return {
+            message: process.env.SUCCESS_MESSAGE
+        };
     }
     getBanner() {
         return this.shopService.getBanner();
@@ -150,6 +157,16 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", void 0)
 ], ShopController.prototype, "getQuotationsByUser", null);
+__decorate([
+    (0, common_1.Patch)('quotations/:ref/status'),
+    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER),
+    (0, swagger_1.ApiOperation)({ summary: 'update quotation status and trigger analytics updates' }),
+    __param(0, (0, common_1.Param)('ref')),
+    __param(1, (0, common_1.Body)('status')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, String]),
+    __metadata("design:returntype", Promise)
+], ShopController.prototype, "updateQuotationStatus", null);
 __decorate([
     (0, common_1.Get)('banners'),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),

@@ -177,45 +177,47 @@ export class AuthService {
 		try {
 			const { email } = signUpInput;
 
+			// Check for existing user
 			const existingUser = await this.userService.findOneByEmail(email);
 			if (existingUser?.user) {
 				throw new BadRequestException('Email already taken, please try another one.');
 			}
 
+			// Check for existing pending signup
 			const existingPendingSignup = await this.pendingSignupService.findByEmail(email);
-
 			if (existingPendingSignup) {
+				// If token is still valid, don't send new email
 				if (!existingPendingSignup.isVerified && existingPendingSignup.tokenExpires > new Date()) {
 					return {
 						message: 'Please check your email for the verification link sent earlier.',
 					};
 				}
+				// Delete expired signup
 				await this.pendingSignupService.delete(existingPendingSignup.uid);
 			}
 
+			// Generate verification token and URL
 			const verificationToken = await this.generateSecureToken();
 			const verificationUrl = `${process.env.SIGNUP_DOMAIN}/verify/${verificationToken}`;
 
+			// Create pending signup
 			await this.pendingSignupService.create(email, verificationToken);
 
+			// Send verification email
 			this.eventEmitter.emit('send.email', EmailType.VERIFICATION, [email], {
 				name: email.split('@')[0],
 				verificationLink: verificationUrl,
 				expiryHours: 24,
 			});
 
-			const response = {
+			return {
 				status: 'success',
 				message: 'Please check your email and verify your account within the next 24 hours.',
 			};
-
-			return response;
 		} catch (error) {
-			const response = {
+			return {
 				message: error?.message,
 			};
-
-			return response;
 		}
 	}
 
@@ -311,97 +313,98 @@ export class AuthService {
 		try {
 			const { email } = forgotPasswordInput;
 
+			// Find user by email
 			const existingUser = await this.userService.findOneByEmail(email);
 
+			console.log(existingUser, email);
+
 			if (!existingUser?.user) {
+				// Return success even if user not found for security
 				return {
-					message: 'sign up to get started',
+					message: 'If an account exists with this email, you will receive password reset instructions.',
 				};
 			}
 
+			// Check for existing reset token
 			const existingReset = await this.passwordResetService.findByEmail(email);
-
-			if (existingReset) {
-				if (existingReset.tokenExpires > new Date()) {
-					const response = {
-						status: 'success',
-						message: 'Please check your email for the password reset link sent earlier.',
-					};
-
-					return response;
-				}
-
-				await this.passwordResetService.delete(existingReset?.uid);
+			if (existingReset && existingReset.tokenExpires > new Date()) {
+				// If token still valid, don't send new email
+				return {
+					message: 'Password reset instructions have already been sent. Please check your email.',
+				};
 			}
 
+			// Generate reset token and URL
 			const resetToken = await this.generateSecureToken();
 			const resetUrl = `${process.env.SIGNUP_DOMAIN}/reset-password/${resetToken}`;
 
+			// Create password reset record
 			await this.passwordResetService.create(email, resetToken);
 
+			// Send reset email
 			this.eventEmitter.emit('send.email', EmailType.PASSWORD_RESET, [email], {
-				name: existingUser.user.name,
+				name: existingUser.user.name || email.split('@')[0],
 				resetLink: resetUrl,
-				expiryMinutes: 30,
 			});
 
-			const response = {
-				status: 'success',
-				message: 'A password reset link has been sent to your email. Please check your inbox.',
+			return {
+				message: 'Password reset instructions have been sent to your email.',
 			};
-
-			return response;
 		} catch (error) {
-			const response = {
-				message: error?.message,
-			};
-
-			return response;
+			throw new HttpException(
+				error.message || 'Failed to process password reset request',
+				error.status || HttpStatus.INTERNAL_SERVER_ERROR,
+			);
 		}
 	}
 
 	async resetPassword(resetPasswordInput: ResetPasswordInput) {
 		try {
 			const { token, password } = resetPasswordInput;
-			const resetRequest = await this.passwordResetService.findByToken(token);
 
-			if (!resetRequest) {
-				throw new BadRequestException('Invalid or expired reset token');
+			// Find reset record
+			const resetRecord = await this.passwordResetService.findByToken(token);
+			if (!resetRecord) {
+				throw new BadRequestException('Invalid or expired reset token.');
 			}
 
-			if (resetRequest.tokenExpires < new Date()) {
-				await this.passwordResetService.delete(resetRequest.uid);
+			if (resetRecord.tokenExpires < new Date()) {
+				await this.passwordResetService.delete(resetRecord.uid);
 				throw new BadRequestException('Reset token has expired. Please request a new one.');
 			}
 
-			const user = await this.userService.findOneByEmail(resetRequest.email);
-			if (!user?.user) {
-				throw new BadRequestException('User not found');
+			if (resetRecord.isUsed) {
+				throw new BadRequestException('This reset token has already been used.');
 			}
 
+			// Find user
+			const user = await this.userService.findOneByEmail(resetRecord.email);
+			if (!user?.user) {
+				throw new BadRequestException('User not found.');
+			}
+
+			// Hash new password
 			const hashedPassword = await bcrypt.hash(password, 10);
-			await this.userService.resetPassword(user.user.uid, hashedPassword);
 
-			// Mark reset request as used
-			await this.passwordResetService.markAsUsed(resetRequest.uid);
+			// Update user password
+			await this.userService.updatePassword(user.user.uid, hashedPassword);
 
-			this.eventEmitter.emit('send.email', EmailType.PASSWORD_CHANGED, [user.user.email], {
-				name: user.user.name,
-				date: new Date(),
-				deviceInfo: {
-					browser: 'Web Browser',
-					os: 'Unknown',
-					location: 'Unknown',
-				},
+			// Mark reset token as used
+			await this.passwordResetService.markAsUsed(resetRecord.uid);
+
+			// Send confirmation email
+			this.eventEmitter.emit('send.email', EmailType.PASSWORD_CHANGED, [resetRecord.email], {
+				name: user.user.name || resetRecord.email.split('@')[0],
+				changeTime: new Date().toLocaleString(),
 			});
 
 			return {
-				message: 'Password reset successfully. You can now sign in with your new password.',
+				message: 'Password has been reset successfully. You can now log in with your new password.',
 			};
 		} catch (error) {
 			throw new HttpException(
 				error.message || 'Failed to reset password',
-				error.status || HttpStatus.BAD_REQUEST,
+				error.status || HttpStatus.INTERNAL_SERVER_ERROR,
 			);
 		}
 	}

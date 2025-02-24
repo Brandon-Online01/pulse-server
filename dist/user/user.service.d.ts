@@ -67,4 +67,5 @@ export declare class UserService {
     setPassword(uid: number, hashedPassword: string): Promise<void>;
     setResetToken(uid: number, token: string): Promise<void>;
     resetPassword(uid: number, hashedPassword: string): Promise<void>;
+    updatePassword(uid: number, hashedPassword: string): Promise<void>;
 }

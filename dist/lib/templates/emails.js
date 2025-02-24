@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TaskUpdated = exports.NewTask = exports.LicenseActivated = exports.LicenseSuspended = exports.LicenseRenewed = exports.LicenseLimitReached = exports.LicenseUpdated = exports.LicenseCreated = exports.DailyReport = exports.PasswordChanged = exports.Invoice = exports.NewQuotationReseller = exports.NewQuotationInternal = exports.NewQuotationClient = exports.PasswordReset = exports.Verification = exports.Signup = void 0;
+exports.TaskReminderCreator = exports.TaskReminderAssignee = exports.TaskUpdated = exports.NewTask = exports.LicenseActivated = exports.LicenseSuspended = exports.LicenseRenewed = exports.LicenseLimitReached = exports.LicenseUpdated = exports.LicenseCreated = exports.DailyReport = exports.PasswordChanged = exports.Invoice = exports.NewQuotationReseller = exports.NewQuotationInternal = exports.NewQuotationClient = exports.PasswordReset = exports.Verification = exports.Signup = void 0;
 const date_utils_1 = require("../utils/date.utils");
 const BASE_STYLES = {
     wrapper: '@media (max-width: 600px) { width: 100% !important; padding: 10px !important; } width: 100%; padding: 20px; background-color: #f9fafb;',
@@ -1284,4 +1284,152 @@ const TaskUpdated = (data) => {
   `;
 };
 exports.TaskUpdated = TaskUpdated;
+const TaskReminderAssignee = (data) => `
+    <div style="${BASE_STYLES.wrapper}">
+      <div style="${BASE_STYLES.container}">
+        <div style="${BASE_STYLES.header}">
+          <div style="font-size: 48px; margin-bottom: 16px;">⏰</div>
+          <h1 style="margin: 16px 0 8px; font-size: 24px;">Task Deadline Approaching</h1>
+          <p style="margin: 0; opacity: 0.9;">Action Required</p>
+        </div>
+
+        <div style="padding: 24px 20px;">
+          <div style="${BASE_STYLES.card}">
+            <h2 style="${BASE_STYLES.heading}">Hi ${data.name},</h2>
+            <p style="${BASE_STYLES.text}">You have a task that requires your attention and is due in 30 minutes:</p>
+
+            <div style="${BASE_STYLES.highlight}">
+              <h3 style="margin: 0 0 16px;">${data.task.title}</h3>
+              <p style="margin: 0 0 12px;"><strong>Description:</strong> ${data.task.description}</p>
+              <div style="display: grid; gap: 12px;">
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Deadline</span>
+                  <strong>${data.task.deadline}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Priority</span>
+                  <strong style="color: ${data.task.priority === 'HIGH' ? '#dc3545' :
+    data.task.priority === 'MEDIUM' ? '#ffc107' : '#28a745'}">${data.task.priority}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Status</span>
+                  <strong>${data.task.status}</strong>
+                </div>
+              </div>
+            </div>
+
+            <div style="${BASE_STYLES.card}">
+              <h3 style="${BASE_STYLES.heading}">Progress</h3>
+              <div style="background: #e9ecef; border-radius: 10px; padding: 3px;">
+                <div style="background: #0d6efd; border-radius: 8px; padding: 8px; color: white; text-align: center; width: ${data.task.progress}%">
+                  ${data.task.progress}%
+                </div>
+              </div>
+            </div>
+
+            ${data.task.subtasks?.length ? `
+              <div style="${BASE_STYLES.card}">
+                <h3 style="${BASE_STYLES.heading}">Subtasks</h3>
+                <ul style="list-style: none; padding: 0; margin: 0;">
+                  ${data.task.subtasks.map(st => `
+                    <li style="padding: 12px; background: #f7fafc; border-radius: 8px; margin-bottom: 8px;">
+                      ${st.title} - ${st.status}
+                    </li>
+                  `).join('')}
+                </ul>
+              </div>
+            ` : ''}
+          </div>
+
+          <div style="${BASE_STYLES.alert}">
+            <p style="margin: 0;"><strong>Action Required:</strong> Please complete your assigned work before the deadline.</p>
+            <p style="margin: 8px 0 0;">Task assigned by: ${data.task.creator.name}</p>
+          </div>
+        </div>
+
+        <div style="${BASE_STYLES.footer}">
+          <p style="margin: 0;">This is an automated reminder. For questions, please contact your task creator directly.</p>
+        </div>
+      </div>
+    </div>
+`;
+exports.TaskReminderAssignee = TaskReminderAssignee;
+const TaskReminderCreator = (data) => {
+    return `
+    <div style="${BASE_STYLES.wrapper}">
+      <div style="${BASE_STYLES.container}">
+        <div style="${BASE_STYLES.header}">
+          <div style="font-size: 48px; margin-bottom: 16px;">🔔</div>
+          <h1 style="margin: 16px 0 8px; font-size: 24px;">Task Deadline Alert</h1>
+          <p style="margin: 0; opacity: 0.9;">Creator Notice</p>
+        </div>
+
+        <div style="padding: 24px 20px;">
+          <div style="${BASE_STYLES.card}">
+            <h2 style="${BASE_STYLES.heading}">Hi ${data.name},</h2>
+            <p style="${BASE_STYLES.text}">A task you created is approaching its deadline in 30 minutes:</p>
+
+            <div style="${BASE_STYLES.highlight}">
+              <h3 style="margin: 0 0 16px;">${data.task.title}</h3>
+              <p style="margin: 0 0 12px;"><strong>Description:</strong> ${data.task.description}</p>
+              <div style="display: grid; gap: 12px;">
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Deadline</span>
+                  <strong>${data.task.deadline}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Priority</span>
+                  <strong style="color: ${data.task.priority === 'HIGH' ? '#dc3545' :
+        data.task.priority === 'MEDIUM' ? '#ffc107' : '#28a745'}">${data.task.priority}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Status</span>
+                  <strong>${data.task.status}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Progress</span>
+                  <strong>${data.task.progress}%</strong>
+                </div>
+              </div>
+            </div>
+
+            <div style="${BASE_STYLES.card}">
+              <h3 style="${BASE_STYLES.heading}">Assignees</h3>
+              <div style="display: grid; gap: 8px;">
+                ${data.task.assignees.map(assignee => `
+                  <div style="padding: 12px; background: #f7fafc; border-radius: 8px;">
+                    <strong>${assignee.name}</strong>
+                    <div style="color: #666; font-size: 14px;">${assignee.email}</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+
+            ${data.task.subtasks?.length ? `
+              <div style="${BASE_STYLES.card}">
+                <h3 style="${BASE_STYLES.heading}">Subtasks Status</h3>
+                <ul style="list-style: none; padding: 0; margin: 0;">
+                  ${data.task.subtasks.map(st => `
+                    <li style="padding: 12px; background: #f7fafc; border-radius: 8px; margin-bottom: 8px;">
+                      ${st.title} - ${st.status}
+                    </li>
+                  `).join('')}
+                </ul>
+              </div>
+            ` : ''}
+          </div>
+
+          <div style="${BASE_STYLES.alert}">
+            <p style="margin: 0;"><strong>Note:</strong> All assignees have been notified of the approaching deadline.</p>
+          </div>
+        </div>
+
+        <div style="${BASE_STYLES.footer}">
+          <p style="margin: 0;">This is an automated reminder. You're receiving this as the task creator.</p>
+        </div>
+      </div>
+    </div>
+  `;
+};
+exports.TaskReminderCreator = TaskReminderCreator;
 //# sourceMappingURL=emails.js.map

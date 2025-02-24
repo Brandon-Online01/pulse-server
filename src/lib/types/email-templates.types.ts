@@ -1,4 +1,6 @@
 import { EmailType } from "../enums/email.enums";
+import { TaskStatus, TaskPriority } from '../enums/task.enums';
+import { SubTaskStatus } from '../enums/status.enums';
 
 export interface BaseEmailData {
     name: string;
@@ -178,6 +180,30 @@ export interface TaskEmailData extends BaseEmailData {
     }>;
 }
 
+export interface TaskReminderData extends BaseEmailData {
+    task: {
+        uid: number;
+        title: string;
+        description: string;
+        deadline: string;
+        priority: TaskPriority;
+        status: TaskStatus;
+        progress: number;
+        creator: {
+            name: string;
+            email: string;
+        };
+        assignees: Array<{
+            name: string;
+            email: string;
+        }>;
+        subtasks?: Array<{
+            title: string;
+            status: SubTaskStatus;
+        }>;
+    };
+}
+
 export interface EmailDataMap {
     [EmailType.SIGNUP]: SignupEmailData;
     [EmailType.VERIFICATION]: VerificationEmailData;
@@ -201,6 +227,8 @@ export interface EmailDataMap {
     [EmailType.LICENSE_TRANSFERRED_TO]: LicenseTransferEmailData;
     [EmailType.NEW_TASK]: TaskEmailData;
     [EmailType.TASK_UPDATED]: TaskEmailData;
+    [EmailType.TASK_REMINDER_ASSIGNEE]: TaskReminderData;
+    [EmailType.TASK_REMINDER_CREATOR]: TaskReminderData;
 }
 
 export type EmailTemplateData<T extends EmailType> = T extends keyof EmailDataMap

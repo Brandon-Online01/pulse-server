@@ -598,4 +598,11 @@ export class UserService {
 			await this.invalidateUserCache(user);
 		}
 	}
+
+	async updatePassword(uid: number, hashedPassword: string): Promise<void> {
+		await this.userRepository.update(uid, {
+			password: hashedPassword,
+			updatedAt: new Date()
+		});
+	}
 }

@@ -2,6 +2,7 @@ import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { PaginationQuery } from '../lib/interfaces/product.interfaces';
+import { ProductAnalyticsDto } from './dto/product-analytics.dto';
 export declare class ProductsController {
     private readonly productsService;
     constructor(productsService: ProductsService);
@@ -24,4 +25,10 @@ export declare class ProductsController {
     deleteProduct(ref: number): Promise<{
         message: string;
     }>;
+    getProductAnalytics(id: number): Promise<import("./entities/product-analytics.entity").ProductAnalytics>;
+    updateProductAnalytics(id: number, analyticsDto: ProductAnalyticsDto): Promise<import("./entities/product-analytics.entity").ProductAnalytics>;
+    recordProductView(id: number): Promise<import("./entities/product-analytics.entity").ProductAnalytics>;
+    recordCartAdd(id: number): Promise<import("./entities/product-analytics.entity").ProductAnalytics>;
+    recordWishlist(id: number): Promise<import("./entities/product-analytics.entity").ProductAnalytics>;
+    calculatePerformance(id: number): Promise<import("./entities/product-analytics.entity").ProductAnalytics>;
 }

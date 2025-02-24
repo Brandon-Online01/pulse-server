@@ -2,8 +2,9 @@ import { Organisation } from 'src/organisation/entities/organisation.entity';
 import { ProductStatus } from '../../lib/enums/product.enums';
 import { QuotationItem } from '../../shop/entities/quotation-item.entity';
 import { Reseller } from '../../resellers/entities/reseller.entity';
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, BeforeInsert, AfterInsert, ManyToOne, getRepository } from 'typeorm';
 import { Branch } from 'src/branch/entities/branch.entity';
+import { ProductAnalytics } from './product-analytics.entity';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, BeforeInsert, AfterInsert, ManyToOne, getRepository, OneToOne } from 'typeorm';
 
 @Entity('product')
 export class Product {
@@ -94,6 +95,9 @@ export class Product {
 
     @ManyToOne(() => Branch, (branch) => branch?.products, { nullable: true })
     branch: Branch;
+
+    @OneToOne(() => ProductAnalytics, analytics => analytics?.product, { cascade: true })
+    analytics: ProductAnalytics;
 
     static generateSKU(category: string, name: string, uid: number, reseller: Reseller): string {
         // Get first 3 letters of category (uppercase)

@@ -12,6 +12,7 @@ import { RewardsService } from '../rewards/rewards.service';
 import { XP_VALUES_TYPES } from '../lib/constants/constants';
 import { XP_VALUES } from '../lib/constants/constants';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { ReportType, ReportFormat, ReportTimeframe } from '../lib/enums/report.enums';
 
 @Injectable()
 export class AttendanceService {
@@ -107,7 +108,15 @@ export class AttendanceService {
           }
         });
 
-        this.eventEmitter.emit('daily-report', checkOutDto?.owner?.uid?.toString());
+        const today = new Date();
+        this.eventEmitter.emit('daily-report', {
+          userId: checkOutDto.owner.uid,
+          type: ReportType.DAILY_USER,
+          format: ReportFormat.JSON,
+          timeframe: ReportTimeframe.DAILY,
+          startDate: new Date(today.setHours(0, 0, 0, 0)),
+          endDate: new Date(today.setHours(23, 59, 59, 999)),
+        });
 
         return response;
       }

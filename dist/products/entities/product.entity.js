@@ -15,8 +15,9 @@ const organisation_entity_1 = require("../../organisation/entities/organisation.
 const product_enums_1 = require("../../lib/enums/product.enums");
 const quotation_item_entity_1 = require("../../shop/entities/quotation-item.entity");
 const reseller_entity_1 = require("../../resellers/entities/reseller.entity");
-const typeorm_1 = require("typeorm");
 const branch_entity_1 = require("../../branch/entities/branch.entity");
+const product_analytics_entity_1 = require("./product-analytics.entity");
+const typeorm_1 = require("typeorm");
 let Product = Product_1 = class Product {
     static generateSKU(category, name, uid, reseller) {
         const categoryCode = (category || 'XXX').slice(0, 3).toUpperCase();
@@ -153,6 +154,10 @@ __decorate([
     (0, typeorm_1.ManyToOne)(() => branch_entity_1.Branch, (branch) => branch?.products, { nullable: true }),
     __metadata("design:type", branch_entity_1.Branch)
 ], Product.prototype, "branch", void 0);
+__decorate([
+    (0, typeorm_1.OneToOne)(() => product_analytics_entity_1.ProductAnalytics, analytics => analytics?.product, { cascade: true }),
+    __metadata("design:type", product_analytics_entity_1.ProductAnalytics)
+], Product.prototype, "analytics", void 0);
 __decorate([
     (0, typeorm_1.BeforeInsert)(),
     __metadata("design:type", Function),

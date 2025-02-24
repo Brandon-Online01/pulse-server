@@ -472,6 +472,12 @@ let UserService = class UserService {
             await this.invalidateUserCache(user);
         }
     }
+    async updatePassword(uid, hashedPassword) {
+        await this.userRepository.update(uid, {
+            password: hashedPassword,
+            updatedAt: new Date()
+        });
+    }
 };
 exports.UserService = UserService;
 exports.UserService = UserService = __decorate([

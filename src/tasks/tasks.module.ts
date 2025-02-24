@@ -12,6 +12,9 @@ import { ConfigModule } from '@nestjs/config';
 import { Organisation } from '../organisation/entities/organisation.entity';
 import { Branch } from '../branch/entities/branch.entity';
 import { CommunicationModule } from '../communication/communication.module';
+import { NotificationsModule } from '../notifications/notifications.module';
+import { TaskReminderService } from './task-reminder.service';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -19,10 +22,12 @@ import { CommunicationModule } from '../communication/communication.module';
     TypeOrmModule.forFeature([Task, SubTask, Client, User, Organisation, Branch]),
     RewardsModule,
     ConfigModule,
-    CommunicationModule
+    CommunicationModule,
+    NotificationsModule,
+    ScheduleModule.forRoot(),
   ],
   controllers: [TasksController],
-  providers: [TasksService],
+  providers: [TasksService, TaskReminderService],
   exports: [TasksService]
 })
 export class TasksModule { }

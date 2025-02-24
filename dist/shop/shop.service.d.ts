@@ -12,6 +12,7 @@ import { ClientsService } from '../clients/clients.service';
 import { CreateProductDto } from '../products/dto/create-product.dto';
 import { ShopGateway } from './shop.gateway';
 import { PaginatedResponse } from '../lib/interfaces/product.interfaces';
+import { ProductsService } from '../products/products.service';
 export declare class ShopService {
     private productRepository;
     private quotationRepository;
@@ -20,10 +21,11 @@ export declare class ShopService {
     private readonly clientsService;
     private readonly eventEmitter;
     private readonly shopGateway;
+    private readonly productsService;
     private readonly currencyLocale;
     private readonly currencyCode;
     private readonly currencySymbol;
-    constructor(productRepository: Repository<Product>, quotationRepository: Repository<Quotation>, bannersRepository: Repository<Banners>, configService: ConfigService, clientsService: ClientsService, eventEmitter: EventEmitter2, shopGateway: ShopGateway);
+    constructor(productRepository: Repository<Product>, quotationRepository: Repository<Quotation>, bannersRepository: Repository<Banners>, configService: ConfigService, clientsService: ClientsService, eventEmitter: EventEmitter2, shopGateway: ShopGateway, productsService: ProductsService);
     private formatCurrency;
     categories(): Promise<{
         categories: string[] | null;
@@ -154,4 +156,5 @@ export declare class ShopService {
         endDate?: Date;
         search?: string;
     }, page?: number, limit?: number): Promise<PaginatedResponse<Quotation>>;
+    updateQuotationStatus(quotationId: number, status: OrderStatus): Promise<void>;
 }

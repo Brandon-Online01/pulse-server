@@ -25,6 +25,7 @@ const rewards_service_1 = require("../rewards/rewards.service");
 const constants_1 = require("../lib/constants/constants");
 const constants_2 = require("../lib/constants/constants");
 const event_emitter_1 = require("@nestjs/event-emitter");
+const report_enums_1 = require("../lib/enums/report.enums");
 let AttendanceService = class AttendanceService {
     constructor(attendanceRepository, userService, rewardsService, eventEmitter) {
         this.attendanceRepository = attendanceRepository;
@@ -102,7 +103,15 @@ let AttendanceService = class AttendanceService {
                         details: 'Check-out reward'
                     }
                 });
-                this.eventEmitter.emit('daily-report', checkOutDto?.owner?.uid?.toString());
+                const today = new Date();
+                this.eventEmitter.emit('daily-report', {
+                    userId: checkOutDto.owner.uid,
+                    type: report_enums_1.ReportType.DAILY_USER,
+                    format: report_enums_1.ReportFormat.JSON,
+                    timeframe: report_enums_1.ReportTimeframe.DAILY,
+                    startDate: new Date(today.setHours(0, 0, 0, 0)),
+                    endDate: new Date(today.setHours(23, 59, 59, 999)),
+                });
                 return response;
             }
         }

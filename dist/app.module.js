@@ -77,6 +77,7 @@ const license_usage_interceptor_1 = require("./licensing/license-usage.intercept
 const organisation_settings_entity_1 = require("./organisation/entities/organisation-settings.entity");
 const organisation_appearance_entity_1 = require("./organisation/entities/organisation-appearance.entity");
 const organisation_hours_entity_1 = require("./organisation/entities/organisation-hours.entity");
+const product_analytics_entity_1 = require("./products/entities/product-analytics.entity");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -118,6 +119,7 @@ exports.AppModule = AppModule = __decorate([
                     task_entity_1.Task,
                     client_entity_1.Client,
                     product_entity_1.Product,
+                    product_analytics_entity_1.ProductAnalytics,
                     reseller_entity_1.Reseller,
                     quotation_entity_1.Quotation,
                     quotation_item_entity_1.QuotationItem,

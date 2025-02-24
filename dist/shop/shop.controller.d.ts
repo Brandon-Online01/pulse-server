@@ -3,6 +3,7 @@ import { Product } from '../products/entities/product.entity';
 import { CheckoutDto } from './dto/checkout.dto';
 import { CreateBannerDto } from './dto/create-banner.dto';
 import { UpdateBannerDto } from './dto/update-banner.dto';
+import { OrderStatus } from '../lib/enums/status.enums';
 export declare class ShopController {
     private readonly shopService;
     constructor(shopService: ShopService);
@@ -39,6 +40,9 @@ export declare class ShopController {
     }>;
     getQuotationsByUser(ref: number): Promise<{
         quotations: import("./entities/quotation.entity").Quotation[];
+        message: string;
+    }>;
+    updateQuotationStatus(ref: number, status: OrderStatus): Promise<{
         message: string;
     }>;
     getBanner(): Promise<{

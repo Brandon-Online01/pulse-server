@@ -13,7 +13,7 @@ export class SignInInput {
   @IsNotEmpty()
   @IsString()
   @ApiProperty({
-    example: 'brandon@2024',
+    example: 'brandon@2025',
     description: 'The password of the user',
   })
   password: string;

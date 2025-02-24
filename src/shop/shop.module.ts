@@ -10,6 +10,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
 import { CommunicationModule } from '../communication/communication.module';
 import { LicensingModule } from '../licensing/licensing.module';
 import { ShopGateway } from './shop.gateway';
+import { ProductsModule } from '../products/products.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { ShopGateway } from './shop.gateway';
     ClientsModule,
     NotificationsModule,
     CommunicationModule,
+    ProductsModule,
     TypeOrmModule.forFeature([Quotation, Product, Banners])
   ],
   controllers: [ShopController],

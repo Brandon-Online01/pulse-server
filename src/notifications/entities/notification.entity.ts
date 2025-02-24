@@ -1,6 +1,6 @@
 import { User } from "../../user/entities/user.entity";
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
-import { NotificationType, NotificationStatus } from "../../lib/enums/notification.enums";
+import { NotificationType, NotificationStatus, NotificationPriority } from "../../lib/enums/notification.enums";
 import { Branch } from "src/branch/entities/branch.entity";
 import { Organisation } from "src/organisation/entities/organisation.entity";
 
@@ -35,5 +35,8 @@ export class Notification {
     organisation: Organisation;
 
     @ManyToOne(() => Branch, branch => branch?.notifications)
-    branch: Branch;  
+    branch: Branch;
+
+    @Column({ nullable: true, type: 'enum', enum: NotificationPriority, default: NotificationPriority.MEDIUM })
+    priority: NotificationPriority;
 }

@@ -25,5 +25,7 @@ var EmailType;
     EmailType["LICENSE_TRANSFERRED_TO"] = "license.transferred.to";
     EmailType["NEW_TASK"] = "new_task";
     EmailType["TASK_UPDATED"] = "task_updated";
+    EmailType["TASK_REMINDER_ASSIGNEE"] = "TASK_REMINDER_ASSIGNEE";
+    EmailType["TASK_REMINDER_CREATOR"] = "TASK_REMINDER_CREATOR";
 })(EmailType || (exports.EmailType = EmailType = {}));
 //# sourceMappingURL=email.enums.js.map

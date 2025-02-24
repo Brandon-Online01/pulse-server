@@ -28,7 +28,7 @@ __decorate([
     (0, class_validator_1.IsNotEmpty)(),
     (0, class_validator_1.IsString)(),
     (0, swagger_1.ApiProperty)({
-        example: 'brandon@2024',
+        example: 'brandon@2025',
         description: 'The password of the user',
     }),
     __metadata("design:type", String)

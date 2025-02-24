@@ -21,7 +21,7 @@ __decorate([
     (0, class_validator_1.IsEnum)(notification_enums_1.NotificationType),
     (0, swagger_1.ApiProperty)({
         example: notification_enums_1.NotificationType.USER,
-        description: 'The type of the notification'
+        description: 'The type of the notification',
     }),
     __metadata("design:type", String)
 ], CreateNotificationDto.prototype, "type", void 0);
@@ -30,7 +30,7 @@ __decorate([
     (0, class_validator_1.IsString)(),
     (0, swagger_1.ApiProperty)({
         example: 'New Order',
-        description: 'The title of the notification'
+        description: 'The title of the notification',
     }),
     __metadata("design:type", String)
 ], CreateNotificationDto.prototype, "title", void 0);
@@ -39,7 +39,7 @@ __decorate([
     (0, class_validator_1.IsString)(),
     (0, swagger_1.ApiProperty)({
         example: 'A new order has been placed',
-        description: 'The message of the notification'
+        description: 'The message of the notification',
     }),
     __metadata("design:type", String)
 ], CreateNotificationDto.prototype, "message", void 0);
@@ -48,7 +48,7 @@ __decorate([
     (0, class_validator_1.IsEnum)(notification_enums_1.NotificationStatus),
     (0, swagger_1.ApiProperty)({
         example: notification_enums_1.NotificationStatus.UNREAD,
-        description: 'Whether the notification is read'
+        description: 'Whether the notification is read',
     }),
     __metadata("design:type", String)
 ], CreateNotificationDto.prototype, "status", void 0);
@@ -57,7 +57,7 @@ __decorate([
     (0, class_validator_1.IsObject)(),
     (0, swagger_1.ApiProperty)({
         example: { uid: 1 },
-        description: 'The owner of the notification'
+        description: 'The owner of the notification',
     }),
     __metadata("design:type", Object)
 ], CreateNotificationDto.prototype, "owner", void 0);

@@ -21,6 +21,9 @@ const config_1 = require("@nestjs/config");
 const organisation_entity_1 = require("../organisation/entities/organisation.entity");
 const branch_entity_1 = require("../branch/entities/branch.entity");
 const communication_module_1 = require("../communication/communication.module");
+const notifications_module_1 = require("../notifications/notifications.module");
+const task_reminder_service_1 = require("./task-reminder.service");
+const schedule_1 = require("@nestjs/schedule");
 let TasksModule = class TasksModule {
 };
 exports.TasksModule = TasksModule;
@@ -31,10 +34,12 @@ exports.TasksModule = TasksModule = __decorate([
             typeorm_1.TypeOrmModule.forFeature([task_entity_1.Task, subtask_entity_1.SubTask, client_entity_1.Client, user_entity_1.User, organisation_entity_1.Organisation, branch_entity_1.Branch]),
             rewards_module_1.RewardsModule,
             config_1.ConfigModule,
-            communication_module_1.CommunicationModule
+            communication_module_1.CommunicationModule,
+            notifications_module_1.NotificationsModule,
+            schedule_1.ScheduleModule.forRoot(),
         ],
         controllers: [tasks_controller_1.TasksController],
-        providers: [tasks_service_1.TasksService],
+        providers: [tasks_service_1.TasksService, task_reminder_service_1.TaskReminderService],
         exports: [tasks_service_1.TasksService]
     })
 ], TasksModule);

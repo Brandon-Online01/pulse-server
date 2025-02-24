@@ -11,6 +11,7 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { PaginationQuery } from '../lib/interfaces/product.interfaces';
 import { EnterpriseOnly } from '../decorators/enterprise-only.decorator';
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { ProductAnalyticsDto } from './dto/product-analytics.dto';
 
 @ApiTags('products')
 @Controller('products')
@@ -68,5 +69,38 @@ export class ProductsController {
   @ApiOperation({ summary: 'soft delete a product' })
   deleteProduct(@Param('ref') ref: number) {
     return this.productsService.deleteProduct(ref);
+  }
+
+  @Get(':id/analytics')
+  async getProductAnalytics(@Param('id') id: number) {
+    return this.productsService.getProductAnalytics(id);
+  }
+
+  @Post(':id/analytics')
+  async updateProductAnalytics(
+    @Param('id') id: number,
+    @Body() analyticsDto: ProductAnalyticsDto
+  ) {
+    return this.productsService.updateProductAnalytics(id, analyticsDto);
+  }
+
+  @Post(':id/record-view')
+  async recordProductView(@Param('id') id: number) {
+    return this.productsService.recordView(id);
+  }
+
+  @Post(':id/record-cart-add')
+  async recordCartAdd(@Param('id') id: number) {
+    return this.productsService.recordCartAdd(id);
+  }
+
+  @Post(':id/record-wishlist')
+  async recordWishlist(@Param('id') id: number) {
+    return this.productsService.recordWishlist(id);
+  }
+
+  @Post(':id/calculate-performance')
+  async calculatePerformance(@Param('id') id: number) {
+    return this.productsService.calculateProductPerformance(id);
   }
 }

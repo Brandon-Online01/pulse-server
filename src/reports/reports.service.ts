@@ -9,23 +9,14 @@ import { Lead } from '../leads/entities/lead.entity';
 import { Journal } from '../journal/entities/journal.entity';
 import { User } from '../user/entities/user.entity';
 import { Attendance } from '../attendance/entities/attendance.entity';
-import { Reward } from '../rewards/entities/reward.entity';
 import { Organisation } from '../organisation/entities/organisation.entity';
 import { Branch } from '../branch/entities/branch.entity';
 import { Report } from './entities/report.entity';
-import { 
-	ReportType, 
-	ReportFormat, 
-	ReportStatus, 
-	ReportTimeframe, 
-	ReportMetricType 
-} from '../lib/enums/report.enums';
-import { TaskStatus, TaskPriority, TaskType } from '../lib/enums/task.enums';
-import { AttendanceStatus } from '../lib/enums/attendance.enums';
+import { ReportType, ReportStatus, ReportMetricType } from '../lib/enums/report.enums';
+import { TaskStatus, TaskPriority } from '../lib/enums/task.enums';
 import { LeadStatus } from '../lib/enums/lead.enums';
-import { JournalStatus } from '../lib/enums/journal.enums';
 import { Department } from '../lib/enums/user.enums';
-import { 
+import {
 	ReportGenerationOptions,
 	TaskMetrics,
 	AttendanceMetrics,
@@ -36,10 +27,13 @@ import {
 	ProductivityMetrics,
 	DailyUserActivityReport,
 	DashboardAnalyticsReport,
-	DepartmentMetrics
 } from './report.types';
 import { Achievement } from '../rewards/entities/achievement.entity';
 import { Client } from '../clients/entities/client.entity';
+import { OnEvent } from '@nestjs/event-emitter';
+import { EventEmitter2 } from 'eventemitter2';
+import { CommunicationService } from '../communication/communication.service';
+import { EmailType } from '../lib/enums/email.enums';
 
 @Injectable()
 export class ReportsService {
@@ -49,6 +43,8 @@ export class ReportsService {
 
 	constructor(
 		private readonly configService: ConfigService,
+		private readonly eventEmitter: EventEmitter2,
+		private readonly communicationService: CommunicationService,
 		@InjectRepository(CheckIn)
 		private readonly checkInRepository: Repository<CheckIn>,
 		@InjectRepository(Task)
@@ -88,10 +84,11 @@ export class ReportsService {
 		report.endDate = options.endDate;
 		report.filters = options.filters;
 		report.status = ReportStatus.GENERATING;
+		report.createdAt = new Date();
 
 		if (options.userId) {
-			const user = await this.userRepository.findOne({ 
-				where: { uid: options.userId }
+			const user = await this.userRepository.findOne({
+				where: { uid: options.userId },
 			});
 			if (!user) throw new NotFoundException('User not found');
 			report.owner = user;
@@ -99,8 +96,8 @@ export class ReportsService {
 		}
 
 		if (options.organisationRef) {
-			const organisation = await this.organisationRepository.findOne({ 
-				where: { ref: options.organisationRef }
+			const organisation = await this.organisationRepository.findOne({
+				where: { ref: options.organisationRef },
 			});
 			if (!organisation) throw new NotFoundException('Organisation not found');
 			report.organisation = organisation;
@@ -108,8 +105,8 @@ export class ReportsService {
 		}
 
 		if (options.branchUid) {
-			const branch = await this.branchRepository.findOne({ 
-				where: { uid: options.branchUid }
+			const branch = await this.branchRepository.findOne({
+				where: { uid: options.branchUid },
 			});
 			if (!branch) throw new NotFoundException('Branch not found');
 			report.branch = branch;
@@ -118,7 +115,7 @@ export class ReportsService {
 
 		try {
 			let data: DailyUserActivityReport | DashboardAnalyticsReport;
-			
+
 			if (options.type === ReportType.DAILY_USER) {
 				data = await this.generateDailyUserReport(options);
 			} else {
@@ -128,23 +125,32 @@ export class ReportsService {
 			report.data = data;
 			report.status = ReportStatus.COMPLETED;
 			report.completedAt = new Date();
-			
+
 			// Calculate metrics based on the report data
 			report.metrics = this.calculateReportMetrics(data);
-			
+
 			// Generate report summary
 			report.summary = this.generateReportSummary(data);
-			
+
 			// Add metadata
 			report.metadata = {
 				generatedBy: options.userId?.toString(),
-				generationTime: Date.now() - report.createdAt.getTime(),
+				generationTime: report?.createdAt ? Date.now() - report?.createdAt?.getTime() : 0,
 				dataPoints: this.countDataPoints(data),
 				version: '2.0',
-				source: 'system'
+				source: 'system',
 			};
-			
-			return await this.reportRepository.save(report);
+
+			const savedReport = await this.reportRepository.save(report);
+
+			// Send email if it's a daily user report
+			if (options.type === ReportType.DAILY_USER && report.owner) {
+				await this.sendDailyReportEmail(report.owner, data as DailyUserActivityReport);
+			}
+
+			console.log('Report generated successfully', report);
+
+			return savedReport;
 		} catch (error) {
 			report.status = ReportStatus.FAILED;
 			report.errorMessage = error.message;
@@ -153,60 +159,74 @@ export class ReportsService {
 		}
 	}
 
+	@OnEvent('daily-report')
+	async handleDailyReport(payload: ReportGenerationOptions) {
+		try {
+			await this.generateReport(payload);
+		} catch (error) {
+			console.error('Failed to generate daily report:', error);
+			// Optionally emit a failure event that can be handled by the system
+			this.eventEmitter.emit('daily-report-failed', {
+				userId: payload.userId,
+				error: error.message,
+			});
+		}
+	}
+
 	async generateDailyUserReport(options: ReportGenerationOptions): Promise<DailyUserActivityReport> {
 		if (!options.userId) throw new Error('User ID is required for daily report');
-		
+
 		const dateRange = {
 			start: options.startDate,
-			end: options.endDate
+			end: options.endDate,
 		};
 
 		// Fetch all required data
-		const [
-			attendanceRecords,
-			tasks,
-			clientVisits,
-			leads,
-			achievements,
-			journals
-		] = await Promise.all([
+		const [attendanceRecords, tasks, clientVisits, leads, achievements, journals, userRewards] = await Promise.all([
 			this.attendanceRepository.find({
 				where: {
 					owner: { uid: options.userId },
-					checkIn: Between(dateRange.start, dateRange.end)
-				}
+					checkIn: Between(dateRange.start, dateRange.end),
+				},
 			}),
 			this.taskRepository.find({
 				where: {
 					creator: { uid: options.userId },
-					createdAt: Between(dateRange.start, dateRange.end)
-				}
+					createdAt: Between(dateRange.start, dateRange.end),
+				},
 			}),
 			this.checkInRepository.find({
 				where: {
 					owner: { uid: options.userId },
-					checkInTime: Between(dateRange.start, dateRange.end)
+					checkInTime: Between(dateRange.start, dateRange.end),
 				},
-				relations: ['client']
+				relations: ['client'],
 			}),
 			this.leadRepository.find({
 				where: {
 					owner: { uid: options.userId },
-					createdAt: Between(dateRange.start, dateRange.end)
-				}
+					createdAt: Between(dateRange.start, dateRange.end),
+				},
 			}),
 			this.achievementRepository.find({
 				where: {
 					userRewards: { owner: { uid: options.userId } },
-					createdAt: Between(dateRange.start, dateRange.end)
-				}
+					createdAt: Between(dateRange.start, dateRange.end),
+				},
 			}),
 			this.journalRepository.find({
 				where: {
 					owner: { uid: options.userId },
-					createdAt: Between(dateRange.start, dateRange.end)
-				}
-			})
+					createdAt: Between(dateRange.start, dateRange.end),
+				},
+			}),
+			// Add this new query to fetch user rewards
+			this.achievementRepository
+				.createQueryBuilder('achievement')
+				.innerJoin('achievement.userRewards', 'userReward')
+				.innerJoin('userReward.owner', 'user')
+				.where('user.uid = :userId', { userId: options.userId })
+				.getMany(),
 		]);
 
 		// Calculate metrics
@@ -214,13 +234,13 @@ export class ReportsService {
 		const clientVisitMetrics = this.calculateClientVisitMetrics(clientVisits);
 		const taskMetrics = this.calculateTaskMetrics(tasks);
 		const quotationMetrics = this.calculateQuotationMetrics(leads);
-		const rewardMetrics = this.calculateRewardMetrics(achievements);
+		const rewardMetrics = this.calculateRewardMetrics([...achievements, ...userRewards]);
 		const journalMetrics = this.calculateJournalMetrics(journals);
 		const productivity = this.calculateProductivityMetrics({
 			tasks: taskMetrics,
 			attendance,
 			clientVisits: clientVisitMetrics,
-			quotations: quotationMetrics
+			quotations: quotationMetrics,
 		});
 
 		return {
@@ -238,8 +258,8 @@ export class ReportsService {
 				tasks: taskMetrics,
 				clientVisits: clientVisitMetrics,
 				quotations: quotationMetrics,
-				productivity
-			})
+				productivity,
+			}),
 		};
 	}
 
@@ -248,46 +268,46 @@ export class ReportsService {
 
 		const dateRange = {
 			start: options.startDate,
-			end: options.endDate
+			end: options.endDate,
 		};
 
 		// Fetch organisation data
 		const organisation = await this.organisationRepository.findOne({
 			where: { ref: options.organisationRef },
-			relations: ['users']
+			relations: ['users'],
 		});
 
 		if (!organisation) throw new NotFoundException('Organisation not found');
 
 		// Get unique departments from users
-		const departmentIds = [...new Set(organisation.users.map(u => u.departmentId))];
+		const departmentIds = [...new Set(organisation.users.map((u) => u.departmentId))];
 
 		// Calculate department metrics
 		const departments = await Promise.all(
 			departmentIds.map(async (deptId) => {
 				const users = await this.userRepository.find({
-					where: { departmentId: deptId }
+					where: { departmentId: deptId },
 				});
 
 				const departmentTasks = await this.taskRepository.find({
 					where: {
-						creator: { uid: In(users.map(u => u.uid)) },
-						createdAt: Between(dateRange.start, dateRange.end)
-					}
+						creator: { uid: In(users.map((u) => u.uid)) },
+						createdAt: Between(dateRange.start, dateRange.end),
+					},
 				});
 
 				const departmentAttendance = await this.attendanceRepository.find({
 					where: {
-						owner: { uid: In(users.map(u => u.uid)) },
-						checkIn: Between(dateRange.start, dateRange.end)
-					}
+						owner: { uid: In(users.map((u) => u.uid)) },
+						checkIn: Between(dateRange.start, dateRange.end),
+					},
 				});
 
 				const taskMetrics = this.calculateTaskMetrics(departmentTasks);
 				const attendanceMetrics = this.calculateAttendanceMetrics(departmentAttendance);
 				const productivity = this.calculateProductivityMetrics({
 					tasks: taskMetrics,
-					attendance: attendanceMetrics
+					attendance: attendanceMetrics,
 				});
 
 				return {
@@ -296,9 +316,9 @@ export class ReportsService {
 					attendance: attendanceMetrics,
 					tasks: taskMetrics,
 					productivity,
-					topPerformers: await this.getTopPerformers(users, dateRange)
+					topPerformers: await this.getTopPerformers(users, dateRange),
 				};
-			})
+			}),
 		);
 
 		// Calculate overall metrics
@@ -320,22 +340,22 @@ export class ReportsService {
 				overview,
 				departments,
 				trends,
-				topMetrics
-			})
+				topMetrics,
+			}),
 		};
 	}
 
 	private calculateAttendanceMetrics(records: Attendance[]): AttendanceMetrics {
-		const totalDays = records.length;
-		const presentDays = records.filter(r => r.checkOut).length;
-		const lateCheckIns = records.filter(r => this.isLateCheckIn(r.checkIn)).length;
-		
+		const totalDays = records?.length || 0;
+		const presentDays = records?.filter((r) => r?.checkOut)?.length || 0;
+		const lateCheckIns = records?.filter((r) => this.isLateCheckIn(r?.checkIn))?.length || 0;
+
 		let totalHours = 0;
 		let totalOvertime = 0;
 
-		records.forEach(record => {
-			if (record.checkOut) {
-				const duration = record.checkOut.getTime() - record.checkIn.getTime();
+		records?.forEach((record) => {
+			if (record?.checkOut) {
+				const duration = record.checkOut.getTime() - record?.checkIn?.getTime();
 				const hours = duration / (1000 * 60 * 60);
 				totalHours += hours;
 				if (hours > 8) totalOvertime += hours - 8;
@@ -346,65 +366,68 @@ export class ReportsService {
 			totalDays,
 			presentDays,
 			absentDays: totalDays - presentDays,
-			attendanceRate: (presentDays / totalDays) * 100,
-			averageCheckInTime: this.calculateAverageTime(records.map(r => r.checkIn)),
-			averageCheckOutTime: this.calculateAverageTime(records.filter(r => r.checkOut).map(r => r.checkOut)),
-			averageHoursWorked: totalHours / presentDays,
+			attendanceRate: totalDays ? (presentDays / totalDays) * 100 : 0,
+			averageCheckInTime: this.calculateAverageTime(records?.map((r) => r?.checkIn) || []),
+			averageCheckOutTime: this.calculateAverageTime(records?.filter((r) => r?.checkOut)?.map((r) => r?.checkOut) || []),
+			averageHoursWorked: presentDays ? totalHours / presentDays : 0,
 			totalOvertime,
 			onTimeCheckIns: totalDays - lateCheckIns,
-			lateCheckIns
+			lateCheckIns,
 		};
 	}
 
 	private calculateClientVisitMetrics(visits: CheckIn[]): ClientVisitMetrics {
-		const uniqueClients = new Set(visits.map(v => v.client?.uid)).size;
-		const totalDuration = visits.reduce((sum, v) => sum + (Number(v.duration) || 0), 0);
+		const uniqueClients = new Set(visits?.map((v) => v?.client?.uid))?.size || 0;
+		const totalDuration = visits?.reduce((sum, v) => sum + (Number(v?.duration) || 0), 0) || 0;
 
 		return {
-			totalVisits: visits.length,
+			totalVisits: visits?.length || 0,
 			uniqueClients,
-			averageTimePerVisit: totalDuration / visits.length,
+			averageTimePerVisit: visits?.length ? totalDuration / visits.length : 0,
 			totalDuration,
-			byPurpose: this.groupBy(visits, 'checkInLocation'),
-			conversionRate: 0 // This needs to be calculated from a different source
+			byPurpose: this.groupBy(visits || [], 'checkInLocation'),
+			conversionRate: 0,
 		};
 	}
 
 	private calculateTaskMetrics(tasks: Task[]): TaskMetrics {
-		const completed = tasks.filter(t => t.status === TaskStatus.COMPLETED).length;
+		const completed = tasks.filter((t) => t.status === TaskStatus.COMPLETED).length;
 		const total = tasks.length;
 
 		return {
 			total,
 			completed,
-			inProgress: tasks.filter(t => t.status === TaskStatus.IN_PROGRESS).length,
-			pending: tasks.filter(t => t.status === TaskStatus.PENDING).length,
-			overdue: tasks.filter(t => t.isOverdue).length,
+			inProgress: tasks.filter((t) => t.status === TaskStatus.IN_PROGRESS).length,
+			pending: tasks.filter((t) => t.status === TaskStatus.PENDING).length,
+			overdue: tasks.filter((t) => t.isOverdue).length,
 			completionRate: (completed / total) * 100,
 			averageCompletionTime: this.calculateAverageCompletionTime(tasks),
 			byPriority: {
-				high: tasks.filter(t => t.priority === TaskPriority.HIGH).length,
-				medium: tasks.filter(t => t.priority === TaskPriority.MEDIUM).length,
-				low: tasks.filter(t => t.priority === TaskPriority.LOW).length
+				high: tasks.filter((t) => t.priority === TaskPriority.HIGH).length,
+				medium: tasks.filter((t) => t.priority === TaskPriority.MEDIUM).length,
+				low: tasks.filter((t) => t.priority === TaskPriority.LOW).length,
 			},
-			byType: this.groupBy(tasks, 'taskType')
+			byType: this.groupBy(tasks, 'taskType'),
 		};
 	}
 
 	private calculateQuotationMetrics(leads: Lead[]): QuotationMetrics {
-		const approved = leads.filter(q => q.status === LeadStatus.APPROVED);
-		const total = leads.length;
-		const totalValue = 0; // This needs to be calculated from a different source
+		const approved = leads?.filter((q) => q?.status === LeadStatus.APPROVED) || [];
+		const total = leads?.length || 0;
+		const totalValue = leads?.reduce((sum, lead) => {
+			const leadValue = (lead as any)?.value || (lead as any)?.amount || (lead as any)?.quotationValue || 0;
+			return sum + leadValue;
+		}, 0) || 0;
 
 		return {
 			total,
-			approved: approved.length,
-			rejected: leads.filter(q => q.status === LeadStatus.DECLINED).length,
-			pending: leads.filter(q => q.status === LeadStatus.PENDING).length,
-			conversionRate: (approved.length / total) * 100,
-			averageValue: totalValue / approved.length,
+			approved: approved?.length || 0,
+			rejected: leads?.filter((q) => q?.status === LeadStatus.DECLINED)?.length || 0,
+			pending: leads?.filter((q) => q?.status === LeadStatus.PENDING)?.length || 0,
+			conversionRate: total > 0 ? ((approved?.length || 0) / total) * 100 : 0,
+			averageValue: approved?.length > 0 ? totalValue / approved.length : 0,
 			totalValue,
-			byProduct: this.groupBy(leads, 'name')
+			byProduct: this.groupBy(leads || [], 'name'),
 		};
 	}
 
@@ -413,29 +436,29 @@ export class ReportsService {
 			totalXP: achievements.reduce((sum, r) => sum + (r.xpValue || 0), 0),
 			totalRewards: achievements.length,
 			byCategory: this.groupBy(achievements, 'category'),
-			achievements: achievements.map(r => ({
+			achievements: achievements.map((r) => ({
 				name: r.name,
 				earnedAt: r.createdAt,
-				xpValue: r.xpValue
-			}))
+				xpValue: r.xpValue,
+			})),
 		};
 	}
 
 	private calculateJournalMetrics(journals: Journal[]): JournalMetrics {
-		const byCategory = this.groupBy(journals, 'type' as keyof Journal);
+		const byCategory = this.groupBy(journals || [], 'type' as keyof Journal);
 		const sortedCategories = Object.entries(byCategory)
-			.sort(([, a], [, b]) => b - a)
-			.slice(0, 5)
-			.map(([category]) => category);
+			?.sort(([, a], [, b]) => b - a)
+			?.slice(0, 5)
+			?.map(([category]) => category) || [];
 
 		return {
-			total: journals.length,
+			total: journals?.length || 0,
 			byCategory,
-			averageEntriesPerDay: journals.length / this.getDaysBetween(
-				journals[0]?.createdAt,
-				journals[journals.length - 1]?.createdAt
-			),
-			topCategories: sortedCategories
+			averageEntriesPerDay:
+				journals?.length ? 
+				journals.length / this.getDaysBetween(journals[0]?.createdAt, journals[journals.length - 1]?.createdAt) : 
+				0,
+			topCategories: sortedCategories,
 		};
 	}
 
@@ -446,11 +469,10 @@ export class ReportsService {
 		quotations?: QuotationMetrics;
 	}): ProductivityMetrics {
 		const taskEfficiency = (data.tasks.completed / data.tasks.total) * 100;
-		const clientHandling = data.clientVisits 
-			? (data.clientVisits.conversionRate + 
-			   (data.quotations?.conversionRate || 0)) / 2
+		const clientHandling = data.clientVisits
+			? (data.clientVisits.conversionRate + (data.quotations?.conversionRate || 0)) / 2
 			: 0;
-		
+
 		const responseTime = this.calculateAverageResponseTime(data);
 		const qualityScore = this.calculateQualityScore(data);
 
@@ -459,7 +481,7 @@ export class ReportsService {
 			taskEfficiency,
 			clientHandling,
 			responseTime,
-			qualityScore
+			qualityScore,
 		};
 	}
 
@@ -472,31 +494,36 @@ export class ReportsService {
 
 	private calculateAverageTime(times: Date[]): string {
 		if (!times.length) return '00:00';
-		const avgMinutes = times.reduce((sum, time) => {
-			return sum + time.getHours() * 60 + time.getMinutes();
-		}, 0) / times.length;
-		
+		const avgMinutes =
+			times.reduce((sum, time) => {
+				return sum + time.getHours() * 60 + time.getMinutes();
+			}, 0) / times.length;
+
 		const hours = Math.floor(avgMinutes / 60);
 		const minutes = Math.floor(avgMinutes % 60);
 		return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
 	}
 
 	private calculateAverageCompletionTime(tasks: Task[]): number {
-		const completedTasks = tasks.filter(t => t.status === TaskStatus.COMPLETED && t.completionDate);
+		const completedTasks = tasks.filter((t) => t.status === TaskStatus.COMPLETED && t.completionDate);
 		if (!completedTasks.length) return 0;
-		
-		return completedTasks.reduce((sum, task) => {
-			const duration = task.completionDate.getTime() - task.createdAt.getTime();
-			return sum + duration;
-		}, 0) / completedTasks.length / (1000 * 60 * 60); // Convert to hours
+
+		return (
+			completedTasks.reduce((sum, task) => {
+				const duration = task.completionDate.getTime() - task.createdAt.getTime();
+				return sum + duration;
+			}, 0) /
+			completedTasks.length /
+			(1000 * 60 * 60)
+		); // Convert to hours
 	}
 
 	private groupBy<T>(items: T[], key: keyof T): Record<string, number> {
-		return items.reduce((acc, item) => {
-			const value = String(item[key]);
+		return items?.reduce((acc, item) => {
+			const value = String(item?.[key]);
 			acc[value] = (acc[value] || 0) + 1;
 			return acc;
-		}, {} as Record<string, number>);
+		}, {} as Record<string, number>) || {};
 	}
 
 	private getDaysBetween(start?: Date, end?: Date): number {
@@ -538,42 +565,48 @@ export class ReportsService {
 		return {};
 	}
 
-	private async getTopPerformers(users: User[], dateRange: { start: Date; end: Date }): Promise<Array<{ userId: number; name: string; score: number }>> {
+	private async getTopPerformers(
+		users: User[],
+		dateRange: { start: Date; end: Date },
+	): Promise<Array<{ userId: number; name: string; score: number }>> {
 		const performanceScores = await Promise.all(
 			users.map(async (user) => {
 				const tasks = await this.taskRepository.find({
 					where: {
 						creator: { uid: user.uid },
-						createdAt: Between(dateRange.start, dateRange.end)
-					}
+						createdAt: Between(dateRange.start, dateRange.end),
+					},
 				});
 
 				const attendance = await this.attendanceRepository.find({
 					where: {
 						owner: { uid: user.uid },
-						checkIn: Between(dateRange.start, dateRange.end)
-					}
+						checkIn: Between(dateRange.start, dateRange.end),
+					},
 				});
 
 				const taskMetrics = this.calculateTaskMetrics(tasks);
 				const attendanceMetrics = this.calculateAttendanceMetrics(attendance);
 				const productivity = this.calculateProductivityMetrics({
 					tasks: taskMetrics,
-					attendance: attendanceMetrics
+					attendance: attendanceMetrics,
 				});
 
 				return {
 					userId: user.uid,
 					name: `${user.name} ${user.surname}`,
-					score: productivity.score
+					score: productivity.score,
 				};
-			})
+			}),
 		);
 
 		return performanceScores.sort((a, b) => b.score - a.score).slice(0, 5);
 	}
 
-	private async calculateOrganisationOverview(organisation: Organisation, dateRange: { start: Date; end: Date }): Promise<{
+	private async calculateOrganisationOverview(
+		organisation: Organisation,
+		dateRange: { start: Date; end: Date },
+	): Promise<{
 		totalUsers: number;
 		activeUsers: number;
 		totalTasks: number;
@@ -585,29 +618,29 @@ export class ReportsService {
 			this.taskRepository.count({
 				where: {
 					organisation: { ref: organisation.ref },
-					createdAt: Between(dateRange.start, dateRange.end)
-				}
+					createdAt: Between(dateRange.start, dateRange.end),
+				},
 			}),
 			this.clientRepository.count({
 				where: {
 					organisation: { ref: organisation.ref },
-					createdAt: Between(dateRange.start, dateRange.end)
-				}
+					createdAt: Between(dateRange.start, dateRange.end),
+				},
 			}),
-			
+
 			this.leadRepository.count({
 				where: {
 					createdAt: Between(dateRange.start, dateRange.end),
-					status: LeadStatus.CONVERTED
-				}
-			})
+					status: LeadStatus.CONVERTED,
+				},
+			}),
 		]);
 
 		const activeUsers = await this.userRepository.count({
 			where: {
 				organisationRef: organisation.ref,
-				status: 'active'
-			}
+				status: 'active',
+			},
 		});
 
 		return {
@@ -616,11 +649,14 @@ export class ReportsService {
 			totalTasks: tasks,
 			totalClients: clients,
 			totalQuotations: leads,
-			totalRevenue: 0 // This would need to be calculated from actual revenue data
+			totalRevenue: 0, // This would need to be calculated from actual revenue data
 		};
 	}
 
-	private async calculateOrganisationTrends(organisation: Organisation, dateRange: { start: Date; end: Date }): Promise<{
+	private async calculateOrganisationTrends(
+		organisation: Organisation,
+		dateRange: { start: Date; end: Date },
+	): Promise<{
 		taskCompletion: number[];
 		clientVisits: number[];
 		quotationConversion: number[];
@@ -633,11 +669,14 @@ export class ReportsService {
 			clientVisits: [],
 			quotationConversion: [],
 			revenue: [],
-			productivity: []
+			productivity: [],
 		};
 	}
 
-	private async calculateTopMetrics(organisation: Organisation, dateRange: { start: Date; end: Date }): Promise<{
+	private async calculateTopMetrics(
+		organisation: Organisation,
+		dateRange: { start: Date; end: Date },
+	): Promise<{
 		performers: Array<{
 			userId: number;
 			name: string;
@@ -660,7 +699,63 @@ export class ReportsService {
 		return {
 			performers: [],
 			departments: [],
-			products: []
+			products: [],
 		};
+	}
+
+	private async sendDailyReportEmail(user: User, reportData: DailyUserActivityReport): Promise<void> {
+		const dailyReportData = {
+			name: `${user.name} ${user.surname}`,
+			date: reportData.date.toISOString().split('T')[0],
+			metrics: {
+				xp: {
+					level: reportData.rewards.totalXP > 0 ? Math.floor(reportData.rewards.totalXP / 100) : 0,
+					currentXP: reportData.rewards.totalXP,
+					todayXP: reportData.rewards.achievements.reduce((sum, a) => sum + (a.xpValue || 0), 0),
+				},
+				attendance: {
+					status: reportData.attendance.presentDays > 0 ? 'Present' : 'Absent',
+					startTime: reportData.attendance.averageCheckInTime,
+					endTime: reportData.attendance.averageCheckOutTime,
+					totalHours: reportData.attendance.averageHoursWorked,
+					duration: `${Math.floor(reportData.attendance.averageHoursWorked)}h ${Math.round((reportData.attendance.averageHoursWorked % 1) * 60)}m`,
+				},
+				totalQuotations: reportData.quotations.total,
+				totalRevenue: this.formatCurrency(reportData.quotations.totalValue),
+				newCustomers: reportData.clientVisits.uniqueClients,
+				quotationGrowth: '0%', // This would need historical data to calculate
+				revenueGrowth: '0%', // This would need historical data to calculate
+				customerGrowth: '0%', // This would need historical data to calculate
+				userSpecific: {
+					todayLeads: reportData.quotations.total,
+					todayClaims: 0, // This would need to be added to the report data
+					todayTasks: reportData.tasks.total,
+					todayQuotations: reportData.quotations.approved,
+					hoursWorked: reportData.attendance.averageHoursWorked,
+				},
+			},
+			tracking: {
+				totalDistance: '0 km', // This would need location data to calculate
+				locations: reportData.clientVisits.byPurpose ? 
+					Object.entries(reportData.clientVisits.byPurpose).map(([address, timeSpent]) => ({
+						address,
+						timeSpent: `${timeSpent} visits`,
+					})) : [],
+				averageTimePerLocation: `${Math.round(reportData.clientVisits.averageTimePerVisit)} minutes`,
+			},
+		};
+
+		await this.communicationService.sendEmail(
+			EmailType.DAILY_REPORT,
+			[user.email],
+			dailyReportData
+		);
+	}
+
+	private formatCurrency(amount: number): string {
+		return new Intl.NumberFormat(this.currencyLocale, {
+			style: 'currency',
+			currency: this.currencyCode,
+		}).format(amount);
 	}
 }

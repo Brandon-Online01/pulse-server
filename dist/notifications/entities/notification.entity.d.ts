@@ -1,5 +1,5 @@
 import { User } from "../../user/entities/user.entity";
-import { NotificationType, NotificationStatus } from "../../lib/enums/notification.enums";
+import { NotificationType, NotificationStatus, NotificationPriority } from "../../lib/enums/notification.enums";
 import { Branch } from "src/branch/entities/branch.entity";
 import { Organisation } from "src/organisation/entities/organisation.entity";
 export declare class Notification {
@@ -13,4 +13,5 @@ export declare class Notification {
     owner: User;
     organisation: Organisation;
     branch: Branch;
+    priority: NotificationPriority;
 }

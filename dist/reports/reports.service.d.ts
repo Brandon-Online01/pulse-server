@@ -13,8 +13,12 @@ import { Report } from './entities/report.entity';
 import { ReportGenerationOptions, DailyUserActivityReport, DashboardAnalyticsReport } from './report.types';
 import { Achievement } from '../rewards/entities/achievement.entity';
 import { Client } from '../clients/entities/client.entity';
+import { EventEmitter2 } from 'eventemitter2';
+import { CommunicationService } from '../communication/communication.service';
 export declare class ReportsService {
     private readonly configService;
+    private readonly eventEmitter;
+    private readonly communicationService;
     private readonly checkInRepository;
     private readonly taskRepository;
     private readonly claimRepository;
@@ -30,8 +34,9 @@ export declare class ReportsService {
     private readonly currencyLocale;
     private readonly currencyCode;
     private readonly currencySymbol;
-    constructor(configService: ConfigService, checkInRepository: Repository<CheckIn>, taskRepository: Repository<Task>, claimRepository: Repository<Claim>, leadRepository: Repository<Lead>, journalRepository: Repository<Journal>, userRepository: Repository<User>, attendanceRepository: Repository<Attendance>, achievementRepository: Repository<Achievement>, reportRepository: Repository<Report>, organisationRepository: Repository<Organisation>, branchRepository: Repository<Branch>, clientRepository: Repository<Client>);
+    constructor(configService: ConfigService, eventEmitter: EventEmitter2, communicationService: CommunicationService, checkInRepository: Repository<CheckIn>, taskRepository: Repository<Task>, claimRepository: Repository<Claim>, leadRepository: Repository<Lead>, journalRepository: Repository<Journal>, userRepository: Repository<User>, attendanceRepository: Repository<Attendance>, achievementRepository: Repository<Achievement>, reportRepository: Repository<Report>, organisationRepository: Repository<Organisation>, branchRepository: Repository<Branch>, clientRepository: Repository<Client>);
     generateReport(options: ReportGenerationOptions): Promise<Report>;
+    handleDailyReport(payload: ReportGenerationOptions): Promise<void>;
     generateDailyUserReport(options: ReportGenerationOptions): Promise<DailyUserActivityReport>;
     generateDashboardReport(options: ReportGenerationOptions): Promise<DashboardAnalyticsReport>;
     private calculateAttendanceMetrics;
@@ -57,4 +62,6 @@ export declare class ReportsService {
     private calculateOrganisationOverview;
     private calculateOrganisationTrends;
     private calculateTopMetrics;
+    private sendDailyReportEmail;
+    private formatCurrency;
 }

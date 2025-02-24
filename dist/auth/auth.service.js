@@ -166,17 +166,15 @@ let AuthService = class AuthService {
                 verificationLink: verificationUrl,
                 expiryHours: 24,
             });
-            const response = {
+            return {
                 status: 'success',
                 message: 'Please check your email and verify your account within the next 24 hours.',
             };
-            return response;
         }
         catch (error) {
-            const response = {
+            return {
                 message: error?.message,
             };
-            return response;
         }
     }
     async verifyEmail(verifyEmailInput) {
@@ -248,76 +246,64 @@ let AuthService = class AuthService {
         try {
             const { email } = forgotPasswordInput;
             const existingUser = await this.userService.findOneByEmail(email);
+            console.log(existingUser, email);
             if (!existingUser?.user) {
                 return {
-                    message: 'sign up to get started',
+                    message: 'If an account exists with this email, you will receive password reset instructions.',
                 };
             }
             const existingReset = await this.passwordResetService.findByEmail(email);
-            if (existingReset) {
-                if (existingReset.tokenExpires > new Date()) {
-                    const response = {
-                        status: 'success',
-                        message: 'Please check your email for the password reset link sent earlier.',
-                    };
-                    return response;
-                }
-                await this.passwordResetService.delete(existingReset?.uid);
+            if (existingReset && existingReset.tokenExpires > new Date()) {
+                return {
+                    message: 'Password reset instructions have already been sent. Please check your email.',
+                };
             }
             const resetToken = await this.generateSecureToken();
             const resetUrl = `${process.env.SIGNUP_DOMAIN}/reset-password/${resetToken}`;
             await this.passwordResetService.create(email, resetToken);
             this.eventEmitter.emit('send.email', email_enums_1.EmailType.PASSWORD_RESET, [email], {
-                name: existingUser.user.name,
+                name: existingUser.user.name || email.split('@')[0],
                 resetLink: resetUrl,
-                expiryMinutes: 30,
             });
-            const response = {
-                status: 'success',
-                message: 'A password reset link has been sent to your email. Please check your inbox.',
+            return {
+                message: 'Password reset instructions have been sent to your email.',
             };
-            return response;
         }
         catch (error) {
-            const response = {
-                message: error?.message,
-            };
-            return response;
+            throw new common_1.HttpException(error.message || 'Failed to process password reset request', error.status || common_1.HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
     async resetPassword(resetPasswordInput) {
         try {
             const { token, password } = resetPasswordInput;
-            const resetRequest = await this.passwordResetService.findByToken(token);
-            if (!resetRequest) {
-                throw new common_1.BadRequestException('Invalid or expired reset token');
+            const resetRecord = await this.passwordResetService.findByToken(token);
+            if (!resetRecord) {
+                throw new common_1.BadRequestException('Invalid or expired reset token.');
             }
-            if (resetRequest.tokenExpires < new Date()) {
-                await this.passwordResetService.delete(resetRequest.uid);
+            if (resetRecord.tokenExpires < new Date()) {
+                await this.passwordResetService.delete(resetRecord.uid);
                 throw new common_1.BadRequestException('Reset token has expired. Please request a new one.');
             }
-            const user = await this.userService.findOneByEmail(resetRequest.email);
+            if (resetRecord.isUsed) {
+                throw new common_1.BadRequestException('This reset token has already been used.');
+            }
+            const user = await this.userService.findOneByEmail(resetRecord.email);
             if (!user?.user) {
-                throw new common_1.BadRequestException('User not found');
+                throw new common_1.BadRequestException('User not found.');
             }
             const hashedPassword = await bcrypt.hash(password, 10);
-            await this.userService.resetPassword(user.user.uid, hashedPassword);
-            await this.passwordResetService.markAsUsed(resetRequest.uid);
-            this.eventEmitter.emit('send.email', email_enums_1.EmailType.PASSWORD_CHANGED, [user.user.email], {
-                name: user.user.name,
-                date: new Date(),
-                deviceInfo: {
-                    browser: 'Web Browser',
-                    os: 'Unknown',
-                    location: 'Unknown',
-                },
+            await this.userService.updatePassword(user.user.uid, hashedPassword);
+            await this.passwordResetService.markAsUsed(resetRecord.uid);
+            this.eventEmitter.emit('send.email', email_enums_1.EmailType.PASSWORD_CHANGED, [resetRecord.email], {
+                name: user.user.name || resetRecord.email.split('@')[0],
+                changeTime: new Date().toLocaleString(),
             });
             return {
-                message: 'Password reset successfully. You can now sign in with your new password.',
+                message: 'Password has been reset successfully. You can now log in with your new password.',
             };
         }
         catch (error) {
-            throw new common_1.HttpException(error.message || 'Failed to reset password', error.status || common_1.HttpStatus.BAD_REQUEST);
+            throw new common_1.HttpException(error.message || 'Failed to reset password', error.status || common_1.HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
     async refreshToken(token) {

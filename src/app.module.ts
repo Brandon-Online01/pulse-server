@@ -68,6 +68,7 @@ import { LicenseUsageInterceptor } from './licensing/license-usage.interceptor';
 import { OrganisationSettings } from './organisation/entities/organisation-settings.entity';
 import { OrganisationAppearance } from './organisation/entities/organisation-appearance.entity';
 import { OrganisationHours } from './organisation/entities/organisation-hours.entity';
+import { ProductAnalytics } from './products/entities/product-analytics.entity';
 
 @Module({
   imports: [
@@ -106,6 +107,7 @@ import { OrganisationHours } from './organisation/entities/organisation-hours.en
         Task,
         Client,
         Product,
+        ProductAnalytics, 
         Reseller,
         Quotation,
         QuotationItem,

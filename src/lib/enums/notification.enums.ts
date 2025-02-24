@@ -5,6 +5,7 @@ export enum NotificationType {
     USER = 'user',
     SYSTEM = 'system',
     SHOPPING = 'shopping',
+    TASK_REMINDER = 'TASK_REMINDER'
 }
 
 export enum NotificationStatus {
@@ -12,3 +13,9 @@ export enum NotificationStatus {
     UNREAD = 'unread',
     ARCHIVED = 'archived',
 } 
+
+export enum NotificationPriority {
+    LOW = 'low',
+    MEDIUM = 'medium',
+    HIGH = 'high',
+}

@@ -3,6 +3,7 @@ import { ProductStatus } from '../../lib/enums/product.enums';
 import { QuotationItem } from '../../shop/entities/quotation-item.entity';
 import { Reseller } from '../../resellers/entities/reseller.entity';
 import { Branch } from 'src/branch/entities/branch.entity';
+import { ProductAnalytics } from './product-analytics.entity';
 export declare class Product {
     uid: number;
     name: string;
@@ -33,6 +34,7 @@ export declare class Product {
     isDeleted: boolean;
     organisation: Organisation;
     branch: Branch;
+    analytics: ProductAnalytics;
     static generateSKU(category: string, name: string, uid: number, reseller: Reseller): string;
     generateSKUBeforeInsert(): Promise<void>;
     updateSKUWithCorrectUid(): Promise<void>;

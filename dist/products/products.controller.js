@@ -25,6 +25,7 @@ const create_product_dto_1 = require("./dto/create-product.dto");
 const update_product_dto_1 = require("./dto/update-product.dto");
 const enterprise_only_decorator_1 = require("../decorators/enterprise-only.decorator");
 const common_2 = require("@nestjs/common");
+const product_analytics_dto_1 = require("./dto/product-analytics.dto");
 let ProductsController = class ProductsController {
     constructor(productsService) {
         this.productsService = productsService;
@@ -49,6 +50,24 @@ let ProductsController = class ProductsController {
     }
     deleteProduct(ref) {
         return this.productsService.deleteProduct(ref);
+    }
+    async getProductAnalytics(id) {
+        return this.productsService.getProductAnalytics(id);
+    }
+    async updateProductAnalytics(id, analyticsDto) {
+        return this.productsService.updateProductAnalytics(id, analyticsDto);
+    }
+    async recordProductView(id) {
+        return this.productsService.recordView(id);
+    }
+    async recordCartAdd(id) {
+        return this.productsService.recordCartAdd(id);
+    }
+    async recordWishlist(id) {
+        return this.productsService.recordWishlist(id);
+    }
+    async calculatePerformance(id) {
+        return this.productsService.calculateProductPerformance(id);
     }
 };
 exports.ProductsController = ProductsController;
@@ -116,6 +135,49 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", void 0)
 ], ProductsController.prototype, "deleteProduct", null);
+__decorate([
+    (0, common_2.Get)(':id/analytics'),
+    __param(0, (0, common_2.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], ProductsController.prototype, "getProductAnalytics", null);
+__decorate([
+    (0, common_2.Post)(':id/analytics'),
+    __param(0, (0, common_2.Param)('id')),
+    __param(1, (0, common_2.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, product_analytics_dto_1.ProductAnalyticsDto]),
+    __metadata("design:returntype", Promise)
+], ProductsController.prototype, "updateProductAnalytics", null);
+__decorate([
+    (0, common_2.Post)(':id/record-view'),
+    __param(0, (0, common_2.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], ProductsController.prototype, "recordProductView", null);
+__decorate([
+    (0, common_2.Post)(':id/record-cart-add'),
+    __param(0, (0, common_2.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], ProductsController.prototype, "recordCartAdd", null);
+__decorate([
+    (0, common_2.Post)(':id/record-wishlist'),
+    __param(0, (0, common_2.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], ProductsController.prototype, "recordWishlist", null);
+__decorate([
+    (0, common_2.Post)(':id/calculate-performance'),
+    __param(0, (0, common_2.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], ProductsController.prototype, "calculatePerformance", null);
 exports.ProductsController = ProductsController = __decorate([
     (0, swagger_1.ApiTags)('products'),
     (0, common_2.Controller)('products'),

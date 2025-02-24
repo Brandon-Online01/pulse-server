@@ -28,8 +28,9 @@ const email_enums_1 = require("../lib/enums/email.enums");
 const event_emitter_1 = require("@nestjs/event-emitter");
 const clients_service_1 = require("../clients/clients.service");
 const shop_gateway_1 = require("./shop.gateway");
+const products_service_1 = require("../products/products.service");
 let ShopService = class ShopService {
-    constructor(productRepository, quotationRepository, bannersRepository, configService, clientsService, eventEmitter, shopGateway) {
+    constructor(productRepository, quotationRepository, bannersRepository, configService, clientsService, eventEmitter, shopGateway, productsService) {
         this.productRepository = productRepository;
         this.quotationRepository = quotationRepository;
         this.bannersRepository = bannersRepository;
@@ -37,6 +38,7 @@ let ShopService = class ShopService {
         this.clientsService = clientsService;
         this.eventEmitter = eventEmitter;
         this.shopGateway = shopGateway;
+        this.productsService = productsService;
         this.currencyLocale = this.configService.get('CURRENCY_LOCALE') || 'en-ZA';
         this.currencyCode = this.configService.get('CURRENCY_CODE') || 'ZAR';
         this.currencySymbol = this.configService.get('CURRENCY_SYMBOL') || 'R';
@@ -178,6 +180,18 @@ let ShopService = class ShopService {
                 })
             };
             const savedQuotation = await this.quotationRepository.save(newQuotation);
+            for (const item of quotationData.items) {
+                const product = products.flat().find(p => p.uid === item.uid);
+                if (product) {
+                    await this.productsService.recordView(product.uid);
+                    await this.productsService.recordCartAdd(product.uid);
+                    if (savedQuotation.status === status_enums_1.OrderStatus.APPROVED) {
+                        await this.productsService.recordSale(product.uid, item.quantity, Number(product.price));
+                    }
+                    await this.productsService.updateStockHistory(product.uid, item.quantity, 'out');
+                    await this.productsService.calculateProductPerformance(product.uid);
+                }
+            }
             this.shopGateway.emitNewQuotation(savedQuotation?.quotationNumber);
             const baseConfig = {
                 name: clientName,
@@ -695,6 +709,21 @@ let ShopService = class ShopService {
             };
         }
     }
+    async updateQuotationStatus(quotationId, status) {
+        const quotation = await this.quotationRepository.findOne({
+            where: { uid: quotationId },
+            relations: ['quotationItems', 'quotationItems.product']
+        });
+        if (!quotation)
+            return;
+        if (status === status_enums_1.OrderStatus.APPROVED) {
+            for (const item of quotation?.quotationItems) {
+                await this.productsService?.recordSale(item?.product?.uid, item?.quantity, Number(item?.totalPrice));
+                await this.productsService?.calculateProductPerformance(item?.product?.uid);
+            }
+        }
+        await this.quotationRepository.update(quotationId, { status });
+    }
 };
 exports.ShopService = ShopService;
 exports.ShopService = ShopService = __decorate([
@@ -708,6 +737,7 @@ exports.ShopService = ShopService = __decorate([
         config_1.ConfigService,
         clients_service_1.ClientsService,
         event_emitter_1.EventEmitter2,
-        shop_gateway_1.ShopGateway])
+        shop_gateway_1.ShopGateway,
+        products_service_1.ProductsService])
 ], ShopService);
 //# sourceMappingURL=shop.service.js.map

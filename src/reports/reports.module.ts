@@ -27,6 +27,7 @@ import { Client } from '../clients/entities/client.entity';
 import { Attendance } from '../attendance/entities/attendance.entity';
 import { Organisation } from '../organisation/entities/organisation.entity';
 import { Branch } from '../branch/entities/branch.entity';
+import { CommunicationModule } from '../communication/communication.module';
 
 @Module({
   imports: [
@@ -56,7 +57,8 @@ import { Branch } from '../branch/entities/branch.entity';
     RewardsModule,
     CheckInsModule,
     TrackingModule,
-    ConfigModule
+    ConfigModule,
+    CommunicationModule
   ],
   controllers: [ReportsController],
   providers: [ReportsService],

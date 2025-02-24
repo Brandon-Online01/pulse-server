@@ -10,6 +10,7 @@ import { AccessLevel } from '../lib/enums/user.enums';
 import { CreateBannerDto } from './dto/create-banner.dto';
 import { UpdateBannerDto } from './dto/update-banner.dto';
 import { EnterpriseOnly } from '../decorators/enterprise-only.decorator';
+import { OrderStatus } from '../lib/enums/status.enums';
 
 @ApiTags('shop')
 @Controller('shop')
@@ -81,6 +82,19 @@ export class ShopController {
   @ApiOperation({ summary: 'get a list of quotations owned by user' })
   getQuotationsByUser(@Param('ref') ref: number) {
     return this.shopService.getQuotationsByUser(ref);
+  }
+
+  @Patch('quotations/:ref/status')
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
+  @ApiOperation({ summary: 'update quotation status and trigger analytics updates' })
+  async updateQuotationStatus(
+    @Param('ref') ref: number,
+    @Body('status') status: OrderStatus
+  ) {
+    await this.shopService.updateQuotationStatus(ref, status);
+    return {
+      message: process.env.SUCCESS_MESSAGE
+    };
   }
 
   //shop banners

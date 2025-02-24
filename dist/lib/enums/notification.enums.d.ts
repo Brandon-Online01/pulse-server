@@ -4,10 +4,16 @@ export declare enum NotificationType {
     PAYROLL = "payroll",
     USER = "user",
     SYSTEM = "system",
-    SHOPPING = "shopping"
+    SHOPPING = "shopping",
+    TASK_REMINDER = "TASK_REMINDER"
 }
 export declare enum NotificationStatus {
     READ = "read",
     UNREAD = "unread",
     ARCHIVED = "archived"
+}
+export declare enum NotificationPriority {
+    LOW = "low",
+    MEDIUM = "medium",
+    HIGH = "high"
 }
