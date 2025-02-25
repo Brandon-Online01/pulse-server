@@ -78,6 +78,7 @@ const organisation_settings_entity_1 = require("./organisation/entities/organisa
 const organisation_appearance_entity_1 = require("./organisation/entities/organisation-appearance.entity");
 const organisation_hours_entity_1 = require("./organisation/entities/organisation-hours.entity");
 const product_analytics_entity_1 = require("./products/entities/product-analytics.entity");
+const route_entity_1 = require("./tasks/entities/route.entity");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -125,6 +126,7 @@ exports.AppModule = AppModule = __decorate([
                     quotation_item_entity_1.QuotationItem,
                     banners_entity_1.Banners,
                     subtask_entity_1.SubTask,
+                    route_entity_1.Route,
                     communication_log_entity_1.CommunicationLog,
                     check_in_entity_1.CheckIn,
                     user_rewards_entity_1.UserRewards,

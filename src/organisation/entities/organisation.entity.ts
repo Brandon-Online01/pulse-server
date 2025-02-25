@@ -30,8 +30,16 @@ export class Organisation {
 	@Column({ nullable: false, unique: true })
 	name: string;
 
-	@Column({ nullable: false, unique: true })
-	address: string;
+	@Column({ type: 'json', nullable: false })
+	address: {
+		street: string;
+		city: string;
+		state: string;
+		country: string;
+		postalCode: string;
+		latitude?: number;
+		longitude?: number;
+	};
 
 	@Column({ nullable: false, unique: true })
 	email: string;

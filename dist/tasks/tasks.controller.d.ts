@@ -1,10 +1,13 @@
 import { TasksService } from './tasks.service';
+import { TaskRouteService } from './task-route.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { UpdateSubtaskDto } from './dto/update-subtask.dto';
+import { OptimizedRoute } from './interfaces/route.interface';
 export declare class TasksController {
     private readonly tasksService;
-    constructor(tasksService: TasksService);
+    private readonly taskRouteService;
+    constructor(tasksService: TasksService, taskRouteService: TaskRouteService);
     create(createTaskDto: CreateTaskDto): Promise<{
         message: string;
     }>;
@@ -45,4 +48,5 @@ export declare class TasksController {
     remove(ref: number): Promise<{
         message: string;
     }>;
+    getOptimizedRoutes(dateStr?: string): Promise<OptimizedRoute[]>;
 }

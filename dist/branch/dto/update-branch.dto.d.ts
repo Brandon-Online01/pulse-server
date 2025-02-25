@@ -6,7 +6,15 @@ export declare class UpdateBranchDto extends UpdateBranchDto_base {
     email?: string;
     phone?: string;
     contactPerson?: string;
-    address?: string;
+    address?: {
+        streetNumber: string;
+        street: string;
+        suburb: string;
+        city: string;
+        province: string;
+        country: string;
+        postalCode: string;
+    };
     website?: string;
     status?: GeneralStatus;
     isDeleted?: boolean;

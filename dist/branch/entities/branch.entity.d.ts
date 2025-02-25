@@ -19,6 +19,7 @@ import { Task } from 'src/tasks/entities/task.entity';
 import { Quotation } from 'src/shop/entities/quotation.entity';
 import { Notification } from 'src/notifications/entities/notification.entity';
 import { CommunicationLog } from 'src/communication/entities/communication-log.entity';
+import { Route } from 'src/tasks/entities/route.entity';
 export declare class Branch {
     uid: number;
     name: string;
@@ -26,7 +27,17 @@ export declare class Branch {
     phone: string;
     contactPerson: string;
     ref: string;
-    address: string;
+    address: {
+        streetNumber: string;
+        street: string;
+        suburb: string;
+        city: string;
+        province: string;
+        country: string;
+        postalCode: string;
+        latitude?: number;
+        longitude?: number;
+    };
     website: string;
     status: GeneralStatus;
     isDeleted: boolean;
@@ -49,6 +60,7 @@ export declare class Branch {
     clients: Client[];
     resellers: Reseller[];
     tasks: Task[];
+    routes: Route[];
     quotations: Quotation[];
     notifications: Notification[];
     communicationLogs: CommunicationLog[];

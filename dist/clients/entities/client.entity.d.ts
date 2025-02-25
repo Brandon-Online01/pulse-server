@@ -29,7 +29,15 @@ export declare class Client {
     website: string;
     logo: string;
     description: string;
-    address: string;
+    address: {
+        street: string;
+        city: string;
+        state: string;
+        country: string;
+        postalCode: string;
+        latitude: number;
+        longitude: number;
+    };
     city: string;
     country: string;
     postalCode: string;

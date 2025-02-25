@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, Req } from '@nestjs/common';
 import { TasksService } from './tasks.service';
+import { TaskRouteService } from './task-route.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -10,13 +11,17 @@ import { AccessLevel } from '../lib/enums/user.enums';
 import { UpdateSubtaskDto } from './dto/update-subtask.dto';
 import { EnterpriseOnly } from '../decorators/enterprise-only.decorator';
 import { TaskStatus, TaskPriority } from '../lib/enums/task.enums';
+import { OptimizedRoute } from './interfaces/route.interface';
 
 @ApiTags('tasks')
 @Controller('tasks')
 @UseGuards(AuthGuard, RoleGuard)
 @EnterpriseOnly('tasks')
 export class TasksController {
-  constructor(private readonly tasksService: TasksService) { }
+  constructor(
+    private readonly tasksService: TasksService,
+    private readonly taskRouteService: TaskRouteService,
+  ) { }
 
   @Post()
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
@@ -156,5 +161,27 @@ export class TasksController {
   @ApiOperation({ summary: 'soft delete a task by reference' })
   remove(@Param('ref') ref: number) {
     return this.tasksService.remove(ref);
+  }
+
+  @Get('routes')
+  @ApiOperation({ summary: 'Get optimized routes for tasks' })
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER)
+  async getOptimizedRoutes(@Query('date') dateStr?: string): Promise<OptimizedRoute[]> { 
+    const date = dateStr ? new Date(dateStr) : new Date();
+    const routes = await this.taskRouteService.planRoutes(date);
+    return routes.map(route => ({
+      userId: route.assignee.uid,
+      stops: route.waypoints.map(wp => ({
+        taskId: wp.taskId,
+        clientId: wp.clientId,
+        location: {
+          latitude: wp.location.lat,
+          longitude: wp.location.lng,
+          address: '' // This should be populated with actual address if available
+        }
+      })),
+      estimatedDuration: route.totalDuration,
+      totalDistance: route.totalDistance
+    }));
   }
 }

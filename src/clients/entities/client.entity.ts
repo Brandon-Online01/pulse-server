@@ -53,8 +53,16 @@ export class Client {
     @Column({ type: 'text', nullable: true })
     description: string;
 
-    @Column({ nullable: false })
-    address: string;
+    @Column({ type: 'json', nullable: false })
+    address: {
+        street: string;
+        city: string;
+        state: string;
+        country: string;
+        postalCode: string;
+        latitude: number;
+        longitude: number;
+    };
 
     @Column({ nullable: true })
     city: string;

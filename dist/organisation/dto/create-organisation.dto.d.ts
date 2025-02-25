@@ -1,6 +1,12 @@
 export declare class CreateOrganisationDto {
     name: string;
-    address: string;
+    address: {
+        streetNumber: string;
+        street: string;
+        suburb: string;
+        city: string;
+        province: string;
+    };
     email: string;
     phone: string;
     contactPerson: string;

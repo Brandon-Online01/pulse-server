@@ -19,6 +19,7 @@ import { Organisation } from '../../organisation/entities/organisation.entity';
 import { Notification } from '../../notifications/entities/notification.entity';
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToOne, OneToMany } from 'typeorm';
 import { Journal } from 'src/journal/entities/journal.entity';
+import { Route } from 'src/tasks/entities/route.entity';
 
 @Entity('users')
 export class User {
@@ -139,4 +140,7 @@ export class User {
 
     @OneToMany(() => Task, (task) => task?.creator)
     tasks: Task[];
+
+    @OneToMany(() => Route, (route) => route?.assignee)
+    routes: Route[]; 
 }

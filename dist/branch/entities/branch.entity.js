@@ -32,6 +32,7 @@ const task_entity_1 = require("../../tasks/entities/task.entity");
 const quotation_entity_1 = require("../../shop/entities/quotation.entity");
 const notification_entity_1 = require("../../notifications/entities/notification.entity");
 const communication_log_entity_1 = require("../../communication/entities/communication-log.entity");
+const route_entity_1 = require("../../tasks/entities/route.entity");
 let Branch = class Branch {
 };
 exports.Branch = Branch;
@@ -60,8 +61,8 @@ __decorate([
     __metadata("design:type", String)
 ], Branch.prototype, "ref", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ nullable: false }),
-    __metadata("design:type", String)
+    (0, typeorm_1.Column)({ type: 'json', nullable: false }),
+    __metadata("design:type", Object)
 ], Branch.prototype, "address", void 0);
 __decorate([
     (0, typeorm_1.Column)({ nullable: false, unique: true }),
@@ -148,9 +149,13 @@ __decorate([
     __metadata("design:type", Array)
 ], Branch.prototype, "resellers", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => task_entity_1.Task, (task) => task?.branch, { nullable: true }),
+    (0, typeorm_1.OneToMany)(() => task_entity_1.Task, (task) => task.branch),
     __metadata("design:type", Array)
 ], Branch.prototype, "tasks", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => route_entity_1.Route, route => route.branch),
+    __metadata("design:type", Array)
+], Branch.prototype, "routes", void 0);
 __decorate([
     (0, typeorm_1.OneToMany)(() => quotation_entity_1.Quotation, (quotation) => quotation?.branch, { nullable: true }),
     __metadata("design:type", Array)

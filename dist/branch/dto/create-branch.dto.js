@@ -59,10 +59,18 @@ __decorate([
 ], CreateBranchDto.prototype, "ref", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
-        example: '123 Main Street, Anytown, USA',
+        example: {
+            streetNumber: '123',
+            street: 'Anystreet',
+            suburb: 'Anysuburb',
+            city: 'Anycity',
+            province: 'Anyprovince',
+            country: 'Anycountry',
+            postalCode: '12345'
+        },
         description: 'The address of the branch'
     }),
-    __metadata("design:type", String)
+    __metadata("design:type", Object)
 ], CreateBranchDto.prototype, "address", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({

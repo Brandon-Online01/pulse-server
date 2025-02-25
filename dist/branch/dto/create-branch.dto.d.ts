@@ -6,7 +6,15 @@ export declare class CreateBranchDto {
     website: string;
     contactPerson: string;
     ref: string;
-    address: string;
+    address: {
+        streetNumber: string;
+        street: string;
+        suburb: string;
+        city: string;
+        province: string;
+        country: string;
+        postalCode: string;
+    };
     status: GeneralStatus;
     organisation: {
         uid: number;

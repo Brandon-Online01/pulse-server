@@ -20,6 +20,8 @@ import { Task } from 'src/tasks/entities/task.entity';
 import { Quotation } from 'src/shop/entities/quotation.entity';
 import { Notification } from 'src/notifications/entities/notification.entity';
 import { CommunicationLog } from 'src/communication/entities/communication-log.entity';
+import { Route } from 'src/tasks/entities/route.entity';
+
 
 @Entity('branch')
 export class Branch {
@@ -41,8 +43,18 @@ export class Branch {
 	@Column({ nullable: false, unique: true })
 	ref: string;
 
-	@Column({ nullable: false })
-	address: string;
+	@Column({ type: 'json', nullable: false })
+	address: {
+		streetNumber: string;
+		street: string;
+		suburb: string;
+		city: string;
+		province: string;
+		country: string;
+		postalCode: string;
+		latitude?: number;
+		longitude?: number;
+	};
 
 	@Column({ nullable: false, unique: true })
 	website: string;
@@ -108,8 +120,11 @@ export class Branch {
 	@OneToMany(() => Reseller, (reseller) => reseller?.branch, { nullable: true })
 	resellers: Reseller[];
 
-	@OneToMany(() => Task, (task) => task?.branch, { nullable: true })
+	@OneToMany(() => Task, (task) => task.branch)
 	tasks: Task[];
+
+	@OneToMany(() => Route, route => route.branch)
+	routes: Route[]; 
 
 	@OneToMany(() => Quotation, (quotation) => quotation?.branch, { nullable: true })
 	quotations: Quotation[];

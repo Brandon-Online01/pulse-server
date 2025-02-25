@@ -1,8 +1,8 @@
-# LORO Enterprise Backend ��
+# LORO Enterprise Backend Service 🚀
 
-A powerful NestJS backend service powering location tracking, geofencing, and business management features for the LORO platform.
+A powerful NestJS backend service powering location tracking, geofencing, business management, and intelligent route optimization for the LORO platform.
 
-## 🎯 Demo Features
+## 🎯 Features
 
 ### 1. Location Services 📍
 - **Real-time Tracking**
@@ -36,6 +36,15 @@ A powerful NestJS backend service powering location tracking, geofencing, and bu
 - User management
 - Task tracking
 - Analytics and reporting
+- Intelligent route optimization
+  - Real-time route planning
+  - Google Maps integration
+  - Multi-stop optimization
+  - Distance and duration calculations
+  - Automatic route updates
+  - Route caching for performance
+  - Assignee-based routing
+  - Client location optimization
 
 ## 🚀 Quick Demo Guide
 
@@ -108,6 +117,17 @@ Key endpoints for demo:
    - POST /geofence
    - POST /geofence/event
    - GET /geofence/areas
+
+4. **Route Optimization**
+   - GET /tasks/routes
+   - Parameters:
+     - date (optional): YYYY-MM-DD format
+   - Returns optimized routes with:
+     - Total distance and duration
+     - Waypoint order
+     - Turn-by-turn directions
+     - Client locations
+     - Assignee details
 
 ## 🧪 Testing Guide
 
@@ -313,88 +333,3 @@ http://localhost:4400/api
 ```bash
 yarn test
 ```
-
-### E2E Tests
-
-```bash
-yarn test:e2e
-```
-
-### Test Coverage
-
-```bash
-yarn test:cov
-```
-
-## 📦 Project Structure
-
-```
-src/
-├── assets/           # Asset management module
-├── attendance/       # Attendance tracking
-├── auth/             # Authentication & authorization
-├── branch/           # Branch management
-├── check-ins/        # Check-in system
-├── claims/           # Claims processing
-├── clients/          # Client management
-├── communication/    # Communication system
-├── config/           # Configuration
-├── decorators/       # Custom decorators
-├── docs/             # Documentation
-├── guards/           # Security guards
-├── journal/          # Journal system
-├── leads/            # Lead management
-├── licensing/        # Licensing system
-├── lib/              # Shared libraries
-│   ├── docs/         # Documentation
-│   ├── enums/        # Enumerations
-│   ├── interfaces/   # TypeScript interfaces
-│   └── templates/    # Email templates
-├── news/             # News management
-├── notifications/    # Notification system
-├── organisation/     # Organization management
-├── products/         # Product management
-├── reports/          # Reporting system
-├── resellers/        # Reseller management
-├── rewards/          # Rewards system
-├── shop/             # E-commerce platform
-├── tasks/            # Task management
-├── tracking/         # GPS tracking
-├── user/             # User management
-└── utils/            # Utility functions
-```
-
-## 🔒 Security
-
--   JWT authentication
--   Role-based authorization
--   Request validation
--   Data encryption
--   Rate limiting
--   CORS protection
--   Helmet security
--   Environment variable protection
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 📝 Code Style
-
--   Follow TypeScript best practices
--   Use ESLint and Prettier for code formatting
--   Follow NestJS architectural patterns
--   Write comprehensive tests
--   Document your code with JSDoc comments
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 👨‍💻 Author
-
-[@Brandon-Online01](https://github.com/Brandon-Online01)

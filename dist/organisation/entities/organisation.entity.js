@@ -45,8 +45,8 @@ __decorate([
     __metadata("design:type", String)
 ], Organisation.prototype, "name", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ nullable: false, unique: true }),
-    __metadata("design:type", String)
+    (0, typeorm_1.Column)({ type: 'json', nullable: false }),
+    __metadata("design:type", Object)
 ], Organisation.prototype, "address", void 0);
 __decorate([
     (0, typeorm_1.Column)({ nullable: false, unique: true }),

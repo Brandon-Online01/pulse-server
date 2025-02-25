@@ -18,6 +18,7 @@ import { UserEmployeementProfile } from './user.employeement.profile.entity';
 import { Organisation } from '../../organisation/entities/organisation.entity';
 import { Notification } from '../../notifications/entities/notification.entity';
 import { Journal } from 'src/journal/entities/journal.entity';
+import { Route } from 'src/tasks/entities/route.entity';
 export declare class User {
     uid: number;
     username: string;
@@ -58,4 +59,5 @@ export declare class User {
     journals: Journal[];
     isDeleted: boolean;
     tasks: Task[];
+    routes: Route[];
 }

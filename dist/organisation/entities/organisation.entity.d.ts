@@ -23,7 +23,15 @@ import { OrganisationHours } from './organisation-hours.entity';
 export declare class Organisation {
     uid: number;
     name: string;
-    address: string;
+    address: {
+        street: string;
+        city: string;
+        state: string;
+        country: string;
+        postalCode: string;
+        latitude?: number;
+        longitude?: number;
+    };
     email: string;
     phone: string;
     website: string;

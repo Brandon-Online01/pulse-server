@@ -39,10 +39,26 @@ export class CreateBranchDto {
     ref: string;
 
     @ApiProperty({
-        example: '123 Main Street, Anytown, USA',
+        example: {
+            streetNumber: '123',
+            street: 'Anystreet',
+            suburb: 'Anysuburb',
+            city: 'Anycity',
+            province: 'Anyprovince',
+            country: 'Anycountry',
+            postalCode: '12345'
+        },
         description: 'The address of the branch'
     })
-    address: string;
+    address: {
+        streetNumber: string;
+        street: string;
+        suburb: string;
+        city: string;
+        province: string;
+        country: string;
+        postalCode: string;
+    };
 
     @ApiProperty({
         example: GeneralStatus.ACTIVE,

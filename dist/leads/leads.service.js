@@ -422,7 +422,7 @@ let LeadsService = class LeadsService {
     analyzeGeographicDistribution(leads) {
         const geoStats = new Map();
         leads.forEach(lead => {
-            const region = lead.client?.address?.split(',').pop()?.trim() || 'Unknown';
+            const region = lead?.client?.address?.city || 'Unknown';
             if (!geoStats.has(region)) {
                 geoStats.set(region, {
                     total: 0,

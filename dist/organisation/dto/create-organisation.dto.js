@@ -28,10 +28,18 @@ __decorate([
     (0, class_validator_1.IsNotEmpty)(),
     (0, class_validator_1.IsString)(),
     (0, swagger_1.ApiProperty)({
-        example: '123 Main St, Anytown, USA',
+        example: {
+            streetNumber: '123',
+            street: 'Anystreet',
+            suburb: 'Anysuburb',
+            city: 'Anycity',
+            province: 'Anyprovince',
+            country: 'Anycountry',
+            postalCode: '12345'
+        },
         description: 'The address of the organisation'
     }),
-    __metadata("design:type", String)
+    __metadata("design:type", Object)
 ], CreateOrganisationDto.prototype, "address", void 0);
 __decorate([
     (0, class_validator_1.IsNotEmpty)(),

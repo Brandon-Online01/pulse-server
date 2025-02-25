@@ -69,6 +69,7 @@ import { OrganisationSettings } from './organisation/entities/organisation-setti
 import { OrganisationAppearance } from './organisation/entities/organisation-appearance.entity';
 import { OrganisationHours } from './organisation/entities/organisation-hours.entity';
 import { ProductAnalytics } from './products/entities/product-analytics.entity';
+import { Route } from './tasks/entities/route.entity';
 
 @Module({
   imports: [
@@ -113,6 +114,7 @@ import { ProductAnalytics } from './products/entities/product-analytics.entity';
         QuotationItem,
         Banners,
         SubTask,
+        Route, 
         CommunicationLog,
         CheckIn,
         UserRewards,

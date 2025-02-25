@@ -15,6 +15,7 @@ import {
 import { Organisation } from '../../organisation/entities/organisation.entity';
 import { Branch } from '../../branch/entities/branch.entity';
 import { User } from 'src/user/entities/user.entity';
+import { Route } from './route.entity';
 
 @Entity('tasks')
 export class Task {
@@ -81,6 +82,9 @@ export class Task {
 
 	@OneToMany(() => SubTask, (subtask) => subtask.task)
 	subtasks: SubTask[];
+
+	@OneToMany(() => Route, route => route.task)
+	routes: Route[];
 
 	@ManyToOne(() => Organisation, (organisation) => organisation.tasks)
 	organisation: Organisation;

@@ -356,7 +356,7 @@ let TasksService = class TasksService {
                     uid: ref,
                     isDeleted: false,
                 },
-                relations: ['creator', 'subtasks', 'organisation', 'branch'],
+                relations: ['creator', 'subtasks', 'organisation', 'branch', 'routes'],
             });
             if (!task) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
@@ -379,7 +379,7 @@ let TasksService = class TasksService {
         try {
             const tasks = await this.taskRepository.find({
                 where: { creator: { uid: ref }, isDeleted: false },
-                relations: ['creator', 'subtasks', 'organisation', 'branch'],
+                relations: ['creator', 'subtasks', 'organisation', 'branch', 'routes'],
             });
             if (!tasks) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
@@ -424,7 +424,7 @@ let TasksService = class TasksService {
             const [tasks, total] = await this.taskRepository.findAndCount({
                 where,
                 skip: (page - 1) * limit,
-                relations: ['creator', 'subtasks', 'organisation', 'branch'],
+                relations: ['creator', 'subtasks', 'organisation', 'branch', 'routes'],
                 take: limit,
                 order: {
                     createdAt: 'DESC',

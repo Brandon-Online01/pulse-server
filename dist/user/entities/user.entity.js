@@ -31,6 +31,7 @@ const organisation_entity_1 = require("../../organisation/entities/organisation.
 const notification_entity_1 = require("../../notifications/entities/notification.entity");
 const typeorm_1 = require("typeorm");
 const journal_entity_1 = require("../../journal/entities/journal.entity");
+const route_entity_1 = require("../../tasks/entities/route.entity");
 let User = class User {
     ;
 };
@@ -192,6 +193,10 @@ __decorate([
     (0, typeorm_1.OneToMany)(() => task_entity_1.Task, (task) => task?.creator),
     __metadata("design:type", Array)
 ], User.prototype, "tasks", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => route_entity_1.Route, (route) => route?.assignee),
+    __metadata("design:type", Array)
+], User.prototype, "routes", void 0);
 exports.User = User = __decorate([
     (0, typeorm_1.Entity)('users')
 ], User);

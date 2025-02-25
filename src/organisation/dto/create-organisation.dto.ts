@@ -1,6 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsBoolean, IsEmail, IsEnum, IsNotEmpty, IsString, IsUrl } from "class-validator";
-import { GeneralStatus } from "../../lib/enums/status.enums";
+import { IsEmail, IsNotEmpty, IsString, IsUrl } from "class-validator";
 
 export class CreateOrganisationDto {
     @IsNotEmpty()
@@ -14,10 +13,24 @@ export class CreateOrganisationDto {
     @IsNotEmpty()
     @IsString()
     @ApiProperty({
-        example: '123 Main St, Anytown, USA',
+        example: {
+            streetNumber: '123',
+            street: 'Anystreet',
+            suburb: 'Anysuburb',
+            city: 'Anycity',
+            province: 'Anyprovince',
+            country: 'Anycountry',
+            postalCode: '12345'
+        },
         description: 'The address of the organisation'
     })
-    address: string;
+    address: {
+        streetNumber: string;
+        street: string;
+        suburb: string;
+        city: string;
+        province: string;
+    };
 
     @IsNotEmpty()
     @IsEmail()

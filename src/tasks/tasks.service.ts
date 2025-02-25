@@ -483,7 +483,7 @@ export class TasksService {
 					uid: ref,
 					isDeleted: false,
 				},
-				relations: ['creator', 'subtasks', 'organisation', 'branch'],
+				relations: ['creator', 'subtasks', 'organisation', 'branch', 'routes'],
 			});
 
 			if (!task) {
@@ -510,7 +510,7 @@ export class TasksService {
 		try {
 			const tasks = await this.taskRepository.find({
 				where: { creator: { uid: ref }, isDeleted: false },
-				relations: ['creator', 'subtasks', 'organisation', 'branch'],
+				relations: ['creator', 'subtasks', 'organisation', 'branch', 'routes'],
 			});
 
 			if (!tasks) {
@@ -578,7 +578,7 @@ export class TasksService {
 			const [tasks, total] = await this.taskRepository.findAndCount({
 				where,
 				skip: (page - 1) * limit,
-				relations: ['creator', 'subtasks', 'organisation', 'branch'],
+				relations: ['creator', 'subtasks', 'organisation', 'branch', 'routes'],
 				take: limit,
 				order: {
 					createdAt: 'DESC',
