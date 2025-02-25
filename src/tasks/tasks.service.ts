@@ -202,7 +202,6 @@ export class TasksService {
 			status: TaskStatus.PENDING,
 			taskType: createTaskDto.taskType || TaskType.OTHER,
 			priority: createTaskDto.priority,
-			attachments: createTaskDto.attachments || [],
 			completionDate: null,
 			repetitionType: RepetitionType.NONE, // Prevent infinite recursion
 			repetitionDeadline: null,
@@ -317,14 +316,11 @@ export class TasksService {
 					description: createTaskDto.description,
 					taskType: createTaskDto.taskType,
 					priority: createTaskDto.priority,
-					status: createTaskDto.status || TaskStatus.PENDING,
-					progress: createTaskDto.progress || 0,
 					deadline: createTaskDto.deadline ? new Date(createTaskDto.deadline) : null,
 					repetitionType: createTaskDto.repetitionType || RepetitionType.NONE,
 					repetitionDeadline: createTaskDto.repetitionDeadline
 						? new Date(createTaskDto.repetitionDeadline)
 						: null,
-					attachments: createTaskDto.attachments || [],
 					targetCategory: createTaskDto.targetCategory,
 					isDeleted: false,
 					isOverdue: false,

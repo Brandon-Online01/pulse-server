@@ -14,9 +14,6 @@ const class_validator_1 = require("class-validator");
 const swagger_1 = require("@nestjs/swagger");
 const finance_enums_1 = require("../../lib/enums/finance.enums");
 class CreateClaimDto {
-    constructor() {
-        this.status = finance_enums_1.ClaimStatus.PENDING;
-    }
 }
 exports.CreateClaimDto = CreateClaimDto;
 __decorate([
@@ -43,11 +40,6 @@ __decorate([
     (0, class_validator_1.IsEnum)(finance_enums_1.ClaimCategory),
     __metadata("design:type", String)
 ], CreateClaimDto.prototype, "category", void 0);
-__decorate([
-    (0, swagger_1.ApiProperty)({ enum: finance_enums_1.ClaimStatus, description: 'Status of the claim' }),
-    (0, class_validator_1.IsEnum)(finance_enums_1.ClaimStatus),
-    __metadata("design:type", String)
-], CreateClaimDto.prototype, "status", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({ description: 'UID of the owner of the claim' }),
     (0, class_validator_1.IsNotEmpty)(),

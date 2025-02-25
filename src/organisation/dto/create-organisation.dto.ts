@@ -58,23 +58,7 @@ export class CreateOrganisationDto {
         description: 'The logo of the organisation'
     })
     logo: string;
-
-    @IsNotEmpty()
-    @IsEnum(GeneralStatus)
-    @ApiProperty({
-        example: GeneralStatus.ACTIVE,
-        description: 'The status of the organisation'
-    })
-    status: GeneralStatus;
-
-    @IsNotEmpty()
-    @IsBoolean()
-    @ApiProperty({
-        example: false,
-        description: 'Whether the organisation is deleted'
-    })
-    isDeleted: boolean;
-
+    
     @IsNotEmpty()
     @IsString()
     @ApiProperty({

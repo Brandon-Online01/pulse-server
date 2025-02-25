@@ -12,7 +12,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateProductDto = void 0;
 const swagger_1 = require("@nestjs/swagger");
 const class_validator_1 = require("class-validator");
-const product_enums_1 = require("../../lib/enums/product.enums");
 class CreateProductDto {
 }
 exports.CreateProductDto = CreateProductDto;
@@ -52,16 +51,6 @@ __decorate([
     }),
     __metadata("design:type", String)
 ], CreateProductDto.prototype, "category", void 0);
-__decorate([
-    (0, class_validator_1.IsEnum)(product_enums_1.ProductStatus),
-    (0, class_validator_1.IsOptional)(),
-    (0, swagger_1.ApiProperty)({
-        description: 'The status of the product',
-        enum: product_enums_1.ProductStatus,
-        default: product_enums_1.ProductStatus.NEW
-    }),
-    __metadata("design:type", String)
-], CreateProductDto.prototype, "status", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsOptional)(),

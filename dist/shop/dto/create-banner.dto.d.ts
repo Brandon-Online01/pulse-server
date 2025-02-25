@@ -5,4 +5,5 @@ export declare class CreateBannerDto {
     description: string;
     image: string;
     category: BannerCategory;
+    isDeleted: boolean;
 }

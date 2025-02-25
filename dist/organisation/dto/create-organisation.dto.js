@@ -12,7 +12,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateOrganisationDto = void 0;
 const swagger_1 = require("@nestjs/swagger");
 const class_validator_1 = require("class-validator");
-const status_enums_1 = require("../../lib/enums/status.enums");
 class CreateOrganisationDto {
 }
 exports.CreateOrganisationDto = CreateOrganisationDto;
@@ -79,24 +78,6 @@ __decorate([
     }),
     __metadata("design:type", String)
 ], CreateOrganisationDto.prototype, "logo", void 0);
-__decorate([
-    (0, class_validator_1.IsNotEmpty)(),
-    (0, class_validator_1.IsEnum)(status_enums_1.GeneralStatus),
-    (0, swagger_1.ApiProperty)({
-        example: status_enums_1.GeneralStatus.ACTIVE,
-        description: 'The status of the organisation'
-    }),
-    __metadata("design:type", String)
-], CreateOrganisationDto.prototype, "status", void 0);
-__decorate([
-    (0, class_validator_1.IsNotEmpty)(),
-    (0, class_validator_1.IsBoolean)(),
-    (0, swagger_1.ApiProperty)({
-        example: false,
-        description: 'Whether the organisation is deleted'
-    }),
-    __metadata("design:type", Boolean)
-], CreateOrganisationDto.prototype, "isDeleted", void 0);
 __decorate([
     (0, class_validator_1.IsNotEmpty)(),
     (0, class_validator_1.IsString)(),

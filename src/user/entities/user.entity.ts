@@ -1,5 +1,4 @@
 import { AccessLevel } from '../../lib/enums/user.enums';
-import { AccountStatus } from '../../lib/enums/status.enums';
 import { UserProfile } from './user.profile.entity';
 import { Branch } from '../../branch/entities/branch.entity';
 import { Claim } from '../../claims/entities/claim.entity';

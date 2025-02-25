@@ -14,7 +14,6 @@ const class_validator_1 = require("class-validator");
 const task_enums_1 = require("../../lib/enums/task.enums");
 const class_transformer_1 = require("class-transformer");
 const swagger_1 = require("@nestjs/swagger");
-const status_enums_1 = require("../../lib/enums/status.enums");
 class AssigneeDto {
 }
 exports.AssigneeDto = AssigneeDto;
@@ -87,12 +86,6 @@ __decorate([
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], SubtaskDto.prototype, "description", void 0);
-__decorate([
-    (0, swagger_1.ApiProperty)({ description: 'Subtask status', enum: status_enums_1.SubTaskStatus, example: status_enums_1.SubTaskStatus.PENDING }),
-    (0, class_validator_1.IsEnum)(status_enums_1.SubTaskStatus),
-    (0, class_validator_1.IsOptional)(),
-    __metadata("design:type", String)
-], SubtaskDto.prototype, "status", void 0);
 class CreateTaskDto {
 }
 exports.CreateTaskDto = CreateTaskDto;
@@ -136,25 +129,6 @@ __decorate([
 ], CreateTaskDto.prototype, "priority", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
-        description: 'The current status of the task',
-        enum: task_enums_1.TaskStatus,
-        example: task_enums_1.TaskStatus.PENDING,
-    }),
-    (0, class_validator_1.IsEnum)(task_enums_1.TaskStatus),
-    (0, class_validator_1.IsOptional)(),
-    __metadata("design:type", String)
-], CreateTaskDto.prototype, "status", void 0);
-__decorate([
-    (0, swagger_1.ApiProperty)({
-        description: 'Task progress percentage',
-        example: 0,
-    }),
-    (0, class_validator_1.IsNumber)(),
-    (0, class_validator_1.IsOptional)(),
-    __metadata("design:type", Number)
-], CreateTaskDto.prototype, "progress", void 0);
-__decorate([
-    (0, swagger_1.ApiProperty)({
         description: 'The deadline for the task completion',
         example: `${new Date()}`,
     }),
@@ -183,16 +157,6 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Date)
 ], CreateTaskDto.prototype, "repetitionDeadline", void 0);
-__decorate([
-    (0, swagger_1.ApiProperty)({
-        description: 'Array of file attachments for the task',
-        example: ['https://cdn-icons-png.flaticon.com/512/3607/3607444.png'],
-        type: [String],
-    }),
-    (0, class_validator_1.IsArray)(),
-    (0, class_validator_1.IsOptional)(),
-    __metadata("design:type", Array)
-], CreateTaskDto.prototype, "attachments", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'Array of assignees',

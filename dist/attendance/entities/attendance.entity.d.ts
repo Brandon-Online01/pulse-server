@@ -14,6 +14,8 @@ export declare class Attendance {
     checkOutLongitude: number;
     checkInNotes: string;
     checkOutNotes: string;
+    breakStartTime: Date;
+    breakEndTime: Date;
     createdAt: Date;
     updatedAt: Date;
     verifiedAt: Date;

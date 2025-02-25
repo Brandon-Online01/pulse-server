@@ -1,4 +1,3 @@
-import { GeneralStatus } from '../../lib/enums/status.enums';
 export declare class CreateClientDto {
     name: string;
     contactPerson: string;
@@ -12,7 +11,6 @@ export declare class CreateClientDto {
     city?: string;
     country?: string;
     postalCode?: string;
-    status: GeneralStatus;
     isDeleted: boolean;
     ref: string;
     assignedSalesRep: {

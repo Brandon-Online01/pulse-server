@@ -43,6 +43,8 @@ export interface AttendanceMetrics {
     totalOvertime: number;
     onTimeCheckIns: number;
     lateCheckIns: number;
+    averageBreakTime: number;
+    efficiency: number;
 }
 
 export interface ClientVisitMetrics {

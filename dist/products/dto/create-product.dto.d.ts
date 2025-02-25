@@ -1,4 +1,3 @@
-import { ProductStatus } from '../../lib/enums/product.enums';
 export declare class CreateProductDto {
     name: string;
     description?: string;
@@ -12,7 +11,6 @@ export declare class CreateProductDto {
     weight: number;
     stockQuantity: number;
     sku: string;
-    status: ProductStatus;
     imageUrl?: string;
     warehouseLocation?: string;
     productReferenceCode: string;

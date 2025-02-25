@@ -67,4 +67,13 @@ __decorate([
     }),
     __metadata("design:type", String)
 ], CreateBannerDto.prototype, "category", void 0);
+__decorate([
+    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.IsBoolean)(),
+    (0, swagger_1.ApiProperty)({
+        description: 'Deletion status of the banner',
+        example: false
+    }),
+    __metadata("design:type", Boolean)
+], CreateBannerDto.prototype, "isDeleted", void 0);
 //# sourceMappingURL=create-banner.dto.js.map

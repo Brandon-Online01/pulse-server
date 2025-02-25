@@ -67,6 +67,14 @@ __decorate([
     __metadata("design:type", String)
 ], Attendance.prototype, "checkOutNotes", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ type: 'timestamp', nullable: true }),
+    __metadata("design:type", Date)
+], Attendance.prototype, "breakStartTime", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'timestamp', nullable: true }),
+    __metadata("design:type", Date)
+], Attendance.prototype, "breakEndTime", void 0);
+__decorate([
     (0, typeorm_1.Column)({ type: 'timestamp', nullable: false, default: () => 'CURRENT_TIMESTAMP' }),
     __metadata("design:type", Date)
 ], Attendance.prototype, "createdAt", void 0);

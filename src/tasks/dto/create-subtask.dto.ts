@@ -1,6 +1,5 @@
-import { IsString, IsOptional, IsEnum } from 'class-validator';
+import { IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { SubTaskStatus } from '../../lib/enums/status.enums';
 
 export class CreateSubtaskDto {
     @ApiProperty({
@@ -18,15 +17,4 @@ export class CreateSubtaskDto {
     })
     @IsString()
     description: string;
-
-    @ApiProperty({
-        description: 'The current status of the subtask',
-        enum: SubTaskStatus,
-        example: SubTaskStatus.PENDING,
-        default: SubTaskStatus.PENDING,
-        required: false
-    })
-    @IsEnum(SubTaskStatus)
-    @IsOptional()
-    status?: SubTaskStatus;
 } 

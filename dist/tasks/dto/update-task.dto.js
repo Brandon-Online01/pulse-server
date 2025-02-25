@@ -15,13 +15,14 @@ const task_enums_1 = require("../../lib/enums/task.enums");
 const class_transformer_1 = require("class-transformer");
 const swagger_1 = require("@nestjs/swagger");
 const create_task_dto_1 = require("./create-task.dto");
+const update_subtask_dto_1 = require("./update-subtask.dto");
 class UpdateTaskDto {
 }
 exports.UpdateTaskDto = UpdateTaskDto;
 __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'The title of the task',
-        example: 'Test Task'
+        example: 'Test Task',
     }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsOptional)(),
@@ -30,7 +31,7 @@ __decorate([
 __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'The description of the task',
-        example: 'Test description'
+        example: 'Test description',
     }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsOptional)(),
@@ -40,7 +41,7 @@ __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'The current status of the task',
         enum: task_enums_1.TaskStatus,
-        example: task_enums_1.TaskStatus.IN_PROGRESS
+        example: task_enums_1.TaskStatus.IN_PROGRESS,
     }),
     (0, class_validator_1.IsEnum)(task_enums_1.TaskStatus),
     (0, class_validator_1.IsOptional)(),
@@ -50,7 +51,7 @@ __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'The type of task',
         enum: task_enums_1.TaskType,
-        example: task_enums_1.TaskType.IN_PERSON_MEETING
+        example: task_enums_1.TaskType.IN_PERSON_MEETING,
     }),
     (0, class_validator_1.IsEnum)(task_enums_1.TaskType),
     (0, class_validator_1.IsOptional)(),
@@ -60,7 +61,7 @@ __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'The priority level of the task',
         enum: task_enums_1.TaskPriority,
-        example: task_enums_1.TaskPriority.HIGH
+        example: task_enums_1.TaskPriority.HIGH,
     }),
     (0, class_validator_1.IsEnum)(task_enums_1.TaskPriority),
     (0, class_validator_1.IsOptional)(),
@@ -69,7 +70,7 @@ __decorate([
 __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'The deadline for the task completion',
-        example: new Date().toISOString()
+        example: new Date().toISOString(),
     }),
     (0, class_transformer_1.Type)(() => Date),
     (0, class_validator_1.IsDate)(),
@@ -80,7 +81,7 @@ __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'How often the task should repeat',
         enum: task_enums_1.RepetitionType,
-        example: task_enums_1.RepetitionType.MONTHLY
+        example: task_enums_1.RepetitionType.MONTHLY,
     }),
     (0, class_validator_1.IsEnum)(task_enums_1.RepetitionType),
     (0, class_validator_1.IsOptional)(),
@@ -89,7 +90,7 @@ __decorate([
 __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'The deadline for task repetition',
-        example: new Date().toISOString()
+        example: new Date().toISOString(),
     }),
     (0, class_transformer_1.Type)(() => Date),
     (0, class_validator_1.IsDate)(),
@@ -99,7 +100,7 @@ __decorate([
 __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'Task progress percentage',
-        example: 50
+        example: 50,
     }),
     (0, class_validator_1.IsNumber)(),
     (0, class_validator_1.IsOptional)(),
@@ -109,7 +110,7 @@ __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'Array of file attachments for the task',
         example: ['https://cdn-icons-png.flaticon.com/512/3607/3607444.png'],
-        type: [String]
+        type: [String],
     }),
     (0, class_validator_1.IsArray)(),
     (0, class_validator_1.IsOptional)(),
@@ -118,7 +119,7 @@ __decorate([
 __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'Array of assignees',
-        type: [create_task_dto_1.AssigneeDto]
+        type: [create_task_dto_1.AssigneeDto],
     }),
     (0, class_validator_1.IsArray)(),
     (0, class_validator_1.ValidateNested)({ each: true }),
@@ -129,7 +130,7 @@ __decorate([
 __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'Array of clients',
-        type: [create_task_dto_1.ClientDto]
+        type: [create_task_dto_1.ClientDto],
     }),
     (0, class_validator_1.IsArray)(),
     (0, class_validator_1.ValidateNested)({ each: true }),
@@ -140,7 +141,7 @@ __decorate([
 __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'Target category for bulk client assignment',
-        example: 'enterprise'
+        example: 'enterprise',
     }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsOptional)(),
@@ -149,18 +150,18 @@ __decorate([
 __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'Array of subtasks',
-        type: [create_task_dto_1.SubtaskDto]
+        type: [create_task_dto_1.SubtaskDto],
     }),
     (0, class_validator_1.IsArray)(),
     (0, class_validator_1.ValidateNested)({ each: true }),
-    (0, class_transformer_1.Type)(() => create_task_dto_1.SubtaskDto),
+    (0, class_transformer_1.Type)(() => update_subtask_dto_1.UpdateSubtaskDto),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Array)
 ], UpdateTaskDto.prototype, "subtasks", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'Array of creators',
-        type: [create_task_dto_1.CreatorDto]
+        type: [create_task_dto_1.CreatorDto],
     }),
     (0, class_validator_1.IsArray)(),
     (0, class_validator_1.ValidateNested)({ each: true }),
@@ -171,7 +172,7 @@ __decorate([
 __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'Comments',
-        example: 'Just a testing task'
+        example: 'Just a testing task',
     }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsOptional)(),

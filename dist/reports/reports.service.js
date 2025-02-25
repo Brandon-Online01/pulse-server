@@ -54,6 +54,8 @@ let ReportsService = class ReportsService {
         this.organisationRepository = organisationRepository;
         this.branchRepository = branchRepository;
         this.clientRepository = clientRepository;
+        this.WORK_HOURS_PER_DAY = 8;
+        this.MINUTES_PER_HOUR = 60;
         this.currencyLocale = this.configService.get('CURRENCY_LOCALE') || 'en-ZA';
         this.currencyCode = this.configService.get('CURRENCY_CODE') || 'ZAR';
         this.currencySymbol = this.configService.get('CURRENCY_SYMBOL') || 'R';
@@ -142,180 +144,198 @@ let ReportsService = class ReportsService {
         }
     }
     async generateDailyUserReport(options) {
-        if (!options.userId)
-            throw new Error('User ID is required for daily report');
-        const dateRange = {
-            start: options.startDate,
-            end: options.endDate,
-        };
-        const [attendanceRecords, tasks, clientVisits, leads, achievements, journals, userRewards] = await Promise.all([
-            this.attendanceRepository.find({
-                where: {
-                    owner: { uid: options.userId },
-                    checkIn: (0, typeorm_2.Between)(dateRange.start, dateRange.end),
-                },
-            }),
-            this.taskRepository.find({
-                where: {
-                    creator: { uid: options.userId },
-                    createdAt: (0, typeorm_2.Between)(dateRange.start, dateRange.end),
-                },
-            }),
-            this.checkInRepository.find({
-                where: {
-                    owner: { uid: options.userId },
-                    checkInTime: (0, typeorm_2.Between)(dateRange.start, dateRange.end),
-                },
-                relations: ['client'],
-            }),
-            this.leadRepository.find({
-                where: {
-                    owner: { uid: options.userId },
-                    createdAt: (0, typeorm_2.Between)(dateRange.start, dateRange.end),
-                },
-            }),
-            this.achievementRepository.find({
-                where: {
-                    userRewards: { owner: { uid: options.userId } },
-                    createdAt: (0, typeorm_2.Between)(dateRange.start, dateRange.end),
-                },
-            }),
-            this.journalRepository.find({
-                where: {
-                    owner: { uid: options.userId },
-                    createdAt: (0, typeorm_2.Between)(dateRange.start, dateRange.end),
-                },
-            }),
-            this.achievementRepository
-                .createQueryBuilder('achievement')
-                .innerJoin('achievement.userRewards', 'userReward')
-                .innerJoin('userReward.owner', 'user')
-                .where('user.uid = :userId', { userId: options.userId })
-                .getMany(),
-        ]);
-        const attendance = this.calculateAttendanceMetrics(attendanceRecords);
-        const clientVisitMetrics = this.calculateClientVisitMetrics(clientVisits);
-        const taskMetrics = this.calculateTaskMetrics(tasks);
-        const quotationMetrics = this.calculateQuotationMetrics(leads);
-        const rewardMetrics = this.calculateRewardMetrics([...achievements, ...userRewards]);
-        const journalMetrics = this.calculateJournalMetrics(journals);
-        const productivity = this.calculateProductivityMetrics({
-            tasks: taskMetrics,
-            attendance,
-            clientVisits: clientVisitMetrics,
-            quotations: quotationMetrics,
-        });
-        return {
-            userId: options.userId,
-            date: options.startDate,
-            attendance,
-            clientVisits: clientVisitMetrics,
-            tasks: taskMetrics,
-            quotations: quotationMetrics,
-            rewards: rewardMetrics,
-            journals: journalMetrics,
-            productivity,
-            summary: this.generateDailyReportSummary({
-                attendance,
-                tasks: taskMetrics,
-                clientVisits: clientVisitMetrics,
-                quotations: quotationMetrics,
-                productivity,
-            }),
-        };
-    }
-    async generateDashboardReport(options) {
-        if (!options.organisationRef)
-            throw new Error('Organisation reference is required for dashboard report');
-        const dateRange = {
-            start: options.startDate,
-            end: options.endDate,
-        };
-        const organisation = await this.organisationRepository.findOne({
-            where: { ref: options.organisationRef },
-            relations: ['users'],
-        });
-        if (!organisation)
-            throw new common_1.NotFoundException('Organisation not found');
-        const departmentIds = [...new Set(organisation.users.map((u) => u.departmentId))];
-        const departments = await Promise.all(departmentIds.map(async (deptId) => {
-            const users = await this.userRepository.find({
-                where: { departmentId: deptId },
+        try {
+            if (!options.userId) {
+                throw new Error('User ID is required for daily report');
+            }
+            const dateRange = {
+                start: options.startDate,
+                end: options.endDate,
+            };
+            const [attendanceRecords, tasks, clientVisits, leads, achievements, journals, userRewards, user,] = await Promise.all([
+                this.fetchAttendanceRecords(options.userId, dateRange),
+                this.fetchTasks(options.userId, dateRange),
+                this.fetchClientVisits(options.userId, dateRange),
+                this.fetchLeads(options.userId, dateRange),
+                this.fetchAchievements(options.userId, dateRange),
+                this.fetchJournals(options.userId, dateRange),
+                this.fetchUserRewards(options.userId),
+                this.userRepository.findOne({ where: { uid: options.userId } }),
+            ]).catch((error) => {
+                throw new Error(`Failed to fetch report data: ${error.message}`);
             });
-            const departmentTasks = await this.taskRepository.find({
-                where: {
-                    creator: { uid: (0, typeorm_2.In)(users.map((u) => u.uid)) },
-                    createdAt: (0, typeorm_2.Between)(dateRange.start, dateRange.end),
-                },
-            });
-            const departmentAttendance = await this.attendanceRepository.find({
-                where: {
-                    owner: { uid: (0, typeorm_2.In)(users.map((u) => u.uid)) },
-                    checkIn: (0, typeorm_2.Between)(dateRange.start, dateRange.end),
-                },
-            });
-            const taskMetrics = this.calculateTaskMetrics(departmentTasks);
-            const attendanceMetrics = this.calculateAttendanceMetrics(departmentAttendance);
+            if (!user) {
+                throw new common_1.NotFoundException(`User with ID ${options.userId} not found`);
+            }
+            const [attendance, clientVisitMetrics, taskMetrics, quotationMetrics, rewardMetrics, journalMetrics,] = await Promise.all([
+                this.calculateAttendanceMetrics(attendanceRecords),
+                this.calculateClientVisitMetrics(clientVisits),
+                this.calculateTaskMetrics(tasks),
+                this.calculateQuotationMetrics(leads),
+                this.calculateRewardMetrics([...achievements, ...userRewards]),
+                this.calculateJournalMetrics(journals),
+            ]);
             const productivity = this.calculateProductivityMetrics({
                 tasks: taskMetrics,
-                attendance: attendanceMetrics,
+                attendance,
+                clientVisits: clientVisitMetrics,
+                quotations: quotationMetrics,
             });
-            return {
-                name: user_enums_1.Department[deptId] || `Department ${deptId}`,
-                headCount: users.length,
-                attendance: attendanceMetrics,
+            const report = {
+                userId: options.userId,
+                date: options.startDate,
+                attendance,
+                clientVisits: clientVisitMetrics,
                 tasks: taskMetrics,
+                quotations: quotationMetrics,
+                rewards: rewardMetrics,
+                journals: journalMetrics,
                 productivity,
-                topPerformers: await this.getTopPerformers(users, dateRange),
+                summary: this.generateDailyReportSummary({
+                    attendance,
+                    tasks: taskMetrics,
+                    clientVisits: clientVisitMetrics,
+                    quotations: quotationMetrics,
+                    productivity,
+                }),
             };
-        }));
-        const overview = await this.calculateOrganisationOverview(organisation, dateRange);
-        const trends = await this.calculateOrganisationTrends(organisation, dateRange);
-        const topMetrics = await this.calculateTopMetrics(organisation, dateRange);
-        return {
-            timeframe: options.timeframe,
-            startDate: dateRange.start,
-            endDate: dateRange.end,
-            organisationRef: options.organisationRef,
-            branchUid: options.branchUid,
-            overview,
-            departments,
-            trends,
-            topMetrics,
-            summary: this.generateDashboardSummary({
-                overview,
-                departments,
-                trends,
-                topMetrics,
-            }),
-        };
+            this.sendDailyReportEmail(user, report).catch((error) => {
+                console.error('Failed to send daily report email:', error);
+            });
+            return report;
+        }
+        catch (error) {
+            throw new Error(`Failed to generate daily report: ${error.message}`);
+        }
+    }
+    async fetchAttendanceRecords(userId, dateRange) {
+        return this.attendanceRepository.find({
+            where: {
+                owner: { uid: userId },
+                checkIn: (0, typeorm_2.Between)(dateRange.start, dateRange.end),
+            },
+            order: { checkIn: 'ASC' },
+        });
+    }
+    async fetchTasks(userId, dateRange) {
+        return this.taskRepository.find({
+            where: {
+                creator: { uid: userId },
+                createdAt: (0, typeorm_2.Between)(dateRange.start, dateRange.end),
+            },
+            order: { createdAt: 'ASC' },
+        });
+    }
+    async fetchClientVisits(userId, dateRange) {
+        return this.checkInRepository.find({
+            where: {
+                owner: { uid: userId },
+                checkInTime: (0, typeorm_2.Between)(dateRange.start, dateRange.end),
+            },
+            relations: ['client'],
+            order: { checkInTime: 'ASC' },
+        });
+    }
+    async fetchLeads(userId, dateRange) {
+        return this.leadRepository.find({
+            where: {
+                owner: { uid: userId },
+                createdAt: (0, typeorm_2.Between)(dateRange.start, dateRange.end),
+            },
+            order: { createdAt: 'ASC' },
+        });
+    }
+    async fetchAchievements(userId, dateRange) {
+        return this.achievementRepository.find({
+            where: {
+                userRewards: { owner: { uid: userId } },
+                createdAt: (0, typeorm_2.Between)(dateRange.start, dateRange.end),
+            },
+            order: { createdAt: 'ASC' },
+        });
+    }
+    async fetchJournals(userId, dateRange) {
+        return this.journalRepository.find({
+            where: {
+                owner: { uid: userId },
+                createdAt: (0, typeorm_2.Between)(dateRange.start, dateRange.end),
+            },
+            order: { createdAt: 'ASC' },
+        });
+    }
+    async fetchUserRewards(userId) {
+        return this.achievementRepository
+            .createQueryBuilder('achievement')
+            .innerJoin('achievement.userRewards', 'userReward')
+            .innerJoin('userReward.owner', 'user')
+            .where('user.uid = :userId', { userId })
+            .orderBy('achievement.createdAt', 'ASC')
+            .getMany();
     }
     calculateAttendanceMetrics(records) {
-        const totalDays = records?.length || 0;
-        const presentDays = records?.filter((r) => r?.checkOut)?.length || 0;
-        const lateCheckIns = records?.filter((r) => this.isLateCheckIn(r?.checkIn))?.length || 0;
-        let totalHours = 0;
-        let totalOvertime = 0;
-        records?.forEach((record) => {
-            if (record?.checkOut) {
-                const duration = record.checkOut.getTime() - record?.checkIn?.getTime();
-                const hours = duration / (1000 * 60 * 60);
-                totalHours += hours;
-                if (hours > 8)
-                    totalOvertime += hours - 8;
-            }
-        });
+        try {
+            const totalDays = records?.length || 0;
+            const presentDays = records?.filter((r) => r?.checkOut)?.length || 0;
+            const lateCheckIns = records?.filter((r) => this.isLateCheckIn(r?.checkIn))?.length || 0;
+            let totalHours = 0;
+            let totalOvertime = 0;
+            let totalBreakTime = 0;
+            records?.forEach((record) => {
+                if (record?.checkOut) {
+                    const duration = record.checkOut.getTime() - record?.checkIn?.getTime();
+                    const hours = duration / (1000 * 60 * 60);
+                    totalHours += hours;
+                    if (hours > this.WORK_HOURS_PER_DAY) {
+                        totalOvertime += hours - this.WORK_HOURS_PER_DAY;
+                    }
+                    if (record.breakStartTime && record.breakEndTime) {
+                        const breakDuration = record.breakEndTime.getTime() - record.breakStartTime.getTime();
+                        totalBreakTime += breakDuration / (1000 * 60);
+                    }
+                }
+            });
+            const averageHoursWorked = presentDays ? totalHours / presentDays : 0;
+            const averageBreakTime = presentDays ? totalBreakTime / presentDays : 0;
+            return {
+                totalDays,
+                presentDays,
+                absentDays: totalDays - presentDays,
+                attendanceRate: totalDays ? (presentDays / totalDays) * 100 : 0,
+                averageCheckInTime: this.calculateAverageTime(records?.map((r) => r?.checkIn) || []),
+                averageCheckOutTime: this.calculateAverageTime(records?.filter((r) => r?.checkOut)?.map((r) => r?.checkOut) || []),
+                averageHoursWorked,
+                totalOvertime,
+                onTimeCheckIns: totalDays - lateCheckIns,
+                lateCheckIns,
+                averageBreakTime,
+                efficiency: this.calculateWorkEfficiency(averageHoursWorked, averageBreakTime),
+            };
+        }
+        catch (error) {
+            console.error('Error calculating attendance metrics:', error);
+            return this.getDefaultAttendanceMetrics();
+        }
+    }
+    calculateWorkEfficiency(averageHoursWorked, averageBreakTime) {
+        const totalWorkMinutes = averageHoursWorked * this.MINUTES_PER_HOUR;
+        const expectedWorkMinutes = this.WORK_HOURS_PER_DAY * this.MINUTES_PER_HOUR;
+        const efficiency = ((totalWorkMinutes - averageBreakTime) / expectedWorkMinutes) * 100;
+        return Math.min(Math.max(efficiency, 0), 100);
+    }
+    getDefaultAttendanceMetrics() {
         return {
-            totalDays,
-            presentDays,
-            absentDays: totalDays - presentDays,
-            attendanceRate: totalDays ? (presentDays / totalDays) * 100 : 0,
-            averageCheckInTime: this.calculateAverageTime(records?.map((r) => r?.checkIn) || []),
-            averageCheckOutTime: this.calculateAverageTime(records?.filter((r) => r?.checkOut)?.map((r) => r?.checkOut) || []),
-            averageHoursWorked: presentDays ? totalHours / presentDays : 0,
-            totalOvertime,
-            onTimeCheckIns: totalDays - lateCheckIns,
-            lateCheckIns,
+            totalDays: 0,
+            presentDays: 0,
+            absentDays: 0,
+            attendanceRate: 0,
+            averageCheckInTime: '00:00',
+            averageCheckOutTime: '00:00',
+            averageHoursWorked: 0,
+            totalOvertime: 0,
+            onTimeCheckIns: 0,
+            lateCheckIns: 0,
+            averageBreakTime: 0,
+            efficiency: 0,
         };
     }
     calculateClientVisitMetrics(visits) {
@@ -597,6 +617,77 @@ let ReportsService = class ReportsService {
             currency: this.currencyCode,
         }).format(amount);
     }
+    async generateDashboardReport(options) {
+        if (!options.organisationRef) {
+            throw new Error('Organisation reference is required for dashboard report');
+        }
+        const dateRange = {
+            start: options.startDate,
+            end: options.endDate,
+        };
+        const organisation = await this.organisationRepository.findOne({
+            where: { ref: options.organisationRef },
+            relations: ['users'],
+        });
+        if (!organisation) {
+            throw new common_1.NotFoundException('Organisation not found');
+        }
+        const overview = await this.calculateOrganisationOverview(organisation, dateRange);
+        const trends = await this.calculateOrganisationTrends(organisation, dateRange);
+        const topMetrics = await this.calculateTopMetrics(organisation, dateRange);
+        const departments = await this.calculateDepartmentMetrics(organisation, dateRange);
+        return {
+            timeframe: options.timeframe,
+            startDate: dateRange.start,
+            endDate: dateRange.end,
+            organisationRef: options.organisationRef,
+            branchUid: options.branchUid,
+            overview,
+            departments,
+            trends,
+            topMetrics,
+            summary: this.generateDashboardSummary({
+                overview,
+                departments,
+                trends,
+                topMetrics,
+            }),
+        };
+    }
+    async calculateDepartmentMetrics(organisation, dateRange) {
+        const departmentIds = [...new Set(organisation.users.map((u) => u.departmentId))];
+        return Promise.all(departmentIds.map(async (deptId) => {
+            const users = await this.userRepository.find({
+                where: { departmentId: deptId },
+            });
+            const departmentTasks = await this.taskRepository.find({
+                where: {
+                    creator: { uid: (0, typeorm_2.In)(users.map((u) => u.uid)) },
+                    createdAt: (0, typeorm_2.Between)(dateRange.start, dateRange.end),
+                },
+            });
+            const departmentAttendance = await this.attendanceRepository.find({
+                where: {
+                    owner: { uid: (0, typeorm_2.In)(users.map((u) => u.uid)) },
+                    checkIn: (0, typeorm_2.Between)(dateRange.start, dateRange.end),
+                },
+            });
+            const taskMetrics = this.calculateTaskMetrics(departmentTasks);
+            const attendanceMetrics = this.calculateAttendanceMetrics(departmentAttendance);
+            const productivity = this.calculateProductivityMetrics({
+                tasks: taskMetrics,
+                attendance: attendanceMetrics,
+            });
+            return {
+                name: user_enums_1.Department[deptId] || `Department ${deptId}`,
+                headCount: users.length,
+                attendance: attendanceMetrics,
+                tasks: taskMetrics,
+                productivity,
+                topPerformers: await this.getTopPerformers(users, dateRange),
+            };
+        }));
+    }
 };
 exports.ReportsService = ReportsService;
 __decorate([
@@ -605,6 +696,12 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], ReportsService.prototype, "handleDailyReport", null);
+__decorate([
+    (0, event_emitter_1.OnEvent)('daily-report'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], ReportsService.prototype, "generateDailyUserReport", null);
 exports.ReportsService = ReportsService = __decorate([
     (0, common_1.Injectable)(),
     __param(3, (0, typeorm_1.InjectRepository)(check_in_entity_1.CheckIn)),

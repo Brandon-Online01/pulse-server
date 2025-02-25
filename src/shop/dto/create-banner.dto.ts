@@ -1,4 +1,4 @@
-import { IsEnum, IsNotEmpty, IsString } from "class-validator";
+import { IsBoolean, IsEnum, IsNotEmpty, IsString } from "class-validator";
 import { ApiProperty } from "@nestjs/swagger";
 import { BannerCategory } from "src/lib/enums/category.enum";
 
@@ -48,4 +48,12 @@ export class CreateBannerDto {
         example: BannerCategory.NEWS
     })
     category: BannerCategory;
+
+    @IsNotEmpty()
+    @IsBoolean()
+    @ApiProperty({
+        description: 'Deletion status of the banner',
+        example: false
+    })
+    isDeleted: boolean;
 } 

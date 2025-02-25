@@ -1,5 +1,4 @@
 import { SubTask } from './subtask.entity';
-import { Client } from '../../clients/entities/client.entity';
 import { TaskStatus, TaskPriority, RepetitionType, TaskType } from '../../lib/enums/task.enums';
 import { SubTaskStatus } from '../../lib/enums/status.enums';
 import {

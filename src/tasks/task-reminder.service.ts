@@ -83,7 +83,6 @@ export class TaskReminderService {
 			message: `Your created task "${task.title}" is due in 30 minutes`,
 			type: NotificationType.TASK_REMINDER,
 			owner: task.creator,
-			status: NotificationStatus.UNREAD,
 		});
 
 		// Send to each assignee
@@ -99,7 +98,6 @@ export class TaskReminderService {
 				message: `Task "${task.title}" requires your attention and is due in 30 minutes`,
 				type: NotificationType.TASK_REMINDER,
 				owner: assignee,
-				status: NotificationStatus.UNREAD,
 			});
 		}
 	}

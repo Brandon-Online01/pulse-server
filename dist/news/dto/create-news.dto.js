@@ -10,10 +10,9 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateNewsDto = void 0;
-const class_validator_1 = require("class-validator");
 const swagger_1 = require("@nestjs/swagger");
 const news_enums_1 = require("../../lib/enums/news.enums");
-const status_enums_1 = require("../../lib/enums/status.enums");
+const class_validator_1 = require("class-validator");
 class CreateNewsDto {
 }
 exports.CreateNewsDto = CreateNewsDto;
@@ -80,15 +79,6 @@ __decorate([
     }),
     __metadata("design:type", Date)
 ], CreateNewsDto.prototype, "publishingDate", void 0);
-__decorate([
-    (0, class_validator_1.IsEnum)(status_enums_1.GeneralStatus),
-    (0, class_validator_1.IsNotEmpty)(),
-    (0, swagger_1.ApiProperty)({
-        example: status_enums_1.GeneralStatus.ACTIVE,
-        description: 'The status of the news'
-    }),
-    __metadata("design:type", String)
-], CreateNewsDto.prototype, "status", void 0);
 __decorate([
     (0, class_validator_1.IsNotEmpty)(),
     (0, class_validator_1.IsObject)(),

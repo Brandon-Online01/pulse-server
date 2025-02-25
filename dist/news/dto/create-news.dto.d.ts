@@ -1,5 +1,4 @@
 import { NewsCategory } from "../../lib/enums/news.enums";
-import { GeneralStatus } from "../../lib/enums/status.enums";
 export declare class CreateNewsDto {
     title: string;
     subtitle: string;
@@ -8,7 +7,6 @@ export declare class CreateNewsDto {
     coverImage: string;
     thumbnail: string;
     publishingDate: Date;
-    status: GeneralStatus;
     author: {
         uid: number;
     };

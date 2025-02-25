@@ -45,15 +45,6 @@ __decorate([
 ], CreateNotificationDto.prototype, "message", void 0);
 __decorate([
     (0, class_validator_1.IsNotEmpty)(),
-    (0, class_validator_1.IsEnum)(notification_enums_1.NotificationStatus),
-    (0, swagger_1.ApiProperty)({
-        example: notification_enums_1.NotificationStatus.UNREAD,
-        description: 'Whether the notification is read',
-    }),
-    __metadata("design:type", String)
-], CreateNotificationDto.prototype, "status", void 0);
-__decorate([
-    (0, class_validator_1.IsNotEmpty)(),
     (0, class_validator_1.IsObject)(),
     (0, swagger_1.ApiProperty)({
         example: { uid: 1 },

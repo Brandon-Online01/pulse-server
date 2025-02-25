@@ -43,6 +43,12 @@ export class Attendance {
 	@Column({ type: 'text', nullable: true })
 	checkOutNotes: string;
 
+	@Column({ type: 'timestamp', nullable: true })
+	breakStartTime: Date;
+
+	@Column({ type: 'timestamp', nullable: true })
+	breakEndTime: Date;
+
 	@Column({ type: 'timestamp', nullable: false, default: () => 'CURRENT_TIMESTAMP' })
 	createdAt: Date;
 

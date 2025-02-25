@@ -1,5 +1,6 @@
 import { TaskStatus, TaskPriority, RepetitionType, TaskType } from '../../lib/enums/task.enums';
-import { AssigneeDto, ClientDto, CreatorDto, SubtaskDto } from './create-task.dto';
+import { AssigneeDto, ClientDto, CreatorDto } from './create-task.dto';
+import { UpdateSubtaskDto } from './update-subtask.dto';
 export declare class UpdateTaskDto {
     title?: string;
     description?: string;
@@ -14,7 +15,7 @@ export declare class UpdateTaskDto {
     assignees?: AssigneeDto[];
     client?: ClientDto[];
     targetCategory?: string;
-    subtasks?: SubtaskDto[];
+    subtasks?: UpdateSubtaskDto[];
     creators?: CreatorDto[];
     comment?: string;
 }

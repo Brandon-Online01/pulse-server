@@ -11,9 +11,9 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UpdateProductDto = void 0;
 const swagger_1 = require("@nestjs/swagger");
-const create_product_dto_1 = require("./create-product.dto");
 const product_enums_1 = require("../../lib/enums/product.enums");
 const class_validator_1 = require("class-validator");
+const create_product_dto_1 = require("../../products/dto/create-product.dto");
 class UpdateProductDto extends (0, swagger_1.PartialType)(create_product_dto_1.CreateProductDto) {
 }
 exports.UpdateProductDto = UpdateProductDto;
@@ -48,9 +48,9 @@ __decorate([
     __metadata("design:type", Number)
 ], UpdateProductDto.prototype, "discount", void 0);
 __decorate([
-    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
-    __metadata("design:type", Number)
+    __metadata("design:type", String)
 ], UpdateProductDto.prototype, "barcode", void 0);
 __decorate([
     (0, class_validator_1.IsNumber)(),

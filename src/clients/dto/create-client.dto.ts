@@ -99,15 +99,6 @@ export class CreateClientDto {
     })
     postalCode?: string;
 
-    @IsEnum(GeneralStatus)
-    @IsNotEmpty()
-    @ApiProperty({
-        example: GeneralStatus.ACTIVE,
-        description: 'The status of the client'
-    })
-    status: GeneralStatus;
-
-
     @IsBoolean()
     @IsNotEmpty()
     @ApiProperty({

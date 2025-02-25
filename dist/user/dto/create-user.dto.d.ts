@@ -13,7 +13,6 @@ export declare class CreateUserDto {
     accessLevel?: AccessLevel;
     status?: AccountStatus;
     userref: string;
-    isDeleted?: boolean;
     profile?: CreateUserProfileDto;
     employmentProfile?: CreateUserEmploymentProfileDto;
 }

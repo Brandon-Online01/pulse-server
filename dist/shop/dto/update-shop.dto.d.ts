@@ -1,5 +1,5 @@
-import { CreateProductDto } from './create-product.dto';
 import { ProductStatus } from '../../lib/enums/product.enums';
+import { CreateProductDto } from 'src/products/dto/create-product.dto';
 declare const UpdateProductDto_base: import("@nestjs/common").Type<Partial<CreateProductDto>>;
 export declare class UpdateProductDto extends UpdateProductDto_base {
     name: string;
@@ -8,7 +8,7 @@ export declare class UpdateProductDto extends UpdateProductDto_base {
     price: number;
     salePrice: number;
     discount: number;
-    barcode: number;
+    barcode: string;
     packageQuantity: number;
     category: string;
     weight: number;

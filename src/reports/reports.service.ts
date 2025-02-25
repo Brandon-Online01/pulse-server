@@ -27,6 +27,7 @@ import {
 	ProductivityMetrics,
 	DailyUserActivityReport,
 	DashboardAnalyticsReport,
+	DepartmentMetrics,
 } from './report.types';
 import { Achievement } from '../rewards/entities/achievement.entity';
 import { Client } from '../clients/entities/client.entity';
@@ -40,6 +41,8 @@ export class ReportsService {
 	private readonly currencyLocale: string;
 	private readonly currencyCode: string;
 	private readonly currencySymbol: string;
+	private readonly WORK_HOURS_PER_DAY = 8;
+	private readonly MINUTES_PER_HOUR = 60;
 
 	constructor(
 		private readonly configService: ConfigService,
@@ -173,206 +176,243 @@ export class ReportsService {
 		}
 	}
 
+	@OnEvent('daily-report')
 	async generateDailyUserReport(options: ReportGenerationOptions): Promise<DailyUserActivityReport> {
-		if (!options.userId) throw new Error('User ID is required for daily report');
+		try {
+			if (!options.userId) {
+				throw new Error('User ID is required for daily report');
+			}
 
-		const dateRange = {
-			start: options.startDate,
-			end: options.endDate,
-		};
+			const dateRange = {
+				start: options.startDate,
+				end: options.endDate,
+			};
 
-		// Fetch all required data
-		const [attendanceRecords, tasks, clientVisits, leads, achievements, journals, userRewards] = await Promise.all([
-			this.attendanceRepository.find({
-				where: {
-					owner: { uid: options.userId },
-					checkIn: Between(dateRange.start, dateRange.end),
-				},
-			}),
-			this.taskRepository.find({
-				where: {
-					creator: { uid: options.userId },
-					createdAt: Between(dateRange.start, dateRange.end),
-				},
-			}),
-			this.checkInRepository.find({
-				where: {
-					owner: { uid: options.userId },
-					checkInTime: Between(dateRange.start, dateRange.end),
-				},
-				relations: ['client'],
-			}),
-			this.leadRepository.find({
-				where: {
-					owner: { uid: options.userId },
-					createdAt: Between(dateRange.start, dateRange.end),
-				},
-			}),
-			this.achievementRepository.find({
-				where: {
-					userRewards: { owner: { uid: options.userId } },
-					createdAt: Between(dateRange.start, dateRange.end),
-				},
-			}),
-			this.journalRepository.find({
-				where: {
-					owner: { uid: options.userId },
-					createdAt: Between(dateRange.start, dateRange.end),
-				},
-			}),
-			// Add this new query to fetch user rewards
-			this.achievementRepository
-				.createQueryBuilder('achievement')
-				.innerJoin('achievement.userRewards', 'userReward')
-				.innerJoin('userReward.owner', 'user')
-				.where('user.uid = :userId', { userId: options.userId })
-				.getMany(),
-		]);
+			// Fetch all required data in parallel with error handling
+			const [
+				attendanceRecords,
+				tasks,
+				clientVisits,
+				leads,
+				achievements,
+				journals,
+				userRewards,
+				user,
+			] = await Promise.all([
+				this.fetchAttendanceRecords(options.userId, dateRange),
+				this.fetchTasks(options.userId, dateRange),
+				this.fetchClientVisits(options.userId, dateRange),
+				this.fetchLeads(options.userId, dateRange),
+				this.fetchAchievements(options.userId, dateRange),
+				this.fetchJournals(options.userId, dateRange),
+				this.fetchUserRewards(options.userId),
+				this.userRepository.findOne({ where: { uid: options.userId } }),
+			]).catch((error) => {
+				throw new Error(`Failed to fetch report data: ${error.message}`);
+			});
 
-		// Calculate metrics
-		const attendance = this.calculateAttendanceMetrics(attendanceRecords);
-		const clientVisitMetrics = this.calculateClientVisitMetrics(clientVisits);
-		const taskMetrics = this.calculateTaskMetrics(tasks);
-		const quotationMetrics = this.calculateQuotationMetrics(leads);
-		const rewardMetrics = this.calculateRewardMetrics([...achievements, ...userRewards]);
-		const journalMetrics = this.calculateJournalMetrics(journals);
-		const productivity = this.calculateProductivityMetrics({
-			tasks: taskMetrics,
-			attendance,
-			clientVisits: clientVisitMetrics,
-			quotations: quotationMetrics,
-		});
+			if (!user) {
+				throw new NotFoundException(`User with ID ${options.userId} not found`);
+			}
 
-		return {
-			userId: options.userId,
-			date: options.startDate,
-			attendance,
-			clientVisits: clientVisitMetrics,
-			tasks: taskMetrics,
-			quotations: quotationMetrics,
-			rewards: rewardMetrics,
-			journals: journalMetrics,
-			productivity,
-			summary: this.generateDailyReportSummary({
+			// Calculate metrics with performance optimizations
+			const [
 				attendance,
+				clientVisitMetrics,
+				taskMetrics,
+				quotationMetrics,
+				rewardMetrics,
+				journalMetrics,
+			] = await Promise.all([
+				this.calculateAttendanceMetrics(attendanceRecords),
+				this.calculateClientVisitMetrics(clientVisits),
+				this.calculateTaskMetrics(tasks),
+				this.calculateQuotationMetrics(leads),
+				this.calculateRewardMetrics([...achievements, ...userRewards]),
+				this.calculateJournalMetrics(journals),
+			]);
+
+			// Calculate productivity score after all metrics are available
+			const productivity = this.calculateProductivityMetrics({
 				tasks: taskMetrics,
+				attendance,
 				clientVisits: clientVisitMetrics,
 				quotations: quotationMetrics,
+			});
+
+			const report: DailyUserActivityReport = {
+				userId: options.userId,
+				date: options.startDate,
+				attendance,
+				clientVisits: clientVisitMetrics,
+				tasks: taskMetrics,
+				quotations: quotationMetrics,
+				rewards: rewardMetrics,
+				journals: journalMetrics,
 				productivity,
-			}),
-		};
+				summary: this.generateDailyReportSummary({
+					attendance,
+					tasks: taskMetrics,
+					clientVisits: clientVisitMetrics,
+					quotations: quotationMetrics,
+					productivity,
+				}),
+			};
+
+			// Send report email asynchronously
+			this.sendDailyReportEmail(user, report).catch((error) => {
+				console.error('Failed to send daily report email:', error);
+			});
+
+			return report;
+		} catch (error) {
+			throw new Error(`Failed to generate daily report: ${error.message}`);
+		}
 	}
 
-	async generateDashboardReport(options: ReportGenerationOptions): Promise<DashboardAnalyticsReport> {
-		if (!options.organisationRef) throw new Error('Organisation reference is required for dashboard report');
-
-		const dateRange = {
-			start: options.startDate,
-			end: options.endDate,
-		};
-
-		// Fetch organisation data
-		const organisation = await this.organisationRepository.findOne({
-			where: { ref: options.organisationRef },
-			relations: ['users'],
+	private async fetchAttendanceRecords(userId: number, dateRange: { start: Date; end: Date }): Promise<Attendance[]> {
+		return this.attendanceRepository.find({
+			where: {
+				owner: { uid: userId },
+				checkIn: Between(dateRange.start, dateRange.end),
+			},
+			order: { checkIn: 'ASC' },
 		});
+	}
 
-		if (!organisation) throw new NotFoundException('Organisation not found');
+	private async fetchTasks(userId: number, dateRange: { start: Date; end: Date }): Promise<Task[]> {
+		return this.taskRepository.find({
+			where: {
+				creator: { uid: userId },
+				createdAt: Between(dateRange.start, dateRange.end),
+			},
+			order: { createdAt: 'ASC' },
+		});
+	}
 
-		// Get unique departments from users
-		const departmentIds = [...new Set(organisation.users.map((u) => u.departmentId))];
+	private async fetchClientVisits(userId: number, dateRange: { start: Date; end: Date }): Promise<CheckIn[]> {
+		return this.checkInRepository.find({
+			where: {
+				owner: { uid: userId },
+				checkInTime: Between(dateRange.start, dateRange.end),
+			},
+			relations: ['client'],
+			order: { checkInTime: 'ASC' },
+		});
+	}
 
-		// Calculate department metrics
-		const departments = await Promise.all(
-			departmentIds.map(async (deptId) => {
-				const users = await this.userRepository.find({
-					where: { departmentId: deptId },
-				});
+	private async fetchLeads(userId: number, dateRange: { start: Date; end: Date }): Promise<Lead[]> {
+		return this.leadRepository.find({
+			where: {
+				owner: { uid: userId },
+				createdAt: Between(dateRange.start, dateRange.end),
+			},
+			order: { createdAt: 'ASC' },
+		});
+	}
 
-				const departmentTasks = await this.taskRepository.find({
-					where: {
-						creator: { uid: In(users.map((u) => u.uid)) },
-						createdAt: Between(dateRange.start, dateRange.end),
-					},
-				});
+	private async fetchAchievements(userId: number, dateRange: { start: Date; end: Date }): Promise<Achievement[]> {
+		return this.achievementRepository.find({
+			where: {
+				userRewards: { owner: { uid: userId } },
+				createdAt: Between(dateRange.start, dateRange.end),
+			},
+			order: { createdAt: 'ASC' },
+		});
+	}
 
-				const departmentAttendance = await this.attendanceRepository.find({
-					where: {
-						owner: { uid: In(users.map((u) => u.uid)) },
-						checkIn: Between(dateRange.start, dateRange.end),
-					},
-				});
+	private async fetchJournals(userId: number, dateRange: { start: Date; end: Date }): Promise<Journal[]> {
+		return this.journalRepository.find({
+			where: {
+				owner: { uid: userId },
+				createdAt: Between(dateRange.start, dateRange.end),
+			},
+			order: { createdAt: 'ASC' },
+		});
+	}
 
-				const taskMetrics = this.calculateTaskMetrics(departmentTasks);
-				const attendanceMetrics = this.calculateAttendanceMetrics(departmentAttendance);
-				const productivity = this.calculateProductivityMetrics({
-					tasks: taskMetrics,
-					attendance: attendanceMetrics,
-				});
-
-				return {
-					name: Department[deptId] || `Department ${deptId}`,
-					headCount: users.length,
-					attendance: attendanceMetrics,
-					tasks: taskMetrics,
-					productivity,
-					topPerformers: await this.getTopPerformers(users, dateRange),
-				};
-			}),
-		);
-
-		// Calculate overall metrics
-		const overview = await this.calculateOrganisationOverview(organisation, dateRange);
-		const trends = await this.calculateOrganisationTrends(organisation, dateRange);
-		const topMetrics = await this.calculateTopMetrics(organisation, dateRange);
-
-		return {
-			timeframe: options.timeframe,
-			startDate: dateRange.start,
-			endDate: dateRange.end,
-			organisationRef: options.organisationRef,
-			branchUid: options.branchUid,
-			overview,
-			departments,
-			trends,
-			topMetrics,
-			summary: this.generateDashboardSummary({
-				overview,
-				departments,
-				trends,
-				topMetrics,
-			}),
-		};
+	private async fetchUserRewards(userId: number): Promise<Achievement[]> {
+		return this.achievementRepository
+			.createQueryBuilder('achievement')
+			.innerJoin('achievement.userRewards', 'userReward')
+			.innerJoin('userReward.owner', 'user')
+			.where('user.uid = :userId', { userId })
+			.orderBy('achievement.createdAt', 'ASC')
+			.getMany();
 	}
 
 	private calculateAttendanceMetrics(records: Attendance[]): AttendanceMetrics {
-		const totalDays = records?.length || 0;
-		const presentDays = records?.filter((r) => r?.checkOut)?.length || 0;
-		const lateCheckIns = records?.filter((r) => this.isLateCheckIn(r?.checkIn))?.length || 0;
+		try {
+			const totalDays = records?.length || 0;
+			const presentDays = records?.filter((r) => r?.checkOut)?.length || 0;
+			const lateCheckIns = records?.filter((r) => this.isLateCheckIn(r?.checkIn))?.length || 0;
 
-		let totalHours = 0;
-		let totalOvertime = 0;
+			let totalHours = 0;
+			let totalOvertime = 0;
+			let totalBreakTime = 0;
 
-		records?.forEach((record) => {
-			if (record?.checkOut) {
-				const duration = record.checkOut.getTime() - record?.checkIn?.getTime();
-				const hours = duration / (1000 * 60 * 60);
-				totalHours += hours;
-				if (hours > 8) totalOvertime += hours - 8;
-			}
-		});
+			records?.forEach((record) => {
+				if (record?.checkOut) {
+					const duration = record.checkOut.getTime() - record?.checkIn?.getTime();
+					const hours = duration / (1000 * 60 * 60);
+					totalHours += hours;
+					
+					if (hours > this.WORK_HOURS_PER_DAY) {
+						totalOvertime += hours - this.WORK_HOURS_PER_DAY;
+					}
 
+					// Calculate break time (if available in the record)
+					if (record.breakStartTime && record.breakEndTime) {
+						const breakDuration = record.breakEndTime.getTime() - record.breakStartTime.getTime();
+						totalBreakTime += breakDuration / (1000 * 60);
+					}
+				}
+			});
+
+			const averageHoursWorked = presentDays ? totalHours / presentDays : 0;
+			const averageBreakTime = presentDays ? totalBreakTime / presentDays : 0;
+
+			return {
+				totalDays,
+				presentDays,
+				absentDays: totalDays - presentDays,
+				attendanceRate: totalDays ? (presentDays / totalDays) * 100 : 0,
+				averageCheckInTime: this.calculateAverageTime(records?.map((r) => r?.checkIn) || []),
+				averageCheckOutTime: this.calculateAverageTime(records?.filter((r) => r?.checkOut)?.map((r) => r?.checkOut) || []),
+				averageHoursWorked,
+				totalOvertime,
+				onTimeCheckIns: totalDays - lateCheckIns,
+				lateCheckIns,
+				averageBreakTime,
+				efficiency: this.calculateWorkEfficiency(averageHoursWorked, averageBreakTime),
+			};
+		} catch (error) {
+			console.error('Error calculating attendance metrics:', error);
+			return this.getDefaultAttendanceMetrics();
+		}
+	}
+
+	private calculateWorkEfficiency(averageHoursWorked: number, averageBreakTime: number): number {
+		const totalWorkMinutes = averageHoursWorked * this.MINUTES_PER_HOUR;
+		const expectedWorkMinutes = this.WORK_HOURS_PER_DAY * this.MINUTES_PER_HOUR;
+		const efficiency = ((totalWorkMinutes - averageBreakTime) / expectedWorkMinutes) * 100;
+		return Math.min(Math.max(efficiency, 0), 100); // Clamp between 0 and 100
+	}
+
+	private getDefaultAttendanceMetrics(): AttendanceMetrics {
 		return {
-			totalDays,
-			presentDays,
-			absentDays: totalDays - presentDays,
-			attendanceRate: totalDays ? (presentDays / totalDays) * 100 : 0,
-			averageCheckInTime: this.calculateAverageTime(records?.map((r) => r?.checkIn) || []),
-			averageCheckOutTime: this.calculateAverageTime(records?.filter((r) => r?.checkOut)?.map((r) => r?.checkOut) || []),
-			averageHoursWorked: presentDays ? totalHours / presentDays : 0,
-			totalOvertime,
-			onTimeCheckIns: totalDays - lateCheckIns,
-			lateCheckIns,
+			totalDays: 0,
+			presentDays: 0,
+			absentDays: 0,
+			attendanceRate: 0,
+			averageCheckInTime: '00:00',
+			averageCheckOutTime: '00:00',
+			averageHoursWorked: 0,
+			totalOvertime: 0,
+			onTimeCheckIns: 0,
+			lateCheckIns: 0,
+			averageBreakTime: 0,
+			efficiency: 0,
 		};
 	}
 
@@ -757,5 +797,89 @@ export class ReportsService {
 			style: 'currency',
 			currency: this.currencyCode,
 		}).format(amount);
+	}
+
+	private async generateDashboardReport(options: ReportGenerationOptions): Promise<DashboardAnalyticsReport> {
+		if (!options.organisationRef) {
+			throw new Error('Organisation reference is required for dashboard report');
+		}
+
+		const dateRange = {
+			start: options.startDate,
+			end: options.endDate,
+		};
+
+		const organisation = await this.organisationRepository.findOne({
+			where: { ref: options.organisationRef },
+			relations: ['users'],
+		});
+
+		if (!organisation) {
+			throw new NotFoundException('Organisation not found');
+		}
+
+		const overview = await this.calculateOrganisationOverview(organisation, dateRange);
+		const trends = await this.calculateOrganisationTrends(organisation, dateRange);
+		const topMetrics = await this.calculateTopMetrics(organisation, dateRange);
+		const departments = await this.calculateDepartmentMetrics(organisation, dateRange);
+
+		return {
+			timeframe: options.timeframe,
+			startDate: dateRange.start,
+			endDate: dateRange.end,
+			organisationRef: options.organisationRef,
+			branchUid: options.branchUid,
+			overview,
+			departments,
+			trends,
+			topMetrics,
+			summary: this.generateDashboardSummary({
+				overview,
+				departments,
+				trends,
+				topMetrics,
+			}),
+		};
+	}
+
+	private async calculateDepartmentMetrics(organisation: Organisation, dateRange: { start: Date; end: Date }): Promise<DepartmentMetrics[]> {
+		const departmentIds = [...new Set(organisation.users.map((u) => u.departmentId))];
+		return Promise.all(
+			departmentIds.map(async (deptId) => {
+				const users = await this.userRepository.find({
+					where: { departmentId: deptId },
+				});
+
+				const departmentTasks = await this.taskRepository.find({
+					where: {
+						creator: { uid: In(users.map((u) => u.uid)) },
+						createdAt: Between(dateRange.start, dateRange.end),
+					},
+				});
+
+				const departmentAttendance = await this.attendanceRepository.find({
+					where: {
+						owner: { uid: In(users.map((u) => u.uid)) },
+						checkIn: Between(dateRange.start, dateRange.end),
+					},
+				});
+
+				const taskMetrics = this.calculateTaskMetrics(departmentTasks);
+				const attendanceMetrics = this.calculateAttendanceMetrics(departmentAttendance);
+				const productivity = this.calculateProductivityMetrics({
+					tasks: taskMetrics,
+					attendance: attendanceMetrics,
+				});
+
+				return {
+					name: Department[deptId] || `Department ${deptId}`,
+					headCount: users.length,
+					attendance: attendanceMetrics,
+					tasks: taskMetrics,
+					productivity,
+					topPerformers: await this.getTopPerformers(users, dateRange),
+				};
+			}),
+		);
 	}
 }

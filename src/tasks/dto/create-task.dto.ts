@@ -1,8 +1,17 @@
-import { IsString, IsOptional, IsEnum, IsArray, IsDate, IsNotEmpty, IsNumber, ValidateNested, ArrayMinSize } from 'class-validator';
-import { TaskStatus, TaskPriority, RepetitionType, TaskType } from '../../lib/enums/task.enums';
+import {
+	IsString,
+	IsOptional,
+	IsEnum,
+	IsArray,
+	IsDate,
+	IsNotEmpty,
+	IsNumber,
+	ValidateNested,
+	ArrayMinSize,
+} from 'class-validator';
+import { TaskPriority, RepetitionType, TaskType } from '../../lib/enums/task.enums';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
-import { SubTaskStatus } from '../../lib/enums/status.enums';
 
 export class AssigneeDto {
 	@ApiProperty({ description: 'User ID', example: 1 })
@@ -60,11 +69,6 @@ export class SubtaskDto {
 	@IsString()
 	@IsNotEmpty()
 	description: string;
-
-	@ApiProperty({ description: 'Subtask status', enum: SubTaskStatus, example: SubTaskStatus.PENDING })
-	@IsEnum(SubTaskStatus)
-	@IsOptional()
-	status?: SubTaskStatus;
 }
 
 export class CreateTaskDto {
@@ -103,23 +107,6 @@ export class CreateTaskDto {
 	priority: TaskPriority;
 
 	@ApiProperty({
-		description: 'The current status of the task',
-		enum: TaskStatus,
-		example: TaskStatus.PENDING,
-	})
-	@IsEnum(TaskStatus)
-	@IsOptional()
-	status?: TaskStatus;
-
-	@ApiProperty({
-		description: 'Task progress percentage',
-		example: 0,
-	})
-	@IsNumber()
-	@IsOptional()
-	progress?: number;
-
-	@ApiProperty({
 		description: 'The deadline for the task completion',
 		example: `${new Date()}`,
 	})
@@ -145,15 +132,6 @@ export class CreateTaskDto {
 	@IsDate()
 	@IsOptional()
 	repetitionDeadline?: Date;
-
-	@ApiProperty({
-		description: 'Array of file attachments for the task',
-		example: ['https://cdn-icons-png.flaticon.com/512/3607/3607444.png'],
-		type: [String],
-	})
-	@IsArray()
-	@IsOptional()
-	attachments?: string[];
 
 	@ApiProperty({
 		description: 'Array of assignees',

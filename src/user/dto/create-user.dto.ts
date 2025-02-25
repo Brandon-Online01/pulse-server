@@ -91,15 +91,6 @@ export class CreateUserDto {
     userref: string;
 
     @IsOptional()
-    @IsBoolean()
-    @ApiProperty({
-        description: 'Whether the user is deleted',
-        example: false,
-        default: false,
-    })
-    isDeleted?: boolean;
-
-    @IsOptional()
     @ApiProperty({
         description: 'User profile information',
         type: () => CreateUserProfileDto

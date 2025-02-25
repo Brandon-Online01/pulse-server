@@ -23,10 +23,6 @@ export class CreateClaimDto {
     @IsEnum(ClaimCategory)
     category: ClaimCategory;
 
-    @ApiProperty({ enum: ClaimStatus, description: 'Status of the claim' })
-    @IsEnum(ClaimStatus)
-    status: ClaimStatus = ClaimStatus.PENDING;
-
     @ApiProperty({ description: 'UID of the owner of the claim' })
     @IsNotEmpty()
     @IsNumber()

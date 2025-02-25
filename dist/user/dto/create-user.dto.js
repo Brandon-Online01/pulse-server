@@ -115,16 +115,6 @@ __decorate([
 ], CreateUserDto.prototype, "userref", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsBoolean)(),
-    (0, swagger_1.ApiProperty)({
-        description: 'Whether the user is deleted',
-        example: false,
-        default: false,
-    }),
-    __metadata("design:type", Boolean)
-], CreateUserDto.prototype, "isDeleted", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
     (0, swagger_1.ApiProperty)({
         description: 'User profile information',
         type: () => create_user_profile_dto_1.CreateUserProfileDto

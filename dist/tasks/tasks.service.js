@@ -133,7 +133,6 @@ let TasksService = class TasksService {
             status: task_enums_1.TaskStatus.PENDING,
             taskType: createTaskDto.taskType || task_enums_1.TaskType.OTHER,
             priority: createTaskDto.priority,
-            attachments: createTaskDto.attachments || [],
             completionDate: null,
             repetitionType: task_enums_1.RepetitionType.NONE,
             repetitionDeadline: null,
@@ -222,14 +221,11 @@ let TasksService = class TasksService {
                     description: createTaskDto.description,
                     taskType: createTaskDto.taskType,
                     priority: createTaskDto.priority,
-                    status: createTaskDto.status || task_enums_1.TaskStatus.PENDING,
-                    progress: createTaskDto.progress || 0,
                     deadline: createTaskDto.deadline ? new Date(createTaskDto.deadline) : null,
                     repetitionType: createTaskDto.repetitionType || task_enums_1.RepetitionType.NONE,
                     repetitionDeadline: createTaskDto.repetitionDeadline
                         ? new Date(createTaskDto.repetitionDeadline)
                         : null,
-                    attachments: createTaskDto.attachments || [],
                     targetCategory: createTaskDto.targetCategory,
                     isDeleted: false,
                     isOverdue: false,

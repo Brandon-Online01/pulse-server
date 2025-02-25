@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { NotificationStatus, NotificationType } from '../../lib/enums/notification.enums';
+import { NotificationType } from '../../lib/enums/notification.enums';
 import { IsEnum, IsNotEmpty, IsObject, IsString } from 'class-validator';
 
 export class CreateNotificationDto {
@@ -26,14 +26,6 @@ export class CreateNotificationDto {
 		description: 'The message of the notification',
 	})
 	message: string;
-
-	@IsNotEmpty()
-	@IsEnum(NotificationStatus)
-	@ApiProperty({
-		example: NotificationStatus.UNREAD,
-		description: 'Whether the notification is read',
-	})
-	status: NotificationStatus;
 
 	@IsNotEmpty()
 	@IsObject()
