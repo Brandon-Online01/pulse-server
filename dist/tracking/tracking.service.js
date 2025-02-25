@@ -289,6 +289,61 @@ let TrackingService = class TrackingService {
             return response;
         }
     }
+    async createStopEvent(stopData, userId) {
+        try {
+            if (!stopData.address) {
+                const { address } = await this.getAddressFromCoordinates(stopData.latitude, stopData.longitude);
+                if (address) {
+                    stopData.address = address;
+                }
+            }
+            const tracking = this.trackingRepository.create({
+                latitude: stopData.latitude,
+                longitude: stopData.longitude,
+                owner: { uid: userId },
+                address: stopData.address,
+                rawLocation: `${stopData.latitude},${stopData.longitude}`,
+                metadata: {
+                    isStop: true,
+                    startTime: new Date(stopData.startTime).toISOString(),
+                    endTime: new Date(stopData.endTime).toISOString(),
+                    durationMinutes: Math.round(stopData.duration / 60000),
+                }
+            });
+            await this.trackingRepository.save(tracking);
+            return {
+                message: 'Stop event recorded successfully',
+                data: tracking
+            };
+        }
+        catch (error) {
+            return {
+                message: `Failed to record stop event: ${error.message}`,
+                data: null
+            };
+        }
+    }
+    async getUserStops(userId) {
+        try {
+            const stops = await this.trackingRepository
+                .createQueryBuilder('tracking')
+                .where('tracking.owner.uid = :userId', { userId })
+                .andWhere('tracking.deletedAt IS NULL')
+                .andWhere("JSON_EXTRACT(tracking.metadata, '$.isStop') = :isStop", { isStop: true })
+                .orderBy('tracking.createdAt', 'DESC')
+                .getMany();
+            return {
+                message: process.env.SUCCESS_MESSAGE,
+                data: stops
+            };
+        }
+        catch (error) {
+            return {
+                message: `Failed to get user stops: ${error.message}`,
+                data: null
+            };
+        }
+    }
 };
 exports.TrackingService = TrackingService;
 exports.TrackingService = TrackingService = __decorate([

@@ -12,7 +12,9 @@ export interface SignupEmailData extends BaseEmailData {
 }
 
 export interface VerificationEmailData extends BaseEmailData {
-    verificationCode: string;
+    verificationCode?: string;
+    verificationLink: string;
+    expiryHours: number;
 }
 
 export interface PasswordResetData extends BaseEmailData {

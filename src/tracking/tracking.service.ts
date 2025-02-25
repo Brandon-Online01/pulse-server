@@ -345,4 +345,90 @@ export class TrackingService {
       return response;
     }
   }
+
+  /**
+   * Records a user stop event
+   * @param stopData Data about the stop location and duration
+   * @param userId The user ID who made the stop
+   * @returns Response with the created stop record
+   */
+  async createStopEvent(stopData: {
+    latitude: number;
+    longitude: number;
+    startTime: number;
+    endTime: number;
+    duration: number;
+    address?: string;
+  }, userId: number) {
+    try {
+      // If no address is provided, try to get it from coordinates
+      if (!stopData.address) {
+        const { address } = await this.getAddressFromCoordinates(
+          stopData.latitude,
+          stopData.longitude
+        );
+        
+        if (address) {
+          stopData.address = address;
+        }
+      }
+
+      // Create a tracking record for the stop
+      const tracking = this.trackingRepository.create({
+        latitude: stopData.latitude,
+        longitude: stopData.longitude,
+        owner: { uid: userId },
+        address: stopData.address,
+        // Store raw coordinates as fallback
+        rawLocation: `${stopData.latitude},${stopData.longitude}`,
+        // Add stop-specific data
+        metadata: {
+          isStop: true,
+          startTime: new Date(stopData.startTime).toISOString(),
+          endTime: new Date(stopData.endTime).toISOString(),
+          durationMinutes: Math.round(stopData.duration / 60000), // Convert ms to minutes
+        }
+      } as DeepPartial<Tracking>);
+
+      await this.trackingRepository.save(tracking);
+
+      return {
+        message: 'Stop event recorded successfully',
+        data: tracking
+      };
+    } catch (error) {
+      return {
+        message: `Failed to record stop event: ${error.message}`,
+        data: null
+      };
+    }
+  }
+
+  /**
+   * Gets all stops for a specific user
+   * @param userId The user ID to get stops for
+   * @returns List of stop events
+   */
+  async getUserStops(userId: number) {
+    try {
+      // Use raw query to find records with stop metadata
+      const stops = await this.trackingRepository
+        .createQueryBuilder('tracking')
+        .where('tracking.owner.uid = :userId', { userId })
+        .andWhere('tracking.deletedAt IS NULL')
+        .andWhere("JSON_EXTRACT(tracking.metadata, '$.isStop') = :isStop", { isStop: true })
+        .orderBy('tracking.createdAt', 'DESC')
+        .getMany();
+
+      return {
+        message: process.env.SUCCESS_MESSAGE,
+        data: stops
+      };
+    } catch (error) {
+      return {
+        message: `Failed to get user stops: ${error.message}`,
+        data: null
+      };
+    }
+  }
 }

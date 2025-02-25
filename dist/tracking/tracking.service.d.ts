@@ -60,4 +60,19 @@ export declare class TrackingService {
     restore(ref: number): Promise<{
         message: string;
     }>;
+    createStopEvent(stopData: {
+        latitude: number;
+        longitude: number;
+        startTime: number;
+        endTime: number;
+        duration: number;
+        address?: string;
+    }, userId: number): Promise<{
+        message: string;
+        data: Tracking;
+    }>;
+    getUserStops(userId: number): Promise<{
+        message: string;
+        data: Tracking[];
+    }>;
 }

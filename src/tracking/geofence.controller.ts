@@ -1,0 +1,134 @@
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, HttpStatus, HttpCode } from '@nestjs/common';
+import { GeofenceService } from './geofence.service';
+import { CreateGeofenceDto } from './dto/create-geofence.dto';
+import { UpdateGeofenceDto } from './dto/update-geofence.dto';
+import { CreateGeofenceEventDto } from './dto/create-geofence-event.dto';
+import { AuthGuard } from '../guards/auth.guard';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
+import { Request } from 'express';
+import { User } from '../user/entities/user.entity';
+
+// Extended request interface with user property
+interface AuthenticatedRequest extends Request {
+  user: User;
+}
+
+@ApiTags('geofence')
+@Controller('geofence')
+@UseGuards(AuthGuard)
+@ApiBearerAuth()
+export class GeofenceController {
+  constructor(private readonly geofenceService: GeofenceService) {}
+
+  @Post()
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create a new geofence area' })
+  async create(@Body() createGeofenceDto: CreateGeofenceDto, @Req() req: AuthenticatedRequest) {
+    const response = await this.geofenceService.createGeofence(createGeofenceDto, req.user);
+    return {
+      data: response.geofence,
+      message: response.message,
+      status: HttpStatus.CREATED
+    };
+  }
+
+  @Get()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get all geofence areas for the current user\'s organisation' })
+  async findAll(@Req() req: AuthenticatedRequest) {
+    const response = await this.geofenceService.findAllByOrganisation(Number(req?.user?.organisationRef));
+    return {
+      data: response.geofences,
+      message: response.message,
+      status: HttpStatus.OK
+    };
+  }
+
+  @Get('areas')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get all geofence areas for mobile app' })
+  async getAreasForMobile(@Req() req: AuthenticatedRequest) {
+    const response = await this.geofenceService.getGeofenceAreasForMobile(req.user);
+    return {
+      data: response.areas,
+      message: response.message,
+      status: HttpStatus.OK
+    };
+  }
+
+  @Get(':ref')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get a geofence area by ref' })
+  async findOne(@Param('ref') ref: string) {
+    const response = await this.geofenceService.findOne(ref);
+    return {
+      data: response.geofence,
+      message: response.message,
+      status: HttpStatus.OK
+    };
+  }
+
+  @Patch(':ref')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Update a geofence area' })
+  async update(
+    @Param('ref') ref: string, 
+    @Body() updateGeofenceDto: UpdateGeofenceDto,
+    @Req() req: AuthenticatedRequest
+  ) {
+    const response = await this.geofenceService.update(ref, updateGeofenceDto, req.user);
+    return {
+      data: response.geofence,
+      message: response.message,
+      status: HttpStatus.OK
+    };
+  }
+
+  @Delete(':ref')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Soft delete a geofence area' })
+  async remove(@Param('ref') ref: string, @Req() req: AuthenticatedRequest) {
+    const response = await this.geofenceService.remove(ref, req.user);
+    return {
+      success: response.success,
+      message: response.message,
+      status: HttpStatus.OK
+    };
+  }
+
+  @Post('event')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create a new geofence event' })
+  async createEvent(@Body() createGeofenceEventDto: CreateGeofenceEventDto, @Req() req: AuthenticatedRequest) {
+    const response = await this.geofenceService.createGeofenceEvent(createGeofenceEventDto, req.user);
+    return {
+      data: response.event,
+      message: response.message,
+      status: HttpStatus.CREATED
+    };
+  }
+
+  @Get('events/user/:userref')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get all geofence events for a user' })
+  async findUserEvents(@Param('userref') userref: string) {
+    const response = await this.geofenceService.findUserEvents(userref);
+    return {
+      data: response.events,
+      message: response.message,
+      status: HttpStatus.OK
+    };
+  }
+
+  @Get('events/geofence/:geofenceref')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get all geofence events for a geofence area' })
+  async findGeofenceEvents(@Param('geofenceref') geofenceref: string) {
+    const response = await this.geofenceService.findGeofenceEvents(geofenceref);
+    return {
+      data: response.events,
+      message: response.message,
+      status: HttpStatus.OK
+    };
+  }
+} 

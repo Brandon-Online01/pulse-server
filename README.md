@@ -1,6 +1,6 @@
 # Enterprise CRM Backend Service 🚀
 
-A powerful and scalable backend service built with NestJS for enterprise-level CRM operations. This service provides comprehensive business management capabilities including user management, asset tracking, communication systems, and more.
+A powerful and scalable backend service built with NestJS for enterprise-level CRM operations. This service provides comprehensive business management capabilities including user management, asset tracking, communication systems, licensing, and more.
 
 ## 🌟 Key Features
 
@@ -9,24 +9,33 @@ A powerful and scalable backend service built with NestJS for enterprise-level C
     -   JWT-based secure authentication
     -   Role-based access control (RBAC)
     -   Multiple access levels
+    -   Password reset functionality
+    -   Signup verification
 
 -   **👥 User Management**
 
     -   Complete user lifecycle management
     -   Profile management
     -   Role-based permissions
+    -   Employment profiles
+    -   Rewards and achievements system
 
 -   **🏢 Organization Management**
 
     -   Multi-tenant architecture
     -   Branch management
     -   Hierarchical structure
+    -   Organization settings
+    -   Appearance customization
+    -   Business hours
 
 -   **📱 Communication System**
 
     -   Email notifications
     -   Real-time updates
     -   Event-driven architecture
+    -   WebSocket integration
+    -   Communication logs
 
 -   **📦 Asset Management**
 
@@ -36,14 +45,32 @@ A powerful and scalable backend service built with NestJS for enterprise-level C
 
 -   **🛍️ E-commerce Platform**
 
-    -   Product management
+    -   Product management with analytics
     -   Order processing
     -   Shopping cart functionality
+    -   Quotation system with items
+    -   Banner management
 
 -   **📊 Reporting & Analytics**
     -   Custom reports
     -   Data visualization
     -   AI-powered insights
+    -   Product analytics
+    -   Performance tracking
+
+-   **🔑 Licensing System**
+    -   License management
+    -   Usage tracking
+    -   License events
+    -   Subscription handling
+    -   Feature access control
+
+-   **📲 Mobile Integration**
+    -   API endpoints for mobile usage
+    -   Offline data synchronization
+    -   Push notification support
+    -   GPS tracking integration
+    -   Check-in system
 
 ## 🚀 Quick Start
 
@@ -154,19 +181,36 @@ yarn test:cov
 src/
 ├── assets/           # Asset management module
 ├── attendance/       # Attendance tracking
-├── auth/            # Authentication & authorization
-├── communication/   # Communication system
-├── lib/             # Shared libraries
-│   ├── docs/        # Documentation
-│   ├── enums/       # Enumerations
-│   ├── interfaces/  # TypeScript interfaces
-│   └── templates/   # Email templates
-├── notifications/   # Notification system
-├── organisation/    # Organization management
-├── shop/           # E-commerce platform
-├── tasks/          # Task management
-├── tracking/       # GPS tracking
-└── user/           # User management
+├── auth/             # Authentication & authorization
+├── branch/           # Branch management
+├── check-ins/        # Check-in system
+├── claims/           # Claims processing
+├── clients/          # Client management
+├── communication/    # Communication system
+├── config/           # Configuration
+├── decorators/       # Custom decorators
+├── docs/             # Documentation
+├── guards/           # Security guards
+├── journal/          # Journal system
+├── leads/            # Lead management
+├── licensing/        # Licensing system
+├── lib/              # Shared libraries
+│   ├── docs/         # Documentation
+│   ├── enums/        # Enumerations
+│   ├── interfaces/   # TypeScript interfaces
+│   └── templates/    # Email templates
+├── news/             # News management
+├── notifications/    # Notification system
+├── organisation/     # Organization management
+├── products/         # Product management
+├── reports/          # Reporting system
+├── resellers/        # Reseller management
+├── rewards/          # Rewards system
+├── shop/             # E-commerce platform
+├── tasks/            # Task management
+├── tracking/         # GPS tracking
+├── user/             # User management
+└── utils/            # Utility functions
 ```
 
 ## 🔒 Security
@@ -176,6 +220,9 @@ src/
 -   Request validation
 -   Data encryption
 -   Rate limiting
+-   CORS protection
+-   Helmet security
+-   Environment variable protection
 
 ## 🤝 Contributing
 
@@ -191,6 +238,7 @@ src/
 -   Use ESLint and Prettier for code formatting
 -   Follow NestJS architectural patterns
 -   Write comprehensive tests
+-   Document your code with JSDoc comments
 
 ## 📄 License
 

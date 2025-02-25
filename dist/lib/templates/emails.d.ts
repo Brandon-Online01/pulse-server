@@ -2,11 +2,11 @@ import { SignupEmailData, VerificationEmailData, PasswordResetData, PasswordChan
 export declare const Signup: (data: SignupEmailData) => string;
 export declare const Verification: (data: VerificationEmailData) => string;
 export declare const PasswordReset: (data: PasswordResetData) => string;
+export declare const PasswordChanged: (data: PasswordChangedData) => string;
 export declare const NewQuotationClient: (data: QuotationData) => string;
 export declare const NewQuotationInternal: (data: QuotationInternalData) => string;
 export declare const NewQuotationReseller: (data: QuotationResellerData) => string;
 export declare const Invoice: (data: InvoiceData) => string;
-export declare const PasswordChanged: (data: PasswordChangedData) => string;
 export declare const DailyReport: (data: DailyReportData) => string;
 export declare const LicenseCreated: (data: LicenseEmailData) => string;
 export declare const LicenseUpdated: (data: LicenseEmailData) => string;

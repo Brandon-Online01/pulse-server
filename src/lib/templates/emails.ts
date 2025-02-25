@@ -43,111 +43,38 @@ const createSection = (title: string, content: string) => `
   </div>
 `;
 
-export const Signup = (data: SignupEmailData): string => {
-  const welcomeSection = data.welcomeOffers ? `
-    <div style="${BASE_STYLES.card}">
-      <h3 style="${BASE_STYLES.heading}">🎁 Your VIP Welcome Package</h3>
-      <div style="display: grid; gap: 12px;">
-        ${data.welcomeOffers.map(offer => `
-          <div style="background: #f7fafc; padding: 12px; border-radius: 6px; display: flex; align-items: center;">
-            <span style="background: #0066FF; color: white; ${BASE_STYLES.badge}">NEW</span>
-            <span style="margin-left: 12px">${offer}</span>
-          </div>
-        `).join('')}
-      </div>
-    </div>
-  ` : '';
-
-  return `
+export const Signup = (data: SignupEmailData): string => `
     <div style="${BASE_STYLES.wrapper}">
       <div style="${BASE_STYLES.container}">
         <div style="${BASE_STYLES.header}">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="white">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm4.59-12.42L10 14.17l-2.59-2.58L6 13l4 4 8-8z"/>
-          </svg>
-          <h1 style="margin: 16px 0 8px; font-size: 24px;">Welcome to the Future</h1>
-          <p style="margin: 0; opacity: 0.9;">We're thrilled to have you, ${data.name}!</p>
-        </div>
-
-        <div style="padding: 24px 20px;">
-          <div style="${BASE_STYLES.card}">
-            <p style="${BASE_STYLES.text}">Your journey to excellence begins now. Let's make it official!</p>
-            <div style="text-align: center; margin: 24px 0;">
-              <a href="${data.verificationLink}" style="${BASE_STYLES.button}">
-                Activate Your Account
-              </a>
-            </div>
-          </div>
-
-          ${welcomeSection}
-
-          ${createSection("🚀 Quick Start Guide", `
-            <ul style="list-style: none; padding: 0; margin: 0;">
-              <li style="margin-bottom: 12px; display: flex; align-items: center;">
-                <span style="background: #e6efff; border-radius: 50%; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; margin-right: 12px;">1</span>
-                Complete your profile
-              </li>
-              <li style="margin-bottom: 12px; display: flex; align-items: center;">
-                <span style="background: #e6efff; border-radius: 50%; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; margin-right: 12px;">2</span>
-                Explore our features
-              </li>
-              <li style="display: flex; align-items: center;">
-                <span style="background: #e6efff; border-radius: 50%; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; margin-right: 12px;">3</span>
-                Connect with the community
-              </li>
-            </ul>
-          `)}
-        </div>
-
-        <div style="${BASE_STYLES.footer}">
-          <p style="margin: 0 0 16px;">Join our growing community</p>
-          <div style="display: flex; justify-content: center; gap: 16px;">
-            <a href="#" style="${BASE_STYLES.link}">Twitter</a>
-            <a href="#" style="${BASE_STYLES.link}">LinkedIn</a>
-            <a href="#" style="${BASE_STYLES.link}">Discord</a>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-};
-
-export const Verification = (data: VerificationEmailData): string => {
-  return `
-    <div style="${BASE_STYLES.wrapper}">
-      <div style="${BASE_STYLES.container}">
-        <div style="${BASE_STYLES.header}">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="white">
-            <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>
-          </svg>
-          <h1 style="margin: 16px 0 8px; font-size: 24px;">Verify Your Email</h1>
-          <p style="margin: 0; opacity: 0.9;">One small step for security</p>
+          <h1 style="margin: 16px 0 8px; font-size: 24px;">Welcome to Pulse! 🚀</h1>
+          <p style="margin: 0; opacity: 0.9;">Your journey to excellence begins</p>
         </div>
 
         <div style="padding: 24px 20px;">
           <div style="${BASE_STYLES.card}">
             <h2 style="${BASE_STYLES.heading}">Hi ${data.name},</h2>
-            <p style="${BASE_STYLES.text}">Your verification code is:</p>
+            <p style="${BASE_STYLES.text}">Thank you for choosing Pulse. Let's get your account set up!</p>
             
             <div style="text-align: center; margin: 24px 0;">
-              <div style="font-size: 24px; font-weight: bold; letter-spacing: 4px; padding: 16px; background: #f7fafc; border-radius: 8px;">
-                ${data.verificationCode}
-              </div>
+              <a href="/sign-in" style="${BASE_STYLES.button}">
+                Sign In Now
+              </a>
             </div>
           </div>
 
-          ${createSection("🔐 Security First", `
+          ${createSection("🔐 Security Tips", `
             <ul style="list-style: none; padding: 0; margin: 0;">
               <li style="margin-bottom: 12px; display: flex; align-items: center;">
-                <span style="color: #0066FF; margin-right: 8px;">✓</span>
+                <span style="color: #A855F7; margin-right: 8px;">✓</span>
                 Enable two-factor authentication
               </li>
               <li style="margin-bottom: 12px; display: flex; align-items: center;">
-                <span style="color: #0066FF; margin-right: 8px;">✓</span>
-                Use a strong password
+                <span style="color: #A855F7; margin-right: 8px;">✓</span>
+                Use a strong, unique password
               </li>
               <li style="display: flex; align-items: center;">
-                <span style="color: #0066FF; margin-right: 8px;">✓</span>
+                <span style="color: #A855F7; margin-right: 8px;">✓</span>
                 Keep your recovery email updated
               </li>
             </ul>
@@ -155,29 +82,59 @@ export const Verification = (data: VerificationEmailData): string => {
         </div>
 
         <div style="${BASE_STYLES.footer}">
-          <p style="margin: 0;">Didn't request this? Please ignore this email.</p>
+          <p style="margin: 0;">Need help? Our support team is ready to assist you.</p>
         </div>
       </div>
     </div>
-  `;
-};
+`;
 
-export const PasswordReset = (data: PasswordResetData): string => {
-  return `
+export const Verification = (data: VerificationEmailData): string => `
     <div style="${BASE_STYLES.wrapper}">
       <div style="${BASE_STYLES.container}">
         <div style="${BASE_STYLES.header}">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="white">
-            <path d="M12 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6-9h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM8.9 6c0-1.71 1.39-3.1 3.1-3.1s3.1 1.39 3.1 3.1v2H8.9V6z"/>
-          </svg>
-          <h1 style="margin: 16px 0 8px; font-size: 24px;">Reset Your Password</h1>
-          <p style="margin: 0; opacity: 0.9;">We've got you covered</p>
+          <h1 style="margin: 16px 0 8px; font-size: 24px;">Verify Your Email 📧</h1>
+          <p style="margin: 0; opacity: 0.9;">One quick step to secure your account</p>
         </div>
 
         <div style="padding: 24px 20px;">
           <div style="${BASE_STYLES.card}">
             <h2 style="${BASE_STYLES.heading}">Hi ${data.name},</h2>
-            <p style="${BASE_STYLES.text}">We received a request to reset your password. No worries - it happens to the best of us!</p>
+            <p style="${BASE_STYLES.text}">Please verify your email to complete your registration:</p>
+            
+            <div style="text-align: center; margin: 24px 0;">
+              <a href="${data.verificationLink}" style="${BASE_STYLES.button}">
+                Verify Email
+              </a>
+            </div>
+
+            <div style="${BASE_STYLES.alert}">
+              <p style="margin: 0;">
+                <strong>Note:</strong> This link expires in ${data.expiryHours} hours.
+                If you didn't request this, please ignore this email.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div style="${BASE_STYLES.footer}">
+          <p style="margin: 0;">Having trouble? Contact our support team.</p>
+        </div>
+      </div>
+    </div>
+`;
+
+export const PasswordReset = (data: PasswordResetData): string => `
+    <div style="${BASE_STYLES.wrapper}">
+      <div style="${BASE_STYLES.container}">
+        <div style="${BASE_STYLES.header}">
+          <h1 style="margin: 16px 0 8px; font-size: 24px;">Reset Your Password 🔒</h1>
+          <p style="margin: 0; opacity: 0.9;">Secure your account</p>
+        </div>
+
+        <div style="padding: 24px 20px;">
+          <div style="${BASE_STYLES.card}">
+            <h2 style="${BASE_STYLES.heading}">Hi ${data.name},</h2>
+            <p style="${BASE_STYLES.text}">We received a request to reset your password. Click the button below to proceed:</p>
             
             <div style="text-align: center; margin: 24px 0;">
               <a href="${data.resetLink}" style="${BASE_STYLES.button}">
@@ -186,23 +143,55 @@ export const PasswordReset = (data: PasswordResetData): string => {
             </div>
 
             <div style="${BASE_STYLES.alert}">
-              <p style="margin: 0; font-weight: 500;">⚡ Quick Tips:</p>
-              <ul style="margin: 8px 0 0; padding-left: 20px;">
-                <li>Link expires in 1 hour</li>
-                <li>Use a unique password</li>
-                <li>Never share your credentials</li>
-              </ul>
+              <p style="margin: 0;">
+                <strong>Important:</strong> This link expires in 1 hour.
+                If you didn't request this reset, please contact support immediately.
+              </p>
             </div>
           </div>
         </div>
 
         <div style="${BASE_STYLES.footer}">
-          <p style="margin: 0;">Didn't request this reset? Please contact support immediately.</p>
+          <p style="margin: 0;">For security reasons, never share your password reset link.</p>
         </div>
       </div>
     </div>
-  `;
-};
+`;
+
+export const PasswordChanged = (data: PasswordChangedData): string => `
+    <div style="${BASE_STYLES.wrapper}">
+      <div style="${BASE_STYLES.container}">
+        <div style="${BASE_STYLES.header}">
+          <h1 style="margin: 16px 0 8px; font-size: 24px;">Password Updated Successfully 🔐</h1>
+          <p style="margin: 0; opacity: 0.9;">Your account is secure</p>
+        </div>
+
+        <div style="padding: 24px 20px;">
+          <div style="${BASE_STYLES.card}">
+            <h2 style="${BASE_STYLES.heading}">Hi ${data.name},</h2>
+            <p style="${BASE_STYLES.text}">Your password was successfully changed on ${data.changeTime}.</p>
+
+            <div style="${BASE_STYLES.alert}">
+              <p style="margin: 0;">
+                <strong>Security Notice:</strong> If you didn't make this change,
+                please contact our support team immediately.
+              </p>
+            </div>
+
+            <div style="text-align: center; margin: 24px 0;">
+              <a href="/sign-in" style="${BASE_STYLES.button}">
+                Sign In
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div style="${BASE_STYLES.footer}">
+          <p style="margin: 0;">Keep your account secure - never share your password.</p>
+        </div>
+      </div>
+    </div>
+`;
 
 export const NewQuotationClient = (data: QuotationData): string => {
   const itemsList = data.quotationItems.map(item => `
@@ -472,36 +461,6 @@ export const Invoice = (data: InvoiceData): string => {
         <div style="${BASE_STYLES?.footer}">
           <p style="margin: 0;">Thank you for your business!</p>
         </div>
-      </div>
-    </div>
-  `;
-};
-
-export const PasswordChanged = (data: PasswordChangedData): string => {
-  return `
-    <div style="${BASE_STYLES.container}">
-      <div style="${BASE_STYLES.header}">
-        <h1>Password Successfully Changed 🔒</h1>
-      </div>
-
-      <div style="padding: 20px;">
-        <h2>Dear ${data.name},</h2>
-        <p>Your password was successfully changed on ${data.changeTime}.</p>
-
-        <div style="${BASE_STYLES.alert}">
-          <p><strong>Important Security Notice:</strong></p>
-          <ul>
-            <li>Contact our security team immediately if unauthorized</li>
-            <li>Review your recent account activity</li>
-            <li>Enable two-factor authentication if not already active</li>
-          </ul>
-        </div>
-
-        <p>We take your account security seriously. Stay safe!</p>
-      </div>
-
-      <div style="${BASE_STYLES.footer}">
-        <p>Best regards,<br>Your Security Team</p>
       </div>
     </div>
   `;

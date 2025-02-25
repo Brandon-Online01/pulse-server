@@ -13,6 +13,13 @@ const tracking_controller_1 = require("./tracking.controller");
 const typeorm_1 = require("@nestjs/typeorm");
 const tracking_entity_1 = require("./entities/tracking.entity");
 const licensing_module_1 = require("../licensing/licensing.module");
+const geofence_entity_1 = require("./entities/geofence.entity");
+const geofence_event_entity_1 = require("./entities/geofence-event.entity");
+const geofence_service_1 = require("./geofence.service");
+const geofence_controller_1 = require("./geofence.controller");
+const organisation_module_1 = require("../organisation/organisation.module");
+const organisation_entity_1 = require("../organisation/entities/organisation.entity");
+const user_entity_1 = require("../user/entities/user.entity");
 let TrackingModule = class TrackingModule {
 };
 exports.TrackingModule = TrackingModule;
@@ -20,11 +27,12 @@ exports.TrackingModule = TrackingModule = __decorate([
     (0, common_1.Module)({
         imports: [
             licensing_module_1.LicensingModule,
-            typeorm_1.TypeOrmModule.forFeature([tracking_entity_1.Tracking])
+            organisation_module_1.OrganisationModule,
+            typeorm_1.TypeOrmModule.forFeature([tracking_entity_1.Tracking, geofence_entity_1.Geofence, geofence_event_entity_1.GeofenceEvent, organisation_entity_1.Organisation, user_entity_1.User]),
         ],
-        controllers: [tracking_controller_1.TrackingController],
-        providers: [tracking_service_1.TrackingService],
-        exports: [tracking_service_1.TrackingService]
+        controllers: [tracking_controller_1.TrackingController, geofence_controller_1.GeofenceController],
+        providers: [tracking_service_1.TrackingService, geofence_service_1.GeofenceService],
+        exports: [tracking_service_1.TrackingService, geofence_service_1.GeofenceService],
     })
 ], TrackingModule);
 //# sourceMappingURL=tracking.module.js.map

@@ -20,12 +20,19 @@ const swagger_1 = require("@nestjs/swagger");
 const role_decorator_1 = require("../decorators/role.decorator");
 const public_decorator_1 = require("../decorators/public.decorator");
 const user_enums_1 = require("../lib/enums/user.enums");
+const auth_guard_1 = require("../guards/auth.guard");
 let TrackingController = class TrackingController {
     constructor(trackingService) {
         this.trackingService = trackingService;
     }
     create(createTrackingDto) {
         return this.trackingService.create(createTrackingDto);
+    }
+    createStopEvent(stopData, req) {
+        return this.trackingService.createStopEvent(stopData, req.user.uid);
+    }
+    getUserStops(req) {
+        return this.trackingService.getUserStops(req.user.uid);
     }
     findAll() {
         return this.trackingService.findAll();
@@ -35,6 +42,9 @@ let TrackingController = class TrackingController {
     }
     trackingByUser(ref) {
         return this.trackingService.trackingByUser(ref);
+    }
+    getDailyTracking(userId) {
+        return this.trackingService.getDailyTracking(userId);
     }
     restore(ref) {
         return this.trackingService.restore(ref);
@@ -53,6 +63,27 @@ __decorate([
     __metadata("design:paramtypes", [create_tracking_dto_1.CreateTrackingDto]),
     __metadata("design:returntype", void 0)
 ], TrackingController.prototype, "create", null);
+__decorate([
+    (0, common_1.Post)('stops'),
+    (0, common_1.UseGuards)(auth_guard_1.AuthGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Record a stop event' }),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", void 0)
+], TrackingController.prototype, "createStopEvent", null);
+__decorate([
+    (0, common_1.Get)('stops'),
+    (0, common_1.UseGuards)(auth_guard_1.AuthGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Get all stops for the current user' }),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], TrackingController.prototype, "getUserStops", null);
 __decorate([
     (0, common_1.Get)(),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
@@ -79,6 +110,15 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", void 0)
 ], TrackingController.prototype, "trackingByUser", null);
+__decorate([
+    (0, common_1.Get)('daily/:userId'),
+    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
+    (0, swagger_1.ApiOperation)({ summary: 'get daily tracking summary for a user' }),
+    __param(0, (0, common_1.Param)('userId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", void 0)
+], TrackingController.prototype, "getDailyTracking", null);
 __decorate([
     (0, common_1.Patch)('/restore/:ref'),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
