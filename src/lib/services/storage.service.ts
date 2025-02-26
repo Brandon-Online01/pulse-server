@@ -34,8 +34,8 @@ export class StorageService {
 		@InjectRepository(Doc)
 		private readonly docsRepository: Repository<Doc>,
 	) {
-		const projectId = 'storage-buckets-451516'; // Hardcode the correct project ID
-		const bucketName = 'loro'; // Hardcode the correct bucket name
+		const projectId = this.configService.get<string>('GOOGLE_CLOUD_PROJECT_ID');
+		const bucketName = this.configService.get<string>('GOOGLE_CLOUD_PROJECT_BUCKET');
 
 		this.logger.log(`Initializing Storage Service with project: ${projectId} and bucket: ${bucketName}`);
 
@@ -43,6 +43,9 @@ export class StorageService {
 			projectId,
 			credentials: getStorageConfig(configService),
 		});
+
+		console.log(getStorageConfig(configService));
+		
 		this.bucket = bucketName;
 
 		// Initialize bucket
