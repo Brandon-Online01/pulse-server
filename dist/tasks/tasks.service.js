@@ -209,7 +209,6 @@ let TasksService = class TasksService {
     }
     async create(createTaskDto) {
         try {
-            console.log(createTaskDto, "create task dto");
             const now = new Date();
             const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
             if (createTaskDto.deadline && new Date(createTaskDto.deadline) < startOfToday) {

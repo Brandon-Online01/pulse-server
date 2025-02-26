@@ -293,9 +293,6 @@ export class TasksService {
 
 	async create(createTaskDto: CreateTaskDto): Promise<{ message: string }> {
 		try {
-
-			console.log(createTaskDto, "create task dto");
-			
 			const now = new Date();
 			const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
