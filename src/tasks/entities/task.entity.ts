@@ -52,9 +52,6 @@ export class Task {
 	@Column({ type: 'datetime', nullable: true })
 	completionDate: Date;
 
-	@Column({ type: 'json', nullable: true })
-	attachments: string[];
-
 	@Column({ type: 'boolean', default: false })
 	isOverdue: boolean;
 

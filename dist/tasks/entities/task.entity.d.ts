@@ -16,7 +16,6 @@ export declare class Task {
     deadline: Date;
     repetitionDeadline: Date;
     completionDate: Date;
-    attachments: string[];
     isOverdue: boolean;
     targetCategory: string;
     createdAt: Date;

@@ -433,10 +433,6 @@ export class TasksService {
 							assignedBy: creator ? `${creator?.name} ${creator?.surname}` : 'System',
 							subtasks: [],
 							clients: clients.length > 0 ? await this.getClientNames(clients.map((c) => c?.uid)) : [],
-							attachments: savedTask.attachments?.map((attachment) => ({
-								name: attachment,
-								url: attachment,
-							})),
 						});
 					}
 				}
