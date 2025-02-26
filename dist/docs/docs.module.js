@@ -13,6 +13,7 @@ const docs_controller_1 = require("./docs.controller");
 const doc_entity_1 = require("./entities/doc.entity");
 const typeorm_1 = require("@nestjs/typeorm");
 const licensing_module_1 = require("../licensing/licensing.module");
+const storage_service_1 = require("../lib/services/storage.service");
 let DocsModule = class DocsModule {
 };
 exports.DocsModule = DocsModule;
@@ -23,7 +24,7 @@ exports.DocsModule = DocsModule = __decorate([
             typeorm_1.TypeOrmModule.forFeature([doc_entity_1.Doc])
         ],
         controllers: [docs_controller_1.DocsController],
-        providers: [docs_service_1.DocsService],
+        providers: [docs_service_1.DocsService, storage_service_1.StorageService],
         exports: [docs_service_1.DocsService]
     })
 ], DocsModule);

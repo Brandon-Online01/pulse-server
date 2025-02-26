@@ -1,4 +1,5 @@
-export declare const storageConfig: {
+import { ConfigService } from '@nestjs/config';
+export declare const getStorageConfig: (configService: ConfigService) => {
     type: string;
     project_id: string;
     private_key_id: string;

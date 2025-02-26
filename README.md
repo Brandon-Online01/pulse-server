@@ -62,7 +62,10 @@ A powerful NestJS backend service powering location tracking, geofencing, busine
    API_PORT=4400
    DB_HOST=localhost
    DB_PORT=3306
-   GOOGLE_MAPS_API_KEY=your_key
+   GOOGLE_MAPS_API_KEY=your_api_key_here
+   GOOGLE_MAPS_GEOCODING_ENABLED=true
+   GOOGLE_MAPS_DIRECTIONS_ENABLED=true
+   GOOGLE_MAPS_PLACES_ENABLED=true
    ```
 
 3. **Start Server (1 minute)**
@@ -161,8 +164,45 @@ API_PORT=4400
 DB_HOST=localhost
 DB_PORT=3306
 JWT_SECRET=your_secret
-GOOGLE_MAPS_API_KEY=your_key
+GOOGLE_MAPS_API_KEY=your_api_key_here
+GOOGLE_MAPS_GEOCODING_ENABLED=true
+GOOGLE_MAPS_DIRECTIONS_ENABLED=true
+GOOGLE_MAPS_PLACES_ENABLED=true
 ```
+
+## ��️ Google Maps Setup
+
+1. **Get API Key**:
+   - Go to [Google Cloud Console](https://console.cloud.google.com/)
+   - Create a new project or select existing one
+   - Enable the following APIs:
+     - Maps JavaScript API
+     - Directions API
+     - Geocoding API
+     - Places API
+   - Create credentials (API key)
+   - Copy the API key
+
+2. **Configure API Key**:
+   ```bash
+   # In your .env file
+   GOOGLE_MAPS_API_KEY=your_api_key_here
+   GOOGLE_MAPS_GEOCODING_ENABLED=true
+   GOOGLE_MAPS_DIRECTIONS_ENABLED=true
+   GOOGLE_MAPS_PLACES_ENABLED=true
+   ```
+
+3. **API Key Security**:
+   - Restrict the API key to your domain/IP
+   - Set up usage quotas
+   - Enable billing to avoid service interruptions
+   - Monitor usage in Google Cloud Console
+
+4. **Testing Setup**:
+   ```bash
+   # Verify API key works
+   curl "https://maps.googleapis.com/maps/api/geocode/json?address=1600+Amphitheatre+Parkway,+Mountain+View,+CA&key=YOUR_API_KEY"
+   ```
 
 ## 🤝 Support
 

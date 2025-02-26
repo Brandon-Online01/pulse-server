@@ -2,10 +2,9 @@ import { DocsService } from './docs.service';
 import { CreateDocDto } from './dto/create-doc.dto';
 import { UpdateDocDto } from './dto/update-doc.dto';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFile, NotFoundException, BadRequestException, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, UseInterceptors, UploadedFile, NotFoundException, BadRequestException, UseGuards, ParseFilePipe, MaxFileSizeValidator, FileTypeValidator, Query, Request } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { isPublic } from '../decorators/public.decorator';
-import { extname } from 'path';
 import { Roles } from '../decorators/role.decorator';
 import { AccessLevel } from '../lib/enums/user.enums';
 import { RoleGuard } from '../guards/role.guard';
@@ -27,41 +26,41 @@ export class DocsController {
     return this.docsService.create(createDocDto);
   }
 
-  //file upload
-  @Post('/upload')
-  @isPublic()
-  @ApiOperation({ summary: 'upload an file to a storage bucket in google cloud storage' })
-  @UseInterceptors(
-    FileInterceptor('file', {
-      fileFilter: (req, file, cb) => {
-        if (!file.originalname) {
-          return cb(new NotFoundException('No file name provided'), false);
-        }
+  @Post('upload')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadFile(
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 5 * 1024 * 1024 }), // 5MB
+          new FileTypeValidator({ fileType: /(jpg|jpeg|png|gif|pdf|doc|docx|xls|xlsx|txt)$/i }),
+        ],
+        errorHttpStatusCode: 400,
+      }),
+    )
+    file: Express.Multer.File,
+    @Query('type') type?: string,
+    @Request() req?: any,
+  ) {
+    try {
+      const ownerId = req.user?.uid;
+      const branchId = req.user?.branch?.uid;
 
-        const allowedExtensions = ['.png', '.jpg', '.jpeg', 'webp', '.gif', 'mp4'];
-        const ext = extname(file?.originalname)?.toLowerCase();
-
-        if (!allowedExtensions?.includes(ext)) {
-          return cb(
-            new BadRequestException(
-              'Invalid file type. Only PNG, JPG, GIF, MP4, and JPEG files are allowed.',
-            ),
-            false,
-          );
-        }
-
-        cb(null, true);
-      },
-    }),
-  )
-  async uploadToBucket(@UploadedFile() file: Express.Multer.File) {
-    return this.docsService.uploadToBucket(file);
+      const result = await this.docsService.uploadFile(file, type, ownerId, branchId);
+      return result;
+    } catch (error) {
+      throw new BadRequestException({
+        message: error.message,
+        error: 'File Upload Failed',
+        statusCode: 400,
+      });
+    }
   }
 
   @Post('/remove/:ref')
   @isPublic()
   @ApiOperation({ summary: 'soft delete an file from a storage bucket in google cloud storage' })
-  async deleteFromBucket(@Param('ref') ref: string) {
+  async deleteFromBucket(@Param('ref') ref: number) {
     return this.docsService.deleteFromBucket(ref);
   }
 
@@ -78,20 +77,20 @@ export class DocsController {
     return this.docsService.findAll();
   }
 
+  @Get('user/:ref')
+  @UseGuards(AuthGuard, RoleGuard)
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+  @ApiOperation({ summary: 'get documents by user reference code' })
+  findByUser(@Param('ref') ref: number) {
+    return this.docsService.docsByUser(ref);
+  }
+
   @Get(':ref')
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
   @ApiOperation({ summary: 'get a document by reference code' })
   findOne(@Param('ref') ref: number) {
     return this.docsService.findOne(ref);
-  }
-
-  @Get('for/:ref')
-  @UseGuards(AuthGuard, RoleGuard)
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
-  @ApiOperation({ summary: 'get documents by user reference code' })
-  docsByUser(@Param('ref') ref: number) {
-    return this.docsService.docsByUser(ref);
   }
 
   @Patch(':ref')
@@ -102,11 +101,11 @@ export class DocsController {
     return this.docsService.update(ref, updateDocDto);
   }
 
-  @Delete(':ref')
+  @Get('download/:ref')
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
-  @ApiOperation({ summary: 'soft delete a document by reference code' })
-  remove(@Param('ref') ref: number) {
-    return this.docsService.remove(ref);
+  @ApiOperation({ summary: 'get download URL for a document' })
+  async getDownloadUrl(@Param('ref') ref: number) {
+    return this.docsService.getDownloadUrl(ref);
   }
 }

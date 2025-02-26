@@ -5,7 +5,7 @@ import { CreateOrganisationAppearanceDto } from '../dto/create-organisation-appe
 import { UpdateOrganisationAppearanceDto } from '../dto/update-organisation-appearance.dto';
 import { OrganisationAppearance } from '../entities/organisation-appearance.entity';
 
-@ApiTags('Organisation Appearance')
+@ApiTags('org appearance')
 @Controller('organisations')
 export class OrganisationAppearanceController {
     constructor(private readonly appearanceService: OrganisationAppearanceService) {}

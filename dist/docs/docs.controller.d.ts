@@ -7,11 +7,14 @@ export declare class DocsController {
     create(createDocDto: CreateDocDto): Promise<{
         message: any;
     }>;
-    uploadToBucket(file: Express.Multer.File): Promise<{
-        newFileName: string;
+    uploadFile(file: Express.Multer.File, type?: string, req?: any): Promise<{
+        fileName: string;
+        publicUrl: string;
+        metadata: Record<string, any>;
+        docId?: number;
         message: string;
     }>;
-    deleteFromBucket(ref: string): Promise<{
+    deleteFromBucket(ref: number): Promise<{
         message: string;
     }>;
     getExtension(filename: string): Promise<string>;
@@ -19,18 +22,21 @@ export declare class DocsController {
         docs: import("./entities/doc.entity").Doc[] | null;
         message: string;
     }>;
+    findByUser(ref: number): Promise<{
+        message: string;
+        docs: import("./entities/doc.entity").Doc[];
+    }>;
     findOne(ref: number): Promise<{
         doc: import("./entities/doc.entity").Doc | null;
         message: string;
     }>;
-    docsByUser(ref: number): Promise<{
-        message: string;
-        docs: import("./entities/doc.entity").Doc[];
-    }>;
     update(ref: number, updateDocDto: UpdateDocDto): Promise<{
         message: string;
     }>;
-    remove(ref: number): Promise<{
+    getDownloadUrl(ref: number): Promise<{
         message: string;
+        url: string;
+        fileName: string;
+        mimeType: string;
     }>;
 }

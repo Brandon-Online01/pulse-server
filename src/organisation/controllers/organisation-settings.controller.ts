@@ -5,7 +5,7 @@ import { CreateOrganisationSettingsDto } from '../dto/create-organisation-settin
 import { UpdateOrganisationSettingsDto } from '../dto/update-organisation-settings.dto';
 import { OrganisationSettings } from '../entities/organisation-settings.entity';
 
-@ApiTags('Organisation Settings')
+@ApiTags('org settings')
 @Controller('organisations')
 export class OrganisationSettingsController {
     constructor(private readonly settingsService: OrganisationSettingsService) {}

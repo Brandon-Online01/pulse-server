@@ -56,15 +56,15 @@ export class TaskRouteService {
 
   @OnEvent('task.created')
   async handleTaskCreated(payload: { task: Task }) {
-    await this.planRouteForTask(payload.task);
+    await this.planRouteForTask(payload?.task);
   }
 
   @OnEvent('task.updated')
   async handleTaskUpdated(payload: { task: Task }) {
     // Delete existing routes for this task
-    await this.routeRepository.delete({ task: { uid: payload.task.uid } });
+    await this.routeRepository.delete({ task: { uid: payload?.task?.uid } });
     // Replan routes
-    await this.planRouteForTask(payload.task);
+    await this.planRouteForTask(payload?.task);
   }
 
   @OnEvent('task.assigneeChanged')
@@ -94,7 +94,7 @@ export class TaskRouteService {
     for (const assignee of assignees) {
       try {
         const user = await this.userRepository.findOne({
-          where: { uid: assignee.uid },
+          where: { uid: assignee?.uid },
           relations: ['branch'],
         });
 
@@ -104,7 +104,7 @@ export class TaskRouteService {
         }
 
         const branch = await this.branchRepository.findOne({
-          where: { uid: user.branch.uid },
+          where: { uid: user?.branch?.uid },
         });
 
         if (!branch?.address?.latitude || !branch?.address?.longitude) {
@@ -114,8 +114,8 @@ export class TaskRouteService {
 
         const clientLocations = await this.getClientLocations([task]);
         const destinations = Array.from(clientLocations.values()).map(loc => ({
-          lat: loc.latitude,
-          lng: loc.longitude,
+          lat: loc?.latitude,
+          lng: loc?.longitude,
         }));
 
         if (destinations.length === 0) {
@@ -124,8 +124,8 @@ export class TaskRouteService {
         }
 
         const origin = {
-          lat: branch.address.latitude,
-          lng: branch.address.longitude,
+          lat: branch?.address?.latitude,
+          lng: branch?.address?.longitude,
         };
 
         try {
@@ -137,11 +137,11 @@ export class TaskRouteService {
           const waypoints = clients.map(client => {
             const location = clientLocations.get(client.uid);
             return {
-              taskId: task.uid,
-              clientId: client.uid,
+              taskId: task?.uid,
+              clientId: client?.uid,
               location: {
-                lat: location.latitude,
-                lng: location.longitude,
+                lat: location?.latitude,
+                lng: location?.longitude,
               },
             };
           });
@@ -151,11 +151,11 @@ export class TaskRouteService {
             assignee: user,
             branch: branch,
             waypoints,
-            waypointOrder: optimizedRoute.waypointOrder,
-            legs: optimizedRoute.legs,
-            totalDistance: optimizedRoute.totalDistance,
-            totalDuration: optimizedRoute.totalDuration,
-            plannedDate: task.deadline,
+            waypointOrder: optimizedRoute?.waypointOrder,
+            legs: optimizedRoute?.legs,
+            totalDistance: optimizedRoute?.totalDistance,
+            totalDuration: optimizedRoute?.totalDuration,
+            plannedDate: task?.deadline,
             isOptimized: true,
           });
 
@@ -170,7 +170,6 @@ export class TaskRouteService {
           throw error;
         }
       } catch (error) {
-        console.error(`Failed to plan route for assignee ${assignee.uid}:`, error);
         if (retryCount < MAX_RETRIES) {
           console.log(`Retrying route planning (attempt ${retryCount + 1}/${MAX_RETRIES})`);
           await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
@@ -233,7 +232,8 @@ export class TaskRouteService {
     const routes: Route[] = [];
     for (const task of tasks) {
       // Check cache first
-      const cachedRoute = await this.getRouteFromCache(task.uid, date);
+      const cachedRoute = await this.getRouteFromCache(task?.uid, date);
+      
       if (cachedRoute) {
         routes.push(cachedRoute);
         continue;

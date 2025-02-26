@@ -25,31 +25,74 @@ async function bootstrap() {
     });
     const config = new swagger_1.DocumentBuilder()
         .setTitle('LORO API DOCS')
-        .setDescription('LORO API documentation with detailed endpoints and schemas definitions')
-        .addTag('assets', 'Manage and track digital assets and resources')
-        .addTag('att', 'Employee attendance tracking and management')
-        .addTag('auth', 'Authentication, authorization, and account security')
-        .addTag('branch', 'Branch office location and information management')
-        .addTag('check-ins', 'Location-based employee check-in system')
-        .addTag('claims', 'Insurance claims and reimbursement processing')
-        .addTag('clients', 'Client relationship and account management')
-        .addTag('communication', 'Event-driven internal and external messaging system')
-        .addTag('docs', 'Document management and file sharing system')
-        .addTag('journal', 'Financial transaction and journal entry management')
-        .addTag('leads', 'Sales lead and prospect management')
-        .addTag('news', 'Company news and announcement management')
-        .addTag('notifications', 'System notifications and user alerts')
-        .addTag('org', 'Organization settings and configuration')
-        .addTag('products', 'Product catalog and inventory management')
-        .addTag('reports', 'Business analytics and reporting tools')
-        .addTag('resellers', 'Reseller partner and distribution management')
-        .addTag('rewards', 'Employee rewards and recognition system')
-        .addTag('shop', 'E-commerce and order management')
-        .addTag('tasks', 'Task and project management system')
-        .addTag('gps', 'GPS tracking and location services')
-        .addTag('user', 'User account management')
-        .addTag('websockets', 'Real-time WebSocket Communication')
-        .addServer('wss://api.loro.co.za', 'WebSocket Server')
+        .setDescription(`
+LORO API documentation with detailed endpoints and schemas definitions.
+
+## Key Features
+- **Authentication**: JWT-based authentication system with role-based access
+- **File Storage**: Google Cloud Storage integration for secure file management
+- **Route Optimization**: Google Maps integration for task route planning
+- **Real-time Updates**: WebSocket support for live notifications
+- **Geofencing**: Advanced location-based services and territory management
+- **Enterprise Features**: Comprehensive business management tools
+
+## Environment Setup
+Required environment variables:
+- \`GOOGLE_MAPS_API_KEY\`: For route optimization and geocoding
+- \`GOOGLE_MAPS_GEOCODING_ENABLED\`: Enable geocoding features
+- \`GOOGLE_CLOUD_PROJECT_ID\`: For file storage
+- \`GOOGLE_CLOUD_BUCKET_NAME\`: Storage bucket name
+- \`JWT_SECRET\`: For authentication
+- \`DATABASE_URL\`: Database connection string
+- \`ALLOWED_ORIGINS\`: CORS allowed origins
+
+## API Security
+- JWT-based authentication
+- Role-based access control (RBAC)
+- CORS enabled with configurable origins
+- Helmet protection
+- Rate limiting
+- Enterprise-only features protection
+- Geofencing validation
+
+## WebSocket Events
+- Real-time notifications
+- Location updates
+- Task assignments
+- Status changes
+`)
+        .addTag('auth', 'JWT-based authentication and authorization system with role management')
+        .addTag('user', 'User management with role-based access control and permissions')
+        .addTag('org', 'Core organization configuration and enterprise features')
+        .addTag('org settings', 'Organization-wide configuration and preferences')
+        .addTag('org appearance', 'Custom branding and UI/UX settings')
+        .addTag('org hours', 'Operating hours and availability management')
+        .addTag('licensing', 'License management with subscription tiers and renewal tracking')
+        .addTag('gps', 'Advanced location services with Google Maps integration')
+        .addTag('geofence', 'Geofencing for organizations, branches, tasks, and clients')
+        .addTag('check-ins', 'GPS-based employee check-in system with location validation')
+        .addTag('branch', 'Branch management with geocoding and territory mapping')
+        .addTag('tasks', 'Task management with route optimization and GPS tracking')
+        .addTag('assets', 'Digital and physical asset tracking with location support')
+        .addTag('att', 'Employee attendance and time tracking with location validation')
+        .addTag('docs', 'Document management with Google Cloud Storage integration')
+        .addTag('clients', 'Client management with location-based services and geofencing')
+        .addTag('leads', 'Sales lead tracking with location and territory management')
+        .addTag('claims', 'Insurance claims processing with document attachments')
+        .addTag('journal', 'Daily activity logging for management and audit trails')
+        .addTag('products', 'Product catalog with image storage and inventory tracking')
+        .addTag('shop', 'E-commerce with location-based delivery and territory restrictions')
+        .addTag('communication', 'Real-time messaging system with WebSocket support')
+        .addTag('notifications', 'Real-time notification system via WebSocket')
+        .addTag('news', 'Company announcements with rich media support')
+        .addTag('websockets', 'Real-time bi-directional communication')
+        .addTag('reports', 'Business analytics with location and route insights')
+        .addTag('rewards', 'Performance tracking and employee recognition system')
+        .addTag('resellers', 'Partner management with territory mapping and analytics')
+        .addBearerAuth()
+        .addServer('https://api.loro.co.za', 'Production')
+        .addServer('http://localhost:4400', 'Development')
+        .addServer('wss://api.loro.co.za', 'WebSocket')
         .build();
     const document = swagger_1.SwaggerModule.createDocument(app, config, {
         deepScanRoutes: true,
@@ -66,15 +109,28 @@ async function bootstrap() {
                     properties: {
                         event: {
                             type: 'string',
-                            enum: ['newQuotation'],
+                            enum: ['newQuotation', 'locationUpdate', 'taskAssigned', 'statusChange'],
                             description: 'WebSocket event name'
                         },
                         data: {
                             type: 'object',
                             properties: {
-                                quotationNumber: {
+                                id: {
                                     type: 'string',
-                                    description: 'The quotation number that was created'
+                                    description: 'The unique identifier of the event'
+                                },
+                                type: {
+                                    type: 'string',
+                                    description: 'The type of event'
+                                },
+                                payload: {
+                                    type: 'object',
+                                    description: 'Event-specific data payload'
+                                },
+                                timestamp: {
+                                    type: 'string',
+                                    format: 'date-time',
+                                    description: 'Event timestamp'
                                 }
                             }
                         }
@@ -97,42 +153,50 @@ async function bootstrap() {
 						
 						## Available Events
 						
-						### newQuotation
-						Emitted when a new quotation is created
+						### System Events
+						- \`connect\`: Connection established
+						- \`disconnect\`: Connection terminated
+						- \`error\`: Error occurred
 						
-						\`\`\`typescript
-						// Event name: newQuotation
-						// Payload structure:
-						{
-							quotationNumber: string
-						}
+						### Business Events
+						- \`locationUpdate\`: Real-time GPS position updates
+						- \`taskAssigned\`: New task assignments
+						- \`statusChange\`: Entity status changes
+						- \`newQuotation\`: New quotation created
+						
+						## Authentication
+						WebSocket connections require JWT authentication via query parameter:
+						\`\`\`
+						wss://api.loro.co.za?token=your_jwt_token
 						\`\`\`
 						
 						## Code Examples
 						
-						### JavaScript/TypeScript (Socket.IO Client)
+						### JavaScript/TypeScript
 						\`\`\`typescript
 						import { io } from "socket.io-client";
 						
-						const socket = io("wss://api.loro.co.za");
-						
-						socket.on("newQuotation", (data) => {
-							console.log("New quotation:", data.quotationNumber);
-						});
-						\`\`\`
-						
-						### C# (.NET)
-						\`\`\`csharp
-						using SocketIOClient;
-						
-						var client = new SocketIO("https://api.loro.co.za");
-						
-						client.On("newQuotation", response => {
-							var data = response.GetValue<QuotationData>();
-							Console.WriteLine($"New quotation: {data.QuotationNumber}");
+						const socket = io("wss://api.loro.co.za", {
+							query: { token: "your_jwt_token" }
 						});
 						
-						await client.ConnectAsync();
+						// Handle connection
+						socket.on("connect", () => {
+							console.log("Connected to WebSocket");
+						});
+						
+						// Listen for events
+						socket.on("locationUpdate", (data) => {
+							console.log("Location update:", data);
+						});
+						
+						socket.on("taskAssigned", (data) => {
+							console.log("New task:", data);
+						});
+						
+						socket.on("error", (error) => {
+							console.error("WebSocket error:", error);
+						});
 						\`\`\`
 					`,
                     responses: {

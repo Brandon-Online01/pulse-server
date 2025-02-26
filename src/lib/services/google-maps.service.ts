@@ -3,6 +3,12 @@ import { ConfigService } from '@nestjs/config';
 import { Client, TravelMode } from '@googlemaps/google-maps-services-js';
 import { Address, GeocodingResult } from '../interfaces/address.interface';
 
+interface GeocoderAddressComponent {
+  long_name: string;
+  short_name: string;
+  types: string[];
+}
+
 @Injectable()
 export class GoogleMapsService {
   private readonly client: Client;
@@ -97,7 +103,7 @@ export class GoogleMapsService {
   }
 
   private findAddressComponent(
-    components: google.maps.GeocoderAddressComponent[],
+    components: GeocoderAddressComponent[],
     type: string,
   ): string {
     const component = components.find(c => c.types.includes(type));

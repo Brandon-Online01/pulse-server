@@ -182,20 +182,32 @@ export class TasksService {
 	): Promise<Task> {
 		// Format date for display
 		const formattedDate = taskDate.toLocaleDateString('en-US', {
-			weekday: 'short',
 			month: 'short',
 			day: 'numeric',
 			year: 'numeric',
 		});
 
-		// Create the repeated task
+		// Create season number based on repetition type
+		let seasonNumber = 1;
+		if (createTaskDto.repetitionType === RepetitionType.YEARLY) {
+			seasonNumber = Math.ceil((taskDate.getFullYear() - seriesStart.getFullYear()) + 1);
+		} else if (createTaskDto.repetitionType === RepetitionType.MONTHLY) {
+			const monthDiff = (taskDate.getFullYear() - seriesStart.getFullYear()) * 12 + 
+				(taskDate.getMonth() - seriesStart.getMonth());
+			seasonNumber = Math.ceil(monthDiff / 3) + 1; // One season every 3 months
+		} else {
+			seasonNumber = Math.ceil(sequenceNumber / (createTaskDto.repetitionType === RepetitionType.WEEKLY ? 13 : 30)); // 13 episodes per season for weekly, 30 for daily
+		}
+
+		// Calculate episode number within the season
+		const episodeNumber = createTaskDto.repetitionType === RepetitionType.WEEKLY ? 
+			((sequenceNumber - 1) % 13) + 1 : // 13 episodes per season for weekly
+			((sequenceNumber - 1) % 30) + 1;   // 30 episodes per season for daily
+
+		// Create the repeated task with TV show style naming
 		const repeatedTask = this.taskRepository.create({
-			title: `${createTaskDto.title} (#${sequenceNumber}/${totalTasks}) - ${formattedDate}`,
-			description: `${
-				createTaskDto.description
-			}\n\n---\nRecurring Task Information:\n- Part ${sequenceNumber} of ${totalTasks}\n- Repeats: ${repetitionTypeDisplay}\n- Original Task: ${
-				createTaskDto.title
-			}\n- Series Start: ${seriesStart.toLocaleDateString()}\n- Series End: ${seriesEnd.toLocaleDateString()}`,
+			title: `${createTaskDto.title} S${seasonNumber.toString().padStart(2, '0')} E${episodeNumber.toString().padStart(2, '0')} - ${formattedDate}`,
+			description: `${createTaskDto.description}\n\n---\nSeries Information:\n- Season ${seasonNumber}, Episode ${episodeNumber}\n- Series: ${createTaskDto.title}\n- Repeats: ${repetitionTypeDisplay}\n- Air Date: ${formattedDate}\n- Series Start: ${seriesStart.toLocaleDateString()}\n- Series Finale: ${seriesEnd.toLocaleDateString()}`,
 			deadline: taskDate,
 			assignees: createTaskDto.assignees?.map((a) => ({ uid: a.uid })) || [],
 			clients: createTaskDto.client?.map((c) => ({ uid: c.uid })) || [],
@@ -281,6 +293,9 @@ export class TasksService {
 
 	async create(createTaskDto: CreateTaskDto): Promise<{ message: string }> {
 		try {
+
+			console.log(createTaskDto, "create task dto");
+			
 			const now = new Date();
 			const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 

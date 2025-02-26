@@ -5,7 +5,7 @@ import { CreateOrganisationHoursDto } from '../dto/create-organisation-hours.dto
 import { UpdateOrganisationHoursDto } from '../dto/update-organisation-hours.dto';
 import { OrganisationHours } from '../entities/organisation-hours.entity';
 
-@ApiTags('Organisation Hours')
+@ApiTags('org hours')
 @Controller('organisations')
 export class OrganisationHoursController {
     constructor(private readonly hoursService: OrganisationHoursService) {}
