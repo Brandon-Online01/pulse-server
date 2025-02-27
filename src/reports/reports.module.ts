@@ -28,6 +28,8 @@ import { Attendance } from '../attendance/entities/attendance.entity';
 import { Organisation } from '../organisation/entities/organisation.entity';
 import { Branch } from '../branch/entities/branch.entity';
 import { CommunicationModule } from '../communication/communication.module';
+import { Tracking } from '../tracking/entities/tracking.entity';
+import { LiveUserReportService } from './live-user-report.service';
 
 @Module({
   imports: [
@@ -45,6 +47,7 @@ import { CommunicationModule } from '../communication/communication.module';
       Attendance,
       Organisation,
       Branch,
+      Tracking
     ]),
     LeadsModule,
     JournalModule,
@@ -61,7 +64,7 @@ import { CommunicationModule } from '../communication/communication.module';
     CommunicationModule
   ],
   controllers: [ReportsController],
-  providers: [ReportsService],
-  exports: [ReportsService]
+  providers: [ReportsService, LiveUserReportService],
+  exports: [ReportsService, LiveUserReportService]
 })
 export class ReportsModule { }

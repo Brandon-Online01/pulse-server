@@ -12,7 +12,7 @@ import { Attendance } from '../attendance/entities/attendance.entity';
 import { Organisation } from '../organisation/entities/organisation.entity';
 import { Branch } from '../branch/entities/branch.entity';
 import { Report } from './entities/report.entity';
-import { ReportType, ReportStatus, ReportMetricType } from '../lib/enums/report.enums';
+import { ReportType, ReportStatus, ReportMetricType, ReportTimeframe, ReportFormat } from '../lib/enums/report.enums';
 import { TaskStatus, TaskPriority } from '../lib/enums/task.enums';
 import { LeadStatus } from '../lib/enums/lead.enums';
 import { Department } from '../lib/enums/user.enums';
@@ -28,6 +28,7 @@ import {
 	DailyUserActivityReport,
 	DashboardAnalyticsReport,
 	DepartmentMetrics,
+	LiveUserReport,
 } from './report.types';
 import { Achievement } from '../rewards/entities/achievement.entity';
 import { Client } from '../clients/entities/client.entity';
@@ -35,6 +36,8 @@ import { OnEvent } from '@nestjs/event-emitter';
 import { EventEmitter2 } from 'eventemitter2';
 import { CommunicationService } from '../communication/communication.service';
 import { EmailType } from '../lib/enums/email.enums';
+import { Tracking } from 'src/tracking/entities/tracking.entity';
+import { LiveUserReportService } from './live-user-report.service';
 
 @Injectable()
 export class ReportsService {
@@ -72,6 +75,9 @@ export class ReportsService {
 		private readonly branchRepository: Repository<Branch>,
 		@InjectRepository(Client)
 		private readonly clientRepository: Repository<Client>,
+		@InjectRepository(Tracking)
+		private readonly trackingRepository: Repository<Tracking>,
+		private readonly liveUserReportService: LiveUserReportService,
 	) {
 		this.currencyLocale = this.configService.get<string>('CURRENCY_LOCALE') || 'en-ZA';
 		this.currencyCode = this.configService.get<string>('CURRENCY_CODE') || 'ZAR';
@@ -881,5 +887,87 @@ export class ReportsService {
 				};
 			}),
 		);
+	}
+
+	async userLiveOverview(userId: number): Promise<LiveUserReport> {
+		try {
+			const now = new Date();
+			const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+			const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+
+			// Fetch user data with relations using query builder
+			const user = await this.userRepository
+				.createQueryBuilder('user')
+				.leftJoinAndSelect('user.userProfile', 'userProfile')
+				.leftJoinAndSelect('user.branch', 'branch')
+				.leftJoinAndSelect('user.organisation', 'organisation')
+				.where('user.uid = :userId', { userId })
+				.getOne();
+			
+			if (!user) {
+				throw new NotFoundException(`User with ID ${userId} not found`);
+			}
+
+			// Generate a daily report first as the base
+			const options: ReportGenerationOptions = {
+				type: ReportType.DAILY_USER,
+				format: ReportFormat.JSON,
+				timeframe: ReportTimeframe.DAILY,
+				startDate: startOfDay,
+				endDate: endOfDay,
+				userId: userId
+			};
+
+			// Get the daily report data
+			const dailyReport = await this.generateDailyUserReport(options);
+
+			// Fetch real-time data using the LiveUserReportService
+			const currentTasksInProgress = await this.liveUserReportService.getCurrentTasksInProgress(userId);
+			const nextTasks = await this.liveUserReportService.getNextTasks(userId);
+			const taskTimeline = await this.liveUserReportService.getTaskTimeline(userId);
+			const overdueTasks = await this.liveUserReportService.getOverdueTasks(userId);
+			const taskEfficiency = await this.liveUserReportService.getTaskEfficiency(userId);
+			const recentActivities = await this.liveUserReportService.getRecentActivities(userId);
+			const isOnline = await this.liveUserReportService.checkUserOnlineStatus(userId);
+			const currentActivity = await this.liveUserReportService.getCurrentActivity(userId);
+			const location = await this.liveUserReportService.getUserLocation(userId);
+
+			// Add live data
+			const liveReport: LiveUserReport = {
+				...dailyReport,
+				lastUpdated: now,
+				isOnline,
+				currentActivity,
+				location,
+				currentTasksInProgress,
+				nextTasks: nextTasks?.map(task => ({
+					...task,
+					deadline: task?.deadline || new Date()
+				})),
+				taskTimeline: taskTimeline?.map(task => ({
+					...task,
+					startTime: task?.startDate || new Date(),
+					endTime: task?.endDate || new Date(),
+					isCompleted: task?.status === TaskStatus.COMPLETED
+				})),
+				overdueTasks,
+				taskEfficiency,
+				recentActivities,
+				summary: this.liveUserReportService.generateLiveReportSummary(user, dailyReport, {
+					currentTasksInProgress,
+					nextTasks: nextTasks?.map(task => ({
+						...task,
+						deadline: task.deadline || new Date()
+					})),
+					overdueTasks,
+					taskEfficiency,
+					isOnline
+				})
+			};
+
+			return liveReport;
+		} catch (error) {
+			throw new Error(`Failed to generate live user report: ${error.message}`);
+		}
 	}
 }

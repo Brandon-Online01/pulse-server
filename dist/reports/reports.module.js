@@ -37,6 +37,8 @@ const attendance_entity_1 = require("../attendance/entities/attendance.entity");
 const organisation_entity_1 = require("../organisation/entities/organisation.entity");
 const branch_entity_1 = require("../branch/entities/branch.entity");
 const communication_module_1 = require("../communication/communication.module");
+const tracking_entity_1 = require("../tracking/entities/tracking.entity");
+const live_user_report_service_1 = require("./live-user-report.service");
 let ReportsModule = class ReportsModule {
 };
 exports.ReportsModule = ReportsModule;
@@ -57,6 +59,7 @@ exports.ReportsModule = ReportsModule = __decorate([
                 attendance_entity_1.Attendance,
                 organisation_entity_1.Organisation,
                 branch_entity_1.Branch,
+                tracking_entity_1.Tracking
             ]),
             leads_module_1.LeadsModule,
             journal_module_1.JournalModule,
@@ -73,8 +76,8 @@ exports.ReportsModule = ReportsModule = __decorate([
             communication_module_1.CommunicationModule
         ],
         controllers: [reports_controller_1.ReportsController],
-        providers: [reports_service_1.ReportsService],
-        exports: [reports_service_1.ReportsService]
+        providers: [reports_service_1.ReportsService, live_user_report_service_1.LiveUserReportService],
+        exports: [reports_service_1.ReportsService, live_user_report_service_1.LiveUserReportService]
     })
 ], ReportsModule);
 //# sourceMappingURL=reports.module.js.map

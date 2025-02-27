@@ -1,6 +1,7 @@
 import { ReportsService } from './reports.service';
+import { LiveUserReport } from './report.types';
 export declare class ReportsController {
     private readonly reportsService;
-    private readonly logger;
     constructor(reportsService: ReportsService);
+    userLiveOverview(ref: number): Promise<LiveUserReport>;
 }

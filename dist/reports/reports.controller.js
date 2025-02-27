@@ -8,7 +8,9 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var ReportsController_1;
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReportsController = void 0;
 const reports_service_1 = require("./reports.service");
@@ -17,14 +19,35 @@ const auth_guard_1 = require("../guards/auth.guard");
 const role_guard_1 = require("../guards/role.guard");
 const common_1 = require("@nestjs/common");
 const enterprise_only_decorator_1 = require("../decorators/enterprise-only.decorator");
-let ReportsController = ReportsController_1 = class ReportsController {
+const live_user_report_dto_1 = require("./dto/live-user-report.dto");
+let ReportsController = class ReportsController {
     constructor(reportsService) {
         this.reportsService = reportsService;
-        this.logger = new common_1.Logger(ReportsController_1.name);
+    }
+    async userLiveOverview(ref) {
+        return this.reportsService.userLiveOverview(ref);
     }
 };
 exports.ReportsController = ReportsController;
-exports.ReportsController = ReportsController = ReportsController_1 = __decorate([
+__decorate([
+    (0, common_1.Get)('live/:ref'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get live user report' }),
+    (0, swagger_1.ApiParam)({
+        name: 'ref',
+        type: 'number',
+        description: 'The reference ID of the user'
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Live user report retrieved successfully',
+        type: live_user_report_dto_1.LiveUserReportDto,
+    }),
+    __param(0, (0, common_1.Param)('ref', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], ReportsController.prototype, "userLiveOverview", null);
+exports.ReportsController = ReportsController = __decorate([
     (0, swagger_1.ApiTags)('reports'),
     (0, common_1.Controller)('reports'),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),

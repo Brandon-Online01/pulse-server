@@ -1,7 +1,8 @@
 export enum ReportType {
     DAILY_USER = 'DAILY_USER',
     MONTHLY_DASHBOARD = 'MONTHLY_DASHBOARD',
-    CUSTOM_DASHBOARD = 'CUSTOM_DASHBOARD'
+    CUSTOM_DASHBOARD = 'CUSTOM_DASHBOARD',
+    LIVE_USER = 'LIVE_USER'
 }
 
 export enum ReportFormat {

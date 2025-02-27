@@ -10,11 +10,13 @@ import { Attendance } from '../attendance/entities/attendance.entity';
 import { Organisation } from '../organisation/entities/organisation.entity';
 import { Branch } from '../branch/entities/branch.entity';
 import { Report } from './entities/report.entity';
-import { ReportGenerationOptions, DailyUserActivityReport } from './report.types';
+import { ReportGenerationOptions, DailyUserActivityReport, LiveUserReport } from './report.types';
 import { Achievement } from '../rewards/entities/achievement.entity';
 import { Client } from '../clients/entities/client.entity';
 import { EventEmitter2 } from 'eventemitter2';
 import { CommunicationService } from '../communication/communication.service';
+import { Tracking } from 'src/tracking/entities/tracking.entity';
+import { LiveUserReportService } from './live-user-report.service';
 export declare class ReportsService {
     private readonly configService;
     private readonly eventEmitter;
@@ -31,12 +33,14 @@ export declare class ReportsService {
     private readonly organisationRepository;
     private readonly branchRepository;
     private readonly clientRepository;
+    private readonly trackingRepository;
+    private readonly liveUserReportService;
     private readonly currencyLocale;
     private readonly currencyCode;
     private readonly currencySymbol;
     private readonly WORK_HOURS_PER_DAY;
     private readonly MINUTES_PER_HOUR;
-    constructor(configService: ConfigService, eventEmitter: EventEmitter2, communicationService: CommunicationService, checkInRepository: Repository<CheckIn>, taskRepository: Repository<Task>, claimRepository: Repository<Claim>, leadRepository: Repository<Lead>, journalRepository: Repository<Journal>, userRepository: Repository<User>, attendanceRepository: Repository<Attendance>, achievementRepository: Repository<Achievement>, reportRepository: Repository<Report>, organisationRepository: Repository<Organisation>, branchRepository: Repository<Branch>, clientRepository: Repository<Client>);
+    constructor(configService: ConfigService, eventEmitter: EventEmitter2, communicationService: CommunicationService, checkInRepository: Repository<CheckIn>, taskRepository: Repository<Task>, claimRepository: Repository<Claim>, leadRepository: Repository<Lead>, journalRepository: Repository<Journal>, userRepository: Repository<User>, attendanceRepository: Repository<Attendance>, achievementRepository: Repository<Achievement>, reportRepository: Repository<Report>, organisationRepository: Repository<Organisation>, branchRepository: Repository<Branch>, clientRepository: Repository<Client>, trackingRepository: Repository<Tracking>, liveUserReportService: LiveUserReportService);
     generateReport(options: ReportGenerationOptions): Promise<Report>;
     handleDailyReport(payload: ReportGenerationOptions): Promise<void>;
     generateDailyUserReport(options: ReportGenerationOptions): Promise<DailyUserActivityReport>;
@@ -76,4 +80,5 @@ export declare class ReportsService {
     private formatCurrency;
     private generateDashboardReport;
     private calculateDepartmentMetrics;
+    userLiveOverview(userId: number): Promise<LiveUserReport>;
 }

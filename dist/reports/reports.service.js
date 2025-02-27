@@ -37,8 +37,10 @@ const event_emitter_1 = require("@nestjs/event-emitter");
 const eventemitter2_1 = require("eventemitter2");
 const communication_service_1 = require("../communication/communication.service");
 const email_enums_1 = require("../lib/enums/email.enums");
+const tracking_entity_1 = require("../tracking/entities/tracking.entity");
+const live_user_report_service_1 = require("./live-user-report.service");
 let ReportsService = class ReportsService {
-    constructor(configService, eventEmitter, communicationService, checkInRepository, taskRepository, claimRepository, leadRepository, journalRepository, userRepository, attendanceRepository, achievementRepository, reportRepository, organisationRepository, branchRepository, clientRepository) {
+    constructor(configService, eventEmitter, communicationService, checkInRepository, taskRepository, claimRepository, leadRepository, journalRepository, userRepository, attendanceRepository, achievementRepository, reportRepository, organisationRepository, branchRepository, clientRepository, trackingRepository, liveUserReportService) {
         this.configService = configService;
         this.eventEmitter = eventEmitter;
         this.communicationService = communicationService;
@@ -54,6 +56,8 @@ let ReportsService = class ReportsService {
         this.organisationRepository = organisationRepository;
         this.branchRepository = branchRepository;
         this.clientRepository = clientRepository;
+        this.trackingRepository = trackingRepository;
+        this.liveUserReportService = liveUserReportService;
         this.WORK_HOURS_PER_DAY = 8;
         this.MINUTES_PER_HOUR = 60;
         this.currencyLocale = this.configService.get('CURRENCY_LOCALE') || 'en-ZA';
@@ -688,6 +692,76 @@ let ReportsService = class ReportsService {
             };
         }));
     }
+    async userLiveOverview(userId) {
+        try {
+            const now = new Date();
+            const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+            const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+            const user = await this.userRepository
+                .createQueryBuilder('user')
+                .leftJoinAndSelect('user.userProfile', 'userProfile')
+                .leftJoinAndSelect('user.branch', 'branch')
+                .leftJoinAndSelect('user.organisation', 'organisation')
+                .where('user.uid = :userId', { userId })
+                .getOne();
+            if (!user) {
+                throw new common_1.NotFoundException(`User with ID ${userId} not found`);
+            }
+            const options = {
+                type: report_enums_1.ReportType.DAILY_USER,
+                format: report_enums_1.ReportFormat.JSON,
+                timeframe: report_enums_1.ReportTimeframe.DAILY,
+                startDate: startOfDay,
+                endDate: endOfDay,
+                userId: userId
+            };
+            const dailyReport = await this.generateDailyUserReport(options);
+            const currentTasksInProgress = await this.liveUserReportService.getCurrentTasksInProgress(userId);
+            const nextTasks = await this.liveUserReportService.getNextTasks(userId);
+            const taskTimeline = await this.liveUserReportService.getTaskTimeline(userId);
+            const overdueTasks = await this.liveUserReportService.getOverdueTasks(userId);
+            const taskEfficiency = await this.liveUserReportService.getTaskEfficiency(userId);
+            const recentActivities = await this.liveUserReportService.getRecentActivities(userId);
+            const isOnline = await this.liveUserReportService.checkUserOnlineStatus(userId);
+            const currentActivity = await this.liveUserReportService.getCurrentActivity(userId);
+            const location = await this.liveUserReportService.getUserLocation(userId);
+            const liveReport = {
+                ...dailyReport,
+                lastUpdated: now,
+                isOnline,
+                currentActivity,
+                location,
+                currentTasksInProgress,
+                nextTasks: nextTasks?.map(task => ({
+                    ...task,
+                    deadline: task?.deadline || new Date()
+                })),
+                taskTimeline: taskTimeline?.map(task => ({
+                    ...task,
+                    startTime: task?.startDate || new Date(),
+                    endTime: task?.endDate || new Date(),
+                    isCompleted: task?.status === task_enums_1.TaskStatus.COMPLETED
+                })),
+                overdueTasks,
+                taskEfficiency,
+                recentActivities,
+                summary: this.liveUserReportService.generateLiveReportSummary(user, dailyReport, {
+                    currentTasksInProgress,
+                    nextTasks: nextTasks?.map(task => ({
+                        ...task,
+                        deadline: task.deadline || new Date()
+                    })),
+                    overdueTasks,
+                    taskEfficiency,
+                    isOnline
+                })
+            };
+            return liveReport;
+        }
+        catch (error) {
+            throw new Error(`Failed to generate live user report: ${error.message}`);
+        }
+    }
 };
 exports.ReportsService = ReportsService;
 __decorate([
@@ -716,6 +790,7 @@ exports.ReportsService = ReportsService = __decorate([
     __param(12, (0, typeorm_1.InjectRepository)(organisation_entity_1.Organisation)),
     __param(13, (0, typeorm_1.InjectRepository)(branch_entity_1.Branch)),
     __param(14, (0, typeorm_1.InjectRepository)(client_entity_1.Client)),
+    __param(15, (0, typeorm_1.InjectRepository)(tracking_entity_1.Tracking)),
     __metadata("design:paramtypes", [config_1.ConfigService,
         eventemitter2_1.EventEmitter2,
         communication_service_1.CommunicationService,
@@ -730,6 +805,8 @@ exports.ReportsService = ReportsService = __decorate([
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
-        typeorm_2.Repository])
+        typeorm_2.Repository,
+        typeorm_2.Repository,
+        live_user_report_service_1.LiveUserReportService])
 ], ReportsService);
 //# sourceMappingURL=reports.service.js.map

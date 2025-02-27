@@ -85,9 +85,11 @@ export class User {
     tokenExpires: Date;
 
     @OneToOne(() => UserProfile, (userProfile) => userProfile?.owner, { nullable: true })
+    @JoinColumn()
     userProfile: UserProfile;
 
     @OneToOne(() => UserEmployeementProfile, (userEmployeementProfile) => userEmployeementProfile?.owner, { nullable: true })
+    @JoinColumn()
     userEmployeementProfile: UserEmployeementProfile;;
 
     @OneToMany(() => Attendance, (attendance) => attendance.owner)

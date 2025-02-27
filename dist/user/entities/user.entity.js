@@ -119,10 +119,12 @@ __decorate([
 ], User.prototype, "tokenExpires", void 0);
 __decorate([
     (0, typeorm_1.OneToOne)(() => user_profile_entity_1.UserProfile, (userProfile) => userProfile?.owner, { nullable: true }),
+    (0, typeorm_1.JoinColumn)(),
     __metadata("design:type", user_profile_entity_1.UserProfile)
 ], User.prototype, "userProfile", void 0);
 __decorate([
     (0, typeorm_1.OneToOne)(() => user_employeement_profile_entity_1.UserEmployeementProfile, (userEmployeementProfile) => userEmployeementProfile?.owner, { nullable: true }),
+    (0, typeorm_1.JoinColumn)(),
     __metadata("design:type", user_employeement_profile_entity_1.UserEmployeementProfile)
 ], User.prototype, "userEmployeementProfile", void 0);
 __decorate([

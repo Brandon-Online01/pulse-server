@@ -161,4 +161,56 @@ export interface DashboardAnalyticsReport {
         }>;
     };
     summary: string;
+}
+
+export interface LiveUserReport extends DailyUserActivityReport {
+    lastUpdated: Date;
+    isOnline: boolean;
+    currentActivity?: string;
+    location?: {
+        latitude: number;
+        longitude: number;
+        address?: string;
+    };
+    currentTasksInProgress?: Array<{
+        uid: number;
+        title: string;
+        startedAt: Date;
+        estimatedCompletion?: Date;
+        progress?: number;
+    }>;
+    nextTasks?: Array<{
+        uid: number;
+        title: string;
+        priority: string;
+        deadline: Date;
+        estimatedDuration?: number;
+    }>;
+    taskTimeline?: Array<{
+        uid: number;
+        title: string;
+        startTime: Date;
+        endTime?: Date;
+        status: string;
+        isCompleted: boolean;
+    }>;
+    overdueTasks?: Array<{
+        uid: number;
+        title: string;
+        deadline: Date;
+        priority: string;
+        daysOverdue: number;
+    }>;
+    taskEfficiency?: {
+        averageCompletionTime: number;
+        userCompletionTime: number;
+        efficiencyRatio: number;
+        trend: 'improving' | 'declining' | 'stable';
+        comparisonToTeam: number;
+    };
+    recentActivities: Array<{
+        type: string;
+        timestamp: Date;
+        description: string;
+    }>;
 } 

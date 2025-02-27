@@ -130,7 +130,7 @@ export class TaskRouteService {
 				};
 
 				try {
-					const optimizedRoute = await this.googleMapsService.optimizeRoute(origin, destinations);
+					const optimizedRoute = await this.googleMapsService.optimizeRouteLatLng(origin, destinations);
 
 					const waypoints = clients.map((client) => {
 						const location = clientLocations.get(client.uid);
