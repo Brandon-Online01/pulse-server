@@ -61,7 +61,7 @@ let BranchService = class BranchService {
         try {
             const branch = await this.branchRepository.findOne({
                 where: { ref, isDeleted: false },
-                relations: ['news', 'docs', 'assets'],
+                relations: ['news', 'docs', 'assets', 'organisation', 'trackings', 'banners', 'routes', 'users'],
             });
             if (!branch) {
                 throw new common_1.NotFoundException(process.env.SEARCH_ERROR_MESSAGE);

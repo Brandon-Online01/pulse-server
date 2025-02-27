@@ -1,6 +1,7 @@
 import { AttendanceService } from './attendance.service';
 import { CreateCheckInDto } from './dto/create-attendance-check-in.dto';
 import { CreateCheckOutDto } from './dto/create-attendance-check-out.dto';
+import { Attendance } from './entities/attendance.entity';
 export declare class AttendanceController {
     private readonly attendanceService;
     constructor(attendanceService: AttendanceService);
@@ -13,15 +14,15 @@ export declare class AttendanceController {
     }>;
     allCheckIns(): Promise<{
         message: string;
-        checkIns: import("./entities/attendance.entity").Attendance[];
+        checkIns: Attendance[];
     }>;
     checkInsByDate(date: string): Promise<{
         message: string;
-        checkIns: import("./entities/attendance.entity").Attendance[];
+        checkIns: Attendance[];
     }>;
     checkInsByUser(ref: number): Promise<{
         message: string;
-        checkIns: import("./entities/attendance.entity").Attendance[];
+        checkIns: Attendance[];
     }>;
     checkInsByStatus(ref: number): Promise<{
         message: string;
@@ -33,6 +34,6 @@ export declare class AttendanceController {
     }>;
     checkInsByBranch(ref: string): Promise<{
         message: string;
-        checkIns: import("./entities/attendance.entity").Attendance[];
+        checkIns: Attendance[];
     }>;
 }

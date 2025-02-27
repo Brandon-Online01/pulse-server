@@ -22,7 +22,6 @@ import { Notification } from 'src/notifications/entities/notification.entity';
 import { CommunicationLog } from 'src/communication/entities/communication-log.entity';
 import { Route } from 'src/tasks/entities/route.entity';
 
-
 @Entity('branch')
 export class Branch {
 	@PrimaryGeneratedColumn()
@@ -45,15 +44,11 @@ export class Branch {
 
 	@Column({ type: 'json', nullable: false })
 	address: {
-		streetNumber: string;
 		street: string;
-		suburb: string;
 		city: string;
-		province: string;
+		state: string;
 		country: string;
 		postalCode: string;
-		latitude?: number;
-		longitude?: number;
 	};
 
 	@Column({ nullable: false, unique: true })
@@ -123,8 +118,8 @@ export class Branch {
 	@OneToMany(() => Task, (task) => task.branch)
 	tasks: Task[];
 
-	@OneToMany(() => Route, route => route.branch)
-	routes: Route[]; 
+	@OneToMany(() => Route, (route) => route.branch)
+	routes: Route[];
 
 	@OneToMany(() => Quotation, (quotation) => quotation?.branch, { nullable: true })
 	quotations: Quotation[];
@@ -134,5 +129,4 @@ export class Branch {
 
 	@OneToMany(() => CommunicationLog, (communicationLog) => communicationLog?.branch, { nullable: true })
 	communicationLogs: CommunicationLog[];
-
 }

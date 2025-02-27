@@ -14,6 +14,8 @@ const class_validator_1 = require("class-validator");
 const swagger_1 = require("@nestjs/swagger");
 const create_branch_dto_1 = require("./create-branch.dto");
 const status_enums_1 = require("../../lib/enums/status.enums");
+const create_client_dto_1 = require("../../clients/dto/create-client.dto");
+const class_transformer_1 = require("class-transformer");
 class UpdateBranchDto extends (0, swagger_1.PartialType)(create_branch_dto_1.CreateBranchDto) {
 }
 exports.UpdateBranchDto = UpdateBranchDto;
@@ -54,21 +56,14 @@ __decorate([
     __metadata("design:type", String)
 ], UpdateBranchDto.prototype, "contactPerson", void 0);
 __decorate([
+    (0, class_validator_1.ValidateNested)(),
+    (0, class_transformer_1.Type)(() => create_client_dto_1.AddressDto),
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)(),
     (0, swagger_1.ApiProperty)({
-        description: 'The address of the branch',
-        example: {
-            streetNumber: '123',
-            street: 'Anystreet',
-            suburb: 'Anysuburb',
-            city: 'Anycity',
-            province: 'Anyprovince',
-            country: 'Anycountry',
-            postalCode: '12345',
-        },
+        description: 'The full address of the client including coordinates',
+        type: create_client_dto_1.AddressDto,
     }),
-    __metadata("design:type", Object)
+    __metadata("design:type", create_client_dto_1.AddressDto)
 ], UpdateBranchDto.prototype, "address", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
@@ -97,24 +92,6 @@ __decorate([
     }),
     __metadata("design:type", Boolean)
 ], UpdateBranchDto.prototype, "isDeleted", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsDate)(),
-    (0, swagger_1.ApiProperty)({
-        description: 'The created date of the branch',
-        example: `${new Date()}`,
-    }),
-    __metadata("design:type", Date)
-], UpdateBranchDto.prototype, "createdAt", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsDate)(),
-    (0, swagger_1.ApiProperty)({
-        description: 'The updated date of the branch',
-        example: `${new Date()}`,
-    }),
-    __metadata("design:type", Date)
-], UpdateBranchDto.prototype, "updatedAt", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsObject)(),

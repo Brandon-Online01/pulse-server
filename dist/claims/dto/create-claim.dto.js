@@ -17,31 +17,47 @@ class CreateClaimDto {
 }
 exports.CreateClaimDto = CreateClaimDto;
 __decorate([
-    (0, swagger_1.ApiProperty)({ description: 'Description of the claim' }),
-    (0, class_validator_1.IsNotEmpty)(),
+    (0, swagger_1.ApiProperty)({
+        example: 'This is a description of the claim',
+        description: 'Description of the claim',
+    }),
+    (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateClaimDto.prototype, "comment", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ description: 'Amount being claimed' }),
+    (0, swagger_1.ApiProperty)({
+        example: 1000,
+        description: 'Amount being claimed',
+    }),
     (0, class_validator_1.IsNotEmpty)(),
     (0, class_validator_1.IsNumber)(),
     __metadata("design:type", Number)
 ], CreateClaimDto.prototype, "amount", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ description: 'URL reference to the uploaded document', required: false }),
+    (0, swagger_1.ApiProperty)({
+        example: 'https://example.com/document.pdf',
+        description: 'URL reference to the uploaded document',
+        required: false,
+    }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateClaimDto.prototype, "documentUrl", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ enum: finance_enums_1.ClaimCategory, description: 'Category of the claim' }),
+    (0, swagger_1.ApiProperty)({
+        example: finance_enums_1.ClaimCategory.GENERAL,
+        description: 'Category of the claim',
+    }),
     (0, class_validator_1.IsNotEmpty)(),
     (0, class_validator_1.IsEnum)(finance_enums_1.ClaimCategory),
     __metadata("design:type", String)
 ], CreateClaimDto.prototype, "category", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ description: 'UID of the owner of the claim' }),
+    (0, swagger_1.ApiProperty)({
+        example: 1,
+        description: 'UID of the owner of the claim',
+    }),
     (0, class_validator_1.IsNotEmpty)(),
     (0, class_validator_1.IsNumber)(),
     __metadata("design:type", Number)

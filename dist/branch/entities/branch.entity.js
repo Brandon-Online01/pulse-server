@@ -153,7 +153,7 @@ __decorate([
     __metadata("design:type", Array)
 ], Branch.prototype, "tasks", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => route_entity_1.Route, route => route.branch),
+    (0, typeorm_1.OneToMany)(() => route_entity_1.Route, (route) => route.branch),
     __metadata("design:type", Array)
 ], Branch.prototype, "routes", void 0);
 __decorate([

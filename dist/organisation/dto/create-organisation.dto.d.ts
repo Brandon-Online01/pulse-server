@@ -1,16 +1,10 @@
+import { AddressDto } from '../../clients/dto/create-client.dto';
 export declare class CreateOrganisationDto {
     name: string;
-    address: {
-        streetNumber: string;
-        street: string;
-        suburb: string;
-        city: string;
-        province: string;
-    };
+    address: AddressDto;
     email: string;
     phone: string;
     contactPerson: string;
     website: string;
-    logo: string;
-    ref: string;
+    logo?: string;
 }

@@ -1,7 +1,9 @@
-import { IsBoolean, IsDate, IsEnum, IsObject, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsEnum, IsObject, IsOptional, IsString, ValidateNested } from 'class-validator';
 import { ApiProperty, PartialType } from '@nestjs/swagger';
 import { CreateBranchDto } from './create-branch.dto';
 import { GeneralStatus } from '../../lib/enums/status.enums';
+import { AddressDto } from '../../clients/dto/create-client.dto';
+import { Type } from 'class-transformer';
 
 export class UpdateBranchDto extends PartialType(CreateBranchDto) {
 	@IsOptional()
@@ -36,29 +38,14 @@ export class UpdateBranchDto extends PartialType(CreateBranchDto) {
 	})
 	contactPerson?: string;
 
+	@ValidateNested()
+	@Type(() => AddressDto)
 	@IsOptional()
-	@IsString()
 	@ApiProperty({
-		description: 'The address of the branch',
-		example: {
-			streetNumber: '123',
-			street: 'Anystreet',
-			suburb: 'Anysuburb',
-			city: 'Anycity',
-			province: 'Anyprovince',
-			country: 'Anycountry',
-			postalCode: '12345',
-		},
+		description: 'The full address of the client including coordinates',
+		type: AddressDto,
 	})
-	address?: {
-		streetNumber: string;
-		street: string;
-		suburb: string;
-		city: string;
-		province: string;
-		country: string;
-		postalCode: string;
-	};
+	address?: AddressDto;
 
 	@IsOptional()
 	@IsString()
@@ -83,22 +70,6 @@ export class UpdateBranchDto extends PartialType(CreateBranchDto) {
 		example: false,
 	})
 	isDeleted?: boolean;
-
-	@IsOptional()
-	@IsDate()
-	@ApiProperty({
-		description: 'The created date of the branch',
-		example: `${new Date()}`,
-	})
-	createdAt?: Date;
-
-	@IsOptional()
-	@IsDate()
-	@ApiProperty({
-		description: 'The updated date of the branch',
-		example: `${new Date()}`,
-	})
-	updatedAt?: Date;
 
 	@IsOptional()
 	@IsObject()

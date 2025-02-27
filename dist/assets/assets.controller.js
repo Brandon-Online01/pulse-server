@@ -56,7 +56,29 @@ exports.AssetsController = AssetsController;
 __decorate([
     (0, common_1.Post)(),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
-    (0, swagger_1.ApiOperation)({ summary: 'create a new asset' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Create a new asset',
+        description: 'Creates a new asset with the provided details'
+    }),
+    (0, swagger_1.ApiBody)({ type: create_asset_dto_1.CreateAssetDto }),
+    (0, swagger_1.ApiCreatedResponse)({
+        description: 'Asset created successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Success' }
+            }
+        }
+    }),
+    (0, swagger_1.ApiBadRequestResponse)({
+        description: 'Bad Request - Invalid data provided',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Error creating asset' }
+            }
+        }
+    }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_asset_dto_1.CreateAssetDto]),
@@ -65,7 +87,29 @@ __decorate([
 __decorate([
     (0, common_1.Get)(),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
-    (0, swagger_1.ApiOperation)({ summary: 'get all assets' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Get all assets',
+        description: 'Retrieves a list of all non-deleted assets'
+    }),
+    (0, swagger_1.ApiOkResponse)({
+        description: 'Assets retrieved successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                assets: {
+                    type: 'array',
+                    items: {
+                        type: 'object',
+                        properties: {
+                            uid: { type: 'number' },
+                            name: { type: 'string' },
+                        }
+                    }
+                },
+                message: { type: 'string', example: 'Success' }
+            }
+        }
+    }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
@@ -73,7 +117,37 @@ __decorate([
 __decorate([
     (0, common_1.Get)(':ref'),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
-    (0, swagger_1.ApiOperation)({ summary: 'get an asset by reference code' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Get an asset by reference code',
+        description: 'Retrieves detailed information about a specific asset'
+    }),
+    (0, swagger_1.ApiParam)({ name: 'ref', description: 'Asset reference code', type: 'number' }),
+    (0, swagger_1.ApiOkResponse)({
+        description: 'Asset details retrieved successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                asset: {
+                    type: 'object',
+                    properties: {
+                        uid: { type: 'number' },
+                        name: { type: 'string' },
+                    }
+                },
+                message: { type: 'string', example: 'Success' }
+            }
+        }
+    }),
+    (0, swagger_1.ApiNotFoundResponse)({
+        description: 'Asset not found',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Asset not found' },
+                asset: { type: 'null' }
+            }
+        }
+    }),
     __param(0, (0, common_1.Param)('ref')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
@@ -82,7 +156,30 @@ __decorate([
 __decorate([
     (0, common_1.Get)('/search/:query'),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
-    (0, swagger_1.ApiOperation)({ summary: 'get an asset by search term i.e brand, model number, serial number' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Get assets by search term',
+        description: 'Searches for assets by brand, model number, or serial number'
+    }),
+    (0, swagger_1.ApiParam)({ name: 'query', description: 'Search term (brand, model number, serial number)', type: 'string' }),
+    (0, swagger_1.ApiOkResponse)({
+        description: 'Search results retrieved successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                assets: {
+                    type: 'array',
+                    items: {
+                        type: 'object',
+                        properties: {
+                            uid: { type: 'number' },
+                            name: { type: 'string' },
+                        }
+                    }
+                },
+                message: { type: 'string', example: 'Success' }
+            }
+        }
+    }),
     __param(0, (0, common_1.Param)('query')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -91,7 +188,30 @@ __decorate([
 __decorate([
     (0, common_1.Get)('for/:ref'),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
-    (0, swagger_1.ApiOperation)({ summary: 'get assets by user reference code' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Get assets by user',
+        description: 'Retrieves all assets assigned to a specific user'
+    }),
+    (0, swagger_1.ApiParam)({ name: 'ref', description: 'User reference code', type: 'number' }),
+    (0, swagger_1.ApiOkResponse)({
+        description: 'User assets retrieved successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                assets: {
+                    type: 'array',
+                    items: {
+                        type: 'object',
+                        properties: {
+                            uid: { type: 'number' },
+                            name: { type: 'string' },
+                        }
+                    }
+                },
+                message: { type: 'string', example: 'Success' }
+            }
+        }
+    }),
     __param(0, (0, common_1.Param)('ref')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
@@ -100,7 +220,39 @@ __decorate([
 __decorate([
     (0, common_1.Patch)(':ref'),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
-    (0, swagger_1.ApiOperation)({ summary: 'update an asset' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Update an asset',
+        description: 'Updates an existing asset with the provided information'
+    }),
+    (0, swagger_1.ApiParam)({ name: 'ref', description: 'Asset reference code', type: 'number' }),
+    (0, swagger_1.ApiBody)({ type: update_asset_dto_1.UpdateAssetDto }),
+    (0, swagger_1.ApiOkResponse)({
+        description: 'Asset updated successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Success' }
+            }
+        }
+    }),
+    (0, swagger_1.ApiNotFoundResponse)({
+        description: 'Asset not found',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Asset not found' }
+            }
+        }
+    }),
+    (0, swagger_1.ApiBadRequestResponse)({
+        description: 'Bad Request - Invalid data provided',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Error updating asset' }
+            }
+        }
+    }),
     __param(0, (0, common_1.Param)('ref')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -109,8 +261,30 @@ __decorate([
 ], AssetsController.prototype, "update", null);
 __decorate([
     (0, common_1.Patch)('restore/:ref'),
-    (0, swagger_1.ApiOperation)({ summary: 'Restore a deleted user by reference code' }),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Restore a deleted asset',
+        description: 'Restores a previously deleted asset'
+    }),
+    (0, swagger_1.ApiParam)({ name: 'ref', description: 'Asset reference code', type: 'number' }),
+    (0, swagger_1.ApiOkResponse)({
+        description: 'Asset restored successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Success' }
+            }
+        }
+    }),
+    (0, swagger_1.ApiNotFoundResponse)({
+        description: 'Asset not found',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Asset not found' }
+            }
+        }
+    }),
     __param(0, (0, common_1.Param)('ref')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
@@ -119,7 +293,29 @@ __decorate([
 __decorate([
     (0, common_1.Delete)(':ref'),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
-    (0, swagger_1.ApiOperation)({ summary: 'soft delete asset' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Soft delete an asset',
+        description: 'Marks an asset as deleted without removing it from the database'
+    }),
+    (0, swagger_1.ApiParam)({ name: 'ref', description: 'Asset reference code', type: 'number' }),
+    (0, swagger_1.ApiOkResponse)({
+        description: 'Asset deleted successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Success' }
+            }
+        }
+    }),
+    (0, swagger_1.ApiNotFoundResponse)({
+        description: 'Asset not found',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Error deleting asset' }
+            }
+        }
+    }),
     __param(0, (0, common_1.Param)('ref')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
@@ -131,6 +327,7 @@ exports.AssetsController = AssetsController = __decorate([
     (0, common_1.Controller)('assets'),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, enterprise_only_decorator_1.EnterpriseOnly)('assets'),
+    (0, swagger_1.ApiUnauthorizedResponse)({ description: 'Unauthorized - Invalid credentials or missing token' }),
     __metadata("design:paramtypes", [assets_service_1.AssetsService])
 ], AssetsController);
 //# sourceMappingURL=assets.controller.js.map

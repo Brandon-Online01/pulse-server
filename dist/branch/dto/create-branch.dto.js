@@ -11,7 +11,10 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateBranchDto = void 0;
 const swagger_1 = require("@nestjs/swagger");
-const status_enums_1 = require("../../lib/enums/status.enums");
+const class_validator_1 = require("class-validator");
+const class_transformer_1 = require("class-transformer");
+const class_validator_2 = require("class-validator");
+const create_client_dto_1 = require("../../clients/dto/create-client.dto");
 class CreateBranchDto {
 }
 exports.CreateBranchDto = CreateBranchDto;
@@ -58,27 +61,15 @@ __decorate([
     __metadata("design:type", String)
 ], CreateBranchDto.prototype, "ref", void 0);
 __decorate([
+    (0, class_validator_1.ValidateNested)(),
+    (0, class_transformer_1.Type)(() => create_client_dto_1.AddressDto),
+    (0, class_validator_2.IsNotEmpty)(),
     (0, swagger_1.ApiProperty)({
-        example: {
-            streetNumber: '123',
-            street: 'Anystreet',
-            suburb: 'Anysuburb',
-            city: 'Anycity',
-            province: 'Anyprovince',
-            country: 'Anycountry',
-            postalCode: '12345'
-        },
-        description: 'The address of the branch'
+        description: 'The full address of the client including coordinates',
+        type: create_client_dto_1.AddressDto
     }),
-    __metadata("design:type", Object)
+    __metadata("design:type", create_client_dto_1.AddressDto)
 ], CreateBranchDto.prototype, "address", void 0);
-__decorate([
-    (0, swagger_1.ApiProperty)({
-        example: status_enums_1.GeneralStatus.ACTIVE,
-        description: 'The status of the branch'
-    }),
-    __metadata("design:type", String)
-], CreateBranchDto.prototype, "status", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
         example: { uid: 1 },

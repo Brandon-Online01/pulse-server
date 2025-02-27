@@ -1,6 +1,7 @@
 import { BranchService } from './branch.service';
 import { CreateBranchDto } from './dto/create-branch.dto';
 import { UpdateBranchDto } from './dto/update-branch.dto';
+import { Branch } from './entities/branch.entity';
 export declare class BranchController {
     private readonly branchService;
     constructor(branchService: BranchService);
@@ -8,11 +9,11 @@ export declare class BranchController {
         message: string;
     }>;
     findAll(): Promise<{
-        branches: import("./entities/branch.entity").Branch[] | null;
+        branches: Branch[] | null;
         message: string;
     }>;
     findOne(ref: string): Promise<{
-        branch: import("./entities/branch.entity").Branch | null;
+        branch: Branch | null;
         message: string;
     }>;
     update(ref: string, updateBranchDto: UpdateBranchDto): Promise<{

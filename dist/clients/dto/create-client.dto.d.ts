@@ -1,4 +1,4 @@
-declare class AddressDto {
+export declare class AddressDto {
     street: string;
     city: string;
     state: string;
@@ -20,4 +20,3 @@ export declare class CreateClientDto {
         uid: number;
     };
 }
-export {};

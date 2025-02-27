@@ -24,8 +24,57 @@ class UpdateClaimDto extends (0, swagger_1.PartialType)(create_claim_dto_1.Creat
 exports.UpdateClaimDto = UpdateClaimDto;
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, swagger_2.ApiProperty)({ enum: finance_enums_1.ClaimStatus, description: 'Status of the claim' }),
+    (0, swagger_2.ApiProperty)({
+        example: finance_enums_1.ClaimStatus.PENDING,
+        description: 'Status of the claim'
+    }),
     (0, class_validator_1.IsEnum)(finance_enums_1.ClaimStatus),
     __metadata("design:type", String)
 ], UpdateClaimDto.prototype, "status", void 0);
+__decorate([
+    (0, swagger_2.ApiProperty)({
+        example: 'This is a description of the claim',
+        description: 'Description of the claim'
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateClaimDto.prototype, "comment", void 0);
+__decorate([
+    (0, swagger_2.ApiProperty)({
+        example: 1000,
+        description: 'Amount being claimed'
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    __metadata("design:type", Number)
+], UpdateClaimDto.prototype, "amount", void 0);
+__decorate([
+    (0, swagger_2.ApiProperty)({
+        example: 'https://example.com/document.pdf',
+        description: 'URL reference to the uploaded document',
+        required: false
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateClaimDto.prototype, "documentUrl", void 0);
+__decorate([
+    (0, swagger_2.ApiProperty)({
+        example: finance_enums_1.ClaimCategory.GENERAL,
+        description: 'Category of the claim'
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(finance_enums_1.ClaimCategory),
+    __metadata("design:type", String)
+], UpdateClaimDto.prototype, "category", void 0);
+__decorate([
+    (0, swagger_2.ApiProperty)({
+        example: 1,
+        description: 'UID of the owner of the claim'
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    __metadata("design:type", Number)
+], UpdateClaimDto.prototype, "owner", void 0);
 //# sourceMappingURL=update-claim.dto.js.map

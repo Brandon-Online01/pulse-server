@@ -28,15 +28,11 @@ export declare class Branch {
     contactPerson: string;
     ref: string;
     address: {
-        streetNumber: string;
         street: string;
-        suburb: string;
         city: string;
-        province: string;
+        state: string;
         country: string;
         postalCode: string;
-        latitude?: number;
-        longitude?: number;
     };
     website: string;
     status: GeneralStatus;

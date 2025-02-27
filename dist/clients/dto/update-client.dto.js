@@ -13,6 +13,7 @@ exports.UpdateClientDto = void 0;
 const swagger_1 = require("@nestjs/swagger");
 const class_validator_1 = require("class-validator");
 const create_client_dto_1 = require("./create-client.dto");
+const class_transformer_1 = require("class-transformer");
 class UpdateClientDto extends (0, swagger_1.PartialType)(create_client_dto_1.CreateClientDto) {
 }
 exports.UpdateClientDto = UpdateClientDto;
@@ -89,19 +90,14 @@ __decorate([
     __metadata("design:type", String)
 ], UpdateClientDto.prototype, "description", void 0);
 __decorate([
-    (0, class_validator_1.IsObject)(),
+    (0, class_validator_1.ValidateNested)(),
+    (0, class_transformer_1.Type)(() => create_client_dto_1.AddressDto),
     (0, class_validator_1.IsOptional)(),
     (0, swagger_1.ApiProperty)({
-        example: {
-            street: '123 Main St',
-            city: 'Anytown',
-            state: 'NY',
-            country: 'USA',
-            postalCode: '12345',
-        },
-        description: 'The address of the client, including coordinates',
+        description: 'The full address of the client including coordinates',
+        type: create_client_dto_1.AddressDto,
     }),
-    __metadata("design:type", Object)
+    __metadata("design:type", create_client_dto_1.AddressDto)
 ], UpdateClientDto.prototype, "address", void 0);
 __decorate([
     (0, class_validator_1.IsBoolean)(),

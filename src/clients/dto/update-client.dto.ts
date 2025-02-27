@@ -1,6 +1,7 @@
 import { ApiProperty, PartialType } from '@nestjs/swagger';
-import { IsEmail, IsPhoneNumber, IsOptional, IsString, IsBoolean, IsObject } from 'class-validator';
-import { CreateClientDto } from './create-client.dto';
+import { IsEmail, IsPhoneNumber, IsOptional, IsString, IsBoolean, IsObject, IsNotEmpty, ValidateNested } from 'class-validator';
+import { AddressDto, CreateClientDto } from './create-client.dto';
+import { Type } from 'class-transformer';
 
 export class UpdateClientDto extends PartialType(CreateClientDto) {
 	@IsString()
@@ -67,25 +68,14 @@ export class UpdateClientDto extends PartialType(CreateClientDto) {
 	})
 	description?: string;
 
-	@IsObject()
+	@ValidateNested()
+	@Type(() => AddressDto)
 	@IsOptional()
 	@ApiProperty({
-		example: {
-			street: '123 Main St',
-			city: 'Anytown',
-			state: 'NY',
-			country: 'USA',
-			postalCode: '12345',
-		},
-		description: 'The address of the client, including coordinates',
+		description: 'The full address of the client including coordinates',
+		type: AddressDto,
 	})
-	address?: {
-		street: string;
-		city: string;
-		state: string;
-		country: string;
-		postalCode: string;
-	};
+	address?: AddressDto;	
 
 	@IsBoolean()
 	@IsOptional()

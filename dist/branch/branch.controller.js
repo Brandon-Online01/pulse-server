@@ -48,7 +48,29 @@ __decorate([
     (0, common_1.Post)(),
     (0, public_decorator_1.isPublic)(),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER),
-    (0, swagger_1.ApiOperation)({ summary: 'create a new branch' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Create a new branch',
+        description: 'Creates a new branch with the provided details'
+    }),
+    (0, swagger_1.ApiBody)({ type: create_branch_dto_1.CreateBranchDto }),
+    (0, swagger_1.ApiCreatedResponse)({
+        description: 'Branch created successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Success' }
+            }
+        }
+    }),
+    (0, swagger_1.ApiBadRequestResponse)({
+        description: 'Bad Request - Invalid data provided',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Error creating branch' }
+            }
+        }
+    }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_branch_dto_1.CreateBranchDto]),
@@ -57,7 +79,31 @@ __decorate([
 __decorate([
     (0, common_1.Get)(),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER),
-    (0, swagger_1.ApiOperation)({ summary: 'get all branches' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Get all branches',
+        description: 'Retrieves a list of all non-deleted branches'
+    }),
+    (0, swagger_1.ApiOkResponse)({
+        description: 'Branches retrieved successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                branches: {
+                    type: 'array',
+                    items: {
+                        type: 'object',
+                        properties: {
+                            uid: { type: 'number' },
+                            name: { type: 'string' },
+                            email: { type: 'string' },
+                            phone: { type: 'string' },
+                        }
+                    }
+                },
+                message: { type: 'string', example: 'Success' }
+            }
+        }
+    }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
@@ -65,7 +111,39 @@ __decorate([
 __decorate([
     (0, common_1.Get)(':ref'),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER),
-    (0, swagger_1.ApiOperation)({ summary: 'get a branch by reference code' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Get a branch by reference code',
+        description: 'Retrieves detailed information about a specific branch including related entities'
+    }),
+    (0, swagger_1.ApiParam)({ name: 'ref', description: 'Branch reference code', type: 'string' }),
+    (0, swagger_1.ApiOkResponse)({
+        description: 'Branch details retrieved successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                branch: {
+                    type: 'object',
+                    properties: {
+                        uid: { type: 'number' },
+                        name: { type: 'string' },
+                        email: { type: 'string' },
+                        phone: { type: 'string' },
+                    }
+                },
+                message: { type: 'string', example: 'Success' }
+            }
+        }
+    }),
+    (0, swagger_1.ApiNotFoundResponse)({
+        description: 'Branch not found',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Branch not found' },
+                branch: { type: 'null' }
+            }
+        }
+    }),
     __param(0, (0, common_1.Param)('ref')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -74,7 +152,39 @@ __decorate([
 __decorate([
     (0, common_1.Patch)(':ref'),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER),
-    (0, swagger_1.ApiOperation)({ summary: 'update a branch by reference code' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Update a branch',
+        description: 'Updates an existing branch with the provided information'
+    }),
+    (0, swagger_1.ApiParam)({ name: 'ref', description: 'Branch reference code', type: 'string' }),
+    (0, swagger_1.ApiBody)({ type: update_branch_dto_1.UpdateBranchDto }),
+    (0, swagger_1.ApiOkResponse)({
+        description: 'Branch updated successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Success' }
+            }
+        }
+    }),
+    (0, swagger_1.ApiNotFoundResponse)({
+        description: 'Branch not found',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Branch not found' }
+            }
+        }
+    }),
+    (0, swagger_1.ApiBadRequestResponse)({
+        description: 'Bad Request - Invalid data provided',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Error updating branch' }
+            }
+        }
+    }),
     __param(0, (0, common_1.Param)('ref')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -84,7 +194,29 @@ __decorate([
 __decorate([
     (0, common_1.Delete)(':ref'),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER),
-    (0, swagger_1.ApiOperation)({ summary: 'soft delete a branch by reference code' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Soft delete a branch',
+        description: 'Marks a branch as deleted without removing it from the database'
+    }),
+    (0, swagger_1.ApiParam)({ name: 'ref', description: 'Branch reference code', type: 'string' }),
+    (0, swagger_1.ApiOkResponse)({
+        description: 'Branch deleted successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Success' }
+            }
+        }
+    }),
+    (0, swagger_1.ApiNotFoundResponse)({
+        description: 'Branch not found',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Error deleting branch' }
+            }
+        }
+    }),
     __param(0, (0, common_1.Param)('ref')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -94,6 +226,7 @@ exports.BranchController = BranchController = __decorate([
     (0, swagger_1.ApiTags)('branch'),
     (0, common_1.Controller)('branch'),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
+    (0, swagger_1.ApiUnauthorizedResponse)({ description: 'Unauthorized - Invalid credentials or missing token' }),
     __metadata("design:paramtypes", [branch_service_1.BranchService])
 ], BranchController);
 //# sourceMappingURL=branch.controller.js.map

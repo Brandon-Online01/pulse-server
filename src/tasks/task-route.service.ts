@@ -107,11 +107,6 @@ export class TaskRouteService {
 					where: { uid: user?.branch?.uid },
 				});
 
-				if (!branch?.address?.latitude || !branch?.address?.longitude) {
-					//if the branch has no adress email the org to complete the branch detail setup
-					continue;
-				}
-
 				const clientLocations = await this.getClientLocations([task]);
 				const destinations = Array.from(clientLocations.values()).map((loc) => ({
 					lat: loc?.latitude,
@@ -122,9 +117,16 @@ export class TaskRouteService {
 					continue;
 				}
 
+				// Convert the branch address to a properly formatted string for geocoding
+				const branchAddress = branch?.address ? 
+					`${branch.address?.street}, ${branch.address?.city}, ${branch.address?.state}, ${branch.address?.country}, ${branch.address?.postalCode}` : 
+					'';
+
+				// Geocode the branch address to get lat/lng coordinates
+				const geocodeResult = await this.googleMapsService.geocodeAddress(branchAddress);
 				const origin = {
-					lat: branch?.address?.latitude,
-					lng: branch?.address?.longitude,
+					lat: geocodeResult.address.latitude,
+					lng: geocodeResult.address.longitude
 				};
 
 				try {
@@ -189,9 +191,26 @@ export class TaskRouteService {
 		});
 
 		const clientLocations = new Map<number, Location>();
-		clients.forEach((client) => {
-			const address = client.address;
-		});
+		
+		// Use Promise.all to handle all geocoding requests in parallel
+		await Promise.all(
+			clients.map(async (client) => {
+				const address = client.address;
+				if (address) {
+					const formattedAddress = `${address.street}, ${address.city}, ${address.state}, ${address.country}, ${address.postalCode}`;
+					try {
+						const geocodeResult = await this.googleMapsService.geocodeAddress(formattedAddress);
+						clientLocations.set(client.uid, {
+							latitude: geocodeResult.address.latitude,
+							longitude: geocodeResult.address.longitude,
+							address: formattedAddress
+						});
+					} catch (error) {
+						console.error(`Failed to geocode address for client ${client.uid}:`, error);
+					}
+				}
+			})
+		);
 
 		return clientLocations;
 	}

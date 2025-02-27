@@ -7,7 +7,16 @@ import {
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignInInput, SignUpInput, VerifyEmailInput, SetPasswordInput, ForgotPasswordInput, ResetPasswordInput } from './dto/auth.dto';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { 
+	ApiOperation, 
+	ApiTags, 
+	ApiBody,
+	ApiOkResponse,
+	ApiCreatedResponse,
+	ApiBadRequestResponse,
+	ApiConflictResponse,
+	ApiUnauthorizedResponse
+} from '@nestjs/swagger';
 import { isPublic } from '../decorators/public.decorator';
 
 @ApiTags('auth')
@@ -17,14 +26,67 @@ export class AuthController {
 
 	@Post('sign-up')
 	@isPublic()
-	@ApiOperation({ summary: 'initiate the sign up process' })
+	@ApiOperation({ 
+		summary: 'Sign up',
+		description: 'Initiates the sign-up process for a new user'
+	})
+	@ApiBody({ type: SignUpInput })
+	@ApiCreatedResponse({ 
+		description: 'Sign-up initiated successfully',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', example: 'Verification email sent' }
+			}
+		}
+	})
+	@ApiBadRequestResponse({ 
+		description: 'Bad Request - Invalid data provided',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', example: 'Invalid email format' }
+			}
+		}
+	})
+	@ApiConflictResponse({ 
+		description: 'Conflict - Email already in use',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', example: 'Email already in use' }
+			}
+		}
+	})
 	signUp(@Body() signUpInput: SignUpInput) {
 		return this.authService.signUp(signUpInput);
 	}
 
 	@Post('verify-email')
 	@isPublic()
-	@ApiOperation({ summary: 'verify email using token from email' })
+	@ApiOperation({ 
+		summary: 'Verify email',
+		description: 'Verifies a user email using the token received via email'
+	})
+	@ApiBody({ type: VerifyEmailInput })
+	@ApiOkResponse({ 
+		description: 'Email verified successfully',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', example: 'Email verified' }
+			}
+		}
+	})
+	@ApiBadRequestResponse({ 
+		description: 'Bad Request - Invalid token',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', example: 'Invalid or expired token' }
+			}
+		}
+	})
 	@HttpCode(HttpStatus.OK)
 	verifyEmail(@Body() verifyEmailInput: VerifyEmailInput) {
 		return this.authService.verifyEmail(verifyEmailInput);
@@ -32,7 +94,29 @@ export class AuthController {
 
 	@Post('set-password')
 	@isPublic()
-	@ApiOperation({ summary: 'set password after email verification' })
+	@ApiOperation({ 
+		summary: 'Set password',
+		description: 'Sets the user password after email verification'
+	})
+	@ApiBody({ type: SetPasswordInput })
+	@ApiOkResponse({ 
+		description: 'Password set successfully',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', example: 'Password set successfully' }
+			}
+		}
+	})
+	@ApiBadRequestResponse({ 
+		description: 'Bad Request - Invalid token or password',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', example: 'Invalid token or password requirements not met' }
+			}
+		}
+	})
 	@HttpCode(HttpStatus.OK)
 	setPassword(@Body() setPasswordInput: SetPasswordInput) {
 		return this.authService.setPassword(setPasswordInput);
@@ -40,7 +124,29 @@ export class AuthController {
 
 	@Post('forgot-password')
 	@isPublic()
-	@ApiOperation({ summary: 'request password reset email' })
+	@ApiOperation({ 
+		summary: 'Forgot password',
+		description: 'Requests a password reset email'
+	})
+	@ApiBody({ type: ForgotPasswordInput })
+	@ApiOkResponse({ 
+		description: 'Password reset email sent',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', example: 'Password reset email sent' }
+			}
+		}
+	})
+	@ApiBadRequestResponse({ 
+		description: 'Bad Request - Invalid email',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', example: 'Email not found' }
+			}
+		}
+	})
 	@HttpCode(HttpStatus.OK)
 	forgotPassword(@Body() forgotPasswordInput: ForgotPasswordInput) {
 		return this.authService.forgotPassword(forgotPasswordInput);
@@ -48,7 +154,29 @@ export class AuthController {
 
 	@Post('reset-password')
 	@isPublic()
-	@ApiOperation({ summary: 'reset password using token from email' })
+	@ApiOperation({ 
+		summary: 'Reset password',
+		description: 'Resets the user password using a token received via email'
+	})
+	@ApiBody({ type: ResetPasswordInput })
+	@ApiOkResponse({ 
+		description: 'Password reset successfully',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', example: 'Password reset successfully' }
+			}
+		}
+	})
+	@ApiBadRequestResponse({ 
+		description: 'Bad Request - Invalid token or password',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', example: 'Invalid token or password requirements not met' }
+			}
+		}
+	})
 	@HttpCode(HttpStatus.OK)
 	resetPassword(@Body() resetPasswordInput: ResetPasswordInput) {
 		return this.authService.resetPassword(resetPasswordInput);
@@ -56,7 +184,39 @@ export class AuthController {
 
 	@Post('sign-in')
 	@isPublic()
-	@ApiOperation({ summary: 'authenticate a user using existing credentials' })
+	@ApiOperation({ 
+		summary: 'Sign in',
+		description: 'Authenticates a user using email and password'
+	})
+	@ApiBody({ type: SignInInput })
+	@ApiOkResponse({ 
+		description: 'Authentication successful',
+		schema: {
+			type: 'object',
+			properties: {
+				accessToken: { type: 'string' },
+				refreshToken: { type: 'string' },
+				user: {
+					type: 'object',
+					properties: {
+						uid: { type: 'number' },
+						email: { type: 'string' },
+						role: { type: 'string' },
+						// Other user properties
+					}
+				}
+			}
+		}
+	})
+	@ApiUnauthorizedResponse({ 
+		description: 'Unauthorized - Invalid credentials',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', example: 'Invalid credentials' }
+			}
+		}
+	})
 	signIn(@Body() signInInput: SignInInput) {
 		return this.authService.signIn(signInInput);
 	}
@@ -64,9 +224,39 @@ export class AuthController {
 	@Post('refresh')
 	@isPublic()
 	@HttpCode(HttpStatus.OK)
-	@ApiOperation({ summary: 'refresh token' })
+	@ApiOperation({ 
+		summary: 'Refresh token',
+		description: 'Generates a new access token using a valid refresh token'
+	})
+	@ApiBody({ 
+		schema: {
+			type: 'object',
+			properties: {
+				refreshToken: { type: 'string' }
+			},
+			required: ['refreshToken']
+		}
+	})
+	@ApiOkResponse({ 
+		description: 'Token refreshed successfully',
+		schema: {
+			type: 'object',
+			properties: {
+				accessToken: { type: 'string' },
+				refreshToken: { type: 'string' }
+			}
+		}
+	})
+	@ApiUnauthorizedResponse({ 
+		description: 'Unauthorized - Invalid refresh token',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', example: 'Invalid refresh token' }
+			}
+		}
+	})
 	async refreshToken(@Body('refreshToken') refreshToken: string) {
 		return this.authService.refreshToken(refreshToken);
 	}
-
 }

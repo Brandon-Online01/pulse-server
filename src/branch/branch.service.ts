@@ -56,7 +56,7 @@ export class BranchService {
 		try {
 			const branch = await this.branchRepository.findOne({
 				where: { ref, isDeleted: false },
-				relations: ['news', 'docs', 'assets'],
+				relations: ['news', 'docs', 'assets', 'organisation', 'trackings', 'banners', 'routes', 'users'],
 			});
 
 			if (!branch) {

@@ -1,5 +1,8 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { GeneralStatus } from '../../lib/enums/status.enums';
+import { ValidateNested } from "class-validator";
+import { Type } from "class-transformer";
+import { IsNotEmpty } from "class-validator";
+import { AddressDto } from "../../clients/dto/create-client.dto";
 
 export class CreateBranchDto {
     @ApiProperty({
@@ -38,33 +41,14 @@ export class CreateBranchDto {
     })
     ref: string;
 
+    @ValidateNested()
+    @Type(() => AddressDto)
+    @IsNotEmpty()
     @ApiProperty({
-        example: {
-            streetNumber: '123',
-            street: 'Anystreet',
-            suburb: 'Anysuburb',
-            city: 'Anycity',
-            province: 'Anyprovince',
-            country: 'Anycountry',
-            postalCode: '12345'
-        },
-        description: 'The address of the branch'
+        description: 'The full address of the client including coordinates',
+        type: AddressDto
     })
-    address: {
-        streetNumber: string;
-        street: string;
-        suburb: string;
-        city: string;
-        province: string;
-        country: string;
-        postalCode: string;
-    };
-
-    @ApiProperty({
-        example: GeneralStatus.ACTIVE,
-        description: 'The status of the branch'
-    })
-    status: GeneralStatus;
+    address: AddressDto;
 
     @ApiProperty({
         example: { uid: 1 },

@@ -1,4 +1,4 @@
-import { GeneralStatus } from '../../lib/enums/status.enums';
+import { AddressDto } from "../../clients/dto/create-client.dto";
 export declare class CreateBranchDto {
     name: string;
     email: string;
@@ -6,16 +6,7 @@ export declare class CreateBranchDto {
     website: string;
     contactPerson: string;
     ref: string;
-    address: {
-        streetNumber: string;
-        street: string;
-        suburb: string;
-        city: string;
-        province: string;
-        country: string;
-        postalCode: string;
-    };
-    status: GeneralStatus;
+    address: AddressDto;
     organisation: {
         uid: number;
     };

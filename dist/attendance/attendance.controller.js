@@ -52,7 +52,29 @@ exports.AttendanceController = AttendanceController;
 __decorate([
     (0, common_1.Post)('in'),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
-    (0, swagger_1.ApiOperation)({ summary: 'manage attendance, check in' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Check in',
+        description: 'Records a user check-in for attendance tracking'
+    }),
+    (0, swagger_1.ApiBody)({ type: create_attendance_check_in_dto_1.CreateCheckInDto }),
+    (0, swagger_1.ApiCreatedResponse)({
+        description: 'Check-in recorded successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Success' }
+            }
+        }
+    }),
+    (0, swagger_1.ApiBadRequestResponse)({
+        description: 'Bad Request - Invalid data provided',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Error recording check-in' }
+            }
+        }
+    }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_attendance_check_in_dto_1.CreateCheckInDto]),
@@ -61,7 +83,29 @@ __decorate([
 __decorate([
     (0, common_1.Post)('out'),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
-    (0, swagger_1.ApiOperation)({ summary: 'manage attendance, check out' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Check out',
+        description: 'Records a user check-out for attendance tracking'
+    }),
+    (0, swagger_1.ApiBody)({ type: create_attendance_check_out_dto_1.CreateCheckOutDto }),
+    (0, swagger_1.ApiCreatedResponse)({
+        description: 'Check-out recorded successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Success' }
+            }
+        }
+    }),
+    (0, swagger_1.ApiBadRequestResponse)({
+        description: 'Bad Request - Invalid data provided',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Error recording check-out' }
+            }
+        }
+    }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_attendance_check_out_dto_1.CreateCheckOutDto]),
@@ -70,7 +114,30 @@ __decorate([
 __decorate([
     (0, common_1.Get)(),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
-    (0, swagger_1.ApiOperation)({ summary: 'get all check ins' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Get all attendance records',
+        description: 'Retrieves a list of all attendance check-ins'
+    }),
+    (0, swagger_1.ApiOkResponse)({
+        description: 'Attendance records retrieved successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                attendances: {
+                    type: 'array',
+                    items: {
+                        type: 'object',
+                        properties: {
+                            uid: { type: 'number' },
+                            checkInTime: { type: 'string', format: 'date-time' },
+                            checkOutTime: { type: 'string', format: 'date-time' },
+                        }
+                    }
+                },
+                message: { type: 'string', example: 'Success' }
+            }
+        }
+    }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
@@ -78,7 +145,24 @@ __decorate([
 __decorate([
     (0, common_1.Get)('date/:date'),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
-    (0, swagger_1.ApiOperation)({ summary: 'get check ins by date' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Get attendance by date',
+        description: 'Retrieves attendance records for a specific date'
+    }),
+    (0, swagger_1.ApiParam)({ name: 'date', description: 'Date in YYYY-MM-DD format', type: 'string' }),
+    (0, swagger_1.ApiOkResponse)({
+        description: 'Attendance records retrieved successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                attendances: {
+                    type: 'array',
+                    items: { type: 'object' }
+                },
+                message: { type: 'string', example: 'Success' }
+            }
+        }
+    }),
     __param(0, (0, common_1.Param)('date')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -87,7 +171,34 @@ __decorate([
 __decorate([
     (0, common_1.Get)('user/:ref'),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
-    (0, swagger_1.ApiOperation)({ summary: 'get check ins by user reference code' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Get attendance by user',
+        description: 'Retrieves attendance records for a specific user'
+    }),
+    (0, swagger_1.ApiParam)({ name: 'ref', description: 'User reference code', type: 'number' }),
+    (0, swagger_1.ApiOkResponse)({
+        description: 'User attendance records retrieved successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                attendances: {
+                    type: 'array',
+                    items: { type: 'object' }
+                },
+                message: { type: 'string', example: 'Success' }
+            }
+        }
+    }),
+    (0, swagger_1.ApiNotFoundResponse)({
+        description: 'User not found',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'User not found' },
+                attendances: { type: 'null' }
+            }
+        }
+    }),
     __param(0, (0, common_1.Param)('ref')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
@@ -96,7 +207,24 @@ __decorate([
 __decorate([
     (0, common_1.Get)('status/:ref'),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
-    (0, swagger_1.ApiOperation)({ summary: 'get check ins by status' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Get attendance by status',
+        description: 'Retrieves attendance records filtered by status'
+    }),
+    (0, swagger_1.ApiParam)({ name: 'ref', description: 'Status reference code', type: 'number' }),
+    (0, swagger_1.ApiOkResponse)({
+        description: 'Status-filtered attendance records retrieved successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                attendances: {
+                    type: 'array',
+                    items: { type: 'object' }
+                },
+                message: { type: 'string', example: 'Success' }
+            }
+        }
+    }),
     __param(0, (0, common_1.Param)('ref')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
@@ -105,7 +233,34 @@ __decorate([
 __decorate([
     (0, common_1.Get)('branch/:ref'),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
-    (0, swagger_1.ApiOperation)({ summary: 'get check ins by branch reference code' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Get attendance by branch',
+        description: 'Retrieves attendance records for a specific branch'
+    }),
+    (0, swagger_1.ApiParam)({ name: 'ref', description: 'Branch reference code', type: 'string' }),
+    (0, swagger_1.ApiOkResponse)({
+        description: 'Branch attendance records retrieved successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                attendances: {
+                    type: 'array',
+                    items: { type: 'object' }
+                },
+                message: { type: 'string', example: 'Success' }
+            }
+        }
+    }),
+    (0, swagger_1.ApiNotFoundResponse)({
+        description: 'Branch not found',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Branch not found' },
+                attendances: { type: 'null' }
+            }
+        }
+    }),
     __param(0, (0, common_1.Param)('ref')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -115,6 +270,7 @@ exports.AttendanceController = AttendanceController = __decorate([
     (0, swagger_1.ApiTags)('att'),
     (0, common_1.Controller)('att'),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
+    (0, swagger_1.ApiUnauthorizedResponse)({ description: 'Unauthorized - Invalid credentials or missing token' }),
     __metadata("design:paramtypes", [attendance_service_1.AttendanceService])
 ], AttendanceController);
 //# sourceMappingURL=attendance.controller.js.map
