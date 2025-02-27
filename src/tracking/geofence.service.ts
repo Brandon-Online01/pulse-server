@@ -10,9 +10,6 @@ import { User } from '../user/entities/user.entity';
 import { Organisation } from '../organisation/entities/organisation.entity';
 import { GeofenceArea } from './interfaces/geofence-area.interface';
 
-/**
- * Service for managing geofence areas and events
- */
 @Injectable()
 export class GeofenceService {
 	constructor(
@@ -24,12 +21,6 @@ export class GeofenceService {
 		private readonly organisationRepository: Repository<Organisation>,
 	) {}
 
-	/**
-	 * Create a new geofence area
-	 * @param createGeofenceDto Data for creating a new geofence area
-	 * @param user Current user
-	 * @returns The created geofence area
-	 */
 	async createGeofence(
 		createGeofenceDto: CreateGeofenceDto,
 		user: User,
@@ -74,11 +65,6 @@ export class GeofenceService {
 		}
 	}
 
-	/**
-	 * Get all geofence areas for an organisation
-	 * @param organisationId Organisation ID
-	 * @returns List of geofence areas
-	 */
 	async findAllByOrganisation(organisationId: number): Promise<{ geofences: Geofence[]; message: string }> {
 		try {
 			const geofences = await this.geofenceRepository.find({
@@ -102,11 +88,6 @@ export class GeofenceService {
 		}
 	}
 
-	/**
-	 * Get a geofence area by ID
-	 * @param ref Geofence area ID
-	 * @returns The geofence area
-	 */
 	async findOne(ref: string): Promise<{ geofence: Geofence | null; message: string }> {
 		try {
 			const geofence = await this.geofenceRepository.findOne({
@@ -130,13 +111,6 @@ export class GeofenceService {
 		}
 	}
 
-	/**
-	 * Update a geofence area
-	 * @param id Geofence area ID
-	 * @param updateGeofenceDto Data for updating the geofence area
-	 * @param user Current user making the update
-	 * @returns The updated geofence area
-	 */
 	async update(
 		id: string,
 		updateGeofenceDto: UpdateGeofenceDto,
@@ -183,12 +157,6 @@ export class GeofenceService {
 		}
 	}
 
-	/**
-	 * Soft delete a geofence area
-	 * @param ref Geofence area ID
-	 * @param user Current user performing the delete
-	 * @returns Success status and message
-	 */
 	async remove(ref: string, user: User): Promise<{ success: boolean; message: string }> {
 		try {
 			const geofence = await this.geofenceRepository.findOne({
@@ -220,12 +188,6 @@ export class GeofenceService {
 		}
 	}
 
-	/**
-	 * Create a geofence event
-	 * @param createGeofenceEventDto Data for creating a new geofence event
-	 * @param user Current user
-	 * @returns The created geofence event
-	 */
 	async createGeofenceEvent(
 		createGeofenceEventDto: CreateGeofenceEventDto,
 		user: User,
@@ -263,12 +225,6 @@ export class GeofenceService {
 		}
 	}
 
-	/**
-	 * Get all geofence events for a user
-	 * @param userRef User reference
-	 * @param limit Maximum number of events to return
-	 * @returns List of geofence events
-	 */
 	async findUserEvents(userRef: string, limit = 100): Promise<{ events: GeofenceEvent[]; message: string }> {
 		try {
 			const events = await this.geofenceEventRepository.find({
@@ -290,12 +246,6 @@ export class GeofenceService {
 		}
 	}
 
-	/**
-	 * Get all geofence events for a geofence area
-	 * @param geofenceRef Geofence area reference
-	 * @param limit Maximum number of events to return
-	 * @returns List of geofence events
-	 */
 	async findGeofenceEvents(geofenceRef: string, limit = 100): Promise<{ events: GeofenceEvent[]; message: string }> {
 		try {
 			const events = await this.geofenceEventRepository.find({
@@ -317,11 +267,6 @@ export class GeofenceService {
 		}
 	}
 
-	/**
-	 * Get all geofence areas for mobile app
-	 * @param user Current user
-	 * @returns List of geofence areas in mobile-friendly format
-	 */
 	async getGeofenceAreasForMobile(user: User): Promise<{ areas: GeofenceArea[]; message: string }> {
 		try {
 			const { geofences } = await this.findAllByOrganisation(Number(user?.organisationRef));

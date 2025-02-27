@@ -20,32 +20,64 @@ const typeorm_2 = require("typeorm");
 const location_utils_1 = require("../lib/utils/location.utils");
 const date_fns_1 = require("date-fns");
 const axios_1 = require("axios");
+const user_entity_1 = require("../user/entities/user.entity");
 let TrackingService = class TrackingService {
-    constructor(trackingRepository) {
+    constructor(trackingRepository, userRepository) {
         this.trackingRepository = trackingRepository;
+        this.userRepository = userRepository;
         this.geocodingApiKey = process.env.GOOGLE_MAPS_API_KEY;
     }
-    async create(createTrackingDto) {
+    async create(createTrackingDto, branchId, orgId) {
         try {
-            const { address, error: geocodingError } = await this.getAddressFromCoordinates(createTrackingDto.latitude, createTrackingDto.longitude);
-            const tracking = this.trackingRepository.create({
-                ...createTrackingDto,
+            let latitude = createTrackingDto.latitude;
+            let longitude = createTrackingDto.longitude;
+            if (!latitude && !longitude && createTrackingDto['coords']) {
+                const coords = createTrackingDto['coords'];
+                latitude = coords.latitude;
+                longitude = coords.longitude;
+                createTrackingDto.latitude = latitude;
+                createTrackingDto.longitude = longitude;
+                if (coords.accuracy !== undefined)
+                    createTrackingDto.accuracy = coords.accuracy;
+                if (coords.altitude !== undefined)
+                    createTrackingDto.altitude = coords.altitude;
+                if (coords.altitudeAccuracy !== undefined)
+                    createTrackingDto.altitudeAccuracy = coords.altitudeAccuracy;
+                if (coords.heading !== undefined)
+                    createTrackingDto.heading = coords.heading;
+                if (coords.speed !== undefined)
+                    createTrackingDto.speed = coords.speed;
+            }
+            const { address, error: geocodingError } = await this.getAddressFromCoordinates(latitude, longitude);
+            const ownerId = createTrackingDto.owner;
+            const { owner, ...trackingDataWithoutOwner } = createTrackingDto;
+            const trackingData = {
+                ...trackingDataWithoutOwner,
                 address,
                 addressDecodingError: geocodingError || null,
-                rawLocation: `${createTrackingDto.latitude},${createTrackingDto.longitude}`,
-            });
+                rawLocation: `${latitude},${longitude}`,
+                owner: { uid: ownerId },
+            };
+            if (branchId) {
+                trackingData.branch = { uid: Number(branchId) };
+            }
+            if (orgId) {
+                trackingData.organisation = { uid: Number(orgId) };
+            }
+            const tracking = this.trackingRepository.create(trackingData);
             await this.trackingRepository.save(tracking);
-            return {
+            const response = {
                 message: process.env.SUCCESS_MESSAGE,
                 data: tracking,
-                warnings: geocodingError ? [{ type: 'GEOCODING_ERROR', message: geocodingError }] : []
+                warnings: geocodingError ? [{ type: 'GEOCODING_ERROR', message: geocodingError }] : [],
             };
+            return response;
         }
         catch (error) {
             return {
                 message: error.message,
                 tracking: null,
-                warnings: []
+                warnings: [],
             };
         }
     }
@@ -57,61 +89,56 @@ let TrackingService = class TrackingService {
                 if (!this.geocodingApiKey) {
                     return {
                         address: null,
-                        error: 'Geocoding API key not configured'
+                        error: 'Geocoding API key not configured',
                     };
                 }
                 const response = await axios_1.default.get(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${this.geocodingApiKey}`, { timeout: 5000 });
                 if (response.data.status === 'ZERO_RESULTS') {
                     return {
                         address: null,
-                        error: 'No address found for these coordinates'
+                        error: 'No address found for these coordinates',
                     };
                 }
                 if (response.data.status !== 'OK') {
                     return {
                         address: null,
-                        error: `Geocoding API error: ${response.data.status}`
+                        error: `Geocoding API error: ${response.data.status}`,
                     };
                 }
                 if (response.data.results && response.data.results.length > 0) {
                     return {
-                        address: response.data.results[0].formatted_address
+                        address: response.data.results[0].formatted_address,
                     };
                 }
                 return {
                     address: null,
-                    error: 'No results in geocoding response'
+                    error: 'No results in geocoding response',
                 };
             }
             catch (error) {
                 const isLastAttempt = attempt === MAX_RETRIES;
                 if (error.response?.status === 429) {
                     if (!isLastAttempt) {
-                        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * attempt));
+                        await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY * attempt));
                         continue;
                     }
                     return {
                         address: null,
-                        error: 'Geocoding API rate limit exceeded'
+                        error: 'Geocoding API rate limit exceeded',
                     };
                 }
                 if (isLastAttempt) {
-                    console.error('Geocoding error after max retries:', {
-                        error: error.message,
-                        coordinates: { latitude, longitude },
-                        attempts: attempt
-                    });
                     return {
                         address: null,
-                        error: `Geocoding failed: ${error.message}`
+                        error: `Geocoding failed: ${error.message}`,
                     };
                 }
-                await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * attempt));
+                await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY * attempt));
             }
         }
         return {
             address: null,
-            error: 'Max retries exceeded for geocoding request'
+            error: 'Max retries exceeded for geocoding request',
         };
     }
     async getDailyTracking(userId, date = new Date()) {
@@ -119,16 +146,16 @@ let TrackingService = class TrackingService {
             const trackingPoints = await this.trackingRepository.find({
                 where: {
                     owner: { uid: userId },
-                    createdAt: (0, typeorm_2.Between)((0, date_fns_1.startOfDay)(date), (0, date_fns_1.endOfDay)(date))
+                    createdAt: (0, typeorm_2.Between)((0, date_fns_1.startOfDay)(date), (0, date_fns_1.endOfDay)(date)),
                 },
                 order: {
-                    createdAt: 'ASC'
-                }
+                    createdAt: 'ASC',
+                },
             });
             if (!trackingPoints.length) {
                 return {
                     message: 'No tracking data found for the specified date',
-                    data: null
+                    data: null,
                 };
             }
             const totalDistance = location_utils_1.LocationUtils.calculateTotalDistance(trackingPoints);
@@ -142,15 +169,15 @@ let TrackingService = class TrackingService {
                     trackingPoints,
                     locationAnalysis: {
                         timeSpentByLocation: locationTimeSpent,
-                        averageTimePerLocation: averageTimePerLocation
-                    }
-                }
+                        averageTimePerLocation: averageTimePerLocation,
+                    },
+                },
             };
         }
         catch (error) {
             return {
                 message: error.message,
-                data: null
+                data: null,
             };
         }
     }
@@ -176,19 +203,19 @@ let TrackingService = class TrackingService {
         try {
             const tracking = await this.trackingRepository.find({
                 where: {
-                    deletedAt: (0, typeorm_2.IsNull)()
-                }
+                    deletedAt: (0, typeorm_2.IsNull)(),
+                },
             });
             const response = {
                 message: process.env.SUCCESS_MESSAGE,
-                tracking: tracking
+                tracking: tracking,
             };
             return response;
         }
         catch (error) {
             const response = {
                 message: error.message,
-                tracking: null
+                tracking: null,
             };
             return response;
         }
@@ -198,20 +225,20 @@ let TrackingService = class TrackingService {
             const tracking = await this.trackingRepository.findOne({
                 where: {
                     uid: ref,
-                    deletedAt: (0, typeorm_2.IsNull)()
+                    deletedAt: (0, typeorm_2.IsNull)(),
                 },
-                relations: ['branch', 'owner']
+                relations: ['branch', 'owner'],
             });
             const response = {
                 message: process.env.SUCCESS_MESSAGE,
-                tracking: tracking
+                tracking: tracking,
             };
             return response;
         }
         catch (error) {
             const response = {
                 message: error.message,
-                tracking: null
+                tracking: null,
             };
             return response;
         }
@@ -219,21 +246,21 @@ let TrackingService = class TrackingService {
     async trackingByUser(ref) {
         try {
             const tracking = await this.trackingRepository.find({
-                where: { owner: { uid: ref } }
+                where: { owner: { uid: ref } },
             });
             if (!tracking) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
             const response = {
                 message: process.env.SUCCESS_MESSAGE,
-                tracking
+                tracking,
             };
             return response;
         }
         catch (error) {
             const response = {
                 message: `could not get tracking by user - ${error?.message}`,
-                tracking: null
+                tracking: null,
             };
             return response;
         }
@@ -257,7 +284,7 @@ let TrackingService = class TrackingService {
         try {
             await this.trackingRepository.update(ref, {
                 deletedAt: new Date(),
-                deletedBy: 'system'
+                deletedBy: 'system',
             });
             const response = {
                 message: process.env.SUCCESS_MESSAGE,
@@ -275,7 +302,7 @@ let TrackingService = class TrackingService {
         try {
             await this.trackingRepository.update(ref, {
                 deletedAt: null,
-                deletedBy: null
+                deletedBy: null,
             });
             const response = {
                 message: process.env.SUCCESS_MESSAGE,
@@ -297,6 +324,10 @@ let TrackingService = class TrackingService {
                     stopData.address = address;
                 }
             }
+            const user = await this.userRepository.findOne({
+                where: { uid: userId },
+                relations: ['branch', 'organisation']
+            });
             const tracking = this.trackingRepository.create({
                 latitude: stopData.latitude,
                 longitude: stopData.longitude,
@@ -308,39 +339,40 @@ let TrackingService = class TrackingService {
                     startTime: new Date(stopData.startTime).toISOString(),
                     endTime: new Date(stopData.endTime).toISOString(),
                     durationMinutes: Math.round(stopData.duration / 60000),
-                }
+                },
+                branch: user?.branch ? { uid: user.branch.uid } : undefined,
+                organisation: user?.organisation ? { uid: user.organisation.uid } : undefined,
             });
             await this.trackingRepository.save(tracking);
             return {
                 message: 'Stop event recorded successfully',
-                data: tracking
+                data: tracking,
             };
         }
         catch (error) {
             return {
                 message: `Failed to record stop event: ${error.message}`,
-                data: null
+                data: null,
             };
         }
     }
     async getUserStops(userId) {
         try {
-            const stops = await this.trackingRepository
-                .createQueryBuilder('tracking')
-                .where('tracking.owner.uid = :userId', { userId })
-                .andWhere('tracking.deletedAt IS NULL')
-                .andWhere("JSON_EXTRACT(tracking.metadata, '$.isStop') = :isStop", { isStop: true })
-                .orderBy('tracking.createdAt', 'DESC')
-                .getMany();
+            const stops = await this.trackingRepository.find({
+                where: {
+                    owner: { uid: userId },
+                    deletedAt: (0, typeorm_2.IsNull)(),
+                },
+            });
             return {
                 message: process.env.SUCCESS_MESSAGE,
-                data: stops
+                data: stops,
             };
         }
         catch (error) {
             return {
                 message: `Failed to get user stops: ${error.message}`,
-                data: null
+                data: null,
             };
         }
     }
@@ -349,6 +381,8 @@ exports.TrackingService = TrackingService;
 exports.TrackingService = TrackingService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(tracking_entity_1.Tracking)),
-    __metadata("design:paramtypes", [typeorm_2.Repository])
+    __param(1, (0, typeorm_1.InjectRepository)(user_entity_1.User)),
+    __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository])
 ], TrackingService);
 //# sourceMappingURL=tracking.service.js.map

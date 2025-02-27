@@ -47,4 +47,55 @@ export class Tracking {
 
     @ManyToOne(() => Organisation, (organisation) => organisation?.trackings, { nullable: true })
     organisation: Organisation;
+
+    @Column({ type: 'float', nullable: true })
+    accuracy: number;
+
+    @Column({ type: 'float', nullable: true })
+    altitude: number;
+
+    @Column({ type: 'float', nullable: true })
+    altitudeAccuracy: number;
+
+    @Column({ type: 'float', nullable: true })
+    heading: number;
+
+    @Column({ type: 'float', nullable: true })
+    speed: number;
+
+    @Column({ type: 'bigint', nullable: true })
+    timestamp: number;
+
+    @Column({ type: 'int', nullable: true })
+    batteryLevel: number;
+
+    @Column({ type: 'int', nullable: true })
+    batteryState: number;
+
+    @Column({ type: 'varchar', length: 255, nullable: true })
+    brand: string;
+
+    @Column({ type: 'varchar', length: 255, nullable: true })
+    manufacturer: string;
+
+    @Column({ type: 'varchar', length: 255, nullable: true })
+    modelID: string;
+
+    @Column({ type: 'varchar', length: 255, nullable: true })
+    modelName: string;
+
+    @Column({ type: 'varchar', length: 255, nullable: true })
+    osName: string;
+
+    @Column({ type: 'varchar', length: 255, nullable: true })
+    osVersion: string;
+
+    @Column({ type: 'json', nullable: true })
+    network: Record<string, any>;
+
+    @Column({ type: 'text', nullable: true })
+    addressDecodingError: string;
+
+    @Column({ type: 'text', nullable: true })
+    rawLocation: string;
 }

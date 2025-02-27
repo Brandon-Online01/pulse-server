@@ -4,13 +4,33 @@ import { UpdateBranchDto } from './dto/update-branch.dto';
 import { Repository } from 'typeorm';
 import { Branch } from './entities/branch.entity';
 import { InjectRepository } from '@nestjs/typeorm';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
+import { Inject } from '@nestjs/common';
 
 @Injectable()
 export class BranchService {
 	constructor(
 		@InjectRepository(Branch)
 		private branchRepository: Repository<Branch>,
+		@Inject(CACHE_MANAGER) private cacheManager: Cache,
 	) {}
+
+	private readonly CACHE_PREFIX = 'branch';
+	private readonly ALL_BRANCHES_CACHE_KEY = `${this.CACHE_PREFIX}:all`;
+	private getBranchCacheKey(ref: string): string {
+		return `${this.CACHE_PREFIX}:${ref}`;
+	}
+
+	private async clearBranchCache(ref?: string): Promise<void> {
+		// Clear the all branches cache
+		await this.cacheManager.del(this.ALL_BRANCHES_CACHE_KEY);
+		
+		// If a specific ref is provided, clear that branch's cache
+		if (ref) {
+			await this.cacheManager.del(this.getBranchCacheKey(ref));
+		}
+	}
 
 	async create(createBranchDto: CreateBranchDto): Promise<{ message: string }> {
 		try {
@@ -19,6 +39,9 @@ export class BranchService {
 			if (!branch) {
 				throw new NotFoundException(process.env.CREATE_ERROR_MESSAGE);
 			}
+
+			// Clear cache after creating a new branch
+			await this.clearBranchCache();
 
 			return {
 				message: process.env.SUCCESS_MESSAGE,
@@ -32,6 +55,17 @@ export class BranchService {
 
 	async findAll(): Promise<{ branches: Branch[] | null; message: string }> {
 		try {
+			// Try to get from cache first
+			const cachedBranches = await this.cacheManager.get<Branch[]>(this.ALL_BRANCHES_CACHE_KEY);
+			
+			if (cachedBranches) {
+				return {
+					branches: cachedBranches,
+					message: process.env.SUCCESS_MESSAGE,
+				};
+			}
+
+			// If not in cache, fetch from database
 			const branches = await this.branchRepository.find({
 				where: { isDeleted: false },
 			});
@@ -39,6 +73,9 @@ export class BranchService {
 			if (!branches) {
 				throw new NotFoundException(process.env.SEARCH_ERROR_MESSAGE);
 			}
+
+			// Store in cache
+			await this.cacheManager.set(this.ALL_BRANCHES_CACHE_KEY, branches);
 
 			return {
 				branches,
@@ -54,6 +91,18 @@ export class BranchService {
 
 	async findOne(ref: string): Promise<{ branch: Branch | null; message: string }> {
 		try {
+			// Try to get from cache first
+			const cacheKey = this.getBranchCacheKey(ref);
+			const cachedBranch = await this.cacheManager.get<Branch>(cacheKey);
+			
+			if (cachedBranch) {
+				return {
+					branch: cachedBranch,
+					message: process.env.SUCCESS_MESSAGE,
+				};
+			}
+
+			// If not in cache, fetch from database
 			const branch = await this.branchRepository.findOne({
 				where: { ref, isDeleted: false },
 				relations: ['news', 'docs', 'assets', 'organisation', 'trackings', 'banners', 'routes', 'users'],
@@ -62,6 +111,9 @@ export class BranchService {
 			if (!branch) {
 				throw new NotFoundException(process.env.SEARCH_ERROR_MESSAGE);
 			}
+
+			// Store in cache
+			await this.cacheManager.set(cacheKey, branch);
 
 			return {
 				branch,
@@ -87,6 +139,9 @@ export class BranchService {
 				throw new NotFoundException(process.env.UPDATE_ERROR_MESSAGE);
 			}
 
+			// Clear cache after updating
+			await this.clearBranchCache(ref);
+
 			return {
 				message: process.env.SUCCESS_MESSAGE,
 			};
@@ -108,6 +163,9 @@ export class BranchService {
 			}
 
 			await this.branchRepository.update({ ref }, { isDeleted: true });
+
+			// Clear cache after removing
+			await this.clearBranchCache(ref);
 
 			return {
 				message: process.env.SUCCESS_MESSAGE,

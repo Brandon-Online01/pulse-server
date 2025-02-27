@@ -18,6 +18,9 @@ export declare class ResellersController {
     update(ref: number, updateResellerDto: UpdateResellerDto): Promise<{
         message: string;
     }>;
+    restore(ref: number): Promise<{
+        message: string;
+    }>;
     remove(ref: number): Promise<{
         message: string;
     }>;

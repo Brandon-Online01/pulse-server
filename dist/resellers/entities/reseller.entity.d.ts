@@ -15,7 +15,13 @@ export declare class Reseller {
     createdAt: Date;
     updatedAt: Date;
     isDeleted: boolean;
-    address: string;
+    address: {
+        street: string;
+        city: string;
+        state: string;
+        country: string;
+        postalCode: string;
+    };
     products: Product[];
     organisation: Organisation;
     branch: Branch;

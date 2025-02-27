@@ -22,7 +22,6 @@ const role_guard_1 = require("../guards/role.guard");
 const auth_guard_1 = require("../guards/auth.guard");
 const user_enums_1 = require("../lib/enums/user.enums");
 const role_decorator_1 = require("../decorators/role.decorator");
-const swagger_2 = require("@nestjs/swagger");
 const enterprise_only_decorator_1 = require("../decorators/enterprise-only.decorator");
 let ResellersController = class ResellersController {
     constructor(resellersService) {
@@ -40,6 +39,9 @@ let ResellersController = class ResellersController {
     update(ref, updateResellerDto) {
         return this.resellersService.update(ref, updateResellerDto);
     }
+    restore(ref) {
+        return this.resellersService.restore(ref);
+    }
     remove(ref) {
         return this.resellersService.remove(ref);
     }
@@ -48,7 +50,29 @@ exports.ResellersController = ResellersController;
 __decorate([
     (0, common_1.Post)(),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
-    (0, swagger_2.ApiOperation)({ summary: 'create a new reseller' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Create a new reseller',
+        description: 'Creates a new reseller with the provided details including contact information and address'
+    }),
+    (0, swagger_1.ApiBody)({ type: create_reseller_dto_1.CreateResellerDto }),
+    (0, swagger_1.ApiCreatedResponse)({
+        description: 'Reseller created successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Success' }
+            }
+        }
+    }),
+    (0, swagger_1.ApiBadRequestResponse)({
+        description: 'Bad Request - Invalid data provided',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Error creating reseller' }
+            }
+        }
+    }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_reseller_dto_1.CreateResellerDto]),
@@ -57,7 +81,31 @@ __decorate([
 __decorate([
     (0, common_1.Get)(),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
-    (0, swagger_2.ApiOperation)({ summary: 'get all resellers' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Get all resellers',
+        description: 'Retrieves a list of all resellers'
+    }),
+    (0, swagger_1.ApiOkResponse)({
+        description: 'List of resellers retrieved successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                resellers: {
+                    type: 'array',
+                    items: {
+                        type: 'object',
+                        properties: {
+                            uid: { type: 'number' },
+                            name: { type: 'string' },
+                            email: { type: 'string' },
+                            phone: { type: 'string' }
+                        }
+                    }
+                },
+                message: { type: 'string', example: 'Success' }
+            }
+        }
+    }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
@@ -65,7 +113,39 @@ __decorate([
 __decorate([
     (0, common_1.Get)(':ref'),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
-    (0, swagger_2.ApiOperation)({ summary: 'get a reseller by reference code' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Get a reseller by reference code',
+        description: 'Retrieves detailed information about a specific reseller'
+    }),
+    (0, swagger_1.ApiParam)({ name: 'ref', description: 'Reseller reference code or ID', type: 'number' }),
+    (0, swagger_1.ApiOkResponse)({
+        description: 'Reseller details retrieved successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                reseller: {
+                    type: 'object',
+                    properties: {
+                        uid: { type: 'number' },
+                        name: { type: 'string' },
+                        email: { type: 'string' },
+                        phone: { type: 'string' }
+                    }
+                },
+                message: { type: 'string', example: 'Success' }
+            }
+        }
+    }),
+    (0, swagger_1.ApiNotFoundResponse)({
+        description: 'Reseller not found',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Reseller not found' },
+                reseller: { type: 'null' }
+            }
+        }
+    }),
     __param(0, (0, common_1.Param)('ref')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
@@ -74,7 +154,39 @@ __decorate([
 __decorate([
     (0, common_1.Patch)(':ref'),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
-    (0, swagger_2.ApiOperation)({ summary: 'update a reseller' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Update a reseller',
+        description: 'Updates an existing reseller with the provided information'
+    }),
+    (0, swagger_1.ApiParam)({ name: 'ref', description: 'Reseller reference code or ID', type: 'number' }),
+    (0, swagger_1.ApiBody)({ type: update_reseller_dto_1.UpdateResellerDto }),
+    (0, swagger_1.ApiOkResponse)({
+        description: 'Reseller updated successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Success' }
+            }
+        }
+    }),
+    (0, swagger_1.ApiNotFoundResponse)({
+        description: 'Reseller not found',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Reseller not found' }
+            }
+        }
+    }),
+    (0, swagger_1.ApiBadRequestResponse)({
+        description: 'Bad Request - Invalid data provided',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Error updating reseller' }
+            }
+        }
+    }),
     __param(0, (0, common_1.Param)('ref')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -82,9 +194,62 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], ResellersController.prototype, "update", null);
 __decorate([
+    (0, common_1.Patch)('restore/:ref'),
+    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Restore a deleted reseller',
+        description: 'Restores a previously deleted reseller'
+    }),
+    (0, swagger_1.ApiParam)({ name: 'ref', description: 'Reseller reference code or ID', type: 'number' }),
+    (0, swagger_1.ApiOkResponse)({
+        description: 'Reseller restored successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Success' }
+            }
+        }
+    }),
+    (0, swagger_1.ApiNotFoundResponse)({
+        description: 'Reseller not found',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Reseller not found' }
+            }
+        }
+    }),
+    __param(0, (0, common_1.Param)('ref')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", void 0)
+], ResellersController.prototype, "restore", null);
+__decorate([
     (0, common_1.Delete)(':ref'),
-    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
-    (0, swagger_2.ApiOperation)({ summary: 'soft delete a reseller' }),
+    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Soft delete a reseller',
+        description: 'Marks a reseller as deleted without removing it from the database'
+    }),
+    (0, swagger_1.ApiParam)({ name: 'ref', description: 'Reseller reference code or ID', type: 'number' }),
+    (0, swagger_1.ApiOkResponse)({
+        description: 'Reseller deleted successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Success' }
+            }
+        }
+    }),
+    (0, swagger_1.ApiNotFoundResponse)({
+        description: 'Reseller not found',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Error deleting reseller' }
+            }
+        }
+    }),
     __param(0, (0, common_1.Param)('ref')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
@@ -95,6 +260,7 @@ exports.ResellersController = ResellersController = __decorate([
     (0, common_1.Controller)('resellers'),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, enterprise_only_decorator_1.EnterpriseOnly)('resellers'),
+    (0, swagger_1.ApiUnauthorizedResponse)({ description: 'Unauthorized - Invalid credentials or missing token' }),
     __metadata("design:paramtypes", [resellers_service_1.ResellersService])
 ], ResellersController);
 //# sourceMappingURL=resellers.controller.js.map

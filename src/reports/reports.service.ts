@@ -38,6 +38,9 @@ import { CommunicationService } from '../communication/communication.service';
 import { EmailType } from '../lib/enums/email.enums';
 import { Tracking } from 'src/tracking/entities/tracking.entity';
 import { LiveUserReportService } from './live-user-report.service';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
+import { Inject } from '@nestjs/common';
 
 @Injectable()
 export class ReportsService {
@@ -46,6 +49,8 @@ export class ReportsService {
 	private readonly currencySymbol: string;
 	private readonly WORK_HOURS_PER_DAY = 8;
 	private readonly MINUTES_PER_HOUR = 60;
+	private readonly BRANCH_CACHE_PREFIX = 'branch';
+	private readonly CACHE_TTL = 3600; // 1 hour in seconds
 
 	constructor(
 		private readonly configService: ConfigService,
@@ -78,10 +83,23 @@ export class ReportsService {
 		@InjectRepository(Tracking)
 		private readonly trackingRepository: Repository<Tracking>,
 		private readonly liveUserReportService: LiveUserReportService,
+		@Inject(CACHE_MANAGER) private cacheManager: Cache,
 	) {
 		this.currencyLocale = this.configService.get<string>('CURRENCY_LOCALE') || 'en-ZA';
 		this.currencyCode = this.configService.get<string>('CURRENCY_CODE') || 'ZAR';
 		this.currencySymbol = this.configService.get<string>('CURRENCY_SYMBOL') || 'R';
+	}
+
+	private getBranchCacheKey(branchUid: number): string {
+		return `${this.BRANCH_CACHE_PREFIX}:uid:${branchUid}`;
+	}
+
+	private async getCachedBranch(branchUid: number): Promise<Branch | null> {
+		return this.cacheManager.get<Branch>(this.getBranchCacheKey(branchUid));
+	}
+
+	private async cacheBranch(branch: Branch): Promise<void> {
+		await this.cacheManager.set(this.getBranchCacheKey(branch.uid), branch, this.CACHE_TTL);
 	}
 
 	async generateReport(options: ReportGenerationOptions): Promise<Report> {
@@ -114,9 +132,21 @@ export class ReportsService {
 		}
 
 		if (options.branchUid) {
-			const branch = await this.branchRepository.findOne({
-				where: { uid: options.branchUid },
-			});
+			// Try to get branch from cache first
+			let branch = await this.getCachedBranch(options.branchUid);
+			
+			// If not in cache, fetch from database
+			if (!branch) {
+				branch = await this.branchRepository.findOne({
+					where: { uid: options.branchUid },
+				});
+				
+				// Store in cache if found
+				if (branch) {
+					await this.cacheBranch(branch);
+				}
+			}
+			
 			if (!branch) throw new NotFoundException('Branch not found');
 			report.branch = branch;
 			report.branchUid = branch.uid;
@@ -182,7 +212,6 @@ export class ReportsService {
 		}
 	}
 
-	@OnEvent('daily-report')
 	async generateDailyUserReport(options: ReportGenerationOptions): Promise<DailyUserActivityReport> {
 		try {
 			if (!options.userId) {
@@ -264,11 +293,6 @@ export class ReportsService {
 					productivity,
 				}),
 			};
-
-			// Send report email asynchronously
-			this.sendDailyReportEmail(user, report).catch((error) => {
-				console.error('Failed to send daily report email:', error);
-			});
 
 			return report;
 		} catch (error) {

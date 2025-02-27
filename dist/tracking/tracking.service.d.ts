@@ -2,23 +2,23 @@ import { CreateTrackingDto } from './dto/create-tracking.dto';
 import { UpdateTrackingDto } from './dto/update-tracking.dto';
 import { Tracking } from './entities/tracking.entity';
 import { Repository } from 'typeorm';
+import { User } from '../user/entities/user.entity';
 export declare class TrackingService {
     private trackingRepository;
+    private userRepository;
     private readonly geocodingApiKey;
-    constructor(trackingRepository: Repository<Tracking>);
-    create(createTrackingDto: CreateTrackingDto): Promise<{
+    constructor(trackingRepository: Repository<Tracking>, userRepository: Repository<User>);
+    create(createTrackingDto: CreateTrackingDto, branchId?: string | number | null, orgId?: string | number | null): Promise<{
         message: string;
         data: Tracking;
         warnings: {
             type: string;
             message: string;
         }[];
-        tracking?: undefined;
     } | {
         message: any;
         tracking: any;
         warnings: any[];
-        data?: undefined;
     }>;
     private getAddressFromCoordinates;
     getDailyTracking(userId: number, date?: Date): Promise<{

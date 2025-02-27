@@ -17,6 +17,7 @@ import { EventEmitter2 } from 'eventemitter2';
 import { CommunicationService } from '../communication/communication.service';
 import { Tracking } from 'src/tracking/entities/tracking.entity';
 import { LiveUserReportService } from './live-user-report.service';
+import { Cache } from 'cache-manager';
 export declare class ReportsService {
     private readonly configService;
     private readonly eventEmitter;
@@ -35,12 +36,18 @@ export declare class ReportsService {
     private readonly clientRepository;
     private readonly trackingRepository;
     private readonly liveUserReportService;
+    private cacheManager;
     private readonly currencyLocale;
     private readonly currencyCode;
     private readonly currencySymbol;
     private readonly WORK_HOURS_PER_DAY;
     private readonly MINUTES_PER_HOUR;
-    constructor(configService: ConfigService, eventEmitter: EventEmitter2, communicationService: CommunicationService, checkInRepository: Repository<CheckIn>, taskRepository: Repository<Task>, claimRepository: Repository<Claim>, leadRepository: Repository<Lead>, journalRepository: Repository<Journal>, userRepository: Repository<User>, attendanceRepository: Repository<Attendance>, achievementRepository: Repository<Achievement>, reportRepository: Repository<Report>, organisationRepository: Repository<Organisation>, branchRepository: Repository<Branch>, clientRepository: Repository<Client>, trackingRepository: Repository<Tracking>, liveUserReportService: LiveUserReportService);
+    private readonly BRANCH_CACHE_PREFIX;
+    private readonly CACHE_TTL;
+    constructor(configService: ConfigService, eventEmitter: EventEmitter2, communicationService: CommunicationService, checkInRepository: Repository<CheckIn>, taskRepository: Repository<Task>, claimRepository: Repository<Claim>, leadRepository: Repository<Lead>, journalRepository: Repository<Journal>, userRepository: Repository<User>, attendanceRepository: Repository<Attendance>, achievementRepository: Repository<Achievement>, reportRepository: Repository<Report>, organisationRepository: Repository<Organisation>, branchRepository: Repository<Branch>, clientRepository: Repository<Client>, trackingRepository: Repository<Tracking>, liveUserReportService: LiveUserReportService, cacheManager: Cache);
+    private getBranchCacheKey;
+    private getCachedBranch;
+    private cacheBranch;
     generateReport(options: ReportGenerationOptions): Promise<Report>;
     handleDailyReport(payload: ReportGenerationOptions): Promise<void>;
     generateDailyUserReport(options: ReportGenerationOptions): Promise<DailyUserActivityReport>;

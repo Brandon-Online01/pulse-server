@@ -18,6 +18,7 @@ import { Inject } from '@nestjs/common';
 @Injectable()
 export class TaskRouteService {
 	private readonly CACHE_TTL = 3600; // 1 hour in seconds
+	private readonly BRANCH_CACHE_PREFIX = 'branch';
 
 	constructor(
 		@InjectRepository(Task)
@@ -34,6 +35,18 @@ export class TaskRouteService {
 		private readonly googleMapsService: GoogleMapsService,
 		@Inject(CACHE_MANAGER) private cacheManager: Cache,
 	) {}
+
+	private getBranchCacheKey(branchUid: number): string {
+		return `${this.BRANCH_CACHE_PREFIX}:uid:${branchUid}`;
+	}
+
+	private async getCachedBranch(branchUid: number): Promise<Branch | null> {
+		return this.cacheManager.get<Branch>(this.getBranchCacheKey(branchUid));
+	}
+
+	private async cacheBranch(branch: Branch): Promise<void> {
+		await this.cacheManager.set(this.getBranchCacheKey(branch.uid), branch, this.CACHE_TTL);
+	}
 
 	private getCacheKey(taskId: number, date: Date): string {
 		return `route_${taskId}_${date.toISOString().split('T')[0]}`;
@@ -103,9 +116,24 @@ export class TaskRouteService {
 					continue;
 				}
 
-				const branch = await this.branchRepository.findOne({
-					where: { uid: user?.branch?.uid },
-				});
+				// Try to get branch from cache first
+				let branch = await this.getCachedBranch(user.branch.uid);
+				
+				// If not in cache, fetch from database
+				if (!branch) {
+					branch = await this.branchRepository.findOne({
+						where: { uid: user?.branch?.uid },
+					});
+					
+					// Store in cache if found
+					if (branch) {
+						await this.cacheBranch(branch);
+					}
+				}
+
+				if (!branch) {
+					continue;
+				}
 
 				const clientLocations = await this.getClientLocations([task]);
 				const destinations = Array.from(clientLocations.values()).map((loc) => ({

@@ -1,6 +1,7 @@
-import { IsString, IsNotEmpty, IsEmail, IsEnum } from 'class-validator';
+import { IsString, IsNotEmpty, IsEmail, ValidateNested, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { ResellerStatus } from '../../lib/enums/product.enums';
+import { AddressDto } from 'src/clients/dto/create-client.dto';
+import { Type } from 'class-transformer';
 
 export class CreateResellerDto {
     @IsString()
@@ -20,7 +21,7 @@ export class CreateResellerDto {
     description: string;
 
     @IsString()
-    @IsNotEmpty()
+    @IsOptional()
     @ApiProperty({
         description: 'The logo of the reseller',
         example: 'https://example.com/logo.png'
@@ -28,20 +29,12 @@ export class CreateResellerDto {
     logo: string;
 
     @IsString()
-    @IsNotEmpty()
+    @IsOptional()
     @ApiProperty({
         description: 'The website of the reseller',
         example: 'https://example.com'
     })
     website: string;
-
-    @IsEnum(ResellerStatus)
-    @IsNotEmpty()
-    @ApiProperty({
-        description: 'The status of the reseller',
-        example: 'ACTIVE'
-    })
-    status: ResellerStatus;
 
     @IsString()
     @IsNotEmpty()
@@ -67,11 +60,12 @@ export class CreateResellerDto {
     })
     email: string;
 
-    @IsString()
+    @ValidateNested()
+    @Type(() => AddressDto)
     @IsNotEmpty()
     @ApiProperty({
-        description: 'The address of the reseller',
-        example: '123 Main Street, Anytown, USA'
+        description: 'The full address of the client including coordinates',
+        type: AddressDto
     })
-    address: string;
+    address: AddressDto;
 }

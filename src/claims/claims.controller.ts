@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@n
 import { ClaimsService } from './claims.service';
 import { CreateClaimDto } from './dto/create-claim.dto';
 import { UpdateClaimDto } from './dto/update-claim.dto';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiTags, ApiParam, ApiBody, ApiOkResponse, ApiCreatedResponse, ApiBadRequestResponse, ApiNotFoundResponse, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { Roles } from '../decorators/role.decorator';
 import { AccessLevel } from '../lib/enums/user.enums';
 import { RoleGuard } from '../guards/role.guard';
@@ -13,54 +13,295 @@ import { EnterpriseOnly } from '../decorators/enterprise-only.decorator';
 @Controller('claims')
 @UseGuards(AuthGuard, RoleGuard)
 @EnterpriseOnly('claims')
+@ApiUnauthorizedResponse({ description: 'Unauthorized access due to invalid credentials or missing token' })
 export class ClaimsController {
   constructor(private readonly claimsService: ClaimsService) { }
 
   @Post()
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
-  @ApiOperation({ summary: 'create a new claim' })
+  @ApiOperation({ 
+    summary: 'Create a new claim',
+    description: 'Creates a new claim with the provided data. Accessible by all authenticated users.'
+  })
+  @ApiBody({ type: CreateClaimDto })
+  @ApiCreatedResponse({ 
+    description: 'Claim created successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', example: 'Success' },
+        data: {
+          type: 'object',
+          properties: {
+            uid: { type: 'number', example: 1 },
+            title: { type: 'string', example: 'Expense Reimbursement' },
+            description: { type: 'string', example: 'Claim for business travel expenses' },
+            amount: { type: 'number', example: 1250.50 },
+            status: { type: 'string', example: 'PENDING' },
+            claimRef: { type: 'string', example: 'CLM123456' },
+            attachments: { 
+              type: 'array', 
+              items: { 
+                type: 'string', 
+                example: 'https://example.com/receipt.pdf' 
+              } 
+            },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+            isDeleted: { type: 'boolean', example: false },
+            owner: {
+              type: 'object',
+              properties: {
+                uid: { type: 'number', example: 1 },
+                name: { type: 'string', example: 'John Doe' }
+              }
+            }
+          }
+        }
+      }
+    }
+  })
+  @ApiBadRequestResponse({ description: 'Invalid input data provided' })
   create(@Body() createClaimDto: CreateClaimDto) {
     return this.claimsService.create(createClaimDto);
   }
 
   @Get()
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
-  @ApiOperation({ summary: 'get all claims' })
+  @ApiOperation({ 
+    summary: 'Get all claims',
+    description: 'Retrieves all claims. Accessible by all authenticated users.'
+  })
+  @ApiOkResponse({ 
+    description: 'List of all claims',
+    schema: {
+      type: 'object',
+      properties: {
+        data: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              uid: { type: 'number', example: 1 },
+              title: { type: 'string', example: 'Expense Reimbursement' },
+              description: { type: 'string', example: 'Claim for business travel expenses' },
+              amount: { type: 'number', example: 1250.50 },
+              status: { type: 'string', example: 'PENDING' },
+              claimRef: { type: 'string', example: 'CLM123456' },
+              attachments: { 
+                type: 'array', 
+                items: { 
+                  type: 'string', 
+                  example: 'https://example.com/receipt.pdf' 
+                } 
+              },
+              createdAt: { type: 'string', format: 'date-time' },
+              updatedAt: { type: 'string', format: 'date-time' },
+              isDeleted: { type: 'boolean', example: false }
+            }
+          }
+        },
+        message: { type: 'string', example: 'Success' },
+        meta: {
+          type: 'object',
+          properties: {
+            total: { type: 'number', example: 10 }
+          }
+        }
+      }
+    }
+  })
   findAll() {
     return this.claimsService.findAll();
   }
 
   @Get(':ref')
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
-  @ApiOperation({ summary: 'get a claim by reference code' })
+  @ApiOperation({ 
+    summary: 'Get a claim by reference code',
+    description: 'Retrieves a specific claim by its reference code. Accessible by all authenticated users.'
+  })
+  @ApiParam({ 
+    name: 'ref', 
+    description: 'Claim reference code',
+    type: 'number',
+    example: 1
+  })
+  @ApiOkResponse({ 
+    description: 'Claim found',
+    schema: {
+      type: 'object',
+      properties: {
+        data: {
+          type: 'object',
+          properties: {
+            uid: { type: 'number', example: 1 },
+            title: { type: 'string', example: 'Expense Reimbursement' },
+            description: { type: 'string', example: 'Claim for business travel expenses' },
+            amount: { type: 'number', example: 1250.50 },
+            status: { type: 'string', example: 'PENDING' },
+            claimRef: { type: 'string', example: 'CLM123456' },
+            attachments: { 
+              type: 'array', 
+              items: { 
+                type: 'string', 
+                example: 'https://example.com/receipt.pdf' 
+              } 
+            },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+            isDeleted: { type: 'boolean', example: false },
+            owner: {
+              type: 'object',
+              properties: {
+                uid: { type: 'number', example: 1 },
+                name: { type: 'string', example: 'John Doe' },
+                email: { type: 'string', example: 'john.doe@example.com' }
+              }
+            }
+          }
+        },
+        message: { type: 'string', example: 'Success' }
+      }
+    }
+  })
+  @ApiNotFoundResponse({ description: 'Claim not found' })
   findOne(@Param('ref') ref: number) {
     return this.claimsService.findOne(ref);
   }
 
   @Patch(':ref')
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
-  @ApiOperation({ summary: 'update a claim' })
+  @ApiOperation({ 
+    summary: 'Update a claim',
+    description: 'Updates a specific claim by its reference code. Accessible by all authenticated users.'
+  })
+  @ApiParam({ 
+    name: 'ref', 
+    description: 'Claim reference code',
+    type: 'number',
+    example: 1
+  })
+  @ApiBody({ type: UpdateClaimDto })
+  @ApiOkResponse({ 
+    description: 'Claim updated successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', example: 'Success' }
+      }
+    }
+  })
+  @ApiNotFoundResponse({ description: 'Claim not found' })
+  @ApiBadRequestResponse({ description: 'Invalid input data provided' })
   update(@Param('ref') ref: number, @Body() updateClaimDto: UpdateClaimDto) {
     return this.claimsService.update(ref, updateClaimDto);
   }
 
   @Patch('restore/:ref')
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
-  @ApiOperation({ summary: 'restore a deleted claim' })
+  @ApiOperation({ 
+    summary: 'Restore a deleted claim',
+    description: 'Restores a previously deleted claim. Accessible by all authenticated users.'
+  })
+  @ApiParam({ 
+    name: 'ref', 
+    description: 'Claim reference code',
+    type: 'number',
+    example: 1
+  })
+  @ApiOkResponse({ 
+    description: 'Claim restored successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', example: 'Success' }
+      }
+    }
+  })
+  @ApiNotFoundResponse({ description: 'Claim not found' })
   restore(@Param('ref') ref: number) {
     return this.claimsService.restore(ref);
   }
 
   @Get('for/:ref')
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
-  @ApiOperation({ summary: 'get claims by user reference code' })
+  @ApiOperation({ 
+    summary: 'Get claims by user reference code',
+    description: 'Retrieves all claims associated with a specific user. Accessible by all authenticated users.'
+  })
+  @ApiParam({ 
+    name: 'ref', 
+    description: 'User reference code',
+    type: 'number',
+    example: 1
+  })
+  @ApiOkResponse({ 
+    description: 'List of claims for the specified user',
+    schema: {
+      type: 'object',
+      properties: {
+        data: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              uid: { type: 'number', example: 1 },
+              title: { type: 'string', example: 'Expense Reimbursement' },
+              description: { type: 'string', example: 'Claim for business travel expenses' },
+              amount: { type: 'number', example: 1250.50 },
+              status: { type: 'string', example: 'PENDING' },
+              claimRef: { type: 'string', example: 'CLM123456' },
+              attachments: { 
+                type: 'array', 
+                items: { 
+                  type: 'string', 
+                  example: 'https://example.com/receipt.pdf' 
+                } 
+              },
+              createdAt: { type: 'string', format: 'date-time' },
+              updatedAt: { type: 'string', format: 'date-time' },
+              isDeleted: { type: 'boolean', example: false }
+            }
+          }
+        },
+        message: { type: 'string', example: 'Success' },
+        meta: {
+          type: 'object',
+          properties: {
+            total: { type: 'number', example: 5 }
+          }
+        }
+      }
+    }
+  })
+  @ApiNotFoundResponse({ description: 'User not found or has no claims' })
   claimsByUser(@Param('ref') ref: number) {
     return this.claimsService.claimsByUser(ref);
   }
 
   @Delete(':ref')
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
-  @ApiOperation({ summary: 'soft delete a claim' })
+  @ApiOperation({ 
+    summary: 'Soft delete a claim',
+    description: 'Performs a soft delete on a claim. Accessible by all authenticated users.'
+  })
+  @ApiParam({ 
+    name: 'ref', 
+    description: 'Claim reference code',
+    type: 'number',
+    example: 1
+  })
+  @ApiOkResponse({ 
+    description: 'Claim deleted successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', example: 'Success' }
+      }
+    }
+  })
+  @ApiNotFoundResponse({ description: 'Claim not found' })
   remove(@Param('ref') ref: number) {
     return this.claimsService.remove(ref);
   }

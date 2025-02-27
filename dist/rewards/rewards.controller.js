@@ -40,7 +40,38 @@ exports.RewardsController = RewardsController;
 __decorate([
     (0, common_1.Post)('award-xp'),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER),
-    (0, swagger_1.ApiOperation)({ summary: 'award XP to a user' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Award XP to a user',
+        description: 'Awards experience points to a specific user. Requires ADMIN or MANAGER role.'
+    }),
+    (0, swagger_1.ApiBody)({ type: create_reward_dto_1.CreateRewardDto }),
+    (0, swagger_1.ApiCreatedResponse)({
+        description: 'XP awarded successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Success' },
+                data: {
+                    type: 'object',
+                    properties: {
+                        uid: { type: 'number', example: 1 },
+                        xp: { type: 'number', example: 100 },
+                        reason: { type: 'string', example: 'Completed project ahead of schedule' },
+                        createdAt: { type: 'string', format: 'date-time' },
+                        user: {
+                            type: 'object',
+                            properties: {
+                                uid: { type: 'number', example: 1 },
+                                name: { type: 'string', example: 'John Doe' }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }),
+    (0, swagger_1.ApiBadRequestResponse)({ description: 'Invalid input data provided' }),
+    (0, swagger_1.ApiNotFoundResponse)({ description: 'User not found' }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_reward_dto_1.CreateRewardDto]),
@@ -49,7 +80,58 @@ __decorate([
 __decorate([
     (0, common_1.Get)('user-stats/:reference'),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.USER),
-    (0, swagger_1.ApiOperation)({ summary: 'get user rewards' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Get user rewards',
+        description: 'Retrieves all rewards and statistics for a specific user. Accessible by ADMIN, MANAGER, and the user themselves.'
+    }),
+    (0, swagger_1.ApiParam)({
+        name: 'reference',
+        description: 'User reference code',
+        type: 'number',
+        example: 1
+    }),
+    (0, swagger_1.ApiOkResponse)({
+        description: 'User rewards retrieved successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                data: {
+                    type: 'object',
+                    properties: {
+                        totalXP: { type: 'number', example: 1250 },
+                        level: { type: 'number', example: 5 },
+                        nextLevelXP: { type: 'number', example: 2000 },
+                        rewards: {
+                            type: 'array',
+                            items: {
+                                type: 'object',
+                                properties: {
+                                    uid: { type: 'number', example: 1 },
+                                    xp: { type: 'number', example: 100 },
+                                    reason: { type: 'string', example: 'Completed project ahead of schedule' },
+                                    createdAt: { type: 'string', format: 'date-time' }
+                                }
+                            }
+                        },
+                        badges: {
+                            type: 'array',
+                            items: {
+                                type: 'object',
+                                properties: {
+                                    uid: { type: 'number', example: 1 },
+                                    name: { type: 'string', example: 'Early Bird' },
+                                    description: { type: 'string', example: 'Completed 10 tasks before deadline' },
+                                    icon: { type: 'string', example: 'https://example.com/badges/early-bird.png' }
+                                }
+                            }
+                        }
+                    }
+                },
+                message: { type: 'string', example: 'Success' }
+            }
+        }
+    }),
+    (0, swagger_1.ApiNotFoundResponse)({ description: 'User not found' }),
     __param(0, (0, common_1.Param)('reference')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
@@ -58,7 +140,49 @@ __decorate([
 __decorate([
     (0, common_1.Get)('leaderboard'),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.USER),
-    (0, swagger_1.ApiOperation)({ summary: 'get rewards leaderboard' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Get rewards leaderboard',
+        description: 'Retrieves the leaderboard showing users ranked by their XP. Accessible by ADMIN, MANAGER, and USER roles.'
+    }),
+    (0, swagger_1.ApiOkResponse)({
+        description: 'Leaderboard retrieved successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                data: {
+                    type: 'array',
+                    items: {
+                        type: 'object',
+                        properties: {
+                            rank: { type: 'number', example: 1 },
+                            user: {
+                                type: 'object',
+                                properties: {
+                                    uid: { type: 'number', example: 1 },
+                                    name: { type: 'string', example: 'John Doe' },
+                                    avatar: { type: 'string', example: 'https://example.com/avatars/john.jpg' }
+                                }
+                            },
+                            totalXP: { type: 'number', example: 3500 },
+                            level: { type: 'number', example: 7 },
+                            badges: {
+                                type: 'array',
+                                items: {
+                                    type: 'object',
+                                    properties: {
+                                        uid: { type: 'number', example: 1 },
+                                        name: { type: 'string', example: 'Early Bird' },
+                                        icon: { type: 'string', example: 'https://example.com/badges/early-bird.png' }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                message: { type: 'string', example: 'Success' }
+            }
+        }
+    }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
@@ -68,6 +192,7 @@ exports.RewardsController = RewardsController = __decorate([
     (0, common_1.Controller)('rewards'),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, enterprise_only_decorator_1.EnterpriseOnly)('rewards'),
+    (0, swagger_1.ApiUnauthorizedResponse)({ description: 'Unauthorized access due to invalid credentials or missing token' }),
     __metadata("design:paramtypes", [rewards_service_1.RewardsService])
 ], RewardsController);
 //# sourceMappingURL=rewards.controller.js.map

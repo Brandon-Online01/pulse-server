@@ -74,8 +74,8 @@ __decorate([
     __metadata("design:type", Boolean)
 ], Reseller.prototype, "isDeleted", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ nullable: false, length: 100, type: 'varchar' }),
-    __metadata("design:type", String)
+    (0, typeorm_1.Column)({ nullable: false, type: 'json' }),
+    __metadata("design:type", Object)
 ], Reseller.prototype, "address", void 0);
 __decorate([
     (0, typeorm_1.OneToMany)(() => product_entity_1.Product, (product) => product?.reseller),

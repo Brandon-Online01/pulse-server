@@ -7,10 +7,20 @@ export declare class UpdateTrackingDto extends UpdateTrackingDto_base {
     heading?: number;
     altitude?: number;
     accuracy?: number;
+    altitudeAccuracy?: number;
+    timestamp?: number;
+    batteryLevel?: number;
+    batteryState?: number;
+    brand?: string;
+    manufacturer?: string;
+    modelID?: string;
+    modelName?: string;
+    osName?: string;
+    osVersion?: string;
+    network?: Record<string, any>;
     deviceId?: string;
     deviceName?: string;
     macAddress?: string;
-    batteryLevel?: number;
     signalStrength?: number;
     isActive?: boolean;
     status?: string;
@@ -18,8 +28,6 @@ export declare class UpdateTrackingDto extends UpdateTrackingDto_base {
     branch?: {
         uid: number;
     };
-    owner?: {
-        uid: number;
-    };
+    owner?: number;
 }
 export {};

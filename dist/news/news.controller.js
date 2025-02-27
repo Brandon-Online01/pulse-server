@@ -47,7 +47,40 @@ exports.NewsController = NewsController;
 __decorate([
     (0, common_1.Post)(),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
-    (0, swagger_1.ApiOperation)({ summary: 'create a new article' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Create a new article',
+        description: 'Creates a new news article with the provided details'
+    }),
+    (0, swagger_1.ApiBody)({ type: create_news_dto_1.CreateNewsDto }),
+    (0, swagger_1.ApiCreatedResponse)({
+        description: 'Article created successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                article: {
+                    type: 'object',
+                    properties: {
+                        uid: { type: 'number' },
+                        title: { type: 'string' },
+                        content: { type: 'string' },
+                        author: { type: 'string' },
+                        imageUrl: { type: 'string' },
+                        createdAt: { type: 'string', format: 'date-time' }
+                    }
+                },
+                message: { type: 'string', example: 'Success' }
+            }
+        }
+    }),
+    (0, swagger_1.ApiBadRequestResponse)({
+        description: 'Bad Request - Invalid data provided',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Error creating article' }
+            }
+        }
+    }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_news_dto_1.CreateNewsDto]),
@@ -56,7 +89,34 @@ __decorate([
 __decorate([
     (0, common_1.Get)(),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
-    (0, swagger_1.ApiOperation)({ summary: 'get all articles' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Get all articles',
+        description: 'Retrieves a list of all news articles'
+    }),
+    (0, swagger_1.ApiOkResponse)({
+        description: 'Articles retrieved successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                articles: {
+                    type: 'array',
+                    items: {
+                        type: 'object',
+                        properties: {
+                            uid: { type: 'number' },
+                            title: { type: 'string' },
+                            content: { type: 'string' },
+                            author: { type: 'string' },
+                            imageUrl: { type: 'string' },
+                            createdAt: { type: 'string', format: 'date-time' },
+                            updatedAt: { type: 'string', format: 'date-time' }
+                        }
+                    }
+                },
+                message: { type: 'string', example: 'Success' }
+            }
+        }
+    }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
@@ -64,7 +124,42 @@ __decorate([
 __decorate([
     (0, common_1.Get)(':ref'),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
-    (0, swagger_1.ApiOperation)({ summary: 'get an article by reference code' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Get an article by reference code',
+        description: 'Retrieves detailed information about a specific news article'
+    }),
+    (0, swagger_1.ApiParam)({ name: 'ref', description: 'Article reference code or ID', type: 'number' }),
+    (0, swagger_1.ApiOkResponse)({
+        description: 'Article retrieved successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                article: {
+                    type: 'object',
+                    properties: {
+                        uid: { type: 'number' },
+                        title: { type: 'string' },
+                        content: { type: 'string' },
+                        author: { type: 'string' },
+                        imageUrl: { type: 'string' },
+                        createdAt: { type: 'string', format: 'date-time' },
+                        updatedAt: { type: 'string', format: 'date-time' }
+                    }
+                },
+                message: { type: 'string', example: 'Success' }
+            }
+        }
+    }),
+    (0, swagger_1.ApiNotFoundResponse)({
+        description: 'Article not found',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Article not found' },
+                article: { type: 'null' }
+            }
+        }
+    }),
     __param(0, (0, common_1.Param)('ref')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
@@ -73,7 +168,39 @@ __decorate([
 __decorate([
     (0, common_1.Patch)(':ref'),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
-    (0, swagger_1.ApiOperation)({ summary: 'update an article by reference code' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Update an article by reference code',
+        description: 'Updates an existing news article with the provided information'
+    }),
+    (0, swagger_1.ApiParam)({ name: 'ref', description: 'Article reference code or ID', type: 'number' }),
+    (0, swagger_1.ApiBody)({ type: update_news_dto_1.UpdateNewsDto }),
+    (0, swagger_1.ApiOkResponse)({
+        description: 'Article updated successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Success' }
+            }
+        }
+    }),
+    (0, swagger_1.ApiNotFoundResponse)({
+        description: 'Article not found',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Article not found' }
+            }
+        }
+    }),
+    (0, swagger_1.ApiBadRequestResponse)({
+        description: 'Bad Request - Invalid data provided',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Error updating article' }
+            }
+        }
+    }),
     __param(0, (0, common_1.Param)('ref')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -83,7 +210,29 @@ __decorate([
 __decorate([
     (0, common_1.Delete)(':ref'),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER),
-    (0, swagger_1.ApiOperation)({ summary: 'soft delete an article by reference code' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Soft delete an article by reference code',
+        description: 'Marks a news article as deleted without removing it from the database'
+    }),
+    (0, swagger_1.ApiParam)({ name: 'ref', description: 'Article reference code or ID', type: 'number' }),
+    (0, swagger_1.ApiOkResponse)({
+        description: 'Article deleted successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Success' }
+            }
+        }
+    }),
+    (0, swagger_1.ApiNotFoundResponse)({
+        description: 'Article not found',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Article not found' }
+            }
+        }
+    }),
     __param(0, (0, common_1.Param)('ref')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
@@ -94,6 +243,7 @@ exports.NewsController = NewsController = __decorate([
     (0, common_1.Controller)('news'),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, enterprise_only_decorator_1.EnterpriseOnly)('news'),
+    (0, swagger_1.ApiUnauthorizedResponse)({ description: 'Unauthorized - Invalid credentials or missing token' }),
     __metadata("design:paramtypes", [news_service_1.NewsService])
 ], NewsController);
 //# sourceMappingURL=news.controller.js.map

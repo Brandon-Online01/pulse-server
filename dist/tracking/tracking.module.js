@@ -20,6 +20,7 @@ const geofence_controller_1 = require("./geofence.controller");
 const organisation_module_1 = require("../organisation/organisation.module");
 const organisation_entity_1 = require("../organisation/entities/organisation.entity");
 const user_entity_1 = require("../user/entities/user.entity");
+const jwt_1 = require("@nestjs/jwt");
 let TrackingModule = class TrackingModule {
 };
 exports.TrackingModule = TrackingModule;
@@ -29,6 +30,10 @@ exports.TrackingModule = TrackingModule = __decorate([
             licensing_module_1.LicensingModule,
             organisation_module_1.OrganisationModule,
             typeorm_1.TypeOrmModule.forFeature([tracking_entity_1.Tracking, geofence_entity_1.Geofence, geofence_event_entity_1.GeofenceEvent, organisation_entity_1.Organisation, user_entity_1.User]),
+            jwt_1.JwtModule.register({
+                secret: process.env.JWT_SECRET,
+                signOptions: { expiresIn: '8h' },
+            }),
         ],
         controllers: [tracking_controller_1.TrackingController, geofence_controller_1.GeofenceController],
         providers: [tracking_service_1.TrackingService, geofence_service_1.GeofenceService],

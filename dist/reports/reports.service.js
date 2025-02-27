@@ -39,8 +39,10 @@ const communication_service_1 = require("../communication/communication.service"
 const email_enums_1 = require("../lib/enums/email.enums");
 const tracking_entity_1 = require("../tracking/entities/tracking.entity");
 const live_user_report_service_1 = require("./live-user-report.service");
+const cache_manager_1 = require("@nestjs/cache-manager");
+const common_2 = require("@nestjs/common");
 let ReportsService = class ReportsService {
-    constructor(configService, eventEmitter, communicationService, checkInRepository, taskRepository, claimRepository, leadRepository, journalRepository, userRepository, attendanceRepository, achievementRepository, reportRepository, organisationRepository, branchRepository, clientRepository, trackingRepository, liveUserReportService) {
+    constructor(configService, eventEmitter, communicationService, checkInRepository, taskRepository, claimRepository, leadRepository, journalRepository, userRepository, attendanceRepository, achievementRepository, reportRepository, organisationRepository, branchRepository, clientRepository, trackingRepository, liveUserReportService, cacheManager) {
         this.configService = configService;
         this.eventEmitter = eventEmitter;
         this.communicationService = communicationService;
@@ -58,11 +60,23 @@ let ReportsService = class ReportsService {
         this.clientRepository = clientRepository;
         this.trackingRepository = trackingRepository;
         this.liveUserReportService = liveUserReportService;
+        this.cacheManager = cacheManager;
         this.WORK_HOURS_PER_DAY = 8;
         this.MINUTES_PER_HOUR = 60;
+        this.BRANCH_CACHE_PREFIX = 'branch';
+        this.CACHE_TTL = 3600;
         this.currencyLocale = this.configService.get('CURRENCY_LOCALE') || 'en-ZA';
         this.currencyCode = this.configService.get('CURRENCY_CODE') || 'ZAR';
         this.currencySymbol = this.configService.get('CURRENCY_SYMBOL') || 'R';
+    }
+    getBranchCacheKey(branchUid) {
+        return `${this.BRANCH_CACHE_PREFIX}:uid:${branchUid}`;
+    }
+    async getCachedBranch(branchUid) {
+        return this.cacheManager.get(this.getBranchCacheKey(branchUid));
+    }
+    async cacheBranch(branch) {
+        await this.cacheManager.set(this.getBranchCacheKey(branch.uid), branch, this.CACHE_TTL);
     }
     async generateReport(options) {
         const report = new report_entity_1.Report();
@@ -93,9 +107,15 @@ let ReportsService = class ReportsService {
             report.organisationRef = organisation.ref;
         }
         if (options.branchUid) {
-            const branch = await this.branchRepository.findOne({
-                where: { uid: options.branchUid },
-            });
+            let branch = await this.getCachedBranch(options.branchUid);
+            if (!branch) {
+                branch = await this.branchRepository.findOne({
+                    where: { uid: options.branchUid },
+                });
+                if (branch) {
+                    await this.cacheBranch(branch);
+                }
+            }
             if (!branch)
                 throw new common_1.NotFoundException('Branch not found');
             report.branch = branch;
@@ -203,9 +223,6 @@ let ReportsService = class ReportsService {
                     productivity,
                 }),
             };
-            this.sendDailyReportEmail(user, report).catch((error) => {
-                console.error('Failed to send daily report email:', error);
-            });
             return report;
         }
         catch (error) {
@@ -770,12 +787,6 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], ReportsService.prototype, "handleDailyReport", null);
-__decorate([
-    (0, event_emitter_1.OnEvent)('daily-report'),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
-    __metadata("design:returntype", Promise)
-], ReportsService.prototype, "generateDailyUserReport", null);
 exports.ReportsService = ReportsService = __decorate([
     (0, common_1.Injectable)(),
     __param(3, (0, typeorm_1.InjectRepository)(check_in_entity_1.CheckIn)),
@@ -791,6 +802,7 @@ exports.ReportsService = ReportsService = __decorate([
     __param(13, (0, typeorm_1.InjectRepository)(branch_entity_1.Branch)),
     __param(14, (0, typeorm_1.InjectRepository)(client_entity_1.Client)),
     __param(15, (0, typeorm_1.InjectRepository)(tracking_entity_1.Tracking)),
+    __param(17, (0, common_2.Inject)(cache_manager_1.CACHE_MANAGER)),
     __metadata("design:paramtypes", [config_1.ConfigService,
         eventemitter2_1.EventEmitter2,
         communication_service_1.CommunicationService,
@@ -807,6 +819,6 @@ exports.ReportsService = ReportsService = __decorate([
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
-        live_user_report_service_1.LiveUserReportService])
+        live_user_report_service_1.LiveUserReportService, Object])
 ], ReportsService);
 //# sourceMappingURL=reports.service.js.map

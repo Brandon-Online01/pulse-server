@@ -4,7 +4,6 @@ import { Organisation } from 'src/organisation/entities/organisation.entity';
 import { Branch } from 'src/branch/entities/branch.entity';
 import { Column, Entity, PrimaryGeneratedColumn, OneToMany, ManyToOne } from 'typeorm';
 
-
 @Entity('reseller')
 export class Reseller {
 	@PrimaryGeneratedColumn()
@@ -50,8 +49,14 @@ export class Reseller {
 	@Column({ nullable: false, default: false })
 	isDeleted: boolean;
 
-	@Column({ nullable: false, length: 100, type: 'varchar' })
-	address: string;
+	@Column({ nullable: false, type: 'json' })
+	address: {
+		street: string;
+		city: string;
+		state: string;
+		country: string;
+		postalCode: string;
+	};
 
 	// Relations
 	@OneToMany(() => Product, (product) => product?.reseller)

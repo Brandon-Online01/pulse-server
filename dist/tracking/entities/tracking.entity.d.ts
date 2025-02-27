@@ -16,4 +16,21 @@ export declare class Tracking {
     deletedBy: string;
     branch: Branch;
     organisation: Organisation;
+    accuracy: number;
+    altitude: number;
+    altitudeAccuracy: number;
+    heading: number;
+    speed: number;
+    timestamp: number;
+    batteryLevel: number;
+    batteryState: number;
+    brand: string;
+    manufacturer: string;
+    modelID: string;
+    modelName: string;
+    osName: string;
+    osVersion: string;
+    network: Record<string, any>;
+    addressDecodingError: string;
+    rawLocation: string;
 }

@@ -11,12 +11,17 @@ import { GeofenceController } from './geofence.controller';
 import { OrganisationModule } from '../organisation/organisation.module';
 import { Organisation } from '../organisation/entities/organisation.entity';
 import { User } from '../user/entities/user.entity';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
 	imports: [
 		LicensingModule,
 		OrganisationModule,
 		TypeOrmModule.forFeature([Tracking, Geofence, GeofenceEvent, Organisation, User]),
+		JwtModule.register({
+			secret: process.env.JWT_SECRET,
+			signOptions: { expiresIn: '8h' },
+		}),
 	],
 	controllers: [TrackingController, GeofenceController],
 	providers: [TrackingService, GeofenceService],

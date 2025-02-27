@@ -12,7 +12,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateResellerDto = void 0;
 const class_validator_1 = require("class-validator");
 const swagger_1 = require("@nestjs/swagger");
-const product_enums_1 = require("../../lib/enums/product.enums");
+const create_client_dto_1 = require("../../clients/dto/create-client.dto");
+const class_transformer_1 = require("class-transformer");
 class CreateResellerDto {
 }
 exports.CreateResellerDto = CreateResellerDto;
@@ -36,7 +37,7 @@ __decorate([
 ], CreateResellerDto.prototype, "description", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.IsOptional)(),
     (0, swagger_1.ApiProperty)({
         description: 'The logo of the reseller',
         example: 'https://example.com/logo.png'
@@ -45,22 +46,13 @@ __decorate([
 ], CreateResellerDto.prototype, "logo", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.IsOptional)(),
     (0, swagger_1.ApiProperty)({
         description: 'The website of the reseller',
         example: 'https://example.com'
     }),
     __metadata("design:type", String)
 ], CreateResellerDto.prototype, "website", void 0);
-__decorate([
-    (0, class_validator_1.IsEnum)(product_enums_1.ResellerStatus),
-    (0, class_validator_1.IsNotEmpty)(),
-    (0, swagger_1.ApiProperty)({
-        description: 'The status of the reseller',
-        example: 'ACTIVE'
-    }),
-    __metadata("design:type", String)
-], CreateResellerDto.prototype, "status", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
@@ -89,12 +81,13 @@ __decorate([
     __metadata("design:type", String)
 ], CreateResellerDto.prototype, "email", void 0);
 __decorate([
-    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.ValidateNested)(),
+    (0, class_transformer_1.Type)(() => create_client_dto_1.AddressDto),
     (0, class_validator_1.IsNotEmpty)(),
     (0, swagger_1.ApiProperty)({
-        description: 'The address of the reseller',
-        example: '123 Main Street, Anytown, USA'
+        description: 'The full address of the client including coordinates',
+        type: create_client_dto_1.AddressDto
     }),
-    __metadata("design:type", String)
+    __metadata("design:type", create_client_dto_1.AddressDto)
 ], CreateResellerDto.prototype, "address", void 0);
 //# sourceMappingURL=create-reseller.dto.js.map

@@ -17,9 +17,23 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("typeorm");
 const branch_entity_1 = require("./entities/branch.entity");
 const typeorm_2 = require("@nestjs/typeorm");
+const cache_manager_1 = require("@nestjs/cache-manager");
+const common_2 = require("@nestjs/common");
 let BranchService = class BranchService {
-    constructor(branchRepository) {
+    constructor(branchRepository, cacheManager) {
         this.branchRepository = branchRepository;
+        this.cacheManager = cacheManager;
+        this.CACHE_PREFIX = 'branch';
+        this.ALL_BRANCHES_CACHE_KEY = `${this.CACHE_PREFIX}:all`;
+    }
+    getBranchCacheKey(ref) {
+        return `${this.CACHE_PREFIX}:${ref}`;
+    }
+    async clearBranchCache(ref) {
+        await this.cacheManager.del(this.ALL_BRANCHES_CACHE_KEY);
+        if (ref) {
+            await this.cacheManager.del(this.getBranchCacheKey(ref));
+        }
     }
     async create(createBranchDto) {
         try {
@@ -27,6 +41,7 @@ let BranchService = class BranchService {
             if (!branch) {
                 throw new common_1.NotFoundException(process.env.CREATE_ERROR_MESSAGE);
             }
+            await this.clearBranchCache();
             return {
                 message: process.env.SUCCESS_MESSAGE,
             };
@@ -39,12 +54,20 @@ let BranchService = class BranchService {
     }
     async findAll() {
         try {
+            const cachedBranches = await this.cacheManager.get(this.ALL_BRANCHES_CACHE_KEY);
+            if (cachedBranches) {
+                return {
+                    branches: cachedBranches,
+                    message: process.env.SUCCESS_MESSAGE,
+                };
+            }
             const branches = await this.branchRepository.find({
                 where: { isDeleted: false },
             });
             if (!branches) {
                 throw new common_1.NotFoundException(process.env.SEARCH_ERROR_MESSAGE);
             }
+            await this.cacheManager.set(this.ALL_BRANCHES_CACHE_KEY, branches);
             return {
                 branches,
                 message: process.env.SUCCESS_MESSAGE,
@@ -59,6 +82,14 @@ let BranchService = class BranchService {
     }
     async findOne(ref) {
         try {
+            const cacheKey = this.getBranchCacheKey(ref);
+            const cachedBranch = await this.cacheManager.get(cacheKey);
+            if (cachedBranch) {
+                return {
+                    branch: cachedBranch,
+                    message: process.env.SUCCESS_MESSAGE,
+                };
+            }
             const branch = await this.branchRepository.findOne({
                 where: { ref, isDeleted: false },
                 relations: ['news', 'docs', 'assets', 'organisation', 'trackings', 'banners', 'routes', 'users'],
@@ -66,6 +97,7 @@ let BranchService = class BranchService {
             if (!branch) {
                 throw new common_1.NotFoundException(process.env.SEARCH_ERROR_MESSAGE);
             }
+            await this.cacheManager.set(cacheKey, branch);
             return {
                 branch,
                 message: process.env.SUCCESS_MESSAGE,
@@ -87,6 +119,7 @@ let BranchService = class BranchService {
             if (!updatedBranch) {
                 throw new common_1.NotFoundException(process.env.UPDATE_ERROR_MESSAGE);
             }
+            await this.clearBranchCache(ref);
             return {
                 message: process.env.SUCCESS_MESSAGE,
             };
@@ -106,6 +139,7 @@ let BranchService = class BranchService {
                 throw new common_1.NotFoundException(process.env.DELETE_ERROR_MESSAGE);
             }
             await this.branchRepository.update({ ref }, { isDeleted: true });
+            await this.clearBranchCache(ref);
             return {
                 message: process.env.SUCCESS_MESSAGE,
             };
@@ -121,6 +155,7 @@ exports.BranchService = BranchService;
 exports.BranchService = BranchService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_2.InjectRepository)(branch_entity_1.Branch)),
-    __metadata("design:paramtypes", [typeorm_1.Repository])
+    __param(1, (0, common_2.Inject)(cache_manager_1.CACHE_MANAGER)),
+    __metadata("design:paramtypes", [typeorm_1.Repository, Object])
 ], BranchService);
 //# sourceMappingURL=branch.service.js.map
