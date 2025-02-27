@@ -18,9 +18,23 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const organisation_entity_1 = require("./entities/organisation.entity");
 const status_enums_1 = require("../lib/enums/status.enums");
+const cache_manager_1 = require("@nestjs/cache-manager");
+const common_2 = require("@nestjs/common");
 let OrganisationService = class OrganisationService {
-    constructor(organisationRepository) {
+    constructor(organisationRepository, cacheManager) {
         this.organisationRepository = organisationRepository;
+        this.cacheManager = cacheManager;
+        this.CACHE_PREFIX = 'organisation';
+        this.ALL_ORGS_CACHE_KEY = `${this.CACHE_PREFIX}:all`;
+    }
+    getOrgCacheKey(ref) {
+        return `${this.CACHE_PREFIX}:${ref}`;
+    }
+    async clearOrganisationCache(ref) {
+        await this.cacheManager.del(this.ALL_ORGS_CACHE_KEY);
+        if (ref) {
+            await this.cacheManager.del(this.getOrgCacheKey(ref));
+        }
     }
     async create(createOrganisationDto) {
         try {
@@ -28,6 +42,7 @@ let OrganisationService = class OrganisationService {
             if (!organisation) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
+            await this.clearOrganisationCache();
             return {
                 message: process.env.SUCCESS_MESSAGE,
             };
@@ -40,6 +55,13 @@ let OrganisationService = class OrganisationService {
     }
     async findAll() {
         try {
+            const cachedOrganisations = await this.cacheManager.get(this.ALL_ORGS_CACHE_KEY);
+            if (cachedOrganisations) {
+                return {
+                    organisations: cachedOrganisations,
+                    message: process.env.SUCCESS_MESSAGE,
+                };
+            }
             const organisations = await this.organisationRepository.find({
                 where: { isDeleted: false },
                 relations: ['branches'],
@@ -56,6 +78,7 @@ let OrganisationService = class OrganisationService {
             if (!organisations) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
+            await this.cacheManager.set(this.ALL_ORGS_CACHE_KEY, organisations);
             return {
                 organisations,
                 message: process.env.SUCCESS_MESSAGE,
@@ -70,6 +93,14 @@ let OrganisationService = class OrganisationService {
     }
     async findOne(ref) {
         try {
+            const cacheKey = this.getOrgCacheKey(ref);
+            const cachedOrganisation = await this.cacheManager.get(cacheKey);
+            if (cachedOrganisation) {
+                return {
+                    organisation: cachedOrganisation,
+                    message: process.env.SUCCESS_MESSAGE,
+                };
+            }
             const organisation = await this.organisationRepository.findOne({
                 where: { ref, isDeleted: false },
                 relations: ['branches', 'settings', 'appearance', 'hours', 'assets', 'products', 'clients', 'users', 'resellers', 'banners', 'news', 'journals', 'docs', 'claims', 'attendances', 'reports', 'quotations', 'tasks', 'notifications', 'trackings', 'communicationLogs'],
@@ -80,6 +111,7 @@ let OrganisationService = class OrganisationService {
                     message: process.env.NOT_FOUND_MESSAGE,
                 };
             }
+            await this.cacheManager.set(cacheKey, organisation);
             return {
                 organisation,
                 message: process.env.SUCCESS_MESSAGE,
@@ -101,6 +133,7 @@ let OrganisationService = class OrganisationService {
             if (!updatedOrganisation) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
+            await this.clearOrganisationCache(ref);
             return {
                 message: process.env.SUCCESS_MESSAGE,
             };
@@ -120,6 +153,7 @@ let OrganisationService = class OrganisationService {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
             await this.organisationRepository.update({ ref }, { isDeleted: true });
+            await this.clearOrganisationCache(ref);
             return {
                 message: process.env.SUCCESS_MESSAGE,
             };
@@ -136,6 +170,7 @@ let OrganisationService = class OrganisationService {
                 isDeleted: false,
                 status: status_enums_1.GeneralStatus.ACTIVE,
             });
+            await this.clearOrganisationCache(ref);
             const response = {
                 message: process.env.SUCCESS_MESSAGE,
             };
@@ -153,6 +188,7 @@ exports.OrganisationService = OrganisationService;
 exports.OrganisationService = OrganisationService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(organisation_entity_1.Organisation)),
-    __metadata("design:paramtypes", [typeorm_2.Repository])
+    __param(1, (0, common_2.Inject)(cache_manager_1.CACHE_MANAGER)),
+    __metadata("design:paramtypes", [typeorm_2.Repository, Object])
 ], OrganisationService);
 //# sourceMappingURL=organisation.service.js.map

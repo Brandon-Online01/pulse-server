@@ -5,6 +5,9 @@ import { OrganisationSettings } from '../entities/organisation-settings.entity';
 import { CreateOrganisationSettingsDto } from '../dto/create-organisation-settings.dto';
 import { UpdateOrganisationSettingsDto } from '../dto/update-organisation-settings.dto';
 import { Organisation } from '../entities/organisation.entity';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
+import { Inject } from '@nestjs/common';
 
 @Injectable()
 export class OrganisationSettingsService {
@@ -13,7 +16,17 @@ export class OrganisationSettingsService {
         private settingsRepository: Repository<OrganisationSettings>,
         @InjectRepository(Organisation)
         private organisationRepository: Repository<Organisation>,
+        @Inject(CACHE_MANAGER) private cacheManager: Cache,
     ) {}
+
+    private readonly CACHE_PREFIX = 'org_settings';
+    private getSettingsCacheKey(orgRef: string): string {
+        return `${this.CACHE_PREFIX}:${orgRef}`;
+    }
+
+    private async clearSettingsCache(orgRef: string): Promise<void> {
+        await this.cacheManager.del(this.getSettingsCacheKey(orgRef));
+    }
 
     async create(orgRef: string, dto: CreateOrganisationSettingsDto): Promise<{ settings: OrganisationSettings | null; message: string }> {
         try {
@@ -42,6 +55,9 @@ export class OrganisationSettingsService {
             });
 
             const savedSettings = await this.settingsRepository.save(settings);
+            
+            // Clear cache after creating new settings
+            await this.clearSettingsCache(orgRef);
 
             return {
                 settings: savedSettings,
@@ -57,6 +73,18 @@ export class OrganisationSettingsService {
 
     async findOne(orgRef: string): Promise<{ settings: OrganisationSettings | null; message: string }> {
         try {
+            // Try to get from cache first
+            const cacheKey = this.getSettingsCacheKey(orgRef);
+            const cachedSettings = await this.cacheManager.get<OrganisationSettings>(cacheKey);
+            
+            if (cachedSettings) {
+                return {
+                    settings: cachedSettings,
+                    message: 'Settings retrieved successfully',
+                };
+            }
+
+            // If not in cache, fetch from database
             const settings = await this.settingsRepository.findOne({
                 where: { organisation: { ref: orgRef }, isDeleted: false },
                 relations: ['organisation'],
@@ -68,6 +96,9 @@ export class OrganisationSettingsService {
                     message: 'Settings not found',
                 };
             }
+
+            // Store in cache
+            await this.cacheManager.set(cacheKey, settings);
 
             return {
                 settings,
@@ -94,6 +125,9 @@ export class OrganisationSettingsService {
 
             const updatedSettings = this.settingsRepository.merge(settings, dto);
             const savedSettings = await this.settingsRepository.save(updatedSettings);
+            
+            // Clear cache after updating
+            await this.clearSettingsCache(orgRef);
 
             return {
                 settings: savedSettings,
@@ -110,7 +144,7 @@ export class OrganisationSettingsService {
     async remove(orgRef: string): Promise<{ success: boolean; message: string }> {
         try {
             const { settings } = await this.findOne(orgRef);
-
+            
             if (!settings) {
                 return {
                     success: false,
@@ -119,15 +153,18 @@ export class OrganisationSettingsService {
             }
 
             await this.settingsRepository.update(settings.uid, { isDeleted: true });
+            
+            // Clear cache after removing
+            await this.clearSettingsCache(orgRef);
 
             return {
                 success: true,
-                message: 'Settings deleted successfully',
+                message: 'Settings removed successfully',
             };
         } catch (error) {
             return {
                 success: false,
-                message: error?.message || 'Error deleting settings',
+                message: error?.message || 'Error removing settings',
             };
         }
     }

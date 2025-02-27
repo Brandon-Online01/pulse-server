@@ -6,6 +6,9 @@ import { CreateOrganisationAppearanceDto } from '../dto/create-organisation-appe
 import { UpdateOrganisationAppearanceDto } from '../dto/update-organisation-appearance.dto';
 import { Organisation } from '../entities/organisation.entity';
 import { v4 as uuidv4 } from 'uuid';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
+import { Inject } from '@nestjs/common';
 
 @Injectable()
 export class OrganisationAppearanceService {
@@ -14,7 +17,17 @@ export class OrganisationAppearanceService {
         private appearanceRepository: Repository<OrganisationAppearance>,
         @InjectRepository(Organisation)
         private organisationRepository: Repository<Organisation>,
+        @Inject(CACHE_MANAGER) private cacheManager: Cache,
     ) {}
+
+    private readonly CACHE_PREFIX = 'org_appearance';
+    private getAppearanceCacheKey(orgRef: string): string {
+        return `${this.CACHE_PREFIX}:${orgRef}`;
+    }
+
+    private async clearAppearanceCache(orgRef: string): Promise<void> {
+        await this.cacheManager.del(this.getAppearanceCacheKey(orgRef));
+    }
 
     async create(orgRef: string, dto: CreateOrganisationAppearanceDto): Promise<OrganisationAppearance> {
         const organisation = await this.organisationRepository.findOne({
@@ -31,10 +44,24 @@ export class OrganisationAppearanceService {
             organisation,
         });
 
-        return this.appearanceRepository.save(appearance);
+        const savedAppearance = await this.appearanceRepository.save(appearance);
+        
+        // Clear cache after creating
+        await this.clearAppearanceCache(orgRef);
+        
+        return savedAppearance;
     }
 
     async findOne(orgRef: string): Promise<OrganisationAppearance> {
+        // Try to get from cache first
+        const cacheKey = this.getAppearanceCacheKey(orgRef);
+        const cachedAppearance = await this.cacheManager.get<OrganisationAppearance>(cacheKey);
+        
+        if (cachedAppearance) {
+            return cachedAppearance;
+        }
+
+        // If not in cache, fetch from database
         const appearance = await this.appearanceRepository.findOne({
             where: { organisation: { ref: orgRef }, isDeleted: false },
             relations: ['organisation'],
@@ -44,6 +71,9 @@ export class OrganisationAppearanceService {
             throw new NotFoundException('Appearance settings not found');
         }
 
+        // Store in cache
+        await this.cacheManager.set(cacheKey, appearance);
+
         return appearance;
     }
 
@@ -51,11 +81,19 @@ export class OrganisationAppearanceService {
         const appearance = await this.findOne(orgRef);
         
         const updatedAppearance = this.appearanceRepository.merge(appearance, dto);
-        return this.appearanceRepository.save(updatedAppearance);
+        const savedAppearance = await this.appearanceRepository.save(updatedAppearance);
+        
+        // Clear cache after updating
+        await this.clearAppearanceCache(orgRef);
+        
+        return savedAppearance;
     }
 
     async remove(orgRef: string): Promise<void> {
         const appearance = await this.findOne(orgRef);
         await this.appearanceRepository.update(appearance.ref, { isDeleted: true });
+        
+        // Clear cache after removing
+        await this.clearAppearanceCache(orgRef);
     }
 } 

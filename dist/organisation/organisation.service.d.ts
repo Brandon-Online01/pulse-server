@@ -2,9 +2,15 @@ import { CreateOrganisationDto } from './dto/create-organisation.dto';
 import { UpdateOrganisationDto } from './dto/update-organisation.dto';
 import { Repository } from 'typeorm';
 import { Organisation } from './entities/organisation.entity';
+import { Cache } from 'cache-manager';
 export declare class OrganisationService {
     private organisationRepository;
-    constructor(organisationRepository: Repository<Organisation>);
+    private cacheManager;
+    constructor(organisationRepository: Repository<Organisation>, cacheManager: Cache);
+    private readonly CACHE_PREFIX;
+    private readonly ALL_ORGS_CACHE_KEY;
+    private getOrgCacheKey;
+    private clearOrganisationCache;
     create(createOrganisationDto: CreateOrganisationDto): Promise<{
         message: string;
     }>;
