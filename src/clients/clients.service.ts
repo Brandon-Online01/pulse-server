@@ -293,11 +293,20 @@ export class ClientsService {
 			};
 		}
 	}
-
 	async restore(ref: number, user?: any): Promise<{ message: string }> {
 		try {
-			const existingClient = await this.findOne(ref, user);
-			if (!existingClient.client) {
+			// Find the deleted client specifically
+			const existingClient = await this.clientsRepository.findOne({
+				where: {
+					uid: ref,
+					isDeleted: true,
+					...(user?.organisationRef && { organisation: { uid: user.organisationRef } }),
+					...(user?.branch?.uid && { branch: { uid: user.branch.uid } }),
+				},
+				relations: ['branch', 'organisation'],
+			});
+
+			if (!existingClient) {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
@@ -310,7 +319,7 @@ export class ClientsService {
 			);
 
 			// Invalidate cache after restoration
-			await this.invalidateClientCache(existingClient.client);
+			await this.invalidateClientCache(existingClient);
 
 			return {
 				message: process.env.SUCCESS_MESSAGE,
