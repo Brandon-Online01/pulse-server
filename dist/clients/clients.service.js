@@ -94,31 +94,28 @@ let ClientsService = class ClientsService {
             if (cachedClients) {
                 return cachedClients;
             }
-            const queryBuilder = this.clientsRepository
-                .createQueryBuilder('client')
-                .leftJoinAndSelect('client.branch', 'branch')
-                .leftJoinAndSelect('client.organisation', 'organisation')
-                .where('client.isDeleted = :isDeleted', { isDeleted: false });
+            const where = { isDeleted: false };
             if (user?.organisationRef) {
-                queryBuilder.andWhere('organisation.uid = :orgId', { orgId: user.organisationRef });
+                where.organisation = { uid: user.organisationRef };
             }
             if (user?.branch?.uid) {
-                queryBuilder.andWhere('branch.uid = :branchId', { branchId: user.branch.uid });
+                where.branch = { uid: user.branch.uid };
             }
             if (filters?.status) {
-                queryBuilder.andWhere('client.status = :status', { status: filters.status });
+                where.status = filters.status;
             }
             if (filters?.category) {
-                queryBuilder.andWhere('client.category = :category', { category: filters.category });
+                where.category = filters.category;
             }
             if (filters?.search) {
-                queryBuilder.andWhere('(client.name ILIKE :search OR client.email ILIKE :search OR client.phone ILIKE :search)', { search: `%${filters.search}%` });
+                return this.clientsBySearchTerm(filters.search, page, limit, user);
             }
-            queryBuilder
-                .skip((page - 1) * limit)
-                .take(limit)
-                .orderBy('client.createdAt', 'DESC');
-            const [clients, total] = await queryBuilder.getManyAndCount();
+            const [clients, total] = await this.clientsRepository.findAndCount({
+                where,
+                skip: (page - 1) * limit,
+                take: limit,
+                order: { createdAt: 'DESC' },
+            });
             if (!clients) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
@@ -158,19 +155,20 @@ let ClientsService = class ClientsService {
                     message: process.env.SUCCESS_MESSAGE,
                 };
             }
-            const queryBuilder = this.clientsRepository
-                .createQueryBuilder('client')
-                .leftJoinAndSelect('client.branch', 'branch')
-                .leftJoinAndSelect('client.organisation', 'organisation')
-                .where('client.uid = :ref', { ref })
-                .andWhere('client.isDeleted = :isDeleted', { isDeleted: false });
+            const where = {
+                uid: ref,
+                isDeleted: false,
+            };
             if (user?.organisationRef) {
-                queryBuilder.andWhere('organisation.uid = :orgId', { orgId: user.organisationRef });
+                where.organisation = { uid: user.organisationRef };
             }
             if (user?.branch?.uid) {
-                queryBuilder.andWhere('branch.uid = :branchId', { branchId: user.branch.uid });
+                where.branch = { uid: user.branch.uid };
             }
-            const client = await queryBuilder.getOne();
+            const client = await this.clientsRepository.findOne({
+                where,
+                relations: ['branch', 'organisation', 'assignedSalesRep', 'quotations', 'checkIns'],
+            });
             if (!client) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
@@ -251,23 +249,24 @@ let ClientsService = class ClientsService {
             if (cachedResults) {
                 return cachedResults;
             }
-            const queryBuilder = this.clientsRepository
-                .createQueryBuilder('client')
-                .leftJoinAndSelect('client.branch', 'branch')
-                .leftJoinAndSelect('client.organisation', 'organisation')
-                .where('client.isDeleted = :isDeleted', { isDeleted: false });
+            const where = { isDeleted: false };
             if (user?.organisationRef) {
-                queryBuilder.andWhere('organisation.uid = :orgId', { orgId: user.organisationRef });
+                where.organisation = { uid: user.organisationRef };
             }
             if (user?.branch?.uid) {
-                queryBuilder.andWhere('branch.uid = :branchId', { branchId: user.branch.uid });
+                where.branch = { uid: user.branch.uid };
             }
-            queryBuilder.andWhere('(client.name ILIKE :search OR client.email ILIKE :search OR client.phone ILIKE :search)', { search: `%${searchTerm?.toLowerCase()}%` });
-            queryBuilder
-                .skip((page - 1) * limit)
-                .take(limit)
-                .orderBy('client.createdAt', 'DESC');
-            const [clients, total] = await queryBuilder.getManyAndCount();
+            const [clients, total] = await this.clientsRepository.findAndCount({
+                where: [
+                    { ...where, name: (0, typeorm_2.ILike)(`%${searchTerm?.toLowerCase()}%`) },
+                    { ...where, email: (0, typeorm_2.ILike)(`%${searchTerm?.toLowerCase()}%`) },
+                    { ...where, phone: (0, typeorm_2.ILike)(`%${searchTerm?.toLowerCase()}%`) },
+                ],
+                relations: ['branch', 'organisation'],
+                skip: (page - 1) * limit,
+                take: limit,
+                order: { createdAt: 'DESC' },
+            });
             if (!clients) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }

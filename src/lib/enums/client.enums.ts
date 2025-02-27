@@ -1,4 +1,4 @@
-export enum ClientCategory {
+export enum ClientType {
     HARDWARE = 'HARDWARE',
     HEALTHCARE = 'HEALTHCARE',
     FINANCE = 'FINANCE',
@@ -7,5 +7,20 @@ export enum ClientCategory {
     TECHNOLOGY = 'TECHNOLOGY',
     MANUFACTURING = 'MANUFACTURING',
     SERVICES = 'SERVICES',
-    OTHER = 'OTHER'
-} 
+    STANDARD = 'standard',
+    PREMIUM = 'premium',
+    ENTERPRISE = 'enterprise',
+    VIP = 'vip',
+    WHOLESALE = 'wholesale',
+    CONTRACT = 'contract',
+    SOFTWARE = 'software',
+    SERVICE = 'service',
+    OTHER = 'other'
+}
+
+export enum ClientStatus {
+    ACTIVE = 'active',
+    INACTIVE = 'inactive',
+    PENDING = 'pending',
+    CANCELLED = 'cancelled'
+}

@@ -86,12 +86,12 @@ export class Route {
   isDeleted: boolean;
 
   // Relations
-  @ManyToOne(() => Task, task => task.routes)
+  @ManyToOne(() => Task, task => task?.routes)
   task: Task;
 
-  @ManyToOne(() => User, user => user.routes)
+  @ManyToOne(() => User, user => user?.routes)
   assignee: User;
 
-  @ManyToOne(() => Branch, branch => branch.routes)
+  @ManyToOne(() => Branch, branch => branch?.routes)
   branch: Branch;
 } 

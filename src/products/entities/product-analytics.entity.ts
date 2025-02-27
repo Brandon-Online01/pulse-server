@@ -87,4 +87,4 @@ export class ProductAnalytics {
 
     @UpdateDateColumn()
     updatedAt: Date;
-} 
+}

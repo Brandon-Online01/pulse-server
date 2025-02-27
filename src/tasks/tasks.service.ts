@@ -701,6 +701,30 @@ export class TasksService {
 				await this.subtaskRepository.save(subtasks);
 			}
 
+			// Emit task.updated event
+			this.eventEmitter.emit('task.updated', {
+				task: savedTask,
+			});
+
+			// Check if specific fields were updated to emit more specific events
+			if (updateTaskDto.assignees && JSON.stringify(task.assignees) !== JSON.stringify(taskData.assignees)) {
+				this.eventEmitter.emit('task.assigneeChanged', {
+					task: savedTask,
+				});
+			}
+
+			if (updateTaskDto.client && JSON.stringify(task.clients) !== JSON.stringify(taskData.clients)) {
+				this.eventEmitter.emit('task.clientChanged', {
+					task: savedTask,
+				});
+			}
+
+			if (updateTaskDto.deadline && task.deadline?.getTime() !== new Date(updateTaskDto.deadline).getTime()) {
+				this.eventEmitter.emit('task.deadlineChanged', {
+					task: savedTask,
+				});
+			}
+
 			// Clear all task-related caches
 			await this.clearTaskCache(ref);
 

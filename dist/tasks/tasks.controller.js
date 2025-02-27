@@ -112,7 +112,7 @@ let TasksController = class TasksController {
     }
     async getOptimizedRoutes(dateStr) {
         const date = dateStr ? new Date(dateStr) : new Date();
-        const routes = await this.taskRouteService.planRoutes(date);
+        const routes = await this.taskRouteService.getRoutes(date);
         return routes.map(route => ({
             userId: route.assignee.uid,
             stops: route.waypoints.map(wp => ({
@@ -127,6 +127,11 @@ let TasksController = class TasksController {
             estimatedDuration: route.totalDuration,
             totalDistance: route.totalDistance
         }));
+    }
+    async calculateOptimizedRoutes(dateStr) {
+        const date = dateStr ? new Date(dateStr) : new Date();
+        await this.taskRouteService.planRoutes(date);
+        return { message: 'Routes calculated successfully' };
     }
 };
 exports.TasksController = TasksController;
@@ -239,6 +244,15 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], TasksController.prototype, "getOptimizedRoutes", null);
+__decorate([
+    (0, common_1.Post)('routes/calculate'),
+    (0, swagger_1.ApiOperation)({ summary: 'Calculate optimized routes for tasks on a specific date' }),
+    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER),
+    __param(0, (0, common_1.Query)('date')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], TasksController.prototype, "calculateOptimizedRoutes", null);
 exports.TasksController = TasksController = __decorate([
     (0, swagger_1.ApiTags)('tasks'),
     (0, common_1.Controller)('tasks'),

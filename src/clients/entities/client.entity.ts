@@ -7,19 +7,7 @@ import { Column, Entity, OneToMany, ManyToOne, PrimaryGeneratedColumn } from 'ty
 import { CheckIn } from '../../check-ins/entities/check-in.entity';
 import { Organisation } from 'src/organisation/entities/organisation.entity';
 import { Branch } from 'src/branch/entities/branch.entity';
-
-export enum CustomerType {
-    STANDARD = 'standard',
-    PREMIUM = 'premium',
-    ENTERPRISE = 'enterprise',
-    VIP = 'vip',
-    WHOLESALE = 'wholesale',
-    CONTRACT = 'contract',
-    HARDWARE = 'hardware',
-    SOFTWARE = 'software',
-    SERVICE = 'service',
-    OTHER = 'other'
-}
+import { ClientType } from 'src/lib/enums/client.enums';
 
 @Entity('client')
 export class Client {
@@ -60,18 +48,7 @@ export class Client {
         state: string;
         country: string;
         postalCode: string;
-        latitude: number;
-        longitude: number;
     };
-
-    @Column({ nullable: true })
-    city: string;
-
-    @Column({ nullable: true })
-    country: string;
-
-    @Column({ nullable: true })
-    postalCode: string;
 
     @Column({ type: 'timestamp', nullable: false, default: () => 'CURRENT_TIMESTAMP' })
     createdAt: Date;
@@ -104,10 +81,9 @@ export class Client {
     @OneToMany(() => CheckIn, (checkIn) => checkIn?.client, { nullable: true })
     checkIns: CheckIn[];
 
-    @Column({ type: 'enum', enum: CustomerType, default: CustomerType.STANDARD })
-    type: CustomerType;
+    @Column({ type: 'enum', enum: ClientType, default: ClientType.STANDARD })
+    type: ClientType;
 
-    // Relations
     @ManyToOne(() => Organisation, (organisation) => organisation?.clients, { nullable: true })
     organisation: Organisation;
 

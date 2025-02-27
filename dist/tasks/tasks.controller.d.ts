@@ -49,4 +49,7 @@ export declare class TasksController {
         message: string;
     }>;
     getOptimizedRoutes(dateStr?: string): Promise<OptimizedRoute[]>;
+    calculateOptimizedRoutes(dateStr?: string): Promise<{
+        message: string;
+    }>;
 }

@@ -3,7 +3,7 @@ import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Client } from './entities/client.entity';
-import { Repository, DeepPartial } from 'typeorm';
+import { Repository, DeepPartial, FindOptionsWhere, ILike } from 'typeorm';
 import { GeneralStatus } from '../lib/enums/status.enums';
 import { PaginatedResponse } from '../lib/interfaces/product.interfaces';
 import { Cache } from 'cache-manager';
@@ -135,43 +135,38 @@ export class ClientsService {
 				return cachedClients;
 			}
 
-			const queryBuilder = this.clientsRepository
-				.createQueryBuilder('client')
-				.leftJoinAndSelect('client.branch', 'branch')
-				.leftJoinAndSelect('client.organisation', 'organisation')
-				.where('client.isDeleted = :isDeleted', { isDeleted: false });
+			// Create find options with relationships
+			const where: FindOptionsWhere<Client> = { isDeleted: false };
 
 			// Security: Always filter by organization and branch
 			if (user?.organisationRef) {
-				queryBuilder.andWhere('organisation.uid = :orgId', { orgId: user.organisationRef });
+				where.organisation = { uid: user.organisationRef };
 			}
 
 			if (user?.branch?.uid) {
-				queryBuilder.andWhere('branch.uid = :branchId', { branchId: user.branch.uid });
+				where.branch = { uid: user.branch.uid };
 			}
 
 			if (filters?.status) {
-				queryBuilder.andWhere('client.status = :status', { status: filters.status });
+				where.status = filters.status;
 			}
 
 			if (filters?.category) {
-				queryBuilder.andWhere('client.category = :category', { category: filters.category });
+				where.category = filters.category;
 			}
 
 			if (filters?.search) {
-				queryBuilder.andWhere(
-					'(client.name ILIKE :search OR client.email ILIKE :search OR client.phone ILIKE :search)',
-					{ search: `%${filters.search}%` },
-				);
+				// Handle search across multiple fields
+				return this.clientsBySearchTerm(filters.search, page, limit, user);
 			}
 
-			// Add pagination
-			queryBuilder
-				.skip((page - 1) * limit)
-				.take(limit)
-				.orderBy('client.createdAt', 'DESC');
-
-			const [clients, total] = await queryBuilder.getManyAndCount();
+			// Find clients with pagination
+			const [clients, total] = await this.clientsRepository.findAndCount({
+				where,
+				skip: (page - 1) * limit,
+				take: limit,
+				order: { createdAt: 'DESC' },
+			});
 
 			if (!clients) {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
@@ -217,23 +212,25 @@ export class ClientsService {
 				};
 			}
 
-			const queryBuilder = this.clientsRepository
-				.createQueryBuilder('client')
-				.leftJoinAndSelect('client.branch', 'branch')
-				.leftJoinAndSelect('client.organisation', 'organisation')
-				.where('client.uid = :ref', { ref })
-				.andWhere('client.isDeleted = :isDeleted', { isDeleted: false });
+			// Create where conditions
+			const where: FindOptionsWhere<Client> = {
+				uid: ref,
+				isDeleted: false,
+			};
 
 			// Security: Always filter by organization and branch
 			if (user?.organisationRef) {
-				queryBuilder.andWhere('organisation.uid = :orgId', { orgId: user.organisationRef });
+				where.organisation = { uid: user.organisationRef };
 			}
 
 			if (user?.branch?.uid) {
-				queryBuilder.andWhere('branch.uid = :branchId', { branchId: user.branch.uid });
+				where.branch = { uid: user.branch.uid };
 			}
 
-			const client = await queryBuilder.getOne();
+			const client = await this.clientsRepository.findOne({
+				where,
+				relations: ['branch', 'organisation', 'assignedSalesRep', 'quotations', 'checkIns'],
+			});
 
 			if (!client) {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
@@ -339,32 +336,30 @@ export class ClientsService {
 				return cachedResults;
 			}
 
-			const queryBuilder = this.clientsRepository
-				.createQueryBuilder('client')
-				.leftJoinAndSelect('client.branch', 'branch')
-				.leftJoinAndSelect('client.organisation', 'organisation')
-				.where('client.isDeleted = :isDeleted', { isDeleted: false });
+			// Build where conditions for search
+			const where: FindOptionsWhere<Client> = { isDeleted: false };
 
 			// Security: Always filter by organization and branch
 			if (user?.organisationRef) {
-				queryBuilder.andWhere('organisation.uid = :orgId', { orgId: user.organisationRef });
+				where.organisation = { uid: user.organisationRef };
 			}
 
 			if (user?.branch?.uid) {
-				queryBuilder.andWhere('branch.uid = :branchId', { branchId: user.branch.uid });
+				where.branch = { uid: user.branch.uid };
 			}
 
-			queryBuilder.andWhere(
-				'(client.name ILIKE :search OR client.email ILIKE :search OR client.phone ILIKE :search)',
-				{ search: `%${searchTerm?.toLowerCase()}%` },
-			);
-
-			queryBuilder
-				.skip((page - 1) * limit)
-				.take(limit)
-				.orderBy('client.createdAt', 'DESC');
-
-			const [clients, total] = await queryBuilder.getManyAndCount();
+			// Find clients with search criteria across multiple fields
+			const [clients, total] = await this.clientsRepository.findAndCount({
+				where: [
+					{ ...where, name: ILike(`%${searchTerm?.toLowerCase()}%`) },
+					{ ...where, email: ILike(`%${searchTerm?.toLowerCase()}%`) },
+					{ ...where, phone: ILike(`%${searchTerm?.toLowerCase()}%`) },
+				],
+				relations: ['branch', 'organisation'],
+				skip: (page - 1) * limit,
+				take: limit,
+				order: { createdAt: 'DESC' },
+			});
 
 			if (!clients) {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);

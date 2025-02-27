@@ -40,7 +40,7 @@ let BranchService = class BranchService {
     async findAll() {
         try {
             const branches = await this.branchRepository.find({
-                where: { isDeleted: false }
+                where: { isDeleted: false },
             });
             if (!branches) {
                 throw new common_1.NotFoundException(process.env.SEARCH_ERROR_MESSAGE);
@@ -53,7 +53,7 @@ let BranchService = class BranchService {
         catch (error) {
             return {
                 message: error?.message,
-                branches: null
+                branches: null,
             };
         }
     }
@@ -61,18 +61,7 @@ let BranchService = class BranchService {
         try {
             const branch = await this.branchRepository.findOne({
                 where: { ref, isDeleted: false },
-                relations: [
-                    'organisation',
-                    'trackings',
-                    'tasks',
-                    'news',
-                    'leads',
-                    'journals',
-                    'docs',
-                    'claims',
-                    'attendances',
-                    'assets'
-                ]
+                relations: ['news', 'docs', 'assets'],
             });
             if (!branch) {
                 throw new common_1.NotFoundException(process.env.SEARCH_ERROR_MESSAGE);
@@ -85,7 +74,7 @@ let BranchService = class BranchService {
         catch (error) {
             return {
                 message: error?.message,
-                branch: null
+                branch: null,
             };
         }
     }
@@ -93,7 +82,7 @@ let BranchService = class BranchService {
         try {
             await this.branchRepository.update({ ref }, updateBranchDto);
             const updatedBranch = await this.branchRepository.findOne({
-                where: { ref, isDeleted: false }
+                where: { ref, isDeleted: false },
             });
             if (!updatedBranch) {
                 throw new common_1.NotFoundException(process.env.UPDATE_ERROR_MESSAGE);
@@ -111,7 +100,7 @@ let BranchService = class BranchService {
     async remove(ref) {
         try {
             const branch = await this.branchRepository.findOne({
-                where: { ref, isDeleted: false }
+                where: { ref, isDeleted: false },
             });
             if (!branch) {
                 throw new common_1.NotFoundException(process.env.DELETE_ERROR_MESSAGE);

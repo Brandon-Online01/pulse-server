@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Client = exports.CustomerType = void 0;
+exports.Client = void 0;
 const status_enums_1 = require("../../lib/enums/status.enums");
 const lead_entity_1 = require("../../leads/entities/lead.entity");
 const user_entity_1 = require("../../user/entities/user.entity");
@@ -19,19 +19,7 @@ const typeorm_1 = require("typeorm");
 const check_in_entity_1 = require("../../check-ins/entities/check-in.entity");
 const organisation_entity_1 = require("../../organisation/entities/organisation.entity");
 const branch_entity_1 = require("../../branch/entities/branch.entity");
-var CustomerType;
-(function (CustomerType) {
-    CustomerType["STANDARD"] = "standard";
-    CustomerType["PREMIUM"] = "premium";
-    CustomerType["ENTERPRISE"] = "enterprise";
-    CustomerType["VIP"] = "vip";
-    CustomerType["WHOLESALE"] = "wholesale";
-    CustomerType["CONTRACT"] = "contract";
-    CustomerType["HARDWARE"] = "hardware";
-    CustomerType["SOFTWARE"] = "software";
-    CustomerType["SERVICE"] = "service";
-    CustomerType["OTHER"] = "other";
-})(CustomerType || (exports.CustomerType = CustomerType = {}));
+const client_enums_1 = require("../../lib/enums/client.enums");
 let Client = class Client {
 };
 exports.Client = Client;
@@ -80,18 +68,6 @@ __decorate([
     __metadata("design:type", Object)
 ], Client.prototype, "address", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
-    __metadata("design:type", String)
-], Client.prototype, "city", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
-    __metadata("design:type", String)
-], Client.prototype, "country", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
-    __metadata("design:type", String)
-], Client.prototype, "postalCode", void 0);
-__decorate([
     (0, typeorm_1.Column)({ type: 'timestamp', nullable: false, default: () => 'CURRENT_TIMESTAMP' }),
     __metadata("design:type", Date)
 ], Client.prototype, "createdAt", void 0);
@@ -132,7 +108,7 @@ __decorate([
     __metadata("design:type", Array)
 ], Client.prototype, "checkIns", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'enum', enum: CustomerType, default: CustomerType.STANDARD }),
+    (0, typeorm_1.Column)({ type: 'enum', enum: client_enums_1.ClientType, default: client_enums_1.ClientType.STANDARD }),
     __metadata("design:type", String)
 ], Client.prototype, "type", void 0);
 __decorate([

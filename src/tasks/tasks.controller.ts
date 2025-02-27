@@ -168,7 +168,7 @@ export class TasksController {
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER)
   async getOptimizedRoutes(@Query('date') dateStr?: string): Promise<OptimizedRoute[]> { 
     const date = dateStr ? new Date(dateStr) : new Date();
-    const routes = await this.taskRouteService.planRoutes(date);
+    const routes = await this.taskRouteService.getRoutes(date);
     return routes.map(route => ({
       userId: route.assignee.uid,
       stops: route.waypoints.map(wp => ({
@@ -183,5 +183,14 @@ export class TasksController {
       estimatedDuration: route.totalDuration,
       totalDistance: route.totalDistance
     }));
+  }
+
+  @Post('routes/calculate')
+  @ApiOperation({ summary: 'Calculate optimized routes for tasks on a specific date' })
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER)
+  async calculateOptimizedRoutes(@Query('date') dateStr?: string): Promise<{ message: string }> { 
+    const date = dateStr ? new Date(dateStr) : new Date();
+    await this.taskRouteService.planRoutes(date);
+    return { message: 'Routes calculated successfully' };
   }
 }

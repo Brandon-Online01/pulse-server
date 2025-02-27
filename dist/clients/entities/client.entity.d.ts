@@ -6,18 +6,7 @@ import { Task } from '../../tasks/entities/task.entity';
 import { CheckIn } from '../../check-ins/entities/check-in.entity';
 import { Organisation } from 'src/organisation/entities/organisation.entity';
 import { Branch } from 'src/branch/entities/branch.entity';
-export declare enum CustomerType {
-    STANDARD = "standard",
-    PREMIUM = "premium",
-    ENTERPRISE = "enterprise",
-    VIP = "vip",
-    WHOLESALE = "wholesale",
-    CONTRACT = "contract",
-    HARDWARE = "hardware",
-    SOFTWARE = "software",
-    SERVICE = "service",
-    OTHER = "other"
-}
+import { ClientType } from 'src/lib/enums/client.enums';
 export declare class Client {
     uid: number;
     name: string;
@@ -35,12 +24,7 @@ export declare class Client {
         state: string;
         country: string;
         postalCode: string;
-        latitude: number;
-        longitude: number;
     };
-    city: string;
-    country: string;
-    postalCode: string;
     createdAt: Date;
     updatedAt: Date;
     status: GeneralStatus;
@@ -51,7 +35,7 @@ export declare class Client {
     quotations: Quotation[];
     tasks: Task[];
     checkIns: CheckIn[];
-    type: CustomerType;
+    type: ClientType;
     organisation: Organisation;
     branch: Branch;
 }

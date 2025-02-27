@@ -1,7 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Storage } from '@google-cloud/storage';
 import { ConfigService } from '@nestjs/config';
-import { getStorageConfig } from '../../config/storage.config';
 import { extname } from 'path';
 import * as crypto from 'crypto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -27,52 +26,14 @@ export interface UploadResult {
 export class StorageService {
 	private storage: Storage;
 	private bucket: string;
-	private readonly logger = new Logger(StorageService.name);
 
 	constructor(
 		private readonly configService: ConfigService,
 		@InjectRepository(Doc)
 		private readonly docsRepository: Repository<Doc>,
-	) {
-		const projectId = this.configService.get<string>('GOOGLE_CLOUD_PROJECT_ID');
-		const bucketName = this.configService.get<string>('GOOGLE_CLOUD_PROJECT_BUCKET');
-
-		this.logger.log(`Initializing Storage Service with project: ${projectId} and bucket: ${bucketName}`);
-
-		this.storage = new Storage({
-			projectId,
-			credentials: getStorageConfig(configService),
-		});
-
-		console.log(getStorageConfig(configService));
-		
-		this.bucket = bucketName;
-
-		// Initialize bucket
-		this.initializeBucket().catch((err) => {
-			this.logger.error(`Failed to initialize bucket: ${err.message}`);
-		});
-	}
-
-	private async initializeBucket(): Promise<void> {
-		try {
-			const [exists] = await this.storage.bucket(this.bucket).exists();
-
-			console.log('exists', exists, this.bucket);
-
-			if (!exists) {
-				this.logger.warn(`Bucket ${this.bucket} does not exist, creating...`);
-			}
-
-			this.logger.log(`Bucket ${this.bucket} initialized successfully`);
-		} catch (error) {
-			this.logger.error(`Bucket initialization failed: ${error.message}`);
-			throw error;
-		}
-	}
+	) {}
 
 	private generateFileName(file: StorageFile): string {
-		// Create a unique filename with original extension
 		const fileHash = crypto
 			.createHash('md5')
 			.update(Date.now().toString() + file.originalname)
@@ -118,7 +79,6 @@ export class StorageService {
 			const fileName = customFileName || this.generateFileName(file);
 			const bucket = this.storage.bucket(this.bucket);
 
-			// Check bucket exists
 			const [exists] = await bucket.exists();
 			if (!exists) {
 				throw new Error(`Bucket ${this.bucket} does not exist`);
@@ -126,7 +86,6 @@ export class StorageService {
 
 			const blob = bucket.file(fileName);
 
-			// Upload with resumable=false for small files
 			await blob.save(file.buffer, {
 				resumable: false,
 				metadata: {
@@ -135,7 +94,6 @@ export class StorageService {
 				},
 			});
 
-			// Make the file public
 			await blob.makePublic();
 			const publicUrl = blob.publicUrl();
 			const [fileMetadata] = await blob.getMetadata();
@@ -157,22 +115,20 @@ export class StorageService {
 				docId: doc.uid,
 			};
 		} catch (error) {
-			this.logger.error(`Failed to upload file: ${error.message}`, error.stack);
 			throw new Error(`File upload failed: ${error.message}`);
 		}
 	}
 
 	async delete(docId: number): Promise<void> {
 		try {
-			// Find the doc first
 			const doc = await this.docsRepository.findOne({ where: { uid: docId } });
 			if (!doc) {
 				throw new Error('Document not found');
 			}
 
-			// Delete from storage
 			const bucket = this.storage.bucket(this.bucket);
-			const fileName = doc.url.split('/').pop(); // Extract filename from URL
+			
+			const fileName = doc.url.split('/').pop();
 			if (fileName) {
 				const file = bucket.file(fileName);
 				const exists = await file.exists();
@@ -181,10 +137,8 @@ export class StorageService {
 				}
 			}
 
-			// Delete doc record
 			await this.docsRepository.delete(docId);
 		} catch (error) {
-			this.logger.error(`Failed to delete file: ${error.message}`, error.stack);
 			throw error;
 		}
 	}
@@ -200,7 +154,6 @@ export class StorageService {
 			});
 			return url;
 		} catch (error) {
-			this.logger.error(`Failed to get signed URL: ${error.message}`, error.stack);
 			throw error;
 		}
 	}
@@ -212,7 +165,6 @@ export class StorageService {
 			const [metadata] = await file.getMetadata();
 			return metadata;
 		} catch (error) {
-			this.logger.error(`Failed to get metadata: ${error.message}`, error.stack);
 			throw error;
 		}
 	}
@@ -221,7 +173,6 @@ export class StorageService {
 		try {
 			await this.docsRepository.update(docId, updates);
 		} catch (error) {
-			this.logger.error(`Failed to update doc: ${error.message}`, error.stack);
 			throw error;
 		}
 	}

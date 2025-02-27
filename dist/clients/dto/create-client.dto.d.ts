@@ -1,3 +1,10 @@
+declare class AddressDto {
+    street: string;
+    city: string;
+    state: string;
+    country: string;
+    postalCode: string;
+}
 export declare class CreateClientDto {
     name: string;
     contactPerson: string;
@@ -7,13 +14,10 @@ export declare class CreateClientDto {
     website?: string;
     logo?: string;
     description?: string;
-    address: string;
-    city?: string;
-    country?: string;
-    postalCode?: string;
-    isDeleted: boolean;
-    ref: string;
+    address: AddressDto;
+    category?: string;
     assignedSalesRep: {
         uid: number;
     };
 }
+export {};

@@ -12,6 +12,54 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateClientDto = void 0;
 const swagger_1 = require("@nestjs/swagger");
 const class_validator_1 = require("class-validator");
+const class_transformer_1 = require("class-transformer");
+class AddressDto {
+}
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    (0, swagger_1.ApiProperty)({
+        example: '123 Main St',
+        description: 'Street address including house/building number'
+    }),
+    __metadata("design:type", String)
+], AddressDto.prototype, "street", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    (0, swagger_1.ApiProperty)({
+        example: 'Cape Town',
+        description: 'City name'
+    }),
+    __metadata("design:type", String)
+], AddressDto.prototype, "city", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    (0, swagger_1.ApiProperty)({
+        example: 'Western Cape',
+        description: 'State or province name'
+    }),
+    __metadata("design:type", String)
+], AddressDto.prototype, "state", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    (0, swagger_1.ApiProperty)({
+        example: 'South Africa',
+        description: 'Country name'
+    }),
+    __metadata("design:type", String)
+], AddressDto.prototype, "country", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    (0, swagger_1.ApiProperty)({
+        example: '8001',
+        description: 'Postal/ZIP code'
+    }),
+    __metadata("design:type", String)
+], AddressDto.prototype, "postalCode", void 0);
 class CreateClientDto {
 }
 exports.CreateClientDto = CreateClientDto;
@@ -37,7 +85,7 @@ __decorate([
     (0, class_validator_1.IsEmail)(),
     (0, class_validator_1.IsNotEmpty)(),
     (0, swagger_1.ApiProperty)({
-        example: 'john.doe@loro.co.za',
+        example: 'john.doe@example.co.za',
         description: 'The email of the client'
     }),
     __metadata("design:type", String)
@@ -55,8 +103,9 @@ __decorate([
     (0, class_validator_1.IsPhoneNumber)(),
     (0, class_validator_1.IsOptional)(),
     (0, swagger_1.ApiProperty)({
-        example: '+27 64 123 4567',
-        description: 'The alternative phone number of the client'
+        example: '+27 64 987 6543',
+        description: 'The alternative phone number of the client',
+        required: false
     }),
     __metadata("design:type", String)
 ], CreateClientDto.prototype, "alternativePhone", void 0);
@@ -64,8 +113,9 @@ __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsOptional)(),
     (0, swagger_1.ApiProperty)({
-        example: 'https://www.loro.co.za',
-        description: 'The website of the client'
+        example: 'https://www.acme.co.za',
+        description: 'The website of the client',
+        required: false
     }),
     __metadata("design:type", String)
 ], CreateClientDto.prototype, "website", void 0);
@@ -73,8 +123,9 @@ __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsOptional)(),
     (0, swagger_1.ApiProperty)({
-        example: 'https://www.loro.co.za/logo.png',
-        description: 'The logo of the client'
+        example: 'https://www.acme.co.za/logo.png',
+        description: 'The URL to the client logo image',
+        required: false
     }),
     __metadata("design:type", String)
 ], CreateClientDto.prototype, "logo", void 0);
@@ -82,71 +133,38 @@ __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsOptional)(),
     (0, swagger_1.ApiProperty)({
-        example: 'This is a description of the client',
-        description: 'The description of the client'
+        example: 'ACME Inc. is a leading provider of innovative solutions in South Africa.',
+        description: 'The description of the client and their business',
+        required: false
     }),
     __metadata("design:type", String)
 ], CreateClientDto.prototype, "description", void 0);
 __decorate([
-    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.ValidateNested)(),
+    (0, class_transformer_1.Type)(() => AddressDto),
     (0, class_validator_1.IsNotEmpty)(),
     (0, swagger_1.ApiProperty)({
-        example: '123 Main St, Anytown, USA',
-        description: 'The address of the client'
+        description: 'The full address of the client including coordinates',
+        type: AddressDto
     }),
-    __metadata("design:type", String)
+    __metadata("design:type", AddressDto)
 ], CreateClientDto.prototype, "address", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsOptional)(),
     (0, swagger_1.ApiProperty)({
-        example: 'Johannesburg',
-        description: 'The city of the client'
+        example: 'contract',
+        description: 'The category of the client',
+        required: false
     }),
     __metadata("design:type", String)
-], CreateClientDto.prototype, "city", void 0);
-__decorate([
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsOptional)(),
-    (0, swagger_1.ApiProperty)({
-        example: 'South Africa',
-        description: 'The country of the client'
-    }),
-    __metadata("design:type", String)
-], CreateClientDto.prototype, "country", void 0);
-__decorate([
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsOptional)(),
-    (0, swagger_1.ApiProperty)({
-        example: '1234',
-        description: 'The postal code of the client'
-    }),
-    __metadata("design:type", String)
-], CreateClientDto.prototype, "postalCode", void 0);
-__decorate([
-    (0, class_validator_1.IsBoolean)(),
-    (0, class_validator_1.IsNotEmpty)(),
-    (0, swagger_1.ApiProperty)({
-        example: false,
-        description: 'Whether the client is deleted'
-    }),
-    __metadata("design:type", Boolean)
-], CreateClientDto.prototype, "isDeleted", void 0);
-__decorate([
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsNotEmpty)(),
-    (0, swagger_1.ApiProperty)({
-        example: '1234567890',
-        description: 'The reference code of the client'
-    }),
-    __metadata("design:type", String)
-], CreateClientDto.prototype, "ref", void 0);
+], CreateClientDto.prototype, "category", void 0);
 __decorate([
     (0, class_validator_1.IsObject)(),
-    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.IsOptional)(),
     (0, swagger_1.ApiProperty)({
         example: { uid: 1 },
-        description: 'The assigned sales rep of the client'
+        description: 'The assigned sales representative of the client'
     }),
     __metadata("design:type", Object)
 ], CreateClientDto.prototype, "assignedSalesRep", void 0);

@@ -519,6 +519,24 @@ let TasksService = class TasksService {
                 }));
                 await this.subtaskRepository.save(subtasks);
             }
+            this.eventEmitter.emit('task.updated', {
+                task: savedTask,
+            });
+            if (updateTaskDto.assignees && JSON.stringify(task.assignees) !== JSON.stringify(taskData.assignees)) {
+                this.eventEmitter.emit('task.assigneeChanged', {
+                    task: savedTask,
+                });
+            }
+            if (updateTaskDto.client && JSON.stringify(task.clients) !== JSON.stringify(taskData.clients)) {
+                this.eventEmitter.emit('task.clientChanged', {
+                    task: savedTask,
+                });
+            }
+            if (updateTaskDto.deadline && task.deadline?.getTime() !== new Date(updateTaskDto.deadline).getTime()) {
+                this.eventEmitter.emit('task.deadlineChanged', {
+                    task: savedTask,
+                });
+            }
             await this.clearTaskCache(ref);
             return {
                 message: process.env.SUCCESS_MESSAGE,

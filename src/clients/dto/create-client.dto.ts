@@ -1,6 +1,48 @@
-import { GeneralStatus } from '../../lib/enums/status.enums';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsPhoneNumber, IsOptional, IsString, IsEnum, IsNotEmpty, IsBoolean, IsObject } from 'class-validator';
+import { IsEmail, IsPhoneNumber, IsOptional, IsString, IsNotEmpty, IsObject, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
+
+class AddressDto {
+    @IsString()
+    @IsNotEmpty()
+    @ApiProperty({
+        example: '123 Main St',
+        description: 'Street address including house/building number'
+    })
+    street: string;
+
+    @IsString()
+    @IsNotEmpty()
+    @ApiProperty({
+        example: 'Cape Town',
+        description: 'City name'
+    })
+    city: string;
+
+    @IsString()
+    @IsNotEmpty()
+    @ApiProperty({
+        example: 'Western Cape',
+        description: 'State or province name'
+    })
+    state: string;
+
+    @IsString()
+    @IsNotEmpty()
+    @ApiProperty({
+        example: 'South Africa',
+        description: 'Country name'
+    })
+    country: string;
+
+    @IsString()
+    @IsNotEmpty()
+    @ApiProperty({
+        example: '8001',
+        description: 'Postal/ZIP code'
+    })
+    postalCode: string;
+}
 
 export class CreateClientDto {
     @IsString()
@@ -22,7 +64,7 @@ export class CreateClientDto {
     @IsEmail()
     @IsNotEmpty()
     @ApiProperty({
-        example: 'john.doe@loro.co.za',
+        example: 'john.doe@example.co.za',
         description: 'The email of the client'
     })
     email: string;
@@ -38,88 +80,62 @@ export class CreateClientDto {
     @IsPhoneNumber()
     @IsOptional()
     @ApiProperty({
-        example: '+27 64 123 4567',
-        description: 'The alternative phone number of the client'
+        example: '+27 64 987 6543',
+        description: 'The alternative phone number of the client',
+        required: false
     })
     alternativePhone?: string;
 
     @IsString()
     @IsOptional()
     @ApiProperty({
-        example: 'https://www.loro.co.za',
-        description: 'The website of the client'
+        example: 'https://www.acme.co.za',
+        description: 'The website of the client',
+        required: false
     })
     website?: string;
 
     @IsString()
     @IsOptional()
     @ApiProperty({
-        example: 'https://www.loro.co.za/logo.png',
-        description: 'The logo of the client'
+        example: 'https://www.acme.co.za/logo.png',
+        description: 'The URL to the client logo image',
+        required: false
     })
     logo?: string;
 
     @IsString()
     @IsOptional()
     @ApiProperty({
-        example: 'This is a description of the client',
-        description: 'The description of the client'
+        example: 'ACME Inc. is a leading provider of innovative solutions in South Africa.',
+        description: 'The description of the client and their business',
+        required: false
     })
     description?: string;
 
-    @IsString()
+    @ValidateNested()
+    @Type(() => AddressDto)
     @IsNotEmpty()
     @ApiProperty({
-        example: '123 Main St, Anytown, USA',
-        description: 'The address of the client'
+        description: 'The full address of the client including coordinates',
+        type: AddressDto
     })
-    address: string;
+    address: AddressDto;
 
     @IsString()
     @IsOptional()
     @ApiProperty({
-        example: 'Johannesburg',
-        description: 'The city of the client'
+        example: 'contract',
+        description: 'The category of the client',
+        required: false
     })
-    city?: string;
-
-    @IsString()
-    @IsOptional()
-    @ApiProperty({
-        example: 'South Africa',
-        description: 'The country of the client'
-    })
-    country?: string;
-
-    @IsString()
-    @IsOptional()
-    @ApiProperty({
-        example: '1234',
-        description: 'The postal code of the client'
-    })
-    postalCode?: string;
-
-    @IsBoolean()
-    @IsNotEmpty()
-    @ApiProperty({
-        example: false,
-        description: 'Whether the client is deleted'
-    })
-    isDeleted: boolean;
-
-    @IsString()
-    @IsNotEmpty()
-    @ApiProperty({
-        example: '1234567890',
-        description: 'The reference code of the client'
-    })
-    ref: string;
-
+    category?: string;
+    
     @IsObject()
-    @IsNotEmpty()
+    @IsOptional()
     @ApiProperty({
         example: { uid: 1 },
-        description: 'The assigned sales rep of the client'
+        description: 'The assigned sales representative of the client'
     })
     assignedSalesRep: { uid: number };
 }

@@ -9,8 +9,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 export class BranchService {
 	constructor(
 		@InjectRepository(Branch)
-		private branchRepository: Repository<Branch>
-	) { }
+		private branchRepository: Repository<Branch>,
+	) {}
 
 	async create(createBranchDto: CreateBranchDto): Promise<{ message: string }> {
 		try {
@@ -30,10 +30,10 @@ export class BranchService {
 		}
 	}
 
-	async findAll(): Promise<{ branches: Branch[] | null, message: string }> {
+	async findAll(): Promise<{ branches: Branch[] | null; message: string }> {
 		try {
 			const branches = await this.branchRepository.find({
-				where: { isDeleted: false }
+				where: { isDeleted: false },
 			});
 
 			if (!branches) {
@@ -47,27 +47,16 @@ export class BranchService {
 		} catch (error) {
 			return {
 				message: error?.message,
-				branches: null
+				branches: null,
 			};
 		}
 	}
 
-	async findOne(ref: string): Promise<{ branch: Branch | null, message: string }> {
+	async findOne(ref: string): Promise<{ branch: Branch | null; message: string }> {
 		try {
 			const branch = await this.branchRepository.findOne({
 				where: { ref, isDeleted: false },
-				relations: [
-					'organisation',
-					'trackings',
-					'tasks',
-					'news',
-					'leads',
-					'journals',
-					'docs',
-					'claims',
-					'attendances',
-					'assets'
-				]
+				relations: ['news', 'docs', 'assets'],
 			});
 
 			if (!branch) {
@@ -81,20 +70,17 @@ export class BranchService {
 		} catch (error) {
 			return {
 				message: error?.message,
-				branch: null
+				branch: null,
 			};
 		}
 	}
 
 	async update(ref: string, updateBranchDto: UpdateBranchDto): Promise<{ message: string }> {
 		try {
-			await this.branchRepository.update(
-				{ ref },
-				updateBranchDto
-			);
+			await this.branchRepository.update({ ref }, updateBranchDto);
 
 			const updatedBranch = await this.branchRepository.findOne({
-				where: { ref, isDeleted: false }
+				where: { ref, isDeleted: false },
 			});
 
 			if (!updatedBranch) {
@@ -114,17 +100,14 @@ export class BranchService {
 	async remove(ref: string): Promise<{ message: string }> {
 		try {
 			const branch = await this.branchRepository.findOne({
-				where: { ref, isDeleted: false }
+				where: { ref, isDeleted: false },
 			});
 
 			if (!branch) {
 				throw new NotFoundException(process.env.DELETE_ERROR_MESSAGE);
 			}
 
-			await this.branchRepository.update(
-				{ ref },
-				{ isDeleted: true }
-			);
+			await this.branchRepository.update({ ref }, { isDeleted: true });
 
 			return {
 				message: process.env.SUCCESS_MESSAGE,
