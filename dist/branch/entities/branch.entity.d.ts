@@ -29,6 +29,7 @@ export declare class Branch {
     ref: string;
     address: {
         street: string;
+        suburb: string;
         city: string;
         state: string;
         country: string;

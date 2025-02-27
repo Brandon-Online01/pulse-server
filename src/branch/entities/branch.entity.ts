@@ -45,6 +45,7 @@ export class Branch {
 	@Column({ type: 'json', nullable: false })
 	address: {
 		street: string;
+		suburb: string;
 		city: string;
 		state: string;
 		country: string;

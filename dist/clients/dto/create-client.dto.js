@@ -29,6 +29,15 @@ __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
     (0, swagger_1.ApiProperty)({
+        example: 'Halfway House',
+        description: 'Suburb name'
+    }),
+    __metadata("design:type", String)
+], AddressDto.prototype, "suburb", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    (0, swagger_1.ApiProperty)({
         example: 'Cape Town',
         description: 'City name'
     }),

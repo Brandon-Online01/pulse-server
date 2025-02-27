@@ -25,12 +25,11 @@ export declare class Organisation {
     name: string;
     address: {
         street: string;
+        suburb: string;
         city: string;
         state: string;
         country: string;
         postalCode: string;
-        latitude?: number;
-        longitude?: number;
     };
     email: string;
     phone: string;

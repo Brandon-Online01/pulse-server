@@ -14,6 +14,14 @@ export class AddressDto {
     @IsString()
     @IsNotEmpty()
     @ApiProperty({
+        example: 'Halfway House',
+        description: 'Suburb name'
+    })
+    suburb: string;
+
+    @IsString()
+    @IsNotEmpty()
+    @ApiProperty({
         example: 'Cape Town',
         description: 'City name'
     })

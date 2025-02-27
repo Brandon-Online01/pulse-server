@@ -20,6 +20,7 @@ export declare class Client {
     description: string;
     address: {
         street: string;
+        suburb: string;
         city: string;
         state: string;
         country: string;

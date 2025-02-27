@@ -1,5 +1,6 @@
 export declare class AddressDto {
     street: string;
+    suburb: string;
     city: string;
     state: string;
     country: string;

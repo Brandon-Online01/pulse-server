@@ -33,12 +33,11 @@ export class Organisation {
 	@Column({ type: 'json', nullable: false })
 	address: {
 		street: string;
+		suburb: string;
 		city: string;
 		state: string;
 		country: string;
 		postalCode: string;
-		latitude?: number;
-		longitude?: number;
 	};
 
 	@Column({ nullable: false, unique: true })
