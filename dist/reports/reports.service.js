@@ -315,21 +315,22 @@ let ReportsService = class ReportsService {
                     }
                 }
             });
-            const averageHoursWorked = presentDays ? totalHours / presentDays : 0;
-            const averageBreakTime = presentDays ? totalBreakTime / presentDays : 0;
+            const averageHoursWorked = presentDays ? Number((totalHours / presentDays).toFixed(2)) : 0;
+            const averageBreakTime = presentDays ? Number((totalBreakTime / presentDays).toFixed(2)) : 0;
+            const attendanceRate = totalDays ? Number(((presentDays / totalDays) * 100).toFixed(2)) : 0;
             return {
                 totalDays,
                 presentDays,
                 absentDays: totalDays - presentDays,
-                attendanceRate: totalDays ? (presentDays / totalDays) * 100 : 0,
+                attendanceRate,
                 averageCheckInTime: this.calculateAverageTime(records?.map((r) => r?.checkIn) || []),
                 averageCheckOutTime: this.calculateAverageTime(records?.filter((r) => r?.checkOut)?.map((r) => r?.checkOut) || []),
                 averageHoursWorked,
-                totalOvertime,
+                totalOvertime: Number(totalOvertime.toFixed(2)),
                 onTimeCheckIns: totalDays - lateCheckIns,
                 lateCheckIns,
                 averageBreakTime,
-                efficiency: this.calculateWorkEfficiency(averageHoursWorked, averageBreakTime),
+                efficiency: Number(this.calculateWorkEfficiency(averageHoursWorked, averageBreakTime).toFixed(2)),
             };
         }
         catch (error) {

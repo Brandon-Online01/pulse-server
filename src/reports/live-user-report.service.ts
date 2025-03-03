@@ -9,6 +9,16 @@ import { Tracking } from '../tracking/entities/tracking.entity';
 import { DailyUserActivityReport } from './report.types';
 import { TaskStatus, TaskPriority } from '../lib/enums/task.enums';
 
+export enum ActivityType {
+    CHECK_IN = 'CHECK_IN',
+    CHECK_OUT = 'CHECK_OUT',
+    BREAK_START = 'BREAK_START',
+    BREAK_END = 'BREAK_END',
+    TASK_COMPLETED = 'TASK_COMPLETED',
+    TASK_UPDATED = 'TASK_UPDATED',
+    JOURNAL_ENTRY = 'JOURNAL_ENTRY'
+}
+
 @Injectable()
 export class LiveUserReportService {
     constructor(
@@ -325,9 +335,10 @@ export class LiveUserReportService {
      * @param userId The user ID to fetch activities for
      * @returns Array of recent activities with their details
      */
-    async getRecentActivities(userId: number): Promise<Array<{ type: string; timestamp: Date; description: string }>> {
+    async getRecentActivities(userId: number): Promise<Array<{ type: ActivityType; timestamp: Date; description: string }>> {
         const activities = [];
         const now = new Date();
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
         const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
         // Fetch recent task updates
@@ -338,7 +349,7 @@ export class LiveUserReportService {
             order: {
                 updatedAt: 'DESC'
             },
-            take: 5,
+            take: 3,
             relations: ['creator']
         });
 
@@ -353,31 +364,41 @@ export class LiveUserReportService {
 
         userTasks.forEach(task => {
             activities.push({
-                type: 'TASK',
-                timestamp: task.updatedAt,
+                type: task.status === TaskStatus.COMPLETED ? ActivityType.TASK_COMPLETED : ActivityType.TASK_UPDATED,
+                timestamp: new Date(task.updatedAt),
                 description: `${task.status === TaskStatus.COMPLETED ? 'Completed' : 'Updated'} task: ${task.title}`
             });
         });
 
-        // Fetch recent check-ins
-        const recentCheckIns = await this.checkInRepository.find({
+        // Fetch today's check-ins, ordered by time to get the latest
+        const todayCheckIns = await this.checkInRepository.find({
             where: {
                 owner: { uid: userId },
-                checkInTime: Between(twentyFourHoursAgo, now)
+                checkInTime: MoreThanOrEqual(startOfToday)
             },
             order: {
-                checkInTime: 'DESC'
-            },
-            take: 5
+                checkInTime: 'DESC' // Order by check-in time descending to get latest first
+            }
         });
 
-        recentCheckIns.forEach(checkIn => {
-            activities.push({
-                type: 'CHECK_IN',
-                timestamp: checkIn.checkInTime,
-                description: `Checked in at ${checkIn.checkInLocation}`
-            });
-        });
+        // Get the latest check-in record
+        const latestCheckIn = todayCheckIns[0];
+        if (latestCheckIn) {
+            if (latestCheckIn.checkInTime) {
+                activities.push({
+                    type: ActivityType.CHECK_IN,
+                    timestamp: new Date(latestCheckIn.checkInTime),
+                    description: `Checked in at ${latestCheckIn.checkInLocation}`
+                });
+            }
+            if (latestCheckIn.checkOutTime) {
+                activities.push({
+                    type: ActivityType.CHECK_OUT,
+                    timestamp: new Date(latestCheckIn.checkOutTime),
+                    description: `Checked out from ${latestCheckIn.checkInLocation}`
+                });
+            }
+        }
 
         // Fetch recent journal entries
         const recentJournals = await this.journalRepository.find({
@@ -388,21 +409,21 @@ export class LiveUserReportService {
             order: {
                 createdAt: 'DESC'
             },
-            take: 5
+            take: 3
         });
 
         recentJournals.forEach(journal => {
             activities.push({
-                type: 'JOURNAL',
-                timestamp: journal.createdAt,
+                type: ActivityType.JOURNAL_ENTRY,
+                timestamp: new Date(journal.createdAt),
                 description: `Added journal entry: ${journal.comments.substring(0, 30)}${journal.comments.length > 30 ? '...' : ''}`
             });
         });
 
-        // Sort by timestamp (newest first) and limit to 10 activities
+        // Sort by timestamp (newest first) and limit to 3 activities total
         return activities
             .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-            .slice(0, 10);
+            .slice(0, 3);
     }
 
     /**
