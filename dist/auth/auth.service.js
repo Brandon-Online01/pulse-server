@@ -246,7 +246,6 @@ let AuthService = class AuthService {
         try {
             const { email } = forgotPasswordInput;
             const existingUser = await this.userService.findOneByEmail(email);
-            console.log(existingUser, email);
             if (!existingUser?.user) {
                 return {
                     message: 'If an account exists with this email, you will receive password reset instructions.',

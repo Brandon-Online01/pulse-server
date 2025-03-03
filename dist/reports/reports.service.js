@@ -145,7 +145,6 @@ let ReportsService = class ReportsService {
             if (options.type === report_enums_1.ReportType.DAILY_USER && report.owner) {
                 await this.sendDailyReportEmail(report.owner, data);
             }
-            console.log('Report generated successfully', report);
             return savedReport;
         }
         catch (error) {
@@ -295,37 +294,104 @@ let ReportsService = class ReportsService {
     }
     calculateAttendanceMetrics(records) {
         try {
-            const totalDays = records?.length || 0;
-            const presentDays = records?.filter((r) => r?.checkOut)?.length || 0;
-            const lateCheckIns = records?.filter((r) => this.isLateCheckIn(r?.checkIn))?.length || 0;
-            let totalHours = 0;
+            if (!records.length) {
+                return this.getDefaultAttendanceMetrics();
+            }
+            const today = new Date();
+            const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0);
+            const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+            const todaysRecords = records.filter((record) => new Date(record.checkIn) >= startOfDay && new Date(record.checkIn) <= endOfDay);
+            const activeShifts = todaysRecords.filter((record) => record.status === 'present' && !record.checkOut);
+            let latestRecord = null;
+            if (activeShifts.length > 0) {
+                latestRecord = [...activeShifts].sort((a, b) => {
+                    return new Date(b.checkIn).getTime() - new Date(a.checkIn).getTime();
+                })[0];
+            }
+            else if (todaysRecords.length > 0) {
+                latestRecord = [...todaysRecords].sort((a, b) => {
+                    return new Date(b.checkIn).getTime() - new Date(a.checkIn).getTime();
+                })[0];
+            }
+            const totalDays = this.getDaysBetween(new Date(records[0].checkIn), new Date(records[records.length - 1].checkIn));
+            const presentDays = new Set(records.map((record) => new Date(record.checkIn).toDateString())).size;
+            const attendanceRate = totalDays ? (presentDays / totalDays) * 100 : 0;
+            let checkInTime = '--:--';
+            let checkOutTime = '--:--';
+            if (latestRecord) {
+                if (latestRecord.checkIn) {
+                    const checkInDate = new Date(latestRecord.checkIn);
+                    checkInTime = `${checkInDate.getHours().toString().padStart(2, '0')}:${checkInDate
+                        .getMinutes()
+                        .toString()
+                        .padStart(2, '0')}`;
+                }
+                if (latestRecord.checkOut) {
+                    const checkOutDate = new Date(latestRecord.checkOut);
+                    checkOutTime = `${checkOutDate.getHours().toString().padStart(2, '0')}:${checkOutDate
+                        .getMinutes()
+                        .toString()
+                        .padStart(2, '0')}`;
+                }
+            }
+            let totalHoursWorked = 0;
             let totalOvertime = 0;
+            let lateCheckIns = 0;
             let totalBreakTime = 0;
-            records?.forEach((record) => {
-                if (record?.checkOut) {
-                    const duration = record.checkOut.getTime() - record?.checkIn?.getTime();
-                    const hours = duration / (1000 * 60 * 60);
-                    totalHours += hours;
-                    if (hours > this.WORK_HOURS_PER_DAY) {
-                        totalOvertime += hours - this.WORK_HOURS_PER_DAY;
-                    }
-                    if (record.breakStartTime && record.breakEndTime) {
-                        const breakDuration = record.breakEndTime.getTime() - record.breakStartTime.getTime();
-                        totalBreakTime += breakDuration / (1000 * 60);
+            let todaysTotalHours = 0;
+            let todaysTotalMinutes = 0;
+            for (const record of records) {
+                let hoursWorked = 0;
+                if (record.duration) {
+                    const durationMatch = record.duration.match(/(\d+)h\s+(\d+)m/);
+                    if (durationMatch) {
+                        const hours = parseInt(durationMatch[1], 10);
+                        const minutes = parseInt(durationMatch[2], 10);
+                        hoursWorked = hours + minutes / 60;
+                        if (todaysRecords.includes(record)) {
+                            todaysTotalHours += hours;
+                            todaysTotalMinutes += minutes;
+                        }
                     }
                 }
-            });
-            const averageHoursWorked = presentDays ? Number((totalHours / presentDays).toFixed(2)) : 0;
-            const averageBreakTime = presentDays ? Number((totalBreakTime / presentDays).toFixed(2)) : 0;
-            const attendanceRate = totalDays ? Number(((presentDays / totalDays) * 100).toFixed(2)) : 0;
+                else if (record.checkIn && record.checkOut) {
+                    const checkInTime = new Date(record.checkIn).getTime();
+                    const checkOutTime = new Date(record.checkOut).getTime();
+                    hoursWorked = (checkOutTime - checkInTime) / (1000 * 60 * 60);
+                    if (todaysRecords.includes(record)) {
+                        const minutesWorked = Math.floor((checkOutTime - checkInTime) / (1000 * 60));
+                        todaysTotalHours += Math.floor(minutesWorked / 60);
+                        todaysTotalMinutes += minutesWorked % 60;
+                    }
+                }
+                totalHoursWorked += hoursWorked;
+                if (this.isLateCheckIn(new Date(record.checkIn))) {
+                    lateCheckIns++;
+                }
+                if (hoursWorked > this.WORK_HOURS_PER_DAY) {
+                    totalOvertime += hoursWorked - this.WORK_HOURS_PER_DAY;
+                }
+                if (record.breakStartTime && record.breakEndTime) {
+                    const breakStartTime = new Date(record.breakStartTime).getTime();
+                    const breakEndTime = new Date(record.breakEndTime).getTime();
+                    const breakDurationMinutes = (breakEndTime - breakStartTime) / (1000 * 60);
+                    totalBreakTime += breakDurationMinutes;
+                }
+            }
+            todaysTotalHours += Math.floor(todaysTotalMinutes / 60);
+            todaysTotalMinutes = todaysTotalMinutes % 60;
+            const todaysHoursFormatted = `${todaysTotalHours}h ${todaysTotalMinutes}m`;
+            const averageHoursWorked = totalDays ? totalHoursWorked / totalDays : 0;
+            const averageBreakTime = presentDays ? totalBreakTime / presentDays : 0;
             return {
                 totalDays,
                 presentDays,
                 absentDays: totalDays - presentDays,
                 attendanceRate,
-                averageCheckInTime: this.calculateAverageTime(records?.map((r) => r?.checkIn) || []),
-                averageCheckOutTime: this.calculateAverageTime(records?.filter((r) => r?.checkOut)?.map((r) => r?.checkOut) || []),
+                averageCheckInTime: checkInTime,
+                averageCheckOutTime: checkOutTime,
                 averageHoursWorked,
+                todaysHoursFormatted,
                 totalOvertime: Number(totalOvertime.toFixed(2)),
                 onTimeCheckIns: totalDays - lateCheckIns,
                 lateCheckIns,
@@ -353,6 +419,7 @@ let ReportsService = class ReportsService {
             averageCheckInTime: '00:00',
             averageCheckOutTime: '00:00',
             averageHoursWorked: 0,
+            todaysHoursFormatted: '0h 0m',
             totalOvertime: 0,
             onTimeCheckIns: 0,
             lateCheckIns: 0,

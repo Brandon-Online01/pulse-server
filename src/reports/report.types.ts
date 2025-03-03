@@ -40,6 +40,7 @@ export interface AttendanceMetrics {
     averageCheckInTime: string;
     averageCheckOutTime: string;
     averageHoursWorked: number;
+    todaysHoursFormatted: string;
     totalOvertime: number;
     onTimeCheckIns: number;
     lateCheckIns: number;

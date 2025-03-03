@@ -316,8 +316,6 @@ export class AuthService {
 			// Find user by email
 			const existingUser = await this.userService.findOneByEmail(email);
 
-			console.log(existingUser, email);
-
 			if (!existingUser?.user) {
 				// Return success even if user not found for security
 				return {
