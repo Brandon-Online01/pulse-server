@@ -454,6 +454,7 @@ let TasksService = class TasksService {
             if (filters?.clientId) {
                 filteredTasks = filteredTasks?.filter((task) => task.clients?.some((client) => client?.uid === filters?.clientId));
             }
+            console.log(filteredTasks, 'all tasks');
             const response = {
                 data: filteredTasks,
                 meta: {

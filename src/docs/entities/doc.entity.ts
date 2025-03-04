@@ -26,9 +26,6 @@ export class Doc {
     @Column()
     url: string;
 
-    @Column({ nullable: true })
-    thumbnailUrl?: string;
-
     @Column({ type: 'json', nullable: true })
     metadata?: Record<string, any>;
 
@@ -44,9 +41,6 @@ export class Doc {
     @Column({ type: 'simple-array', nullable: true })
     sharedWith?: string[];
 
-    @Column({ nullable: true })
-    version?: number;
-
     @Column({ default: false })
     isPublic: boolean;
 
@@ -58,12 +52,6 @@ export class Doc {
 
     @Column({ type: 'timestamp', nullable: false, default: () => 'CURRENT_TIMESTAMP' })
     lastAccessedAt?: Date;
-
-    @Column({ nullable: true })
-    createdBy?: string;
-
-    @Column({ nullable: true })
-    updatedBy?: string;
 
     // relations
     @ManyToOne(() => User, (user) => user?.userDocs)

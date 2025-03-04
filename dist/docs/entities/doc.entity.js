@@ -46,10 +46,6 @@ __decorate([
     __metadata("design:type", String)
 ], Doc.prototype, "url", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
-    __metadata("design:type", String)
-], Doc.prototype, "thumbnailUrl", void 0);
-__decorate([
     (0, typeorm_1.Column)({ type: 'json', nullable: true }),
     __metadata("design:type", Object)
 ], Doc.prototype, "metadata", void 0);
@@ -70,10 +66,6 @@ __decorate([
     __metadata("design:type", Array)
 ], Doc.prototype, "sharedWith", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
-    __metadata("design:type", Number)
-], Doc.prototype, "version", void 0);
-__decorate([
     (0, typeorm_1.Column)({ default: false }),
     __metadata("design:type", Boolean)
 ], Doc.prototype, "isPublic", void 0);
@@ -89,14 +81,6 @@ __decorate([
     (0, typeorm_1.Column)({ type: 'timestamp', nullable: false, default: () => 'CURRENT_TIMESTAMP' }),
     __metadata("design:type", Date)
 ], Doc.prototype, "lastAccessedAt", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
-    __metadata("design:type", String)
-], Doc.prototype, "createdBy", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
-    __metadata("design:type", String)
-], Doc.prototype, "updatedBy", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => user_entity_1.User, (user) => user?.userDocs),
     __metadata("design:type", user_entity_1.User)

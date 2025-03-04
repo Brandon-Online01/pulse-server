@@ -34,32 +34,46 @@ let DocsService = class DocsService {
             if (type && !this.isValidFileType(file.mimetype, type)) {
                 throw new Error(`Invalid file type: ${file.mimetype} for specified type: ${type}`);
             }
-            const result = await this.storageService.upload({
-                buffer: file.buffer,
-                mimetype: file.mimetype,
-                originalname: file.originalname,
-                size: file.size,
-                metadata: {
-                    type,
-                    uploadedBy: ownerId?.toString(),
-                    branch: branchId?.toString(),
-                },
-            }, undefined, ownerId, branchId);
-            return {
-                message: 'File uploaded successfully',
-                ...result,
-            };
+            try {
+                const result = await this.storageService.upload({
+                    buffer: file.buffer,
+                    mimetype: file.mimetype,
+                    originalname: file.originalname,
+                    size: file.size,
+                    metadata: {
+                        type,
+                        uploadedBy: ownerId?.toString(),
+                        branch: branchId?.toString(),
+                    },
+                }, undefined, ownerId, branchId);
+                return {
+                    message: 'File uploaded successfully',
+                    ...result,
+                };
+            }
+            catch (storageError) {
+                console.error('Storage service error:', storageError);
+                throw new Error(`Storage service error: ${storageError.message}`);
+            }
         }
         catch (error) {
+            console.error('File upload failed:', error);
             throw new Error(`File upload failed: ${error.message}`);
         }
     }
     isValidFileType(mimetype, type) {
         const typeMap = {
-            'image': ['image/jpeg', 'image/png', 'image/gif'],
-            'document': ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
-            'spreadsheet': ['application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
-            'text': ['text/plain'],
+            image: ['image/jpeg', 'image/png', 'image/gif'],
+            document: [
+                'application/pdf',
+                'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            ],
+            spreadsheet: [
+                'application/vnd.ms-excel',
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            ],
+            text: ['text/plain'],
         };
         return !typeMap[type] || typeMap[type].includes(mimetype);
     }
@@ -106,14 +120,14 @@ let DocsService = class DocsService {
             }
             const response = {
                 message: process.env.SUCCESS_MESSAGE,
-                docs: docs
+                docs: docs,
             };
             return response;
         }
         catch (error) {
             const response = {
                 message: process.env.NOT_FOUND_MESSAGE,
-                docs: null
+                docs: null,
             };
             return response;
         }
@@ -122,21 +136,21 @@ let DocsService = class DocsService {
         try {
             const doc = await this.docsRepository.findOne({
                 where: { uid: ref },
-                relations: ['owner', 'branch']
+                relations: ['owner', 'branch'],
             });
             if (!doc) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
             const response = {
                 message: process.env.SUCCESS_MESSAGE,
-                doc: doc
+                doc: doc,
             };
             return response;
         }
         catch (error) {
             const response = {
                 message: process.env.NOT_FOUND_MESSAGE,
-                doc: null
+                doc: null,
             };
             return response;
         }
@@ -144,21 +158,21 @@ let DocsService = class DocsService {
     async docsByUser(ref) {
         try {
             const docs = await this.docsRepository.find({
-                where: { owner: { uid: ref } }
+                where: { owner: { uid: ref } },
             });
             if (!docs) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
             const response = {
                 message: process.env.SUCCESS_MESSAGE,
-                docs
+                docs,
             };
             return response;
         }
         catch (error) {
             const response = {
                 message: `could not get documents by user - ${error?.message}`,
-                docs: null
+                docs: null,
             };
             return response;
         }
@@ -184,7 +198,7 @@ let DocsService = class DocsService {
     async deleteFromBucket(ref) {
         try {
             const doc = await this.docsRepository.findOne({
-                where: { uid: ref }
+                where: { uid: ref },
             });
             if (!doc) {
                 throw new common_1.NotFoundException('Document not found');

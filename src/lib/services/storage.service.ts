@@ -1,11 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { Storage } from '@google-cloud/storage';
 import { ConfigService } from '@nestjs/config';
 import { extname } from 'path';
 import * as crypto from 'crypto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Connection } from 'typeorm';
 import { Doc } from '../../docs/entities/doc.entity';
+import { getStorageConfig } from '../../config/storage.config';
+import { User } from '../../user/entities/user.entity';
 
 export interface StorageFile {
 	buffer: Buffer;
@@ -23,15 +25,33 @@ export interface UploadResult {
 }
 
 @Injectable()
-export class StorageService {
+export class StorageService implements OnModuleInit {
 	private storage: Storage;
 	private bucket: string;
+	private readonly logger = new Logger(StorageService.name);
 
 	constructor(
 		private readonly configService: ConfigService,
 		@InjectRepository(Doc)
 		private readonly docsRepository: Repository<Doc>,
-	) {}
+		private readonly connection: Connection,
+	) {
+		this.bucket = this.configService.get<string>('GOOGLE_CLOUD_PROJECT_BUCKET');
+	}
+
+	onModuleInit() {
+		try {
+			const credentials = getStorageConfig(this.configService);
+			this.storage = new Storage({
+				projectId: this.configService.get<string>('GOOGLE_CLOUD_PROJECT_ID'),
+				credentials,
+			});
+
+			this.logger.log(`gcs ready: ${this.bucket}`);
+		} catch (error) {
+			this.logger.error('failed to get gcs ready:', error);
+		}
+	}
 
 	private generateFileName(file: StorageFile): string {
 		const fileHash = crypto
@@ -51,9 +71,15 @@ export class StorageService {
 		ownerId?: number,
 		branchId?: number,
 	): Promise<Doc> {
+		// Get content type for content field
+		const contentType = mimeType.split('/')[0];
+		
+		// Use docId for description if available
+		const description = metadata?.docId?.toString() || '';
+		
 		const doc = this.docsRepository.create({
 			title: originalName,
-			content: '',
+			content: contentType, // Use content type
 			fileType: mimeType.split('/')[0],
 			fileSize,
 			url: publicUrl,
@@ -62,6 +88,7 @@ export class StorageService {
 			metadata,
 			isActive: true,
 			isPublic: false,
+			description, // Use docId for description
 			owner: ownerId ? ({ uid: ownerId } as any) : null,
 			branch: branchId ? ({ uid: branchId } as any) : null,
 		});
@@ -76,15 +103,30 @@ export class StorageService {
 		branchId?: number,
 	): Promise<UploadResult> {
 		try {
+			// Check if storage and bucket are properly initialized
+			if (!this.storage) {
+				throw new Error('Google Cloud Storage client is not initialized');
+			}
+
+			if (!this.bucket) {
+				throw new Error(
+					'Storage bucket name is not configured. Please check GOOGLE_CLOUD_PROJECT_BUCKET in your environment variables',
+				);
+			}
+
 			const fileName = customFileName || this.generateFileName(file);
 			const bucket = this.storage.bucket(this.bucket);
 
 			const [exists] = await bucket.exists();
 			if (!exists) {
-				throw new Error(`Bucket ${this.bucket} does not exist`);
+				throw new Error(
+					`Bucket ${this.bucket} does not exist or is not accessible. Please check your credentials and bucket name.`,
+				);
 			}
 
-			const blob = bucket.file(fileName);
+			// Save file in the 'loro' folder
+			const filePath = `loro/${fileName}`;
+			const blob = bucket.file(filePath);
 
 			await blob.save(file.buffer, {
 				resumable: false,
@@ -98,15 +140,53 @@ export class StorageService {
 			const publicUrl = blob.publicUrl();
 			const [fileMetadata] = await blob.getMetadata();
 
+			// Extract the user ID from metadata
+			const uploadedBy = file.metadata?.uploadedBy;
+			let userOwnerId = ownerId;
+			let userBranchId = branchId;
+			let organisationId = null;
+
+			if (uploadedBy) {
+				try {
+					// Find the user by ID to get their organization
+					const userRepo = this.connection.getRepository(User);
+					const user = await userRepo.findOne({
+						where: { uid: parseInt(uploadedBy, 10) },
+						relations: ['organisation']
+					});
+
+					if (user) {
+						userOwnerId = user.uid;
+						if (user.organisation) {
+							organisationId = user.organisation.uid;
+						}
+					}
+
+					// Use branch from metadata if available
+					if (file.metadata?.branch) {
+						userBranchId = parseInt(file.metadata.branch, 10);
+					}
+				} catch (error) {
+					this.logger.error(`Error finding user: ${error.message}`);
+				}
+			}
+
 			const doc = await this.createDocRecord(
 				file.originalname,
 				publicUrl,
 				fileMetadata,
 				file.mimetype,
 				file.size,
-				ownerId,
-				branchId,
+				userOwnerId,
+				userBranchId
 			);
+
+			// Set organization if found
+			if (organisationId) {
+				await this.docsRepository.update(doc.uid, {
+					organisation: { uid: organisationId } as any
+				});
+			}
 
 			return {
 				fileName,
@@ -127,13 +207,24 @@ export class StorageService {
 			}
 
 			const bucket = this.storage.bucket(this.bucket);
-			
+
+			// Extract just the filename from the URL
 			const fileName = doc.url.split('/').pop();
 			if (fileName) {
-				const file = bucket.file(fileName);
-				const exists = await file.exists();
-				if (exists[0]) {
-					await file.delete();
+				// Check both the root location and the loro folder
+				const fileLocations = [
+					fileName,
+					`loro/${fileName}`
+				];
+
+				// Try to delete from both possible locations
+				for (const location of fileLocations) {
+					const file = bucket.file(location);
+					const [exists] = await file.exists();
+					if (exists) {
+						await file.delete();
+						break; // Exit once the file is found and deleted
+					}
 				}
 			}
 
@@ -146,12 +237,32 @@ export class StorageService {
 	async getSignedUrl(fileName: string, expiresIn = 3600): Promise<string> {
 		try {
 			const bucket = this.storage.bucket(this.bucket);
-			const file = bucket.file(fileName);
-			const [url] = await file.getSignedUrl({
-				version: 'v4',
-				action: 'read',
-				expires: Date.now() + expiresIn * 1000,
-			});
+			
+			// Check both the root location and the loro folder
+			const fileLocations = [
+				fileName,
+				`loro/${fileName}`
+			];
+
+			let url;
+			// Try to get signed URL from both possible locations
+			for (const location of fileLocations) {
+				const file = bucket.file(location);
+				const [exists] = await file.exists();
+				if (exists) {
+					[url] = await file.getSignedUrl({
+						version: 'v4',
+						action: 'read',
+						expires: Date.now() + expiresIn * 1000,
+					});
+					break; // Exit once the file is found
+				}
+			}
+			
+			if (!url) {
+				throw new Error(`File ${fileName} not found in bucket`);
+			}
+			
 			return url;
 		} catch (error) {
 			throw error;
@@ -161,8 +272,28 @@ export class StorageService {
 	async getMetadata(fileName: string): Promise<any> {
 		try {
 			const bucket = this.storage.bucket(this.bucket);
-			const file = bucket.file(fileName);
-			const [metadata] = await file.getMetadata();
+			
+			// Check both the root location and the loro folder
+			const fileLocations = [
+				fileName,
+				`loro/${fileName}`
+			];
+
+			let metadata;
+			// Try to get metadata from both possible locations
+			for (const location of fileLocations) {
+				const file = bucket.file(location);
+				const [exists] = await file.exists();
+				if (exists) {
+					[metadata] = await file.getMetadata();
+					break; // Exit once the file is found
+				}
+			}
+			
+			if (!metadata) {
+				throw new Error(`File ${fileName} not found in bucket`);
+			}
+			
 			return metadata;
 		} catch (error) {
 			throw error;
