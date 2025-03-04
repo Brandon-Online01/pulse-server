@@ -5,4 +5,5 @@ export interface Token {
     licenseId?: string;
     licensePlan?: string;
     features?: Record<string, boolean>;
+    branch?: { uid: number };
 }

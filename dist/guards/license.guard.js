@@ -10,25 +10,55 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LicenseGuard = void 0;
-const common_1 = require("@nestjs/common");
 const licensing_service_1 = require("../licensing/licensing.service");
+const common_1 = require("@nestjs/common");
 let LicenseGuard = class LicenseGuard {
     constructor(licensingService) {
         this.licensingService = licensingService;
     }
     async canActivate(context) {
-        const request = context.switchToHttp().getRequest();
-        const user = request['user'];
-        if (!user) {
+        try {
+            const request = context.switchToHttp().getRequest();
+            if (request['licenseValidated'] === true) {
+                return true;
+            }
+            const user = request['user'];
+            if (!user) {
+                return false;
+            }
+            if (user.licenseId) {
+                const isValid = await this.licensingService.validateLicense(user.licenseId);
+                if (isValid && user.licensePlan) {
+                    request['license'] = {
+                        id: user.licenseId,
+                        plan: user.licensePlan,
+                    };
+                    request['licenseValidated'] = true;
+                }
+                return isValid;
+            }
+            const licenses = user.licenses || [];
+            if (!licenses.length) {
+                return false;
+            }
+            const validationResults = await Promise.all(licenses.map(async (license) => ({
+                license,
+                isValid: await this.licensingService.validateLicense(String(license.uid)),
+            })));
+            const validLicense = validationResults.find((result) => result.isValid)?.license;
+            if (validLicense) {
+                request['license'] = {
+                    id: validLicense.uid,
+                    plan: validLicense.plan,
+                };
+                request['licenseValidated'] = true;
+                return true;
+            }
             return false;
         }
-        const licenses = user.licenses || [];
-        if (!licenses.length) {
+        catch (error) {
             return false;
         }
-        const validLicense = await licenses
-            .find(async (license) => await this.licensingService.validateLicense(String(license.uid)));
-        return !!validLicense;
     }
 };
 exports.LicenseGuard = LicenseGuard;

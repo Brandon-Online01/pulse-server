@@ -110,7 +110,7 @@ export class AuthService {
 					licenseId: String(activeLicense?.uid),
 					licensePlan: activeLicense?.plan,
 					features: activeLicense?.features,
-					branch: restOfUser?.branch?.uid ? { uid: restOfUser.branch.uid } : undefined
+					branch: restOfUser?.branch?.uid ? { uid: restOfUser?.branch.uid } : undefined
 				};
 
 				const accessToken = await this.jwtService.signAsync(payload, { expiresIn: `8h` });

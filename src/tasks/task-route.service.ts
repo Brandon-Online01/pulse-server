@@ -6,7 +6,6 @@ import { Client } from '../clients/entities/client.entity';
 import { User } from '../user/entities/user.entity';
 import { Branch } from '../branch/entities/branch.entity';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { ConfigService } from '@nestjs/config';
 import { GoogleMapsService } from '../lib/services/google-maps.service';
 import { Route } from './entities/route.entity';
 import { OnEvent } from '@nestjs/event-emitter';
@@ -31,7 +30,6 @@ export class TaskRouteService {
 		private readonly branchRepository: Repository<Branch>,
 		@InjectRepository(Route)
 		private readonly routeRepository: Repository<Route>,
-		private readonly configService: ConfigService,
 		private readonly googleMapsService: GoogleMapsService,
 		@Inject(CACHE_MANAGER) private cacheManager: Cache,
 	) {}
@@ -118,13 +116,13 @@ export class TaskRouteService {
 
 				// Try to get branch from cache first
 				let branch = await this.getCachedBranch(user.branch.uid);
-				
+
 				// If not in cache, fetch from database
 				if (!branch) {
 					branch = await this.branchRepository.findOne({
 						where: { uid: user?.branch?.uid },
 					});
-					
+
 					// Store in cache if found
 					if (branch) {
 						await this.cacheBranch(branch);
@@ -146,15 +144,15 @@ export class TaskRouteService {
 				}
 
 				// Convert the branch address to a properly formatted string for geocoding
-				const branchAddress = branch?.address ? 
-					`${branch.address?.street}, ${branch.address?.city}, ${branch.address?.state}, ${branch.address?.country}, ${branch.address?.postalCode}` : 
-					'';
+				const branchAddress = branch?.address
+					? `${branch.address?.street}, ${branch.address?.city}, ${branch.address?.state}, ${branch.address?.country}, ${branch.address?.postalCode}`
+					: '';
 
 				// Geocode the branch address to get lat/lng coordinates
 				const geocodeResult = await this.googleMapsService.geocodeAddress(branchAddress);
 				const origin = {
 					lat: geocodeResult.address.latitude,
-					lng: geocodeResult.address.longitude
+					lng: geocodeResult.address.longitude,
 				};
 
 				try {
@@ -219,7 +217,7 @@ export class TaskRouteService {
 		});
 
 		const clientLocations = new Map<number, Location>();
-		
+
 		// Use Promise.all to handle all geocoding requests in parallel
 		await Promise.all(
 			clients.map(async (client) => {
@@ -231,13 +229,13 @@ export class TaskRouteService {
 						clientLocations.set(client.uid, {
 							latitude: geocodeResult.address.latitude,
 							longitude: geocodeResult.address.longitude,
-							address: formattedAddress
+							address: formattedAddress,
 						});
 					} catch (error) {
 						console.error(`Failed to geocode address for client ${client.uid}:`, error);
 					}
 				}
-			})
+			}),
 		);
 
 		return clientLocations;
@@ -246,19 +244,31 @@ export class TaskRouteService {
 	/**
 	 * Get routes for all tasks on a given date without recalculating
 	 */
-	async getRoutes(date: Date = new Date()): Promise<Route[]> {
+	async getRoutes(date: Date = new Date(), organizationId?: number, branchId?: number): Promise<Route[]> {
 		const startOfDay = new Date(date);
 		startOfDay.setHours(0, 0, 0, 0);
 
 		const endOfDay = new Date(date);
 		endOfDay.setHours(23, 59, 59, 999);
 
+		// Build the where clause
+		const where: any = {
+			plannedDate: Between(startOfDay, endOfDay),
+			isDeleted: false,
+		};
+
+		// Add organization and branch filters if provided
+		if (organizationId) {
+			where.organisation = { ref: organizationId };
+		}
+
+		if (branchId) {
+			where.branch = { uid: branchId };
+		}
+
 		// First try to get routes from the database
 		const routes = await this.routeRepository.find({
-			where: {
-				plannedDate: Between(startOfDay, endOfDay),
-				isDeleted: false,
-			},
+			where,
 			relations: ['assignee', 'branch', 'task'],
 		});
 
@@ -269,18 +279,30 @@ export class TaskRouteService {
 	 * Plan routes for all tasks on a given date
 	 */
 	@Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
-	async planRoutes(date: Date = new Date()): Promise<Route[]> {
+	async planRoutes(date: Date = new Date(), organizationId?: number, branchId?: number): Promise<Route[]> {
 		const startOfDay = new Date(date);
 		startOfDay.setHours(0, 0, 0, 0);
 
 		const endOfDay = new Date(date);
 		endOfDay.setHours(23, 59, 59, 999);
 
+		// Build the where clause
+		const where: any = {
+			deadline: Between(startOfDay, endOfDay),
+			isDeleted: false,
+		};
+
+		// Add organization and branch filters if provided
+		if (organizationId) {
+			where.organisation = { ref: organizationId };
+		}
+
+		if (branchId) {
+			where.branch = { uid: branchId };
+		}
+
 		const tasks = await this.taskRepository.find({
-			where: {
-				deadline: Between(startOfDay, endOfDay),
-				isDeleted: false,
-			},
+			where,
 			relations: ['assignees', 'clients', 'branch'],
 		});
 

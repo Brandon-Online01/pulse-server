@@ -23,12 +23,16 @@ const event_emitter_1 = require("@nestjs/event-emitter");
 const email_enums_1 = require("../lib/enums/email.enums");
 const crypto = require("crypto");
 const schedule_1 = require("@nestjs/schedule");
+const cache_manager_1 = require("@nestjs/cache-manager");
 let LicensingService = class LicensingService {
-    constructor(licenseRepository, eventEmitter) {
+    constructor(licenseRepository, eventEmitter, cacheManager) {
         this.licenseRepository = licenseRepository;
         this.eventEmitter = eventEmitter;
+        this.cacheManager = cacheManager;
         this.GRACE_PERIOD_DAYS = 15;
         this.RENEWAL_WINDOW_DAYS = 30;
+        this.LICENSE_CACHE_KEY_PREFIX = 'license_validation:';
+        this.LICENSE_CACHE_TTL = 3600;
     }
     async resetAllLicensesToActive() {
         await this.licenseRepository.update({}, {
@@ -187,6 +191,7 @@ let LicensingService = class LicensingService {
             }
             Object.assign(license, updateLicenseDto);
             const updated = await this.licenseRepository.save(license);
+            await this.invalidateLicenseCache(ref);
             await this.eventEmitter.emit('send.email', email_enums_1.EmailType.LICENSE_UPDATED, [updated?.organisation?.email], {
                 name: updated?.organisation?.name,
                 licenseKey: updated?.licenseKey,
@@ -210,32 +215,49 @@ let LicensingService = class LicensingService {
     }
     async validateLicense(ref) {
         try {
+            const cacheKey = `${this.LICENSE_CACHE_KEY_PREFIX}${ref}`;
+            const cachedResult = await this.cacheManager.get(cacheKey);
+            if (cachedResult !== undefined) {
+                return cachedResult;
+            }
             const license = await this.findOne(ref);
             const now = new Date();
             license.lastValidated = now;
             await this.licenseRepository.save(license);
+            let isValid = false;
             if (license.status === license_enums_1.LicenseStatus.SUSPENDED) {
-                return false;
+                isValid = false;
             }
-            if (now > license.validUntil) {
+            else if (now > license.validUntil) {
                 const gracePeriodEnd = new Date(license.validUntil.getTime() + this.GRACE_PERIOD_DAYS * 24 * 60 * 60 * 1000);
                 if (now <= gracePeriodEnd) {
                     license.status = license_enums_1.LicenseStatus.GRACE_PERIOD;
                     await this.licenseRepository.save(license);
-                    return true;
+                    isValid = true;
                 }
-                license.status = license_enums_1.LicenseStatus.EXPIRED;
-                await this.licenseRepository.save(license);
-                return false;
+                else {
+                    license.status = license_enums_1.LicenseStatus.EXPIRED;
+                    await this.licenseRepository.save(license);
+                    isValid = false;
+                }
             }
-            if (license.status === license_enums_1.LicenseStatus.TRIAL) {
-                return now <= license.validUntil;
+            else if (license.status === license_enums_1.LicenseStatus.TRIAL) {
+                isValid = now <= license.validUntil;
             }
-            return license.status === license_enums_1.LicenseStatus.ACTIVE;
+            else {
+                isValid = license.status === license_enums_1.LicenseStatus.ACTIVE;
+            }
+            await this.cacheManager.set(cacheKey, isValid, this.LICENSE_CACHE_TTL);
+            return isValid;
         }
         catch (error) {
-            console.log(error);
+            common_1.Logger.error(`Error validating license ${ref}`, error);
+            return false;
         }
+    }
+    async invalidateLicenseCache(ref) {
+        const cacheKey = `${this.LICENSE_CACHE_KEY_PREFIX}${ref}`;
+        await this.cacheManager.del(cacheKey);
     }
     async checkLimits(ref, metric, currentValue) {
         try {
@@ -304,7 +326,8 @@ let LicensingService = class LicensingService {
             return renewed;
         }
         catch (error) {
-            console.log(error);
+            common_1.Logger.error(`Error renewing license ${ref}`, error);
+            throw error;
         }
     }
     async suspendLicense(ref) {
@@ -328,7 +351,8 @@ let LicensingService = class LicensingService {
             return suspended;
         }
         catch (error) {
-            console.log(error);
+            common_1.Logger.error(`Error suspending license ${ref}`, error);
+            throw error;
         }
     }
     async activateLicense(ref) {
@@ -352,7 +376,8 @@ let LicensingService = class LicensingService {
             return activated;
         }
         catch (error) {
-            console.log(error);
+            common_1.Logger.error(`Error activating license ${ref}`, error);
+            throw error;
         }
     }
     async findExpiringLicenses(daysThreshold = 30) {
@@ -382,7 +407,8 @@ __decorate([
 exports.LicensingService = LicensingService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(license_entity_1.License)),
+    __param(2, (0, common_1.Inject)(cache_manager_1.CACHE_MANAGER)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
-        event_emitter_1.EventEmitter2])
+        event_emitter_1.EventEmitter2, Object])
 ], LicensingService);
 //# sourceMappingURL=licensing.service.js.map

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan } from 'typeorm';
 import { License } from './entities/license.entity';
@@ -10,16 +10,21 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { EmailType } from '../lib/enums/email.enums';
 import * as crypto from 'crypto';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 
 @Injectable()
 export class LicensingService {
 	private readonly GRACE_PERIOD_DAYS = 15;
 	private readonly RENEWAL_WINDOW_DAYS = 30;
+	private readonly LICENSE_CACHE_KEY_PREFIX = 'license_validation:';
+	private readonly LICENSE_CACHE_TTL = 3600; // 1 hour in seconds
 
 	constructor(
 		@InjectRepository(License)
 		private readonly licenseRepository: Repository<License>,
 		private readonly eventEmitter: EventEmitter2,
+		@Inject(CACHE_MANAGER) private cacheManager: Cache,
 	) {}
 
 	//TODO: Remove this cron job after testing and proper setup
@@ -203,6 +208,9 @@ export class LicensingService {
 
 			const updated = await this.licenseRepository.save(license);
 
+			// Invalidate cache
+			await this.invalidateLicenseCache(ref);
+
 			// Send email notification
 			await this.eventEmitter.emit('send.email', EmailType.LICENSE_UPDATED, [updated?.organisation?.email], {
 				name: updated?.organisation?.name,
@@ -228,17 +236,26 @@ export class LicensingService {
 
 	async validateLicense(ref: string): Promise<boolean> {
 		try {
+			// Try to get from cache first
+			const cacheKey = `${this.LICENSE_CACHE_KEY_PREFIX}${ref}`;
+			const cachedResult = await this.cacheManager.get<boolean>(cacheKey);
+			
+			if (cachedResult !== undefined) {
+				return cachedResult;
+			}
+
+			// If not in cache, validate from database
 			const license = await this.findOne(ref);
 			const now = new Date();
 
 			license.lastValidated = now;
 			await this.licenseRepository.save(license);
 
-			if (license.status === LicenseStatus.SUSPENDED) {
-				return false;
-			}
+			let isValid = false;
 
-			if (now > license.validUntil) {
+			if (license.status === LicenseStatus.SUSPENDED) {
+				isValid = false;
+			} else if (now > license.validUntil) {
 				const gracePeriodEnd = new Date(
 					license.validUntil.getTime() + this.GRACE_PERIOD_DAYS * 24 * 60 * 60 * 1000,
 				);
@@ -246,22 +263,32 @@ export class LicensingService {
 				if (now <= gracePeriodEnd) {
 					license.status = LicenseStatus.GRACE_PERIOD;
 					await this.licenseRepository.save(license);
-					return true;
+					isValid = true;
+				} else {
+					license.status = LicenseStatus.EXPIRED;
+					await this.licenseRepository.save(license);
+					isValid = false;
 				}
-
-				license.status = LicenseStatus.EXPIRED;
-				await this.licenseRepository.save(license);
-				return false;
+			} else if (license.status === LicenseStatus.TRIAL) {
+				isValid = now <= license.validUntil;
+			} else {
+				isValid = license.status === LicenseStatus.ACTIVE;
 			}
 
-			if (license.status === LicenseStatus.TRIAL) {
-				return now <= license.validUntil;
-			}
-
-			return license.status === LicenseStatus.ACTIVE;
+			// Cache the result
+			await this.cacheManager.set(cacheKey, isValid, this.LICENSE_CACHE_TTL);
+			
+			return isValid;
 		} catch (error) {
-			console.log(error);
+			Logger.error(`Error validating license ${ref}`, error);
+			return false;
 		}
+	}
+
+	// Add a method to invalidate license cache when license is updated
+	async invalidateLicenseCache(ref: string): Promise<void> {
+		const cacheKey = `${this.LICENSE_CACHE_KEY_PREFIX}${ref}`;
+		await this.cacheManager.del(cacheKey);
 	}
 
 	async checkLimits(ref: string, metric: keyof License, currentValue: number): Promise<boolean> {
@@ -330,6 +357,8 @@ export class LicensingService {
 				status: LicenseStatus.ACTIVE,
 			});
 
+			// Cache will be invalidated by the update method call above
+
 			this.eventEmitter.emit('send.email', EmailType.LICENSE_RENEWED, [renewed?.organisation?.email], {
 				name: renewed?.organisation?.name,
 				licenseKey: renewed?.licenseKey,
@@ -348,13 +377,16 @@ export class LicensingService {
 
 			return renewed;
 		} catch (error) {
-			console.log(error);
+			Logger.error(`Error renewing license ${ref}`, error);
+			throw error;
 		}
 	}
 
 	async suspendLicense(ref: string): Promise<License> {
 		try {
 			const suspended = await this.update(ref, { status: LicenseStatus.SUSPENDED });
+
+			// Cache will be invalidated by the update method call
 
 			// Send email notification
 			this.eventEmitter.emit('send.email', EmailType.LICENSE_SUSPENDED, [suspended.organisation.email], {
@@ -375,13 +407,16 @@ export class LicensingService {
 
 			return suspended;
 		} catch (error) {
-			console.log(error);
+			Logger.error(`Error suspending license ${ref}`, error);
+			throw error;
 		}
 	}
 
 	async activateLicense(ref: string): Promise<License> {
 		try {
 			const activated = await this.update(ref, { status: LicenseStatus.ACTIVE });
+
+			// Cache will be invalidated by the update method call
 
 			this.eventEmitter.emit('send.email', EmailType.LICENSE_ACTIVATED, [activated?.organisation?.email], {
 				name: activated?.organisation?.name,
@@ -401,7 +436,8 @@ export class LicensingService {
 
 			return activated;
 		} catch (error) {
-			console.log(error);
+			Logger.error(`Error activating license ${ref}`, error);
+			throw error;
 		}
 	}
 

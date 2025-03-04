@@ -378,24 +378,27 @@ let ReportsService = class ReportsService {
                     totalBreakTime += breakDurationMinutes;
                 }
             }
-            todaysTotalHours += Math.floor(todaysTotalMinutes / 60);
-            todaysTotalMinutes = todaysTotalMinutes % 60;
+            if (todaysTotalMinutes >= 60) {
+                todaysTotalHours += Math.floor(todaysTotalMinutes / 60);
+                todaysTotalMinutes = todaysTotalMinutes % 60;
+            }
             const todaysHoursFormatted = `${todaysTotalHours}h ${todaysTotalMinutes}m`;
             const averageHoursWorked = totalDays ? totalHoursWorked / totalDays : 0;
-            const averageBreakTime = presentDays ? totalBreakTime / presentDays : 0;
+            const averageBreakTime = totalDays ? totalBreakTime / totalDays : 0;
+            const onTimeCheckIns = records.length - lateCheckIns;
             return {
                 totalDays,
                 presentDays,
                 absentDays: totalDays - presentDays,
-                attendanceRate,
+                attendanceRate: Number(attendanceRate.toFixed(2)),
                 averageCheckInTime: checkInTime,
                 averageCheckOutTime: checkOutTime,
                 averageHoursWorked,
                 todaysHoursFormatted,
                 totalOvertime: Number(totalOvertime.toFixed(2)),
-                onTimeCheckIns: totalDays - lateCheckIns,
+                onTimeCheckIns,
                 lateCheckIns,
-                averageBreakTime,
+                averageBreakTime: Number(averageBreakTime.toFixed(2)),
                 efficiency: Number(this.calculateWorkEfficiency(averageHoursWorked, averageBreakTime).toFixed(2)),
             };
         }

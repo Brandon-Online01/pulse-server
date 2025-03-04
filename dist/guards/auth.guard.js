@@ -26,10 +26,18 @@ let AuthGuard = class AuthGuard extends base_guard_1.BaseGuard {
             if (!request['licenseValidated']) {
                 const isLicenseValid = await this.licensingService.validateLicense(decodedToken.licenseId);
                 if (!isLicenseValid) {
-                    throw new common_1.UnauthorizedException('Your organization\'s license has expired');
+                    throw new common_1.UnauthorizedException("Your organization's license has expired");
                 }
                 request['licenseValidated'] = true;
+                if (!request['organization']) {
+                    request['organization'] = {
+                        ref: decodedToken.organisationRef,
+                    };
+                }
             }
+        }
+        if (decodedToken.branch && !request['branch']) {
+            request['branch'] = decodedToken.branch;
         }
         if (!request['user']) {
             request['user'] = decodedToken;
@@ -40,7 +48,6 @@ let AuthGuard = class AuthGuard extends base_guard_1.BaseGuard {
 exports.AuthGuard = AuthGuard;
 exports.AuthGuard = AuthGuard = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [jwt_1.JwtService,
-        licensing_service_1.LicensingService])
+    __metadata("design:paramtypes", [jwt_1.JwtService, licensing_service_1.LicensingService])
 ], AuthGuard);
 //# sourceMappingURL=auth.guard.js.map

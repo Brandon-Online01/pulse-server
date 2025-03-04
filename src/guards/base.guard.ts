@@ -36,10 +36,10 @@ export class BaseGuard {
 
     private extractTokenFromHeader(request: Request): string | undefined {
         const token = request.headers['token'] as string;
-        if (!token) {
-            const [type, authToken] = request.headers.authorization?.split(' ') ?? [];
-            return type === 'Bearer' ? authToken : undefined;
-        }
-        return token;
+		if (!token) {
+			const [type, authToken] = request.headers.authorization?.split(' ') ?? [];
+			return type === 'Bearer' ? authToken : undefined;
+		}
+		return token;
     }
 } 

@@ -497,29 +497,31 @@ export class ReportsService {
 			}
 
 			// Convert excess minutes to hours
-			todaysTotalHours += Math.floor(todaysTotalMinutes / 60);
-			todaysTotalMinutes = todaysTotalMinutes % 60;
+			if (todaysTotalMinutes >= 60) {
+				todaysTotalHours += Math.floor(todaysTotalMinutes / 60);
+				todaysTotalMinutes = todaysTotalMinutes % 60;
+			}
 
 			// Format today's hours in "xh ym" format
 			const todaysHoursFormatted = `${todaysTotalHours}h ${todaysTotalMinutes}m`;
 
 			const averageHoursWorked = totalDays ? totalHoursWorked / totalDays : 0;
-			const averageBreakTime = presentDays ? totalBreakTime / presentDays : 0;
+			const averageBreakTime = totalDays ? totalBreakTime / totalDays : 0;
+			const onTimeCheckIns = records.length - lateCheckIns;
 
 			return {
 				totalDays,
 				presentDays,
 				absentDays: totalDays - presentDays,
-				attendanceRate,
-				// Use latest record times instead of averages
+				attendanceRate: Number(attendanceRate.toFixed(2)),
 				averageCheckInTime: checkInTime,
 				averageCheckOutTime: checkOutTime,
 				averageHoursWorked,
 				todaysHoursFormatted, // Add the new field with formatted hours
 				totalOvertime: Number(totalOvertime.toFixed(2)),
-				onTimeCheckIns: totalDays - lateCheckIns,
+				onTimeCheckIns,
 				lateCheckIns,
-				averageBreakTime,
+				averageBreakTime: Number(averageBreakTime.toFixed(2)),
 				efficiency: Number(this.calculateWorkEfficiency(averageHoursWorked, averageBreakTime).toFixed(2)),
 			};
 		} catch (error) {

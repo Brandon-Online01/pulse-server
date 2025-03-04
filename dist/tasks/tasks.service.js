@@ -125,7 +125,7 @@ let TasksService = class TasksService {
         });
         let seasonNumber = 1;
         if (createTaskDto.repetitionType === task_enums_1.RepetitionType.YEARLY) {
-            seasonNumber = Math.ceil((taskDate.getFullYear() - seriesStart.getFullYear()) + 1);
+            seasonNumber = Math.ceil(taskDate.getFullYear() - seriesStart.getFullYear() + 1);
         }
         else if (createTaskDto.repetitionType === task_enums_1.RepetitionType.MONTHLY) {
             const monthDiff = (taskDate.getFullYear() - seriesStart.getFullYear()) * 12 +
@@ -135,11 +135,13 @@ let TasksService = class TasksService {
         else {
             seasonNumber = Math.ceil(sequenceNumber / (createTaskDto.repetitionType === task_enums_1.RepetitionType.WEEKLY ? 13 : 30));
         }
-        const episodeNumber = createTaskDto.repetitionType === task_enums_1.RepetitionType.WEEKLY ?
-            ((sequenceNumber - 1) % 13) + 1 :
-            ((sequenceNumber - 1) % 30) + 1;
+        const episodeNumber = createTaskDto.repetitionType === task_enums_1.RepetitionType.WEEKLY
+            ? ((sequenceNumber - 1) % 13) + 1
+            : ((sequenceNumber - 1) % 30) + 1;
         const repeatedTask = this.taskRepository.create({
-            title: `${createTaskDto.title} S${seasonNumber.toString().padStart(2, '0')} E${episodeNumber.toString().padStart(2, '0')} - ${formattedDate}`,
+            title: `${createTaskDto.title} S${seasonNumber.toString().padStart(2, '0')} E${episodeNumber
+                .toString()
+                .padStart(2, '0')} - ${formattedDate}`,
             description: `${createTaskDto.description}\n\n---\nSeries Information:\n- Season ${seasonNumber}, Episode ${episodeNumber}\n- Series: ${createTaskDto.title}\n- Repeats: ${repetitionTypeDisplay}\n- Air Date: ${formattedDate}\n- Series Start: ${seriesStart.toLocaleDateString()}\n- Series Finale: ${seriesEnd.toLocaleDateString()}`,
             deadline: taskDate,
             assignees: createTaskDto.assignees?.map((a) => ({ uid: a.uid })) || [],
@@ -168,7 +170,7 @@ let TasksService = class TasksService {
                     task: { uid: savedTask.uid },
                     isDeleted: false,
                     createdAt: new Date(),
-                    updatedAt: new Date()
+                    updatedAt: new Date(),
                 }));
                 const savedSubtasks = await this.subtaskRepository.save(subtasks);
                 if (!savedSubtasks) {
@@ -264,7 +266,7 @@ let TasksService = class TasksService {
                             task: { uid: savedTask.uid },
                             isDeleted: false,
                             createdAt: new Date(),
-                            updatedAt: new Date()
+                            updatedAt: new Date(),
                         }));
                         const savedSubtasks = await this.subtaskRepository.save(subtasks);
                         if (!savedSubtasks) {
@@ -353,7 +355,7 @@ let TasksService = class TasksService {
     }
     async findOne(ref) {
         try {
-            const cacheKey = this.getCacheKey(ref);
+            const cacheKey = this.getCacheKey(`${ref}`);
             const cachedTask = await this.cacheManager.get(cacheKey);
             if (cachedTask) {
                 return {
@@ -361,11 +363,12 @@ let TasksService = class TasksService {
                     message: process.env.SUCCESS_MESSAGE,
                 };
             }
+            const where = {
+                uid: ref,
+                isDeleted: false,
+            };
             const task = await this.taskRepository.findOne({
-                where: {
-                    uid: ref,
-                    isDeleted: false,
-                },
+                where: where,
                 relations: ['creator', 'subtasks', 'organisation', 'branch', 'routes'],
             });
             if (!task) {
@@ -387,8 +390,12 @@ let TasksService = class TasksService {
     }
     async tasksByUser(ref) {
         try {
+            const where = {
+                creator: { uid: ref },
+                isDeleted: false,
+            };
             const tasks = await this.taskRepository.find({
-                where: { creator: { uid: ref }, isDeleted: false },
+                where: where,
                 relations: ['creator', 'subtasks', 'organisation', 'branch', 'routes'],
             });
             if (!tasks) {
@@ -432,7 +439,7 @@ let TasksService = class TasksService {
                 where.status = (0, typeorm_3.Not)(task_enums_1.TaskStatus.COMPLETED);
             }
             const [tasks, total] = await this.taskRepository.findAndCount({
-                where,
+                where: where,
                 skip: (page - 1) * limit,
                 relations: ['creator', 'subtasks', 'organisation', 'branch', 'routes'],
                 take: limit,
@@ -442,10 +449,10 @@ let TasksService = class TasksService {
             });
             let filteredTasks = await Promise.all(tasks.map((task) => this.populateTaskRelations(task)));
             if (filters?.assigneeId) {
-                filteredTasks = filteredTasks?.filter((task) => task.assignees?.some((assignee) => assignee.uid === filters?.assigneeId));
+                filteredTasks = filteredTasks?.filter((task) => task.assignees?.some((assignee) => assignee?.uid === filters?.assigneeId));
             }
             if (filters?.clientId) {
-                filteredTasks = filteredTasks?.filter((task) => task.clients?.some((client) => client.uid === filters?.clientId));
+                filteredTasks = filteredTasks?.filter((task) => task.clients?.some((client) => client?.uid === filters?.clientId));
             }
             const response = {
                 data: filteredTasks,
@@ -631,6 +638,7 @@ let TasksService = class TasksService {
         try {
             const subtask = await this.subtaskRepository.findOne({
                 where: { uid: ref, isDeleted: false },
+                relations: ['task'],
             });
             if (!subtask) {
                 return {

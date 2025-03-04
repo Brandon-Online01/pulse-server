@@ -3,12 +3,16 @@ import { License } from './entities/license.entity';
 import { CreateLicenseDto } from './dto/create-license.dto';
 import { UpdateLicenseDto } from './dto/update-license.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { Cache } from 'cache-manager';
 export declare class LicensingService {
     private readonly licenseRepository;
     private readonly eventEmitter;
+    private cacheManager;
     private readonly GRACE_PERIOD_DAYS;
     private readonly RENEWAL_WINDOW_DAYS;
-    constructor(licenseRepository: Repository<License>, eventEmitter: EventEmitter2);
+    private readonly LICENSE_CACHE_KEY_PREFIX;
+    private readonly LICENSE_CACHE_TTL;
+    constructor(licenseRepository: Repository<License>, eventEmitter: EventEmitter2, cacheManager: Cache);
     resetAllLicensesToActive(): Promise<void>;
     private generateLicenseKey;
     private getPlanDefaults;
@@ -18,6 +22,7 @@ export declare class LicensingService {
     findByOrganisation(organisationRef: string): Promise<License[]>;
     update(ref: string, updateLicenseDto: UpdateLicenseDto): Promise<License>;
     validateLicense(ref: string): Promise<boolean>;
+    invalidateLicenseCache(ref: string): Promise<void>;
     checkLimits(ref: string, metric: keyof License, currentValue: number): Promise<boolean>;
     renewLicense(ref: string): Promise<License>;
     suspendLicense(ref: string): Promise<License>;

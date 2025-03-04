@@ -13,7 +13,6 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TasksController = void 0;
-const common_1 = require("@nestjs/common");
 const tasks_service_1 = require("./tasks.service");
 const task_route_service_1 = require("./task-route.service");
 const create_task_dto_1 = require("./dto/create-task.dto");
@@ -26,6 +25,7 @@ const user_enums_1 = require("../lib/enums/user.enums");
 const update_subtask_dto_1 = require("./dto/update-subtask.dto");
 const enterprise_only_decorator_1 = require("../decorators/enterprise-only.decorator");
 const task_enums_1 = require("../lib/enums/task.enums");
+const common_1 = require("@nestjs/common");
 let TasksController = class TasksController {
     constructor(tasksService, taskRouteService) {
         this.tasksService = tasksService;
@@ -72,6 +72,7 @@ let TasksController = class TasksController {
             if (isOverdue && isOverdue !== 'undefined' && isOverdue !== '') {
                 filters.isOverdue = isOverdue.toLowerCase() === 'true';
             }
+            console.log(filters, 'task filters here');
             return this.tasksService.findAll(Object.keys(filters).length > 0 ? filters : undefined, pageNum, limitNum);
         }
         catch (error) {
@@ -114,19 +115,19 @@ let TasksController = class TasksController {
     async getOptimizedRoutes(dateStr) {
         const date = dateStr ? new Date(dateStr) : new Date();
         const routes = await this.taskRouteService.getRoutes(date);
-        return routes.map(route => ({
+        return routes.map((route) => ({
             userId: route.assignee.uid,
-            stops: route.waypoints.map(wp => ({
+            stops: route.waypoints.map((wp) => ({
                 taskId: wp.taskId,
                 clientId: wp.clientId,
                 location: {
                     latitude: wp.location.lat,
                     longitude: wp.location.lng,
-                    address: ''
-                }
+                    address: '',
+                },
             })),
             estimatedDuration: route.totalDuration,
-            totalDistance: route.totalDistance
+            totalDistance: route.totalDistance,
         }));
     }
     async calculateOptimizedRoutes(dateStr) {
@@ -141,7 +142,7 @@ __decorate([
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({
         summary: 'Create a new task',
-        description: 'Creates a new task with the provided details including assignees, clients, and subtasks'
+        description: 'Creates a new task with the provided details including assignees, clients, and subtasks',
     }),
     (0, swagger_1.ApiBody)({ type: create_task_dto_1.CreateTaskDto }),
     (0, swagger_1.ApiCreatedResponse)({
@@ -149,18 +150,18 @@ __decorate([
         schema: {
             type: 'object',
             properties: {
-                message: { type: 'string', example: 'Success' }
-            }
-        }
+                message: { type: 'string', example: 'Success' },
+            },
+        },
     }),
     (0, swagger_1.ApiBadRequestResponse)({
         description: 'Bad Request - Invalid data provided',
         schema: {
             type: 'object',
             properties: {
-                message: { type: 'string', example: 'Error creating task' }
-            }
-        }
+                message: { type: 'string', example: 'Error creating task' },
+            },
+        },
     }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -172,7 +173,7 @@ __decorate([
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({
         summary: 'Get all tasks',
-        description: 'Retrieves a paginated list of all tasks with optional filtering by status, priority, assignee, client, date range, and overdue status'
+        description: 'Retrieves a paginated list of all tasks with optional filtering by status, priority, assignee, client, date range, and overdue status',
     }),
     (0, swagger_1.ApiQuery)({ name: 'status', enum: task_enums_1.TaskStatus, required: false, description: 'Filter by task status' }),
     (0, swagger_1.ApiQuery)({ name: 'priority', enum: task_enums_1.TaskPriority, required: false, description: 'Filter by task priority' }),
@@ -180,9 +181,19 @@ __decorate([
     (0, swagger_1.ApiQuery)({ name: 'clientId', type: String, required: false, description: 'Filter by client ID' }),
     (0, swagger_1.ApiQuery)({ name: 'startDate', type: String, required: false, description: 'Filter by start date (ISO format)' }),
     (0, swagger_1.ApiQuery)({ name: 'endDate', type: String, required: false, description: 'Filter by end date (ISO format)' }),
-    (0, swagger_1.ApiQuery)({ name: 'isOverdue', type: String, required: false, description: 'Filter by overdue status (true/false)' }),
+    (0, swagger_1.ApiQuery)({
+        name: 'isOverdue',
+        type: String,
+        required: false,
+        description: 'Filter by overdue status (true/false)',
+    }),
     (0, swagger_1.ApiQuery)({ name: 'page', type: Number, required: false, description: 'Page number, defaults to 1' }),
-    (0, swagger_1.ApiQuery)({ name: 'limit', type: Number, required: false, description: 'Number of records per page, defaults to system setting' }),
+    (0, swagger_1.ApiQuery)({
+        name: 'limit',
+        type: Number,
+        required: false,
+        description: 'Number of records per page, defaults to system setting',
+    }),
     (0, swagger_1.ApiOkResponse)({
         description: 'List of tasks retrieved successfully',
         schema: {
@@ -200,9 +211,9 @@ __decorate([
                             priority: { type: 'string', enum: Object.values(task_enums_1.TaskPriority) },
                             deadline: { type: 'string', format: 'date-time' },
                             progress: { type: 'number' },
-                            isOverdue: { type: 'boolean' }
-                        }
-                    }
+                            isOverdue: { type: 'boolean' },
+                        },
+                    },
                 },
                 meta: {
                     type: 'object',
@@ -210,12 +221,12 @@ __decorate([
                         total: { type: 'number', example: 100 },
                         page: { type: 'number', example: 1 },
                         limit: { type: 'number', example: 10 },
-                        totalPages: { type: 'number', example: 10 }
-                    }
+                        totalPages: { type: 'number', example: 10 },
+                    },
                 },
-                message: { type: 'string', example: 'Success' }
-            }
-        }
+                message: { type: 'string', example: 'Success' },
+            },
+        },
     }),
     __param(0, (0, common_1.Query)('status')),
     __param(1, (0, common_1.Query)('priority')),
@@ -235,7 +246,7 @@ __decorate([
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({
         summary: 'Get a task by reference',
-        description: 'Retrieves detailed information about a specific task including assignees, clients, and subtasks'
+        description: 'Retrieves detailed information about a specific task including assignees, clients, and subtasks',
     }),
     (0, swagger_1.ApiParam)({ name: 'ref', description: 'Task reference code or ID', type: 'number' }),
     (0, swagger_1.ApiOkResponse)({
@@ -256,12 +267,12 @@ __decorate([
                         isOverdue: { type: 'boolean' },
                         assignees: { type: 'array', items: { type: 'object' } },
                         clients: { type: 'array', items: { type: 'object' } },
-                        subtasks: { type: 'array', items: { type: 'object' } }
-                    }
+                        subtasks: { type: 'array', items: { type: 'object' } },
+                    },
                 },
-                message: { type: 'string', example: 'Success' }
-            }
-        }
+                message: { type: 'string', example: 'Success' },
+            },
+        },
     }),
     (0, swagger_1.ApiNotFoundResponse)({
         description: 'Task not found',
@@ -269,9 +280,9 @@ __decorate([
             type: 'object',
             properties: {
                 message: { type: 'string', example: 'Task not found' },
-                task: { type: 'null' }
-            }
-        }
+                task: { type: 'null' },
+            },
+        },
     }),
     __param(0, (0, common_1.Param)('ref')),
     __metadata("design:type", Function),
@@ -283,7 +294,7 @@ __decorate([
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({
         summary: 'Get tasks by user reference code',
-        description: 'Retrieves all tasks assigned to a specific user'
+        description: 'Retrieves all tasks assigned to a specific user',
     }),
     (0, swagger_1.ApiParam)({ name: 'ref', description: 'User reference code or ID', type: 'number' }),
     (0, swagger_1.ApiOkResponse)({
@@ -301,13 +312,13 @@ __decorate([
                             description: { type: 'string' },
                             status: { type: 'string' },
                             priority: { type: 'string' },
-                            deadline: { type: 'string', format: 'date-time' }
-                        }
-                    }
+                            deadline: { type: 'string', format: 'date-time' },
+                        },
+                    },
                 },
-                message: { type: 'string', example: 'Success' }
-            }
-        }
+                message: { type: 'string', example: 'Success' },
+            },
+        },
     }),
     (0, swagger_1.ApiNotFoundResponse)({
         description: 'User not found or has no tasks',
@@ -315,9 +326,9 @@ __decorate([
             type: 'object',
             properties: {
                 message: { type: 'string', example: 'No tasks found for this user' },
-                tasks: { type: 'array', items: {}, example: [] }
-            }
-        }
+                tasks: { type: 'array', items: {}, example: [] },
+            },
+        },
     }),
     __param(0, (0, common_1.Param)('ref')),
     __metadata("design:type", Function),
@@ -329,7 +340,7 @@ __decorate([
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({
         summary: 'Get a subtask by reference',
-        description: 'Retrieves detailed information about a specific subtask'
+        description: 'Retrieves detailed information about a specific subtask',
     }),
     (0, swagger_1.ApiParam)({ name: 'ref', description: 'Subtask reference code or ID', type: 'number' }),
     (0, swagger_1.ApiOkResponse)({
@@ -344,12 +355,12 @@ __decorate([
                         title: { type: 'string' },
                         description: { type: 'string' },
                         status: { type: 'string' },
-                        isCompleted: { type: 'boolean' }
-                    }
+                        isCompleted: { type: 'boolean' },
+                    },
                 },
-                message: { type: 'string', example: 'Success' }
-            }
-        }
+                message: { type: 'string', example: 'Success' },
+            },
+        },
     }),
     (0, swagger_1.ApiNotFoundResponse)({
         description: 'Subtask not found',
@@ -357,9 +368,9 @@ __decorate([
             type: 'object',
             properties: {
                 message: { type: 'string', example: 'Subtask not found' },
-                subtask: { type: 'null' }
-            }
-        }
+                subtask: { type: 'null' },
+            },
+        },
     }),
     __param(0, (0, common_1.Param)('ref')),
     __metadata("design:type", Function),
@@ -371,7 +382,7 @@ __decorate([
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({
         summary: 'Update a task by reference',
-        description: 'Updates an existing task with the provided information including status, assignees, clients, and subtasks'
+        description: 'Updates an existing task with the provided information including status, assignees, clients, and subtasks',
     }),
     (0, swagger_1.ApiParam)({ name: 'ref', description: 'Task reference code or ID', type: 'number' }),
     (0, swagger_1.ApiBody)({ type: update_task_dto_1.UpdateTaskDto }),
@@ -380,27 +391,27 @@ __decorate([
         schema: {
             type: 'object',
             properties: {
-                message: { type: 'string', example: 'Success' }
-            }
-        }
+                message: { type: 'string', example: 'Success' },
+            },
+        },
     }),
     (0, swagger_1.ApiNotFoundResponse)({
         description: 'Task not found',
         schema: {
             type: 'object',
             properties: {
-                message: { type: 'string', example: 'Task not found' }
-            }
-        }
+                message: { type: 'string', example: 'Task not found' },
+            },
+        },
     }),
     (0, swagger_1.ApiBadRequestResponse)({
         description: 'Bad Request - Invalid data provided',
         schema: {
             type: 'object',
             properties: {
-                message: { type: 'string', example: 'Error updating task' }
-            }
-        }
+                message: { type: 'string', example: 'Error updating task' },
+            },
+        },
     }),
     __param(0, (0, common_1.Param)('ref')),
     __param(1, (0, common_1.Body)()),
@@ -413,7 +424,7 @@ __decorate([
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({
         summary: 'Update a subtask by reference',
-        description: 'Updates an existing subtask with the provided information'
+        description: 'Updates an existing subtask with the provided information',
     }),
     (0, swagger_1.ApiParam)({ name: 'ref', description: 'Subtask reference code or ID', type: 'number' }),
     (0, swagger_1.ApiBody)({ type: update_subtask_dto_1.UpdateSubtaskDto }),
@@ -422,27 +433,27 @@ __decorate([
         schema: {
             type: 'object',
             properties: {
-                message: { type: 'string', example: 'Success' }
-            }
-        }
+                message: { type: 'string', example: 'Success' },
+            },
+        },
     }),
     (0, swagger_1.ApiNotFoundResponse)({
         description: 'Subtask not found',
         schema: {
             type: 'object',
             properties: {
-                message: { type: 'string', example: 'Subtask not found' }
-            }
-        }
+                message: { type: 'string', example: 'Subtask not found' },
+            },
+        },
     }),
     (0, swagger_1.ApiBadRequestResponse)({
         description: 'Bad Request - Invalid data provided',
         schema: {
             type: 'object',
             properties: {
-                message: { type: 'string', example: 'Error updating subtask' }
-            }
-        }
+                message: { type: 'string', example: 'Error updating subtask' },
+            },
+        },
     }),
     __param(0, (0, common_1.Param)('ref')),
     __param(1, (0, common_1.Body)()),
@@ -455,7 +466,7 @@ __decorate([
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({
         summary: 'Complete a subtask by reference',
-        description: 'Marks a subtask as completed'
+        description: 'Marks a subtask as completed',
     }),
     (0, swagger_1.ApiParam)({ name: 'ref', description: 'Subtask reference code or ID', type: 'number' }),
     (0, swagger_1.ApiOkResponse)({
@@ -463,18 +474,18 @@ __decorate([
         schema: {
             type: 'object',
             properties: {
-                message: { type: 'string', example: 'Success' }
-            }
-        }
+                message: { type: 'string', example: 'Success' },
+            },
+        },
     }),
     (0, swagger_1.ApiNotFoundResponse)({
         description: 'Subtask not found',
         schema: {
             type: 'object',
             properties: {
-                message: { type: 'string', example: 'Subtask not found' }
-            }
-        }
+                message: { type: 'string', example: 'Subtask not found' },
+            },
+        },
     }),
     __param(0, (0, common_1.Param)('ref')),
     __metadata("design:type", Function),
@@ -486,7 +497,7 @@ __decorate([
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({
         summary: 'Soft delete a subtask by reference',
-        description: 'Marks a subtask as deleted without removing it from the database'
+        description: 'Marks a subtask as deleted without removing it from the database',
     }),
     (0, swagger_1.ApiParam)({ name: 'ref', description: 'Subtask reference code or ID', type: 'number' }),
     (0, swagger_1.ApiOkResponse)({
@@ -494,18 +505,18 @@ __decorate([
         schema: {
             type: 'object',
             properties: {
-                message: { type: 'string', example: 'Success' }
-            }
-        }
+                message: { type: 'string', example: 'Success' },
+            },
+        },
     }),
     (0, swagger_1.ApiNotFoundResponse)({
         description: 'Subtask not found',
         schema: {
             type: 'object',
             properties: {
-                message: { type: 'string', example: 'Subtask not found' }
-            }
-        }
+                message: { type: 'string', example: 'Subtask not found' },
+            },
+        },
     }),
     __param(0, (0, common_1.Param)('ref')),
     __metadata("design:type", Function),
@@ -517,7 +528,7 @@ __decorate([
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({
         summary: 'Soft delete a task by reference',
-        description: 'Marks a task as deleted without removing it from the database'
+        description: 'Marks a task as deleted without removing it from the database',
     }),
     (0, swagger_1.ApiParam)({ name: 'ref', description: 'Task reference code or ID', type: 'number' }),
     (0, swagger_1.ApiOkResponse)({
@@ -525,18 +536,18 @@ __decorate([
         schema: {
             type: 'object',
             properties: {
-                message: { type: 'string', example: 'Success' }
-            }
-        }
+                message: { type: 'string', example: 'Success' },
+            },
+        },
     }),
     (0, swagger_1.ApiNotFoundResponse)({
         description: 'Task not found',
         schema: {
             type: 'object',
             properties: {
-                message: { type: 'string', example: 'Error deleting task' }
-            }
-        }
+                message: { type: 'string', example: 'Error deleting task' },
+            },
+        },
     }),
     __param(0, (0, common_1.Param)('ref')),
     __metadata("design:type", Function),
@@ -547,9 +558,14 @@ __decorate([
     (0, common_1.Get)('routes'),
     (0, swagger_1.ApiOperation)({
         summary: 'Get optimized routes for tasks',
-        description: 'Retrieves optimized routes for tasks on a specific date'
+        description: 'Retrieves optimized routes for tasks on a specific date',
     }),
-    (0, swagger_1.ApiQuery)({ name: 'date', type: String, required: false, description: 'Date for which to retrieve routes (ISO format), defaults to current date' }),
+    (0, swagger_1.ApiQuery)({
+        name: 'date',
+        type: String,
+        required: false,
+        description: 'Date for which to retrieve routes (ISO format), defaults to current date',
+    }),
     (0, swagger_1.ApiOkResponse)({
         description: 'Routes retrieved successfully',
         schema: {
@@ -570,17 +586,17 @@ __decorate([
                                     properties: {
                                         latitude: { type: 'number' },
                                         longitude: { type: 'number' },
-                                        address: { type: 'string' }
-                                    }
-                                }
-                            }
-                        }
+                                        address: { type: 'string' },
+                                    },
+                                },
+                            },
+                        },
                     },
                     estimatedDuration: { type: 'number' },
-                    totalDistance: { type: 'number' }
-                }
-            }
-        }
+                    totalDistance: { type: 'number' },
+                },
+            },
+        },
     }),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER),
     __param(0, (0, common_1.Query)('date')),
@@ -592,26 +608,31 @@ __decorate([
     (0, common_1.Post)('routes/calculate'),
     (0, swagger_1.ApiOperation)({
         summary: 'Calculate optimized routes for tasks on a specific date',
-        description: 'Calculates and stores optimized routes for tasks on a specific date'
+        description: 'Calculates and stores optimized routes for tasks on a specific date',
     }),
-    (0, swagger_1.ApiQuery)({ name: 'date', type: String, required: false, description: 'Date for which to calculate routes (ISO format), defaults to current date' }),
+    (0, swagger_1.ApiQuery)({
+        name: 'date',
+        type: String,
+        required: false,
+        description: 'Date for which to calculate routes (ISO format), defaults to current date',
+    }),
     (0, swagger_1.ApiOkResponse)({
         description: 'Routes calculated successfully',
         schema: {
             type: 'object',
             properties: {
-                message: { type: 'string', example: 'Routes calculated successfully' }
-            }
-        }
+                message: { type: 'string', example: 'Routes calculated successfully' },
+            },
+        },
     }),
     (0, swagger_1.ApiBadRequestResponse)({
         description: 'Bad Request - Invalid date or no tasks found',
         schema: {
             type: 'object',
             properties: {
-                message: { type: 'string', example: 'Error calculating routes' }
-            }
-        }
+                message: { type: 'string', example: 'Error calculating routes' },
+            },
+        },
     }),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER),
     __param(0, (0, common_1.Query)('date')),
@@ -625,7 +646,6 @@ exports.TasksController = TasksController = __decorate([
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, role_guard_1.RoleGuard),
     (0, enterprise_only_decorator_1.EnterpriseOnly)('tasks'),
     (0, swagger_1.ApiUnauthorizedResponse)({ description: 'Unauthorized - Invalid credentials or missing token' }),
-    __metadata("design:paramtypes", [tasks_service_1.TasksService,
-        task_route_service_1.TaskRouteService])
+    __metadata("design:paramtypes", [tasks_service_1.TasksService, task_route_service_1.TaskRouteService])
 ], TasksController);
 //# sourceMappingURL=tasks.controller.js.map
