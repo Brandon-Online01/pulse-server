@@ -84,7 +84,7 @@ __decorate([
     (0, class_validator_1.IsObject)(),
     (0, swagger_1.ApiProperty)({
         example: { uid: 1 },
-        description: 'The branch reference code of the lead'
+        description: 'The branch reference code of the lead',
     }),
     __metadata("design:type", Object)
 ], CreateLeadDto.prototype, "branch", void 0);

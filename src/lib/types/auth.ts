@@ -17,6 +17,7 @@ export interface ProfileData {
   };
   branch?: {
     uid: string;
+    name: string;
   };
 }
 

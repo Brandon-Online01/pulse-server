@@ -16,6 +16,7 @@ export interface ProfileData {
     };
     branch?: {
         uid: string;
+        name: string;
     };
 }
 export interface SignInResponse {

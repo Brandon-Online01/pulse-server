@@ -96,6 +96,7 @@ export class AuthService {
 					},
 					...restOfUser,
 					branch: {
+						name: restOfUser?.branch?.name,
 						uid: restOfUser?.branch?.uid,
 					}
 				};

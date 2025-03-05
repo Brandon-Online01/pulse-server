@@ -1,4 +1,4 @@
-import { LeadStatus } from "src/lib/enums/lead.enums";
+import { LeadStatus } from 'src/lib/enums/lead.enums';
 export declare class CreateLeadDto {
     name: string;
     email: string;

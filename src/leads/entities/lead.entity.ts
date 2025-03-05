@@ -1,4 +1,12 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import {
+	Entity,
+	Column,
+	PrimaryGeneratedColumn,
+	CreateDateColumn,
+	UpdateDateColumn,
+	ManyToOne,
+	JoinColumn,
+} from 'typeorm';
 import { User } from '../../user/entities/user.entity';
 import { Branch } from '../../branch/entities/branch.entity';
 import { Client } from '../../clients/entities/client.entity';
@@ -6,47 +14,47 @@ import { LeadStatus } from '../../lib/enums/lead.enums';
 
 @Entity('leads')
 export class Lead {
-    @PrimaryGeneratedColumn()
-    uid: number;
+	@PrimaryGeneratedColumn()
+	uid: number;
 
-    @Column()
-    name: string;
+	@Column()
+	name: string;
 
-    @Column()
-    email: string;
+	@Column()
+	email: string;
 
-    @Column()
-    phone: string;
+	@Column()
+	phone: string;
 
-    @Column({ nullable: true })
-    notes: string;
+	@Column({ nullable: true })
+	notes: string;
 
-    @Column({ type: 'enum', enum: LeadStatus, default: LeadStatus.PENDING })
-    status: LeadStatus;
+	@Column({ type: 'enum', enum: LeadStatus, default: LeadStatus.PENDING })
+	status: LeadStatus;
 
-    @Column({ type: 'boolean', default: false })
-    isDeleted: boolean;
+	@Column({ type: 'boolean', default: false })
+	isDeleted: boolean;
 
-    @CreateDateColumn()
-    createdAt: Date;
+	@CreateDateColumn()
+	createdAt: Date;
 
-    @UpdateDateColumn()
-    updatedAt: Date;
+	@UpdateDateColumn()
+	updatedAt: Date;
 
-    @ManyToOne(() => User, { onDelete: 'SET NULL' })
-    @JoinColumn({ name: 'ownerUid' })
-    owner: User;
+	@ManyToOne(() => User, { onDelete: 'SET NULL' })
+	@JoinColumn({ name: 'ownerUid' })
+	owner: User;
 
-    @Column({ nullable: true })
-    ownerUid: number;
+	@Column({ nullable: true })
+	ownerUid: number;
 
-    @ManyToOne(() => Branch, { onDelete: 'SET NULL' })
-    @JoinColumn({ name: 'branchUid' })
-    branch: Branch;
+	@ManyToOne(() => Branch, { onDelete: 'SET NULL' })
+	@JoinColumn({ name: 'branchUid' })
+	branch: Branch;
 
-    @Column({ nullable: true })
-    branchUid: number;
+	@Column({ nullable: true })
+	branchUid: number;
 
-    @ManyToOne(() => Client, (client) => client?.leads)
-    client: Client;
+	@ManyToOne(() => Client, (client) => client?.leads)
+	client: Client;
 }
