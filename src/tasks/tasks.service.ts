@@ -628,8 +628,6 @@ export class TasksService {
 				);
 			}
 
-			console.log(filteredTasks, 'all tasks')
-
 			const response = {
 				data: filteredTasks,
 				meta: {

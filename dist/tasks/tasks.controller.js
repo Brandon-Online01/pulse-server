@@ -72,7 +72,6 @@ let TasksController = class TasksController {
             if (isOverdue && isOverdue !== 'undefined' && isOverdue !== '') {
                 filters.isOverdue = isOverdue.toLowerCase() === 'true';
             }
-            console.log(filters, 'task filters here');
             return this.tasksService.findAll(Object.keys(filters).length > 0 ? filters : undefined, pageNum, limitNum);
         }
         catch (error) {

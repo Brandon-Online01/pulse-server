@@ -175,8 +175,6 @@ export class TasksController {
 				filters.isOverdue = isOverdue.toLowerCase() === 'true';
 			}
 
-			console.log(filters, 'task filters here');
-
 			// Call service with filters only if we have any
 			return this.tasksService.findAll(Object.keys(filters).length > 0 ? filters : undefined, pageNum, limitNum);
 		} catch (error) {
