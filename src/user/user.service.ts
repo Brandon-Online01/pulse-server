@@ -38,7 +38,7 @@ export class UserService {
 		try {
 			// Get all cache keys
 			const keys = await this.cacheManager.store.keys();
-			
+
 			// Keys to clear
 			const keysToDelete = [];
 
@@ -48,7 +48,7 @@ export class UserService {
 				this.getCacheKey(user.email),
 				this.getCacheKey(user.username),
 				`${this.CACHE_PREFIX}all`,
-				`${this.CACHE_PREFIX}stats`
+				`${this.CACHE_PREFIX}stats`,
 			);
 
 			// Add organization and branch specific keys
@@ -70,20 +70,19 @@ export class UserService {
 			}
 
 			// Clear all pagination and filtered user list caches
-			const userListCaches = keys.filter(key => 
-				key.startsWith(`${this.CACHE_PREFIX}page`) || 
-				key.includes('_limit') ||
-				key.includes('_filter')
+			const userListCaches = keys.filter(
+				(key) =>
+					key.startsWith(`${this.CACHE_PREFIX}page`) || key.includes('_limit') || key.includes('_filter'),
 			);
 			keysToDelete.push(...userListCaches);
 
 			// Clear all caches
-			await Promise.all(keysToDelete.map(key => this.cacheManager.del(key)));
+			await Promise.all(keysToDelete.map((key) => this.cacheManager.del(key)));
 
 			// Emit event for other services that might be caching user data
 			this.eventEmitter.emit('users.cache.invalidate', {
 				userId: user.uid,
-				keys: keysToDelete
+				keys: keysToDelete,
 			});
 		} catch (error) {
 			console.error('Error invalidating user cache:', error);
@@ -133,7 +132,7 @@ export class UserService {
 			organisationId?: number;
 		},
 		page: number = 1,
-		limit: number = Number(process.env.DEFAULT_PAGE_LIMIT)
+		limit: number = Number(process.env.DEFAULT_PAGE_LIMIT),
 	): Promise<PaginatedResponse<Omit<User, 'password'>>> {
 		try {
 			const queryBuilder = this.userRepository
@@ -161,7 +160,7 @@ export class UserService {
 			if (filters?.search) {
 				queryBuilder.andWhere(
 					'(user.name ILIKE :search OR user.surname ILIKE :search OR user.email ILIKE :search OR user.username ILIKE :search)',
-					{ search: `%${filters.search}%` }
+					{ search: `%${filters.search}%` },
 				);
 			}
 
@@ -178,7 +177,7 @@ export class UserService {
 			}
 
 			return {
-				data: users.map(user => this.excludePassword(user)),
+				data: users.map((user) => this.excludePassword(user)),
 				meta: {
 					total,
 					page,
@@ -219,18 +218,18 @@ export class UserService {
 					status: true,
 					verificationToken: true,
 					resetToken: true,
-					tokenExpires: true
+					tokenExpires: true,
 				},
 				relations: [
 					'userProfile',
-					'userEmployeementProfile', 
+					'userEmployeementProfile',
 					'userAttendances',
 					'userClaims',
 					'userDocs',
 					'leads',
 					'journals',
 					'tasks',
-					'articles', 
+					'articles',
 					'assets',
 					'trackings',
 					'orders',
@@ -240,25 +239,25 @@ export class UserService {
 					'checkIns',
 					'reports',
 					'rewards',
-					'organisation'
-				]
+					'organisation',
+				],
 			});
 
 			if (!user) {
 				return {
 					user: null,
-					message: process.env.NOT_FOUND_MESSAGE
+					message: process.env.NOT_FOUND_MESSAGE,
 				};
 			}
 
 			return {
 				user,
-				message: process.env.SUCCESS_MESSAGE
+				message: process.env.SUCCESS_MESSAGE,
 			};
 		} catch (error) {
 			return {
 				message: error?.message,
-				user: null
+				user: null,
 			};
 		}
 	}
@@ -360,7 +359,7 @@ export class UserService {
 			}
 
 			return {
-				users: users.map(user => this.excludePassword(user)),
+				users: users.map((user) => this.excludePassword(user)),
 				message: process.env.SUCCESS_MESSAGE,
 			};
 		} catch (error) {
@@ -373,11 +372,11 @@ export class UserService {
 		}
 	}
 
-	async update(ref: string, updateUserDto: UpdateUserDto): Promise<{ message: string }> {
+	async update(ref: number, updateUserDto: UpdateUserDto): Promise<{ message: string }> {
 		try {
 			const user = await this.userRepository.findOne({
-				where: { userref: ref, isDeleted: false },
-				relations: ['organisation', 'branch']
+				where: { uid: ref, isDeleted: false },
+				relations: ['organisation', 'branch'],
 			});
 
 			if (!user) {
@@ -403,7 +402,7 @@ export class UserService {
 		try {
 			const user = await this.userRepository.findOne({
 				where: { userref: ref, isDeleted: false },
-				relations: ['organisation', 'branch']
+				relations: ['organisation', 'branch'],
 			});
 
 			if (!user) {
@@ -467,7 +466,7 @@ export class UserService {
 		try {
 			const user = await this.userRepository.findOne({
 				where: { uid: ref },
-				relations: ['organisation', 'branch']
+				relations: ['organisation', 'branch'],
 			});
 
 			if (!user) {
@@ -518,7 +517,7 @@ export class UserService {
 	async markEmailAsVerified(uid: number): Promise<void> {
 		const user = await this.userRepository.findOne({
 			where: { uid },
-			relations: ['organisation', 'branch']
+			relations: ['organisation', 'branch'],
 		});
 
 		if (user) {
@@ -539,7 +538,7 @@ export class UserService {
 	async setPassword(uid: number, hashedPassword: string): Promise<void> {
 		const user = await this.userRepository.findOne({
 			where: { uid },
-			relations: ['organisation', 'branch']
+			relations: ['organisation', 'branch'],
 		});
 
 		if (user) {
@@ -561,7 +560,7 @@ export class UserService {
 	async setResetToken(uid: number, token: string): Promise<void> {
 		const user = await this.userRepository.findOne({
 			where: { uid },
-			relations: ['organisation', 'branch']
+			relations: ['organisation', 'branch'],
 		});
 
 		if (user) {
@@ -581,7 +580,7 @@ export class UserService {
 	async resetPassword(uid: number, hashedPassword: string): Promise<void> {
 		const user = await this.userRepository.findOne({
 			where: { uid },
-			relations: ['organisation', 'branch']
+			relations: ['organisation', 'branch'],
 		});
 
 		if (user) {
@@ -602,7 +601,7 @@ export class UserService {
 	async updatePassword(uid: number, hashedPassword: string): Promise<void> {
 		await this.userRepository.update(uid, {
 			password: hashedPassword,
-			updatedAt: new Date()
+			updatedAt: new Date(),
 		});
 	}
 }

@@ -50,7 +50,7 @@ export declare class UserService {
         users: Omit<User, 'password'>[] | null;
         message: string;
     }>;
-    update(ref: string, updateUserDto: UpdateUserDto): Promise<{
+    update(ref: number, updateUserDto: UpdateUserDto): Promise<{
         message: string;
     }>;
     remove(ref: string): Promise<{

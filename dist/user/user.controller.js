@@ -44,7 +44,7 @@ let UserController = class UserController {
         return this.userService.findOne(searchParameter);
     }
     update(ref, updateUserDto) {
-        return this.userService.update(String(ref), updateUserDto);
+        return this.userService.update(ref, updateUserDto);
     }
     restore(ref) {
         return this.userService.restore(ref);
@@ -59,7 +59,7 @@ __decorate([
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({
         summary: 'Create a new user',
-        description: 'Creates a new user with the provided data. Accessible by users with appropriate roles.'
+        description: 'Creates a new user with the provided data. Accessible by users with appropriate roles.',
     }),
     (0, swagger_1.ApiBody)({ type: create_user_dto_1.CreateUserDto }),
     (0, swagger_1.ApiCreatedResponse)({
@@ -82,11 +82,11 @@ __decorate([
                         status: { type: 'string', enum: Object.values(status_enums_1.AccountStatus), example: status_enums_1.AccountStatus.ACTIVE },
                         userref: { type: 'string', example: 'USR123456' },
                         createdAt: { type: 'string', format: 'date-time' },
-                        updatedAt: { type: 'string', format: 'date-time' }
-                    }
-                }
-            }
-        }
+                        updatedAt: { type: 'string', format: 'date-time' },
+                    },
+                },
+            },
+        },
     }),
     (0, swagger_1.ApiBadRequestResponse)({ description: 'Invalid input data provided' }),
     __param(0, (0, common_1.Body)()),
@@ -99,7 +99,7 @@ __decorate([
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER),
     (0, swagger_1.ApiOperation)({
         summary: 'Get all users',
-        description: 'Retrieves all users with optional filtering and pagination. Requires ADMIN or MANAGER role.'
+        description: 'Retrieves all users with optional filtering and pagination. Requires ADMIN or MANAGER role.',
     }),
     (0, swagger_1.ApiQuery)({ name: 'page', description: 'Page number for pagination', required: false, type: Number, example: 1 }),
     (0, swagger_1.ApiQuery)({ name: 'limit', description: 'Number of items per page', required: false, type: Number, example: 10 }),
@@ -125,8 +125,16 @@ __decorate([
                             email: { type: 'string', example: 'brandon@loro.co.za' },
                             phone: { type: 'string', example: '+27 64 123 4567' },
                             photoURL: { type: 'string', example: 'https://example.com/photo.jpg' },
-                            accessLevel: { type: 'string', enum: Object.values(user_enums_1.AccessLevel), example: user_enums_1.AccessLevel.USER },
-                            status: { type: 'string', enum: Object.values(status_enums_1.AccountStatus), example: status_enums_1.AccountStatus.ACTIVE },
+                            accessLevel: {
+                                type: 'string',
+                                enum: Object.values(user_enums_1.AccessLevel),
+                                example: user_enums_1.AccessLevel.USER,
+                            },
+                            status: {
+                                type: 'string',
+                                enum: Object.values(status_enums_1.AccountStatus),
+                                example: status_enums_1.AccountStatus.ACTIVE,
+                            },
                             userref: { type: 'string', example: 'USR123456' },
                             createdAt: { type: 'string', format: 'date-time' },
                             updatedAt: { type: 'string', format: 'date-time' },
@@ -135,18 +143,18 @@ __decorate([
                                 properties: {
                                     height: { type: 'string', example: '180cm' },
                                     weight: { type: 'string', example: '75kg' },
-                                    gender: { type: 'string', example: 'MALE' }
-                                }
+                                    gender: { type: 'string', example: 'MALE' },
+                                },
                             },
                             employmentProfile: {
                                 type: 'object',
                                 properties: {
                                     position: { type: 'string', example: 'Senior Software Engineer' },
-                                    department: { type: 'string', example: 'ENGINEERING' }
-                                }
-                            }
-                        }
-                    }
+                                    department: { type: 'string', example: 'ENGINEERING' },
+                                },
+                            },
+                        },
+                    },
                 },
                 message: { type: 'string', example: 'Success' },
                 meta: {
@@ -155,11 +163,11 @@ __decorate([
                         total: { type: 'number', example: 50 },
                         page: { type: 'number', example: 1 },
                         limit: { type: 'number', example: 10 },
-                        totalPages: { type: 'number', example: 5 }
-                    }
-                }
-            }
-        }
+                        totalPages: { type: 'number', example: 5 },
+                    },
+                },
+            },
+        },
     }),
     __param(0, (0, common_1.Query)('page')),
     __param(1, (0, common_1.Query)('limit')),
@@ -177,13 +185,13 @@ __decorate([
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({
         summary: 'Get a user by search parameter',
-        description: 'Retrieves a user by email, phone number, or reference code. Accessible by all authenticated users.'
+        description: 'Retrieves a user by email, phone number, or reference code. Accessible by all authenticated users.',
     }),
     (0, swagger_1.ApiParam)({
         name: 'searchParameter',
         description: 'User identifier (email, phone, or reference code)',
         type: 'string',
-        example: 'USR123456'
+        example: 'USR123456',
     }),
     (0, swagger_1.ApiOkResponse)({
         description: 'User found',
@@ -210,21 +218,21 @@ __decorate([
                             properties: {
                                 height: { type: 'string', example: '180cm' },
                                 weight: { type: 'string', example: '75kg' },
-                                gender: { type: 'string', example: 'MALE' }
-                            }
+                                gender: { type: 'string', example: 'MALE' },
+                            },
                         },
                         employmentProfile: {
                             type: 'object',
                             properties: {
                                 position: { type: 'string', example: 'Senior Software Engineer' },
-                                department: { type: 'string', example: 'ENGINEERING' }
-                            }
-                        }
-                    }
+                                department: { type: 'string', example: 'ENGINEERING' },
+                            },
+                        },
+                    },
                 },
-                message: { type: 'string', example: 'Success' }
-            }
-        }
+                message: { type: 'string', example: 'Success' },
+            },
+        },
     }),
     (0, swagger_1.ApiNotFoundResponse)({ description: 'User not found' }),
     __param(0, (0, common_1.Param)('searchParameter')),
@@ -236,14 +244,14 @@ __decorate([
     (0, common_1.Patch)(':ref'),
     (0, swagger_1.ApiOperation)({
         summary: 'Update a user by reference code',
-        description: 'Updates a user by reference code. Accessible by users with appropriate roles.'
+        description: 'Updates a user by reference code. Accessible by users with appropriate roles.',
     }),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiParam)({
         name: 'ref',
-        description: 'User reference code',
+        description: 'Reference code',
         type: 'number',
-        example: 1
+        example: 1,
     }),
     (0, swagger_1.ApiBody)({ type: update_user_dto_1.UpdateUserDto }),
     (0, swagger_1.ApiOkResponse)({
@@ -251,9 +259,9 @@ __decorate([
         schema: {
             type: 'object',
             properties: {
-                message: { type: 'string', example: 'Success' }
-            }
-        }
+                message: { type: 'string', example: 'Success' },
+            },
+        },
     }),
     (0, swagger_1.ApiNotFoundResponse)({ description: 'User not found' }),
     (0, swagger_1.ApiBadRequestResponse)({ description: 'Invalid input data provided' }),
@@ -267,23 +275,23 @@ __decorate([
     (0, common_1.Patch)('restore/:ref'),
     (0, swagger_1.ApiOperation)({
         summary: 'Restore a deleted user by reference code',
-        description: 'Restores a previously deleted user. Accessible by users with appropriate roles.'
+        description: 'Restores a previously deleted user. Accessible by users with appropriate roles.',
     }),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiParam)({
         name: 'ref',
         description: 'User reference code',
         type: 'number',
-        example: 1
+        example: 1,
     }),
     (0, swagger_1.ApiOkResponse)({
         description: 'User restored successfully',
         schema: {
             type: 'object',
             properties: {
-                message: { type: 'string', example: 'Success' }
-            }
-        }
+                message: { type: 'string', example: 'Success' },
+            },
+        },
     }),
     (0, swagger_1.ApiNotFoundResponse)({ description: 'User not found' }),
     __param(0, (0, common_1.Param)('ref')),
@@ -296,22 +304,22 @@ __decorate([
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
     (0, swagger_1.ApiOperation)({
         summary: 'Soft delete a user by reference code',
-        description: 'Performs a soft delete on a user. Accessible by users with appropriate roles.'
+        description: 'Performs a soft delete on a user. Accessible by users with appropriate roles.',
     }),
     (0, swagger_1.ApiParam)({
         name: 'ref',
         description: 'User reference code',
         type: 'string',
-        example: 'USR123456'
+        example: 'USR123456',
     }),
     (0, swagger_1.ApiOkResponse)({
         description: 'User deleted successfully',
         schema: {
             type: 'object',
             properties: {
-                message: { type: 'string', example: 'Success' }
-            }
-        }
+                message: { type: 'string', example: 'Success' },
+            },
+        },
     }),
     (0, swagger_1.ApiNotFoundResponse)({ description: 'User not found' }),
     __param(0, (0, common_1.Param)('ref')),

@@ -51,14 +51,12 @@ let UserService = class UserService {
             if (user.status) {
                 keysToDelete.push(`${this.CACHE_PREFIX}status_${user.status}`);
             }
-            const userListCaches = keys.filter(key => key.startsWith(`${this.CACHE_PREFIX}page`) ||
-                key.includes('_limit') ||
-                key.includes('_filter'));
+            const userListCaches = keys.filter((key) => key.startsWith(`${this.CACHE_PREFIX}page`) || key.includes('_limit') || key.includes('_filter'));
             keysToDelete.push(...userListCaches);
-            await Promise.all(keysToDelete.map(key => this.cacheManager.del(key)));
+            await Promise.all(keysToDelete.map((key) => this.cacheManager.del(key)));
             this.eventEmitter.emit('users.cache.invalidate', {
                 userId: user.uid,
-                keys: keysToDelete
+                keys: keysToDelete,
             });
         }
         catch (error) {
@@ -122,7 +120,7 @@ let UserService = class UserService {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
             return {
-                data: users.map(user => this.excludePassword(user)),
+                data: users.map((user) => this.excludePassword(user)),
                 meta: {
                     total,
                     page,
@@ -163,7 +161,7 @@ let UserService = class UserService {
                     status: true,
                     verificationToken: true,
                     resetToken: true,
-                    tokenExpires: true
+                    tokenExpires: true,
                 },
                 relations: [
                     'userProfile',
@@ -184,24 +182,24 @@ let UserService = class UserService {
                     'checkIns',
                     'reports',
                     'rewards',
-                    'organisation'
-                ]
+                    'organisation',
+                ],
             });
             if (!user) {
                 return {
                     user: null,
-                    message: process.env.NOT_FOUND_MESSAGE
+                    message: process.env.NOT_FOUND_MESSAGE,
                 };
             }
             return {
                 user,
-                message: process.env.SUCCESS_MESSAGE
+                message: process.env.SUCCESS_MESSAGE,
             };
         }
         catch (error) {
             return {
                 message: error?.message,
-                user: null
+                user: null,
             };
         }
     }
@@ -290,7 +288,7 @@ let UserService = class UserService {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
             return {
-                users: users.map(user => this.excludePassword(user)),
+                users: users.map((user) => this.excludePassword(user)),
                 message: process.env.SUCCESS_MESSAGE,
             };
         }
@@ -305,8 +303,8 @@ let UserService = class UserService {
     async update(ref, updateUserDto) {
         try {
             const user = await this.userRepository.findOne({
-                where: { userref: ref, isDeleted: false },
-                relations: ['organisation', 'branch']
+                where: { uid: ref, isDeleted: false },
+                relations: ['organisation', 'branch'],
             });
             if (!user) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
@@ -327,7 +325,7 @@ let UserService = class UserService {
         try {
             const user = await this.userRepository.findOne({
                 where: { userref: ref, isDeleted: false },
-                relations: ['organisation', 'branch']
+                relations: ['organisation', 'branch'],
             });
             if (!user) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
@@ -376,7 +374,7 @@ let UserService = class UserService {
         try {
             const user = await this.userRepository.findOne({
                 where: { uid: ref },
-                relations: ['organisation', 'branch']
+                relations: ['organisation', 'branch'],
             });
             if (!user) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
@@ -419,7 +417,7 @@ let UserService = class UserService {
     async markEmailAsVerified(uid) {
         const user = await this.userRepository.findOne({
             where: { uid },
-            relations: ['organisation', 'branch']
+            relations: ['organisation', 'branch'],
         });
         if (user) {
             await this.userRepository.update({ uid }, {
@@ -433,7 +431,7 @@ let UserService = class UserService {
     async setPassword(uid, hashedPassword) {
         const user = await this.userRepository.findOne({
             where: { uid },
-            relations: ['organisation', 'branch']
+            relations: ['organisation', 'branch'],
         });
         if (user) {
             await this.userRepository.update({ uid }, {
@@ -448,7 +446,7 @@ let UserService = class UserService {
     async setResetToken(uid, token) {
         const user = await this.userRepository.findOne({
             where: { uid },
-            relations: ['organisation', 'branch']
+            relations: ['organisation', 'branch'],
         });
         if (user) {
             await this.userRepository.update({ uid }, {
@@ -461,7 +459,7 @@ let UserService = class UserService {
     async resetPassword(uid, hashedPassword) {
         const user = await this.userRepository.findOne({
             where: { uid },
-            relations: ['organisation', 'branch']
+            relations: ['organisation', 'branch'],
         });
         if (user) {
             await this.userRepository.update({ uid }, {
@@ -475,7 +473,7 @@ let UserService = class UserService {
     async updatePassword(uid, hashedPassword) {
         await this.userRepository.update(uid, {
             password: hashedPassword,
-            updatedAt: new Date()
+            updatedAt: new Date(),
         });
     }
 };
