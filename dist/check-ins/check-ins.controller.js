@@ -17,9 +17,7 @@ const common_1 = require("@nestjs/common");
 const check_ins_service_1 = require("./check-ins.service");
 const create_check_in_dto_1 = require("./dto/create-check-in.dto");
 const create_check_out_dto_1 = require("./dto/create-check-out.dto");
-const user_enums_1 = require("../lib/enums/user.enums");
 const swagger_1 = require("@nestjs/swagger");
-const role_decorator_1 = require("../decorators/role.decorator");
 const auth_guard_1 = require("../guards/auth.guard");
 const role_guard_1 = require("../guards/role.guard");
 let CheckInsController = class CheckInsController {
@@ -39,10 +37,9 @@ let CheckInsController = class CheckInsController {
 exports.CheckInsController = CheckInsController;
 __decorate([
     (0, common_1.Post)(),
-    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER, user_enums_1.AccessLevel.OWNER, user_enums_1.AccessLevel.TECHNICIAN),
     (0, swagger_1.ApiOperation)({
         summary: 'Record check-in',
-        description: 'Creates a new attendance check-in record for a user'
+        description: 'Creates a new attendance check-in record for a user',
     }),
     (0, swagger_1.ApiBody)({ type: create_check_in_dto_1.CreateCheckInDto }),
     (0, swagger_1.ApiCreatedResponse)({
@@ -56,20 +53,20 @@ __decorate([
                     properties: {
                         uid: { type: 'number' },
                         checkInTime: { type: 'string', format: 'date-time' },
-                        user: { type: 'object' }
-                    }
-                }
-            }
-        }
+                        user: { type: 'object' },
+                    },
+                },
+            },
+        },
     }),
     (0, swagger_1.ApiBadRequestResponse)({
         description: 'Bad Request - Invalid data provided',
         schema: {
             type: 'object',
             properties: {
-                message: { type: 'string', example: 'Error recording check-in' }
-            }
-        }
+                message: { type: 'string', example: 'Error recording check-in' },
+            },
+        },
     }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -78,10 +75,9 @@ __decorate([
 ], CheckInsController.prototype, "checkIn", null);
 __decorate([
     (0, common_1.Get)('status/:reference'),
-    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER, user_enums_1.AccessLevel.OWNER, user_enums_1.AccessLevel.TECHNICIAN),
     (0, swagger_1.ApiOperation)({
         summary: 'Get check-in status',
-        description: 'Retrieves the current check-in status for a specific user'
+        description: 'Retrieves the current check-in status for a specific user',
     }),
     (0, swagger_1.ApiParam)({ name: 'reference', description: 'User reference code', type: 'number' }),
     (0, swagger_1.ApiOkResponse)({
@@ -95,12 +91,12 @@ __decorate([
                     properties: {
                         uid: { type: 'number' },
                         checkInTime: { type: 'string', format: 'date-time' },
-                        checkOutTime: { type: 'string', format: 'date-time', nullable: true }
-                    }
+                        checkOutTime: { type: 'string', format: 'date-time', nullable: true },
+                    },
                 },
-                message: { type: 'string', example: 'Success' }
-            }
-        }
+                message: { type: 'string', example: 'Success' },
+            },
+        },
     }),
     (0, swagger_1.ApiNotFoundResponse)({
         description: 'User not found',
@@ -108,9 +104,9 @@ __decorate([
             type: 'object',
             properties: {
                 message: { type: 'string', example: 'User not found' },
-                status: { type: 'null' }
-            }
-        }
+                status: { type: 'null' },
+            },
+        },
     }),
     __param(0, (0, common_1.Param)('reference')),
     __metadata("design:type", Function),
@@ -119,10 +115,9 @@ __decorate([
 ], CheckInsController.prototype, "checkInStatus", null);
 __decorate([
     (0, common_1.Patch)(':reference'),
-    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER, user_enums_1.AccessLevel.OWNER, user_enums_1.AccessLevel.TECHNICIAN),
     (0, swagger_1.ApiOperation)({
         summary: 'Record check-out',
-        description: 'Updates an existing check-in record with check-out information'
+        description: 'Updates an existing check-in record with check-out information',
     }),
     (0, swagger_1.ApiParam)({ name: 'reference', description: 'Check-in reference code', type: 'number' }),
     (0, swagger_1.ApiBody)({ type: create_check_out_dto_1.CreateCheckOutDto }),
@@ -137,29 +132,29 @@ __decorate([
                     properties: {
                         uid: { type: 'number' },
                         checkInTime: { type: 'string', format: 'date-time' },
-                        checkOutTime: { type: 'string', format: 'date-time' }
-                    }
-                }
-            }
-        }
+                        checkOutTime: { type: 'string', format: 'date-time' },
+                    },
+                },
+            },
+        },
     }),
     (0, swagger_1.ApiBadRequestResponse)({
         description: 'Bad Request - Invalid data provided',
         schema: {
             type: 'object',
             properties: {
-                message: { type: 'string', example: 'Error recording check-out' }
-            }
-        }
+                message: { type: 'string', example: 'Error recording check-out' },
+            },
+        },
     }),
     (0, swagger_1.ApiNotFoundResponse)({
         description: 'Check-in not found',
         schema: {
             type: 'object',
             properties: {
-                message: { type: 'string', example: 'Check-in not found' }
-            }
-        }
+                message: { type: 'string', example: 'Check-in not found' },
+            },
+        },
     }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
