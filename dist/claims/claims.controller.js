@@ -52,7 +52,7 @@ let ClaimsController = class ClaimsController {
 exports.ClaimsController = ClaimsController;
 __decorate([
     (0, common_1.Post)(),
-    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
+    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER, user_enums_1.AccessLevel.OWNER, user_enums_1.AccessLevel.TECHNICIAN),
     (0, swagger_1.ApiOperation)({
         summary: 'Create a new claim',
         description: 'Creates a new claim with the provided data. Accessible by all authenticated users.'
@@ -103,7 +103,7 @@ __decorate([
 ], ClaimsController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)(),
-    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
+    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER, user_enums_1.AccessLevel.OWNER, user_enums_1.AccessLevel.TECHNICIAN),
     (0, swagger_1.ApiOperation)({
         summary: 'Get all claims',
         description: 'Retrieves all claims. Accessible by all authenticated users.'
@@ -153,7 +153,7 @@ __decorate([
 ], ClaimsController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)(':ref'),
-    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
+    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER, user_enums_1.AccessLevel.OWNER, user_enums_1.AccessLevel.TECHNICIAN),
     (0, swagger_1.ApiOperation)({
         summary: 'Get a claim by reference code',
         description: 'Retrieves a specific claim by its reference code. Accessible by all authenticated users.'
@@ -210,7 +210,7 @@ __decorate([
 ], ClaimsController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Patch)(':ref'),
-    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
+    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER, user_enums_1.AccessLevel.OWNER, user_enums_1.AccessLevel.TECHNICIAN),
     (0, swagger_1.ApiOperation)({
         summary: 'Update a claim',
         description: 'Updates a specific claim by its reference code. Accessible by all authenticated users.'
@@ -241,7 +241,7 @@ __decorate([
 ], ClaimsController.prototype, "update", null);
 __decorate([
     (0, common_1.Patch)('restore/:ref'),
-    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
+    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER, user_enums_1.AccessLevel.OWNER, user_enums_1.AccessLevel.TECHNICIAN),
     (0, swagger_1.ApiOperation)({
         summary: 'Restore a deleted claim',
         description: 'Restores a previously deleted claim. Accessible by all authenticated users.'
@@ -269,7 +269,7 @@ __decorate([
 ], ClaimsController.prototype, "restore", null);
 __decorate([
     (0, common_1.Get)('for/:ref'),
-    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
+    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER, user_enums_1.AccessLevel.OWNER, user_enums_1.AccessLevel.TECHNICIAN),
     (0, swagger_1.ApiOperation)({
         summary: 'Get claims by user reference code',
         description: 'Retrieves all claims associated with a specific user. Accessible by all authenticated users.'
@@ -327,7 +327,7 @@ __decorate([
 ], ClaimsController.prototype, "claimsByUser", null);
 __decorate([
     (0, common_1.Delete)(':ref'),
-    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER),
+    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER, user_enums_1.AccessLevel.OWNER, user_enums_1.AccessLevel.TECHNICIAN),
     (0, swagger_1.ApiOperation)({
         summary: 'Soft delete a claim',
         description: 'Performs a soft delete on a claim. Accessible by all authenticated users.'

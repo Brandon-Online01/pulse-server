@@ -71,7 +71,15 @@ export class DocsController {
 
   @Get()
   @UseGuards(AuthGuard, RoleGuard)
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+ @Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
   @ApiOperation({ summary: 'get all documents' })
   findAll() {
     return this.docsService.findAll();
@@ -79,7 +87,15 @@ export class DocsController {
 
   @Get('user/:ref')
   @UseGuards(AuthGuard, RoleGuard)
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+ @Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
   @ApiOperation({ summary: 'get documents by user reference code' })
   findByUser(@Param('ref') ref: number) {
     return this.docsService.docsByUser(ref);
@@ -87,7 +103,15 @@ export class DocsController {
 
   @Get(':ref')
   @UseGuards(AuthGuard, RoleGuard)
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+ @Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
   @ApiOperation({ summary: 'get a document by reference code' })
   findOne(@Param('ref') ref: number) {
     return this.docsService.findOne(ref);
@@ -95,7 +119,15 @@ export class DocsController {
 
   @Patch(':ref')
   @UseGuards(AuthGuard, RoleGuard)
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+ @Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
   @ApiOperation({ summary: 'update a document by reference code' })
   update(@Param('ref') ref: number, @Body() updateDocDto: UpdateDocDto) {
     return this.docsService.update(ref, updateDocDto);
@@ -103,7 +135,15 @@ export class DocsController {
 
   @Get('download/:ref')
   @UseGuards(AuthGuard, RoleGuard)
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+ @Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
   @ApiOperation({ summary: 'get download URL for a document' })
   async getDownloadUrl(@Param('ref') ref: number) {
     return this.docsService.getDownloadUrl(ref);

@@ -37,7 +37,15 @@ export class GeofenceController {
   }
 
   @Get()
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+ @Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get all geofence areas for the current user\'s organisation' })
   async findAll(@Req() req: AuthenticatedRequest) {
@@ -50,7 +58,15 @@ export class GeofenceController {
   }
 
   @Get('areas')
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+ @Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get all geofence areas for mobile app' })
   async getAreasForMobile(@Req() req: AuthenticatedRequest) {
@@ -63,7 +79,15 @@ export class GeofenceController {
   }
 
   @Get(':ref')
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+ @Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get a geofence area by ref' })
   async findOne(@Param('ref') ref: string) {
@@ -106,7 +130,15 @@ export class GeofenceController {
   }
 
   @Post('event')
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+ @Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create a new geofence event' })
   async createEvent(@Body() createGeofenceEventDto: CreateGeofenceEventDto, @Req() req: AuthenticatedRequest) {
@@ -119,7 +151,15 @@ export class GeofenceController {
   }
 
   @Get('events/user/:userref')
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+ @Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get all geofence events for a user' })
   async findUserEvents(@Param('userref') userref: string) {
@@ -132,7 +172,15 @@ export class GeofenceController {
   }
 
   @Get('events/geofence/:geofenceref')
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+ @Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get all geofence events for a geofence area' })
   async findGeofenceEvents(@Param('geofenceref') geofenceref: string) {

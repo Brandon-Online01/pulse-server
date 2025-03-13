@@ -32,7 +32,15 @@ export class LeadsController {
   constructor(private readonly leadsService: LeadsService) { }
 
   @Post()
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+ @Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
   @ApiOperation({ 
     summary: 'Create a new lead',
     description: 'Creates a new lead with the provided details'
@@ -75,7 +83,15 @@ export class LeadsController {
   }
 
   @Get()
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+ @Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
   @ApiOperation({ 
     summary: 'Get all leads',
     description: 'Retrieves a paginated list of leads with optional filtering by status, search term, and date range'
@@ -147,7 +163,15 @@ export class LeadsController {
   }
 
   @Get(':ref')
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+ @Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
   @ApiOperation({ 
     summary: 'Get a lead by reference code',
     description: 'Retrieves detailed information about a specific lead'
@@ -200,7 +224,15 @@ export class LeadsController {
   }
 
   @Get('for/:ref')
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+ @Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
   @ApiOperation({ 
     summary: 'Get leads by user reference code',
     description: 'Retrieves all leads assigned to a specific user'
@@ -246,7 +278,15 @@ export class LeadsController {
   }
 
   @Patch(':ref')
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+ @Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
   @ApiOperation({ 
     summary: 'Update a lead by reference code',
     description: 'Updates an existing lead with the provided information'
@@ -285,7 +325,15 @@ export class LeadsController {
   }
 
   @Patch('restore/:ref')
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+ @Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
   @ApiOperation({ 
     summary: 'Restore a lead by reference code',
     description: 'Restores a previously deleted lead'

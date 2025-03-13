@@ -144,7 +144,15 @@ export class JournalController {
 
   @Get('for/:ref')
   @UseGuards(AuthGuard, RoleGuard)
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+ @Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
   @ApiOperation({ 
     summary: 'Get journals by user reference code',
     description: 'Retrieves all journal entries associated with a specific user. Accessible by all authenticated users.'

@@ -32,7 +32,15 @@ export class ShopController {
 
   //shopping
   @Get('best-sellers')
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+ @Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
   @ApiOperation({ 
     summary: 'Get a list of best selling products',
     description: 'Retrieves a list of products that have the highest sales volume'
@@ -65,7 +73,15 @@ export class ShopController {
   }
 
   @Get('new-arrivals')
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+ @Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
   @ApiOperation({ 
     summary: 'Get a list of newly arrived products',
     description: 'Retrieves a list of products that were recently added to the inventory'
@@ -98,7 +114,15 @@ export class ShopController {
   }
 
   @Get('hot-deals')
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+ @Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
   @ApiOperation({ 
     summary: 'Get a list of products with hot deals',
     description: 'Retrieves a list of products that are currently on sale or have special promotions'
@@ -132,7 +156,15 @@ export class ShopController {
   }
 
   @Get('categories')
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+ @Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
   @ApiOperation({ 
     summary: 'Get a list of categories',
     description: 'Retrieves all product categories available in the shop'
@@ -163,7 +195,15 @@ export class ShopController {
   }
 
   @Get('specials')
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+ @Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
   @ApiOperation({ 
     summary: 'Get a list of specials',
     description: 'Retrieves all special offers and promotions currently available'
@@ -197,7 +237,15 @@ export class ShopController {
 
   //ordering
   @Post('checkout')
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+ @Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
   @ApiOperation({ 
     summary: 'Checkout a list of products',
     description: 'Creates a quotation for the selected products in the shopping cart'
@@ -247,7 +295,15 @@ export class ShopController {
   }
 
   @Get('quotations')
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+ @Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
   @ApiOperation({ 
     summary: 'Get a list of all quotations',
     description: 'Retrieves all quotations created in the system'
@@ -287,7 +343,15 @@ export class ShopController {
   }
 
   @Get('quotations/:ref')
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+ @Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
   @ApiOperation({ 
     summary: 'Get a quotation by reference',
     description: 'Retrieves detailed information about a specific quotation'
@@ -356,7 +420,15 @@ export class ShopController {
   }
 
   @Get('quotations/by/:ref')
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+ @Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
   @ApiOperation({ 
     summary: 'Get a list of quotations owned by user',
     description: 'Retrieves all quotations created by a specific user'
@@ -457,7 +529,15 @@ export class ShopController {
 
   //shop banners
   @Get('banners')
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+ @Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
   @ApiOperation({ 
     summary: 'Get a list of banners',
     description: 'Retrieves all banners configured for the shop'
@@ -492,7 +572,15 @@ export class ShopController {
   }
 
   @Post('banners')
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+ @Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
   @ApiOperation({ 
     summary: 'Create a banner',
     description: 'Creates a new banner for the shop'
@@ -532,7 +620,15 @@ export class ShopController {
   }
 
   @Patch('banners/:ref')
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+ @Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
   @ApiOperation({ 
     summary: 'Update a banner',
     description: 'Updates an existing banner with the provided information'
@@ -571,7 +667,15 @@ export class ShopController {
   }
 
   @Delete('banners/:ref')
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+ @Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
   @ApiOperation({ 
     summary: 'Delete a banner',
     description: 'Deletes a banner from the system'

@@ -55,7 +55,15 @@ export class OrganisationHoursController {
     }
 
     @Get(':orgRef/hours')
-    @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+   @Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
     @ApiOperation({ 
         summary: 'Get all organization hours',
         description: 'Retrieves all operating hours for a specific organization. Accessible by all authenticated users.'
@@ -98,7 +106,15 @@ export class OrganisationHoursController {
     }
 
     @Get(':orgRef/hours/:hoursRef')
-    @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+   @Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
     @ApiOperation({ 
         summary: 'Get specific organization hours',
         description: 'Retrieves specific operating hours for an organization by hours reference code. Accessible by all authenticated users.'

@@ -63,9 +63,6 @@ export class Client {
     @Column({ default: false })
     isDeleted: boolean;
 
-    @Column({ nullable: false })
-    ref: string;
-
     // Relations
     @ManyToOne(() => User, (user) => user?.clients, { nullable: true })
     assignedSalesRep: User;

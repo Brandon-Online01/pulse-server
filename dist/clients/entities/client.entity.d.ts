@@ -30,7 +30,6 @@ export declare class Client {
     updatedAt: Date;
     status: GeneralStatus;
     isDeleted: boolean;
-    ref: string;
     assignedSalesRep: User;
     leads: Lead[];
     quotations: Quotation[];

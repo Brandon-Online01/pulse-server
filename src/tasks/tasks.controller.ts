@@ -33,7 +33,15 @@ export class TasksController {
 	constructor(private readonly tasksService: TasksService, private readonly taskRouteService: TaskRouteService) {}
 
 	@Post()
-	@Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+	@Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
 	@ApiOperation({
 		summary: 'Create a new task',
 		description: 'Creates a new task with the provided details including assignees, clients, and subtasks',
@@ -62,7 +70,15 @@ export class TasksController {
 	}
 
 	@Get()
-	@Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+	@Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
 	@ApiOperation({
 		summary: 'Get all tasks',
 		description:
@@ -192,7 +208,15 @@ export class TasksController {
 	}
 
 	@Get(':ref')
-	@Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+	@Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
 	@ApiOperation({
 		summary: 'Get a task by reference',
 		description: 'Retrieves detailed information about a specific task including assignees, clients, and subtasks',
@@ -238,7 +262,15 @@ export class TasksController {
 	}
 
 	@Get('for/:ref')
-	@Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+	@Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
 	@ApiOperation({
 		summary: 'Get tasks by user reference code',
 		description: 'Retrieves all tasks assigned to a specific user',
@@ -282,7 +314,15 @@ export class TasksController {
 	}
 
 	@Get('sub-task/:ref')
-	@Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+	@Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
 	@ApiOperation({
 		summary: 'Get a subtask by reference',
 		description: 'Retrieves detailed information about a specific subtask',
@@ -322,7 +362,15 @@ export class TasksController {
 	}
 
 	@Patch(':ref')
-	@Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+	@Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
 	@ApiOperation({
 		summary: 'Update a task by reference',
 		description:
@@ -362,7 +410,15 @@ export class TasksController {
 	}
 
 	@Patch('sub-task/:ref')
-	@Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+	@Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
 	@ApiOperation({
 		summary: 'Update a subtask by reference',
 		description: 'Updates an existing subtask with the provided information',
@@ -401,7 +457,15 @@ export class TasksController {
 	}
 
 	@Patch('sub-task/complete/:ref')
-	@Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+	@Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
 	@ApiOperation({
 		summary: 'Complete a subtask by reference',
 		description: 'Marks a subtask as completed',
@@ -430,7 +494,15 @@ export class TasksController {
 	}
 
 	@Delete('sub-task/:ref')
-	@Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+	@Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
 	@ApiOperation({
 		summary: 'Soft delete a subtask by reference',
 		description: 'Marks a subtask as deleted without removing it from the database',
@@ -459,7 +531,15 @@ export class TasksController {
 	}
 
 	@Delete(':ref')
-	@Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+	@Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
 	@ApiOperation({
 		summary: 'Soft delete a task by reference',
 		description: 'Marks a task as deleted without removing it from the database',
@@ -530,7 +610,15 @@ export class TasksController {
 			},
 		},
 	})
-	@Roles(AccessLevel.ADMIN, AccessLevel.MANAGER)
+	@Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
 	async getOptimizedRoutes(@Query('date') dateStr?: string): Promise<OptimizedRoute[]> {
 		const date = dateStr ? new Date(dateStr) : new Date();
 
@@ -581,7 +669,15 @@ export class TasksController {
 			},
 		},
 	})
-	@Roles(AccessLevel.ADMIN, AccessLevel.MANAGER)
+	@Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
 	async calculateOptimizedRoutes(@Query('date') dateStr?: string): Promise<{ message: string }> {
 		const date = dateStr ? new Date(dateStr) : new Date();
 

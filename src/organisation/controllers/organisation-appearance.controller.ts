@@ -55,7 +55,15 @@ export class OrganisationAppearanceController {
     }
 
     @Get(':orgRef/appearance')
-    @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+   @Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
     @ApiOperation({ 
         summary: 'Get organization appearance settings',
         description: 'Retrieves appearance settings for a specific organization. Accessible by all authenticated users.'

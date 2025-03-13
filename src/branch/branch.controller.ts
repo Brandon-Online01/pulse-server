@@ -2,16 +2,16 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@n
 import { BranchService } from './branch.service';
 import { CreateBranchDto } from './dto/create-branch.dto';
 import { UpdateBranchDto } from './dto/update-branch.dto';
-import { 
-  ApiOperation, 
-  ApiTags, 
-  ApiParam, 
-  ApiBody, 
-  ApiOkResponse, 
-  ApiCreatedResponse, 
-  ApiBadRequestResponse, 
-  ApiNotFoundResponse,
-  ApiUnauthorizedResponse 
+import {
+	ApiOperation,
+	ApiTags,
+	ApiParam,
+	ApiBody,
+	ApiOkResponse,
+	ApiCreatedResponse,
+	ApiBadRequestResponse,
+	ApiNotFoundResponse,
+	ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { RoleGuard } from '../guards/role.guard';
 import { AuthGuard } from '../guards/auth.guard';
@@ -25,175 +25,215 @@ import { Branch } from './entities/branch.entity';
 @UseGuards(AuthGuard, RoleGuard)
 @ApiUnauthorizedResponse({ description: 'Unauthorized - Invalid credentials or missing token' })
 export class BranchController {
-  constructor(private readonly branchService: BranchService) { }
+	constructor(private readonly branchService: BranchService) {}
 
-  @Post()
-  @isPublic()
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
-  @ApiOperation({ 
-    summary: 'Create a new branch',
-    description: 'Creates a new branch with the provided details' 
-  })
-  @ApiBody({ type: CreateBranchDto })
-  @ApiCreatedResponse({ 
-    description: 'Branch created successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        message: { type: 'string', example: 'Success' }
-      }
-    }
-  })
-  @ApiBadRequestResponse({ 
-    description: 'Bad Request - Invalid data provided',
-    schema: {
-      type: 'object',
-      properties: {
-        message: { type: 'string', example: 'Error creating branch' }
-      }
-    }
-  })
-  create(@Body() createBranchDto: CreateBranchDto) {
-    return this.branchService.create(createBranchDto);
-  }
+	@Post()
+	@isPublic()
+	@Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
+	@ApiOperation({
+		summary: 'Create a new branch',
+		description: 'Creates a new branch with the provided details',
+	})
+	@ApiBody({ type: CreateBranchDto })
+	@ApiCreatedResponse({
+		description: 'Branch created successfully',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', example: 'Success' },
+			},
+		},
+	})
+	@ApiBadRequestResponse({
+		description: 'Bad Request - Invalid data provided',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', example: 'Error creating branch' },
+			},
+		},
+	})
+	create(@Body() createBranchDto: CreateBranchDto) {
+		return this.branchService.create(createBranchDto);
+	}
 
-  @Get()
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
-  @ApiOperation({ 
-    summary: 'Get all branches',
-    description: 'Retrieves a list of all non-deleted branches' 
-  })
-  @ApiOkResponse({
-    description: 'Branches retrieved successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        branches: {
-          type: 'array',
-          items: { 
-            type: 'object',
-            properties: {
-              uid: { type: 'number' },
-              name: { type: 'string' },
-              email: { type: 'string' },
-              phone: { type: 'string' },
-              // Other branch properties
-            }
-          }
-        },
-        message: { type: 'string', example: 'Success' }
-      }
-    }
-  })
-  findAll() {
-    return this.branchService.findAll();
-  }
+	@Get()
+	@Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
+	@ApiOperation({
+		summary: 'Get all branches',
+		description: 'Retrieves a list of all non-deleted branches',
+	})
+	@ApiOkResponse({
+		description: 'Branches retrieved successfully',
+		schema: {
+			type: 'object',
+			properties: {
+				branches: {
+					type: 'array',
+					items: {
+						type: 'object',
+						properties: {
+							uid: { type: 'number' },
+							name: { type: 'string' },
+							email: { type: 'string' },
+							phone: { type: 'string' },
+							// Other branch properties
+						},
+					},
+				},
+				message: { type: 'string', example: 'Success' },
+			},
+		},
+	})
+	findAll() {
+		return this.branchService.findAll();
+	}
 
-  @Get(':ref')
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
-  @ApiOperation({ 
-    summary: 'Get a branch by reference code',
-    description: 'Retrieves detailed information about a specific branch including related entities' 
-  })
-  @ApiParam({ name: 'ref', description: 'Branch reference code', type: 'string' })
-  @ApiOkResponse({ 
-    description: 'Branch details retrieved successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        branch: { 
-          type: 'object',
-          properties: {
-            uid: { type: 'number' },
-            name: { type: 'string' },
-            email: { type: 'string' },
-            phone: { type: 'string' },
-            // Other branch properties
-          }
-        },
-        message: { type: 'string', example: 'Success' }
-      }
-    }
-  })
-  @ApiNotFoundResponse({ 
-    description: 'Branch not found',
-    schema: {
-      type: 'object',
-      properties: {
-        message: { type: 'string', example: 'Branch not found' },
-        branch: { type: 'null' }
-      }
-    }
-  })
-  findOne(@Param('ref') ref: string) {
-    return this.branchService.findOne(ref);
-  }
+	@Get(':ref')
+	@Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
+	@ApiOperation({
+		summary: 'Get a branch by reference code',
+		description: 'Retrieves detailed information about a specific branch including related entities',
+	})
+	@ApiParam({ name: 'ref', description: 'Branch reference code', type: 'string' })
+	@ApiOkResponse({
+		description: 'Branch details retrieved successfully',
+		schema: {
+			type: 'object',
+			properties: {
+				branch: {
+					type: 'object',
+					properties: {
+						uid: { type: 'number' },
+						name: { type: 'string' },
+						email: { type: 'string' },
+						phone: { type: 'string' },
+						// Other branch properties
+					},
+				},
+				message: { type: 'string', example: 'Success' },
+			},
+		},
+	})
+	@ApiNotFoundResponse({
+		description: 'Branch not found',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', example: 'Branch not found' },
+				branch: { type: 'null' },
+			},
+		},
+	})
+	findOne(@Param('ref') ref: string) {
+		return this.branchService.findOne(ref);
+	}
 
-  @Patch(':ref')
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
-  @ApiOperation({ 
-    summary: 'Update a branch',
-    description: 'Updates an existing branch with the provided information' 
-  })
-  @ApiParam({ name: 'ref', description: 'Branch reference code', type: 'string' })
-  @ApiBody({ type: UpdateBranchDto })
-  @ApiOkResponse({ 
-    description: 'Branch updated successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        message: { type: 'string', example: 'Success' }
-      }
-    }
-  })
-  @ApiNotFoundResponse({ 
-    description: 'Branch not found',
-    schema: {
-      type: 'object',
-      properties: {
-        message: { type: 'string', example: 'Branch not found' }
-      }
-    }
-  })
-  @ApiBadRequestResponse({ 
-    description: 'Bad Request - Invalid data provided',
-    schema: {
-      type: 'object',
-      properties: {
-        message: { type: 'string', example: 'Error updating branch' }
-      }
-    }
-  })
-  update(@Param('ref') ref: string, @Body() updateBranchDto: UpdateBranchDto) {
-    return this.branchService.update(ref, updateBranchDto);
-  }
+	@Patch(':ref')
+	@Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
+	@ApiOperation({
+		summary: 'Update a branch',
+		description: 'Updates an existing branch with the provided information',
+	})
+	@ApiParam({ name: 'ref', description: 'Branch reference code', type: 'string' })
+	@ApiBody({ type: UpdateBranchDto })
+	@ApiOkResponse({
+		description: 'Branch updated successfully',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', example: 'Success' },
+			},
+		},
+	})
+	@ApiNotFoundResponse({
+		description: 'Branch not found',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', example: 'Branch not found' },
+			},
+		},
+	})
+	@ApiBadRequestResponse({
+		description: 'Bad Request - Invalid data provided',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', example: 'Error updating branch' },
+			},
+		},
+	})
+	update(@Param('ref') ref: string, @Body() updateBranchDto: UpdateBranchDto) {
+		return this.branchService.update(ref, updateBranchDto);
+	}
 
-  @Delete(':ref')
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
-  @ApiOperation({ 
-    summary: 'Soft delete a branch',
-    description: 'Marks a branch as deleted without removing it from the database' 
-  })
-  @ApiParam({ name: 'ref', description: 'Branch reference code', type: 'string' })
-  @ApiOkResponse({ 
-    description: 'Branch deleted successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        message: { type: 'string', example: 'Success' }
-      }
-    }
-  })
-  @ApiNotFoundResponse({ 
-    description: 'Branch not found',
-    schema: {
-      type: 'object',
-      properties: {
-        message: { type: 'string', example: 'Error deleting branch' }
-      }
-    }
-  })
-  remove(@Param('ref') ref: string) {
-    return this.branchService.remove(ref);
-  }
+	@Delete(':ref')
+	@Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
+	@ApiOperation({
+		summary: 'Soft delete a branch',
+		description: 'Marks a branch as deleted without removing it from the database',
+	})
+	@ApiParam({ name: 'ref', description: 'Branch reference code', type: 'string' })
+	@ApiOkResponse({
+		description: 'Branch deleted successfully',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', example: 'Success' },
+			},
+		},
+	})
+	@ApiNotFoundResponse({
+		description: 'Branch not found',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', example: 'Error deleting branch' },
+			},
+		},
+	})
+	remove(@Param('ref') ref: string) {
+		return this.branchService.remove(ref);
+	}
 }

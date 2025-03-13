@@ -28,7 +28,15 @@ export class UserController {
 	constructor(private readonly userService: UserService) {}
 
 	@Post()
-	@Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+	@Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
 	@ApiOperation({
 		summary: 'Create a new user',
 		description: 'Creates a new user with the provided data. Accessible by users with appropriate roles.',
@@ -66,7 +74,15 @@ export class UserController {
 	}
 
 	@Get()
-	@Roles(AccessLevel.ADMIN, AccessLevel.MANAGER)
+	@Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
 	@ApiOperation({
 		summary: 'Get all users',
 		description: 'Retrieves all users with optional filtering and pagination. Requires ADMIN or MANAGER role.',
@@ -164,7 +180,15 @@ export class UserController {
 	}
 
 	@Get(':ref')
-	@Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+	@Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
 	@ApiOperation({
 		summary: 'Get a user by search parameter',
 		description:
@@ -227,7 +251,15 @@ export class UserController {
 		summary: 'Update a user by reference code',
 		description: 'Updates a user by reference code. Accessible by users with appropriate roles.',
 	})
-	@Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+	@Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
 	@ApiParam({
 		name: 'ref',
 		description: 'Reference code',
@@ -255,7 +287,15 @@ export class UserController {
 		summary: 'Restore a deleted user by reference code',
 		description: 'Restores a previously deleted user. Accessible by users with appropriate roles.',
 	})
-	@Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+	@Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
 	@ApiParam({
 		name: 'ref',
 		description: 'User reference code',
@@ -277,7 +317,15 @@ export class UserController {
 	}
 
 	@Delete(':ref')
-	@Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.USER)
+	@Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
 	@ApiOperation({
 		summary: 'Soft delete a user by reference code',
 		description: 'Performs a soft delete on a user. Accessible by users with appropriate roles.',

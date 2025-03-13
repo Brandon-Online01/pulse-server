@@ -84,10 +84,6 @@ __decorate([
     __metadata("design:type", Boolean)
 ], Client.prototype, "isDeleted", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ nullable: false }),
-    __metadata("design:type", String)
-], Client.prototype, "ref", void 0);
-__decorate([
     (0, typeorm_1.ManyToOne)(() => user_entity_1.User, (user) => user?.clients, { nullable: true }),
     __metadata("design:type", user_entity_1.User)
 ], Client.prototype, "assignedSalesRep", void 0);
