@@ -804,6 +804,10 @@ let ReportsService = class ReportsService {
                 userId: userId
             };
             const dailyReport = await this.generateDailyUserReport(options);
+            const todaysHoursWorked = await this.liveUserReportService.calculateTodaysHoursWorked(userId);
+            if (dailyReport.attendance) {
+                dailyReport.attendance.todaysHoursFormatted = todaysHoursWorked.hoursFormatted;
+            }
             const currentTasksInProgress = await this.liveUserReportService.getCurrentTasksInProgress(userId);
             const nextTasks = await this.liveUserReportService.getNextTasks(userId);
             const taskTimeline = await this.liveUserReportService.getTaskTimeline(userId);

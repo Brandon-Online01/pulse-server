@@ -416,6 +416,146 @@ export const NewQuotationReseller = (data: QuotationResellerData): string => {
   `;
 };
 
+export const QuotationStatusUpdate = (data: QuotationData): string => {
+  const itemsList = data.quotationItems.map(item => `
+    <tr>
+      <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; font-family: 'Unbounded', sans-serif;">${item.quantity}x</td>
+      <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; font-family: 'Unbounded', sans-serif;">
+        <div style="font-weight: 500; font-family: 'Unbounded', sans-serif;">${item.product.name}</div>
+        <div style="font-size: 12px; color: #666; font-family: 'Unbounded', sans-serif;">Code: ${item.product.code}</div>
+      </td>
+      <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: right; font-family: 'Unbounded', sans-serif;">${new Intl.NumberFormat('en-US', { style: 'currency', currency: data.currency }).format(item.totalPrice)}</td>
+    </tr>
+  `).join('');
+
+  // Get status information
+  const statusInfo = {
+    pending: {
+      title: 'Pending Review',
+      description: 'Your quotation is currently being reviewed by our team.',
+      color: '#A855F7', // Purple color (matching the header)
+      next: 'Our team will process your quotation shortly.'
+    },
+    inprogress: {
+      title: 'In Progress',
+      description: 'Your quotation is currently being processed.',
+      color: '#A855F7', // Purple color (matching the header)
+      next: 'We\'re working on preparing your order based on the quotation.'
+    },
+    approved: {
+      title: 'Approved',
+      description: 'Your quotation has been approved.',
+      color: '#A855F7', // Purple color (matching the header)
+      next: 'We\'ll be in touch soon to arrange delivery or collection details.'
+    },
+    rejected: {
+      title: 'Not Approved',
+      description: 'Unfortunately, your quotation could not be approved at this time.',
+      color: '#A855F7', // Purple color (matching the header)
+      next: 'Please contact our customer service for more information.'
+    },
+    completed: {
+      title: 'Completed',
+      description: 'Your order has been successfully completed.',
+      color: '#A855F7', // Purple color (matching the header)
+      next: 'Thank you for your business!'
+    },
+    cancelled: {
+      title: 'Cancelled',
+      description: 'Your quotation has been cancelled as requested.',
+      color: '#A855F7', // Purple color (matching the header)
+      next: 'If you wish to place a new order, please create a new quotation.'
+    },
+    postponed: {
+      title: 'Postponed',
+      description: 'Your quotation has been temporarily postponed.',
+      color: '#A855F7', // Purple color (matching the header) 
+      next: 'We\'ll contact you with additional information about next steps.'
+    },
+    outfordelivery: {
+      title: 'Out for Delivery',
+      description: 'Your order is now out for delivery.',
+      color: '#A855F7', // Purple color (matching the header)
+      next: 'You should receive your items shortly.'
+    },
+    delivered: {
+      title: 'Delivered',
+      description: 'Your order has been delivered successfully.',
+      color: '#A855F7', // Purple color (matching the header)
+      next: 'We hope you enjoy your purchase!'
+    }
+  };
+
+  const status = data.status.toLowerCase();
+  const statusDisplay = statusInfo[status] || statusInfo.pending;
+
+  return `
+    <div style="${BASE_STYLES.wrapper}">
+      <div style="${BASE_STYLES.container}">
+        <div style="${BASE_STYLES.header}">
+          <h1 style="margin: 16px 0 8px; font-size: 24px; font-family: 'Unbounded', sans-serif;">Quotation Status Update</h1>
+          <p style="margin: 0; opacity: 0.9; font-family: 'Unbounded', sans-serif;">Reference: ${data.quotationId}</p>
+        </div>
+
+        <div style="padding: 24px 20px;">
+          <div style="${BASE_STYLES.card}">
+            <h2 style="${BASE_STYLES.heading}">Dear ${data.name},</h2>
+            <p style="${BASE_STYLES.text}">This is to inform you that the status of your quotation has been updated to:</p>
+            
+            <div style="${BASE_STYLES.highlight}">
+              <div style="display: inline-block; width: 100%; text-align: center;">
+                <div style="display: inline-block; padding: 8px 24px; border-radius: 16px; background-color: #faf5ff; color: #A855F7; font-weight: 600; font-family: 'Unbounded', sans-serif; margin-bottom: 12px;">
+                  ${statusDisplay.title}
+                </div>
+              </div>
+              <p style="margin: 12px 0 0; color: #4b5563; font-family: 'Unbounded', sans-serif; text-align: center; font-size: 15px;">${statusDisplay.description}</p>
+            </div>
+
+            <div style="margin: 24px 0; background: #f7fafc; border-radius: 8px; padding: 16px;">
+              <h3 style="margin: 0 0 16px; font-size: 18px; color: #A855F7; font-family: 'Unbounded', sans-serif;">Quotation Details</h3>
+              <table style="width: 100%; border-collapse: collapse; font-family: 'Unbounded', sans-serif;">
+                <thead>
+                  <tr>
+                    <th style="text-align: left; padding: 12px; border-bottom: 2px solid #e2e8f0; font-family: 'Unbounded', sans-serif;">Quantity</th>
+                    <th style="text-align: left; padding: 12px; border-bottom: 2px solid #e2e8f0; font-family: 'Unbounded', sans-serif;">Product</th>
+                    <th style="text-align: right; padding: 12px; border-bottom: 2px solid #e2e8f0; font-family: 'Unbounded', sans-serif;">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${itemsList}
+                  <tr>
+                    <td colspan="2" style="padding: 12px; font-weight: 600; font-family: 'Unbounded', sans-serif;">Total Amount</td>
+                    <td style="padding: 12px; text-align: right; font-weight: 600; font-family: 'Unbounded', sans-serif;">${new Intl.NumberFormat('en-US', { style: 'currency', currency: data.currency }).format(data.total)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div style="${BASE_STYLES.alert}">
+              <p style="margin: 0; font-weight: 500; font-family: 'Unbounded', sans-serif;">Next Steps:</p>
+              <p style="margin: 8px 0 0; font-family: 'Unbounded', sans-serif;">${statusDisplay.next}</p>
+            </div>
+          </div>
+
+          <div style="${BASE_STYLES.card}">
+            <h3 style="${BASE_STYLES.heading}">Need Help?</h3>
+            <p style="${BASE_STYLES.text}">If you have any questions or concerns about your quotation:</p>
+            <ul style="margin: 16px 0; padding-left: 20px; font-family: 'Unbounded', sans-serif;">
+              <li style="margin-bottom: 8px;">Reply to this email</li>
+              <li style="margin-bottom: 8px;">Contact our customer support</li>
+              <li style="margin-bottom: 8px;">Check your account on our platform for the latest status</li>
+            </ul>
+          </div>
+        </div>
+
+        <div style="${BASE_STYLES.footer}">
+          <p style="margin: 0; font-family: 'Unbounded', sans-serif;">Thank you for choosing our services. We appreciate your business.</p>
+        </div>
+      </div>
+    </div>
+  `;
+};
+
 export const Invoice = (data: InvoiceData): string => {
   return `
     <div style="${BASE_STYLES?.wrapper}">

@@ -20,7 +20,7 @@ export declare class UserController {
     restore(ref: number): Promise<{
         message: string;
     }>;
-    remove(ref: string): Promise<{
+    remove(ref: number): Promise<{
         message: string;
     }>;
 }

@@ -6,6 +6,7 @@ export declare const PasswordChanged: (data: PasswordChangedData) => string;
 export declare const NewQuotationClient: (data: QuotationData) => string;
 export declare const NewQuotationInternal: (data: QuotationInternalData) => string;
 export declare const NewQuotationReseller: (data: QuotationResellerData) => string;
+export declare const QuotationStatusUpdate: (data: QuotationData) => string;
 export declare const Invoice: (data: InvoiceData) => string;
 export declare const DailyReport: (data: DailyReportData) => string;
 export declare const LicenseCreated: (data: LicenseEmailData) => string;

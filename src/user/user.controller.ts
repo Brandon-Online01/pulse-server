@@ -298,7 +298,7 @@ export class UserController {
 		},
 	})
 	@ApiNotFoundResponse({ description: 'User not found' })
-	remove(@Param('ref') ref: string) {
+	remove(@Param('ref') ref: number) {
 		return this.userService.remove(ref);
 	}
 }

@@ -33,7 +33,6 @@ const typeorm_1 = require("typeorm");
 const journal_entity_1 = require("../../journal/entities/journal.entity");
 const route_entity_1 = require("../../tasks/entities/route.entity");
 let User = class User {
-    ;
 };
 exports.User = User;
 __decorate([
@@ -93,10 +92,6 @@ __decorate([
     __metadata("design:type", String)
 ], User.prototype, "accessLevel", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ unique: true, nullable: true }),
-    __metadata("design:type", String)
-], User.prototype, "userref", void 0);
-__decorate([
     (0, typeorm_1.ManyToOne)(() => organisation_entity_1.Organisation, { onDelete: 'SET NULL', nullable: true }),
     (0, typeorm_1.JoinColumn)({ name: 'organisationRef' }),
     __metadata("design:type", organisation_entity_1.Organisation)
@@ -123,7 +118,9 @@ __decorate([
     __metadata("design:type", user_profile_entity_1.UserProfile)
 ], User.prototype, "userProfile", void 0);
 __decorate([
-    (0, typeorm_1.OneToOne)(() => user_employeement_profile_entity_1.UserEmployeementProfile, (userEmployeementProfile) => userEmployeementProfile?.owner, { nullable: true }),
+    (0, typeorm_1.OneToOne)(() => user_employeement_profile_entity_1.UserEmployeementProfile, (userEmployeementProfile) => userEmployeementProfile?.owner, {
+        nullable: true,
+    }),
     (0, typeorm_1.JoinColumn)(),
     __metadata("design:type", user_employeement_profile_entity_1.UserEmployeementProfile)
 ], User.prototype, "userEmployeementProfile", void 0);

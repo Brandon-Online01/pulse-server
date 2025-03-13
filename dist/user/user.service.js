@@ -324,13 +324,13 @@ let UserService = class UserService {
     async remove(ref) {
         try {
             const user = await this.userRepository.findOne({
-                where: { userref: ref, isDeleted: false },
+                where: { uid: ref, isDeleted: false },
                 relations: ['organisation', 'branch'],
             });
             if (!user) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
-            await this.userRepository.update({ userref: ref }, {
+            await this.userRepository.update({ uid: ref }, {
                 isDeleted: true,
                 status: status_enums_1.AccountStatus.INACTIVE,
             });

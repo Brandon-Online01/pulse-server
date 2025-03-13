@@ -8,6 +8,9 @@ import { Journal } from '../journal/entities/journal.entity';
 import { Tracking } from '../tracking/entities/tracking.entity';
 import { DailyUserActivityReport } from './report.types';
 import { TaskStatus, TaskPriority } from '../lib/enums/task.enums';
+import { differenceInMinutes, differenceInHours } from 'date-fns';
+import { Attendance } from '../attendance/entities/attendance.entity';
+import { AttendanceStatus } from '../lib/enums/attendance.enums';
 
 export enum ActivityType {
     CHECK_IN = 'CHECK_IN',
@@ -31,7 +34,9 @@ export class LiveUserReportService {
         @InjectRepository(Journal)
         private readonly journalRepository: Repository<Journal>,
         @InjectRepository(Tracking)
-        private readonly trackingRepository: Repository<Tracking>
+        private readonly trackingRepository: Repository<Tracking>,
+        @InjectRepository(Attendance)
+        private readonly attendanceRepository: Repository<Attendance>
     ) {}
 
     /**
@@ -636,5 +641,92 @@ export class LiveUserReportService {
         summary += `Overall productivity score: ${dailyReport.productivity.score.toFixed(1)}/10.`;
         
         return summary;
+    }
+
+    /**
+     * Calculates the hours worked by a user today, focusing on attendance
+     * @param userId The user ID to calculate hours for
+     * @returns Object containing hours worked today
+     */
+    async calculateTodaysHoursWorked(userId: number): Promise<{ hoursFormatted: string, totalHoursDecimal: number }> {
+        try {
+            const today = new Date();
+            const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0);
+            const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+
+            // Find completed attendance records for today
+            const completedAttendance = await this.attendanceRepository.find({
+                where: {
+                    owner: { uid: userId },
+                    checkIn: MoreThanOrEqual(startOfDay),
+                    checkOut: LessThan(endOfDay),
+                    status: AttendanceStatus.COMPLETED
+                },
+                order: {
+                    checkIn: 'ASC'
+                }
+            });
+
+            // Find active attendance record (if any)
+            const activeAttendance = await this.attendanceRepository.findOne({
+                where: {
+                    owner: { uid: userId },
+                    checkIn: MoreThanOrEqual(startOfDay),
+                    checkOut: IsNull(),
+                    status: AttendanceStatus.PRESENT
+                },
+                order: {
+                    checkIn: 'DESC'
+                }
+            });
+
+            let totalMinutesWorked = 0;
+
+            // Calculate minutes from completed attendance records
+            for (const record of completedAttendance) {
+                if (record.duration) {
+                    // Parse duration field if available
+                    const durationMatch = record.duration.match(/(\d+)h\s+(\d+)m/);
+                    if (durationMatch) {
+                        const hours = parseInt(durationMatch[1], 10);
+                        const minutes = parseInt(durationMatch[2], 10);
+                        totalMinutesWorked += (hours * 60) + minutes;
+                    }
+                } else if (record.checkIn && record.checkOut) {
+                    // Calculate from timestamps if duration not available
+                    const checkInTime = new Date(record.checkIn).getTime();
+                    const checkOutTime = new Date(record.checkOut).getTime();
+                    const minutesWorked = Math.floor((checkOutTime - checkInTime) / (1000 * 60));
+                    totalMinutesWorked += minutesWorked;
+                }
+            }
+
+            // Add time from active attendance record if exists
+            if (activeAttendance && activeAttendance.checkIn) {
+                const now = new Date();
+                const checkInTime = new Date(activeAttendance.checkIn);
+                const minutesWorked = differenceInMinutes(now, checkInTime);
+                totalMinutesWorked += minutesWorked;
+            }
+
+            // Convert to hours and minutes
+            const hours = Math.floor(totalMinutesWorked / 60);
+            const minutes = totalMinutesWorked % 60;
+
+            // Format as "Xh Ym"
+            const hoursFormatted = `${hours}h ${minutes}m`;
+            const totalHoursDecimal = Number((totalMinutesWorked / 60).toFixed(2));
+
+            return {
+                hoursFormatted,
+                totalHoursDecimal
+            };
+        } catch (error) {
+            console.error('Error calculating today\'s hours worked:', error);
+            return {
+                hoursFormatted: '0h 0m',
+                totalHoursDecimal: 0
+            };
+        }
     }
 } 

@@ -1054,6 +1054,14 @@ export class ReportsService {
 			// Get the daily report data
 			const dailyReport = await this.generateDailyUserReport(options);
 
+			// Calculate today's hours worked using the new method
+			const todaysHoursWorked = await this.liveUserReportService.calculateTodaysHoursWorked(userId);
+			
+			// Update the attendance metrics with today's hours worked
+			if (dailyReport.attendance) {
+				dailyReport.attendance.todaysHoursFormatted = todaysHoursWorked.hoursFormatted;
+			}
+
 			// Fetch real-time data using the LiveUserReportService
 			const currentTasksInProgress = await this.liveUserReportService.getCurrentTasksInProgress(userId);
 			const nextTasks = await this.liveUserReportService.getNextTasks(userId);

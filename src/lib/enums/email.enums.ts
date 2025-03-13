@@ -12,6 +12,7 @@ export enum EmailType {
     NEW_QUOTATION_WAREHOUSE_FULFILLMENT = 'new_quotation_warehouse_fulfillment',
     QUOTATION_APPROVED = 'quotation_approved',
     QUOTATION_REJECTED = 'quotation_rejected',
+    QUOTATION_STATUS_UPDATE = 'quotation_status_update',
     // License related emails
     LICENSE_CREATED = 'license_created',
     LICENSE_UPDATED = 'license_updated',

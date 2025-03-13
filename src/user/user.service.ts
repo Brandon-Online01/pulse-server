@@ -398,10 +398,10 @@ export class UserService {
 		}
 	}
 
-	async remove(ref: string): Promise<{ message: string }> {
+	async remove(ref: number): Promise<{ message: string }> {
 		try {
 			const user = await this.userRepository.findOne({
-				where: { userref: ref, isDeleted: false },
+				where: { uid: ref, isDeleted: false },
 				relations: ['organisation', 'branch'],
 			});
 
@@ -410,7 +410,7 @@ export class UserService {
 			}
 
 			await this.userRepository.update(
-				{ userref: ref },
+				{ uid: ref },
 				{
 					isDeleted: true,
 					status: AccountStatus.INACTIVE,

@@ -163,6 +163,21 @@ let CommunicationService = class CommunicationService {
                     subject: 'Task Updated',
                     body: (0, emails_2.TaskUpdated)(data),
                 };
+            case email_enums_1.EmailType.QUOTATION_APPROVED:
+                return {
+                    subject: 'Quotation Approved',
+                    body: (0, emails_1.QuotationStatusUpdate)(data),
+                };
+            case email_enums_1.EmailType.QUOTATION_REJECTED:
+                return {
+                    subject: 'Quotation Not Approved',
+                    body: (0, emails_1.QuotationStatusUpdate)(data),
+                };
+            case email_enums_1.EmailType.QUOTATION_STATUS_UPDATE:
+                return {
+                    subject: 'Quotation Status Update',
+                    body: (0, emails_1.QuotationStatusUpdate)(data),
+                };
             default:
                 throw new common_1.NotFoundException(`Unknown email template type: ${type}`);
         }

@@ -15,6 +15,7 @@ var EmailType;
     EmailType["NEW_QUOTATION_WAREHOUSE_FULFILLMENT"] = "new_quotation_warehouse_fulfillment";
     EmailType["QUOTATION_APPROVED"] = "quotation_approved";
     EmailType["QUOTATION_REJECTED"] = "quotation_rejected";
+    EmailType["QUOTATION_STATUS_UPDATE"] = "quotation_status_update";
     EmailType["LICENSE_CREATED"] = "license_created";
     EmailType["LICENSE_UPDATED"] = "license_updated";
     EmailType["LICENSE_LIMIT_REACHED"] = "license_limit_reached";

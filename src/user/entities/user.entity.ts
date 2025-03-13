@@ -17,132 +17,141 @@ import { Attendance } from '../../attendance/entities/attendance.entity';
 import { UserEmployeementProfile } from './user.employeement.profile.entity';
 import { Organisation } from '../../organisation/entities/organisation.entity';
 import { Notification } from '../../notifications/entities/notification.entity';
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToOne, OneToMany } from 'typeorm';
+import {
+	Entity,
+	Column,
+	PrimaryGeneratedColumn,
+	CreateDateColumn,
+	UpdateDateColumn,
+	ManyToOne,
+	JoinColumn,
+	OneToOne,
+	OneToMany,
+} from 'typeorm';
 import { Journal } from 'src/journal/entities/journal.entity';
 import { Route } from 'src/tasks/entities/route.entity';
 
 @Entity('users')
 export class User {
-    @PrimaryGeneratedColumn()
-    uid: number;
+	@PrimaryGeneratedColumn()
+	uid: number;
 
-    @Column({ unique: true })
-    username: string;
+	@Column({ unique: true })
+	username: string;
 
-    @Column()
-    password: string;
+	@Column()
+	password: string;
 
-    @Column()
-    name: string;
+	@Column()
+	name: string;
 
-    @Column()
-    surname: string;
+	@Column()
+	surname: string;
 
-    @Column({ unique: true })
-    email: string;
+	@Column({ unique: true })
+	email: string;
 
-    @Column({ nullable: true })
-    phone: string;
+	@Column({ nullable: true })
+	phone: string;
 
-    @Column({ nullable: true })
-    photoURL: string;
+	@Column({ nullable: true })
+	photoURL: string;
 
-    @Column({ default: 'user' })
-    role: string;
+	@Column({ default: 'user' })
+	role: string;
 
-    @Column({ default: 'active' })
-    status: string;
+	@Column({ default: 'active' })
+	status: string;
 
-    @Column({ nullable: true })
-    departmentId: number;
+	@Column({ nullable: true })
+	departmentId: number;
 
-    @CreateDateColumn()
-    createdAt: Date;
+	@CreateDateColumn()
+	createdAt: Date;
 
-    @UpdateDateColumn()
-    updatedAt: Date;
+	@UpdateDateColumn()
+	updatedAt: Date;
 
-    @Column({ type: 'enum', enum: AccessLevel })
-    accessLevel: AccessLevel;
+	@Column({ type: 'enum', enum: AccessLevel })
+	accessLevel: AccessLevel;
 
-    @Column({ unique: true, nullable: true })
-    userref: string;
+	@ManyToOne(() => Organisation, { onDelete: 'SET NULL', nullable: true })
+	@JoinColumn({ name: 'organisationRef' })
+	organisation: Organisation;
 
-    @ManyToOne(() => Organisation, { onDelete: 'SET NULL', nullable: true })
-    @JoinColumn({ name: 'organisationRef' })
-    organisation: Organisation;
+	@Column({ nullable: true })
+	organisationRef: string;
 
-    @Column({ nullable: true })
-    organisationRef: string;
+	@Column({ nullable: true })
+	verificationToken: string;
 
-    @Column({ nullable: true })
-    verificationToken: string;
+	@Column({ nullable: true })
+	resetToken: string;
 
-    @Column({ nullable: true })
-    resetToken: string;
+	@Column({ type: 'timestamp', nullable: true })
+	tokenExpires: Date;
 
-    @Column({ type: 'timestamp', nullable: true })
-    tokenExpires: Date;
+	@OneToOne(() => UserProfile, (userProfile) => userProfile?.owner, { nullable: true })
+	@JoinColumn()
+	userProfile: UserProfile;
 
-    @OneToOne(() => UserProfile, (userProfile) => userProfile?.owner, { nullable: true })
-    @JoinColumn()
-    userProfile: UserProfile;
+	@OneToOne(() => UserEmployeementProfile, (userEmployeementProfile) => userEmployeementProfile?.owner, {
+		nullable: true,
+	})
+	@JoinColumn()
+	userEmployeementProfile: UserEmployeementProfile;
 
-    @OneToOne(() => UserEmployeementProfile, (userEmployeementProfile) => userEmployeementProfile?.owner, { nullable: true })
-    @JoinColumn()
-    userEmployeementProfile: UserEmployeementProfile;;
+	@OneToMany(() => Attendance, (attendance) => attendance.owner)
+	attendance: Attendance[];
 
-    @OneToMany(() => Attendance, (attendance) => attendance.owner)
-    attendance: Attendance[];
+	@OneToMany(() => Report, (report) => report.owner)
+	reports: Report[];
 
-    @OneToMany(() => Report, (report) => report.owner)
-    reports: Report[];
+	@OneToMany(() => Claim, (claim) => claim?.owner, { nullable: true })
+	userClaims: Claim[];
 
-    @OneToMany(() => Claim, (claim) => claim?.owner, { nullable: true })
-    userClaims: Claim[];
+	@OneToMany(() => Doc, (doc) => doc?.owner, { nullable: true })
+	userDocs: Doc[];
 
-    @OneToMany(() => Doc, (doc) => doc?.owner, { nullable: true })
-    userDocs: Doc[];
+	@OneToMany(() => Lead, (lead) => lead?.owner, { nullable: true })
+	leads: Lead[];
 
-    @OneToMany(() => Lead, (lead) => lead?.owner, { nullable: true })
-    leads: Lead[];
+	@OneToMany(() => News, (news) => news?.author, { nullable: true })
+	articles: News[];
 
-    @OneToMany(() => News, (news) => news?.author, { nullable: true })
-    articles: News[];
+	@OneToMany(() => Asset, (asset) => asset?.owner, { nullable: true })
+	assets: Asset[];
 
-    @OneToMany(() => Asset, (asset) => asset?.owner, { nullable: true })
-    assets: Asset[];
+	@OneToMany(() => Tracking, (tracking) => tracking?.owner, { nullable: true })
+	trackings: Tracking[];
 
-    @OneToMany(() => Tracking, (tracking) => tracking?.owner, { nullable: true })
-    trackings: Tracking[];
+	@OneToMany(() => Quotation, (quotation) => quotation?.placedBy, { nullable: true })
+	quotations: Quotation[];
 
-    @OneToMany(() => Quotation, (quotation) => quotation?.placedBy, { nullable: true })
-    quotations: Quotation[];
+	@OneToMany(() => Notification, (notification) => notification?.owner, { nullable: true })
+	notifications: Notification[];
 
-    @OneToMany(() => Notification, (notification) => notification?.owner, { nullable: true })
-    notifications: Notification[];
+	@ManyToOne(() => Branch, (branch) => branch?.users)
+	branch: Branch;
 
-    @ManyToOne(() => Branch, (branch) => branch?.users)
-    branch: Branch;
+	@OneToMany(() => Client, (client) => client?.assignedSalesRep, { nullable: true })
+	clients: Client[];
 
-    @OneToMany(() => Client, (client) => client?.assignedSalesRep, { nullable: true })
-    clients: Client[];
+	@OneToMany(() => CheckIn, (checkIn) => checkIn?.owner, { nullable: true })
+	checkIns: CheckIn[];
 
-    @OneToMany(() => CheckIn, (checkIn) => checkIn?.owner, { nullable: true })
-    checkIns: CheckIn[];
+	@OneToOne(() => UserRewards, (userRewards) => userRewards?.owner, { nullable: true })
+	rewards: UserRewards;
 
-    @OneToOne(() => UserRewards, (userRewards) => userRewards?.owner, { nullable: true })
-    rewards: UserRewards;
+	@OneToMany(() => Journal, (journal) => journal.owner)
+	journals: Journal[];
 
-    @OneToMany(() => Journal, (journal) => journal.owner)
-    journals: Journal[];
+	@Column({ default: false })
+	isDeleted: boolean;
 
-    @Column({ default: false })
-    isDeleted: boolean; 
+	@OneToMany(() => Task, (task) => task?.creator)
+	tasks: Task[];
 
-    @OneToMany(() => Task, (task) => task?.creator)
-    tasks: Task[];
-
-    @OneToMany(() => Route, (route) => route?.assignee)
-    routes: Route[]; 
+	@OneToMany(() => Route, (route) => route?.assignee)
+	routes: Route[];
 }

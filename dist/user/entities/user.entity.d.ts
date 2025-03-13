@@ -34,7 +34,6 @@ export declare class User {
     createdAt: Date;
     updatedAt: Date;
     accessLevel: AccessLevel;
-    userref: string;
     organisation: Organisation;
     organisationRef: string;
     verificationToken: string;

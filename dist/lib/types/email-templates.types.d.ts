@@ -87,6 +87,7 @@ export interface QuotationData extends BaseEmailData {
     validUntil: Date;
     total: number;
     currency: string;
+    status?: string;
     quotationItems: Array<{
         quantity: number;
         product: {
@@ -202,6 +203,7 @@ export interface EmailDataMap {
     [EmailType.NEW_QUOTATION_WAREHOUSE_FULFILLMENT]: QuotationWarehouseData;
     [EmailType.QUOTATION_APPROVED]: QuotationData;
     [EmailType.QUOTATION_REJECTED]: QuotationData;
+    [EmailType.QUOTATION_STATUS_UPDATE]: QuotationData;
     [EmailType.LICENSE_CREATED]: LicenseEmailData;
     [EmailType.LICENSE_UPDATED]: LicenseEmailData;
     [EmailType.LICENSE_LIMIT_REACHED]: LicenseLimitData;

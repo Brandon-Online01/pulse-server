@@ -922,11 +922,13 @@ export class ShopService {
     async updateQuotationStatus(quotationId: number, status: OrderStatus): Promise<void> {
         const quotation = await this.quotationRepository.findOne({
             where: { uid: quotationId },
-            relations: ['quotationItems', 'quotationItems.product']
+            relations: ['quotationItems', 'quotationItems.product', 'client']
         });
 
         if (!quotation) return;
 
+        const previousStatus = quotation.status;
+        
         // If quotation is approved, update product analytics
         if (status === OrderStatus.APPROVED) {
             for (const item of quotation?.quotationItems) {
@@ -939,7 +941,49 @@ export class ShopService {
             }
         }
 
+        // Update the quotation status
         await this.quotationRepository.update(quotationId, { status });
+
+        // Only send notification if the status has changed
+        if (previousStatus !== status && quotation.client?.email) {
+            try {
+                // Prepare email data
+                const emailData = {
+                    name: quotation.client.name || quotation.client.email.split('@')[0],
+                    quotationId: quotation.quotationNumber,
+                    validUntil: quotation.validUntil || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now if not set
+                    total: Number(quotation.totalAmount),
+                    currency: this.currencyCode,
+                    status: status.toLowerCase(),
+                    quotationItems: quotation.quotationItems.map(item => ({
+                        quantity: item.quantity,
+                        product: {
+                            uid: item.product.uid,
+                            name: item.product.name,
+                            code: item.product.sku || `SKU-${item.product.uid}`
+                        },
+                        totalPrice: Number(item.totalPrice)
+                    }))
+                };
+
+                // Determine which email template to use based on status
+                let emailType = EmailType.QUOTATION_STATUS_UPDATE;
+                if (status === OrderStatus.APPROVED) {
+                    emailType = EmailType.QUOTATION_APPROVED;
+                } else if (status === OrderStatus.REJECTED) {
+                    emailType = EmailType.QUOTATION_REJECTED;
+                }
+
+                // Emit event for email sending
+                this.eventEmitter.emit('send.email', emailType, [quotation.client.email], emailData);
+                
+                // Also notify internal team about the status change
+                this.shopGateway.notifyQuotationStatusChanged(quotationId, status);
+            } catch (error) {
+                console.error('Failed to send quotation status update email:', error);
+                // Continue with the process even if email sending fails
+            }
+        }
     }
 }
 

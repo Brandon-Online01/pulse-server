@@ -53,7 +53,7 @@ export declare class UserService {
     update(ref: number, updateUserDto: UpdateUserDto): Promise<{
         message: string;
     }>;
-    remove(ref: string): Promise<{
+    remove(ref: number): Promise<{
         message: string;
     }>;
     createPendingUser(userData: NewSignUp): Promise<void>;

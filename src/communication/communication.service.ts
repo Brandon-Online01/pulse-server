@@ -11,7 +11,7 @@ import { User } from '../user/entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CommunicationLog } from './entities/communication-log.entity';
-import { LicenseCreated, LicenseUpdated, LicenseLimitReached, LicenseRenewed, LicenseSuspended, LicenseActivated, NewQuotationClient, NewQuotationInternal, NewQuotationReseller, Signup, Verification, PasswordReset, Invoice, PasswordChanged, DailyReport } from '../lib/templates/emails';
+import { LicenseCreated, LicenseUpdated, LicenseLimitReached, LicenseRenewed, LicenseSuspended, LicenseActivated, NewQuotationClient, NewQuotationInternal, NewQuotationReseller, Signup, Verification, PasswordReset, Invoice, PasswordChanged, DailyReport, QuotationStatusUpdate } from '../lib/templates/emails';
 import { DailyReportData, InvoiceData, PasswordChangedData, PasswordResetData, VerificationEmailData, SignupEmailData, EmailTemplateData, LicenseEmailData, LicenseLimitData, QuotationInternalData, QuotationResellerData, QuotationData } from '../lib/types/email-templates.types';
 import { NewTask, TaskUpdated } from '../lib/templates/emails';
 import { TaskEmailData } from '../lib/types/email-templates.types';
@@ -169,6 +169,21 @@ export class CommunicationService {
 				return {
 					subject: 'Task Updated',
 					body: TaskUpdated(data as TaskEmailData),
+				};
+			case EmailType.QUOTATION_APPROVED:
+				return {
+					subject: 'Quotation Approved',
+					body: QuotationStatusUpdate(data as QuotationData),
+				};
+			case EmailType.QUOTATION_REJECTED:
+				return {
+					subject: 'Quotation Not Approved',
+					body: QuotationStatusUpdate(data as QuotationData),
+				};
+			case EmailType.QUOTATION_STATUS_UPDATE:
+				return {
+					subject: 'Quotation Status Update',
+					body: QuotationStatusUpdate(data as QuotationData),
 				};
 			default:
 				throw new NotFoundException(`Unknown email template type: ${type}`);

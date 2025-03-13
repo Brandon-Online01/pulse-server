@@ -29,6 +29,10 @@ export declare class AuthController {
                 features: Record<string, boolean>;
             };
             uid: number;
+            createdAt: Date;
+            updatedAt: Date;
+            branch: import("../branch/entities/branch.entity").Branch;
+            organisation: import("../organisation/entities/organisation.entity").Organisation;
             username: string;
             name: string;
             surname: string;
@@ -38,11 +42,7 @@ export declare class AuthController {
             role: string;
             status: string;
             departmentId: number;
-            createdAt: Date;
-            updatedAt: Date;
             accessLevel: import("../lib/enums/user.enums").AccessLevel;
-            userref: string;
-            organisation: import("../organisation/entities/organisation.entity").Organisation;
             organisationRef: string;
             verificationToken: string;
             resetToken: string;
@@ -59,7 +59,6 @@ export declare class AuthController {
             trackings: import("../tracking/entities/tracking.entity").Tracking[];
             quotations: import("../shop/entities/quotation.entity").Quotation[];
             notifications: import("../notifications/entities/notification.entity").Notification[];
-            branch: import("../branch/entities/branch.entity").Branch;
             clients: import("../clients/entities/client.entity").Client[];
             checkIns: import("../check-ins/entities/check-in.entity").CheckIn[];
             rewards: import("../rewards/entities/user-rewards.entity").UserRewards;

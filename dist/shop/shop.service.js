@@ -712,10 +712,11 @@ let ShopService = class ShopService {
     async updateQuotationStatus(quotationId, status) {
         const quotation = await this.quotationRepository.findOne({
             where: { uid: quotationId },
-            relations: ['quotationItems', 'quotationItems.product']
+            relations: ['quotationItems', 'quotationItems.product', 'client']
         });
         if (!quotation)
             return;
+        const previousStatus = quotation.status;
         if (status === status_enums_1.OrderStatus.APPROVED) {
             for (const item of quotation?.quotationItems) {
                 await this.productsService?.recordSale(item?.product?.uid, item?.quantity, Number(item?.totalPrice));
@@ -723,6 +724,39 @@ let ShopService = class ShopService {
             }
         }
         await this.quotationRepository.update(quotationId, { status });
+        if (previousStatus !== status && quotation.client?.email) {
+            try {
+                const emailData = {
+                    name: quotation.client.name || quotation.client.email.split('@')[0],
+                    quotationId: quotation.quotationNumber,
+                    validUntil: quotation.validUntil || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+                    total: Number(quotation.totalAmount),
+                    currency: this.currencyCode,
+                    status: status.toLowerCase(),
+                    quotationItems: quotation.quotationItems.map(item => ({
+                        quantity: item.quantity,
+                        product: {
+                            uid: item.product.uid,
+                            name: item.product.name,
+                            code: item.product.sku || `SKU-${item.product.uid}`
+                        },
+                        totalPrice: Number(item.totalPrice)
+                    }))
+                };
+                let emailType = email_enums_1.EmailType.QUOTATION_STATUS_UPDATE;
+                if (status === status_enums_1.OrderStatus.APPROVED) {
+                    emailType = email_enums_1.EmailType.QUOTATION_APPROVED;
+                }
+                else if (status === status_enums_1.OrderStatus.REJECTED) {
+                    emailType = email_enums_1.EmailType.QUOTATION_REJECTED;
+                }
+                this.eventEmitter.emit('send.email', emailType, [quotation.client.email], emailData);
+                this.shopGateway.notifyQuotationStatusChanged(quotationId, status);
+            }
+            catch (error) {
+                console.error('Failed to send quotation status update email:', error);
+            }
+        }
     }
 };
 exports.ShopService = ShopService;
