@@ -244,7 +244,7 @@ export class TaskRouteService {
 	/**
 	 * Get routes for all tasks on a given date without recalculating
 	 */
-	async getRoutes(date: Date = new Date(), organizationId?: number, branchId?: number): Promise<Route[]> {
+	async getRoutes(date: Date = new Date(), organisationRef?: string, branchId?: number): Promise<Route[]> {
 		const startOfDay = new Date(date);
 		startOfDay.setHours(0, 0, 0, 0);
 
@@ -258,8 +258,8 @@ export class TaskRouteService {
 		};
 
 		// Add organization and branch filters if provided
-		if (organizationId) {
-			where.organisation = { ref: organizationId };
+		if (organisationRef) {
+			where.organisation = { ref: organisationRef };
 		}
 
 		if (branchId) {
@@ -279,7 +279,7 @@ export class TaskRouteService {
 	 * Plan routes for all tasks on a given date
 	 */
 	@Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
-	async planRoutes(date: Date = new Date(), organizationId?: number, branchId?: number): Promise<Route[]> {
+	async planRoutes(date: Date = new Date(), organisationRef?: string, branchId?: number): Promise<Route[]> {
 		const startOfDay = new Date(date);
 		startOfDay.setHours(0, 0, 0, 0);
 
@@ -293,8 +293,8 @@ export class TaskRouteService {
 		};
 
 		// Add organization and branch filters if provided
-		if (organizationId) {
-			where.organisation = { ref: organizationId };
+		if (organisationRef) {
+			where.organisation = { ref: organisationRef };
 		}
 
 		if (branchId) {

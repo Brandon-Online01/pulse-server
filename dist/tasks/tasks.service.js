@@ -353,9 +353,9 @@ let TasksService = class TasksService {
         }
         return task;
     }
-    async findOne(ref) {
+    async findOne(ref, organisationRef, branchId) {
         try {
-            const cacheKey = this.getCacheKey(`${ref}`);
+            const cacheKey = this.getCacheKey(`${ref}_${organisationRef}_${branchId}`);
             const cachedTask = await this.cacheManager.get(cacheKey);
             if (cachedTask) {
                 return {
@@ -367,6 +367,12 @@ let TasksService = class TasksService {
                 uid: ref,
                 isDeleted: false,
             };
+            if (organisationRef) {
+                where.organisation = { ref: organisationRef };
+            }
+            if (branchId) {
+                where.branch = { uid: branchId };
+            }
             const task = await this.taskRepository.findOne({
                 where: where,
                 relations: ['creator', 'subtasks', 'organisation', 'branch', 'routes'],
@@ -388,12 +394,18 @@ let TasksService = class TasksService {
             };
         }
     }
-    async tasksByUser(ref) {
+    async tasksByUser(ref, organisationRef, branchId) {
         try {
             const where = {
                 creator: { uid: ref },
                 isDeleted: false,
             };
+            if (organisationRef) {
+                where.organisation = { ref: organisationRef };
+            }
+            if (branchId) {
+                where.branch = { uid: branchId };
+            }
             const tasks = await this.taskRepository.find({
                 where: where,
                 relations: ['creator', 'subtasks', 'organisation', 'branch', 'routes'],
@@ -403,14 +415,14 @@ let TasksService = class TasksService {
             }
             const populatedTasks = await Promise.all(tasks.map((task) => this.populateTaskRelations(task)));
             return {
-                message: process.env.SUCCESS_MESSAGE,
                 tasks: populatedTasks,
+                message: process.env.SUCCESS_MESSAGE,
             };
         }
         catch (error) {
             return {
-                message: `could not get tasks by user - ${error?.message}`,
-                tasks: null,
+                tasks: [],
+                message: error?.message,
             };
         }
     }
@@ -438,6 +450,12 @@ let TasksService = class TasksService {
                 where.deadline = (0, typeorm_3.LessThan)(new Date());
                 where.status = (0, typeorm_3.Not)(task_enums_1.TaskStatus.COMPLETED);
             }
+            if (filters?.organisationRef) {
+                where.organisation = { ref: filters.organisationRef };
+            }
+            if (filters?.branchId) {
+                where.branch = { uid: filters.branchId };
+            }
             const [tasks, total] = await this.taskRepository.findAndCount({
                 where: where,
                 skip: (page - 1) * limit,
@@ -447,7 +465,7 @@ let TasksService = class TasksService {
                     createdAt: 'DESC',
                 },
             });
-            let filteredTasks = await Promise.all(tasks.map((task) => this.populateTaskRelations(task)));
+            let filteredTasks = await Promise.all(tasks?.map((task) => this.populateTaskRelations(task)));
             if (filters?.assigneeId) {
                 filteredTasks = filteredTasks?.filter((task) => task.assignees?.some((assignee) => assignee?.uid === filters?.assigneeId));
             }
@@ -634,7 +652,7 @@ let TasksService = class TasksService {
             return { total: 0 };
         }
     }
-    async findOneSubTask(ref) {
+    async findOneSubTask(ref, organisationRef, branchId) {
         try {
             const subtask = await this.subtaskRepository.findOne({
                 where: { uid: ref, isDeleted: false },
@@ -645,6 +663,27 @@ let TasksService = class TasksService {
                     tasks: null,
                     message: process.env.NOT_FOUND_MESSAGE,
                 };
+            }
+            if (organisationRef || branchId) {
+                const taskWhere = {
+                    uid: subtask.task.uid,
+                    isDeleted: false,
+                };
+                if (organisationRef) {
+                    taskWhere.organisation = { ref: organisationRef };
+                }
+                if (branchId) {
+                    taskWhere.branch = { uid: branchId };
+                }
+                const parentTask = await this.taskRepository.findOne({
+                    where: taskWhere,
+                });
+                if (!parentTask) {
+                    return {
+                        tasks: null,
+                        message: "Subtask does not belong to the specified organization or branch",
+                    };
+                }
             }
             return {
                 tasks: subtask,

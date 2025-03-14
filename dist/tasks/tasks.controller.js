@@ -34,7 +34,7 @@ let TasksController = class TasksController {
     create(createTaskDto) {
         return this.tasksService.create(createTaskDto);
     }
-    findAll(status, priority, assigneeId, clientId, startDate, endDate, isOverdue, page, limit) {
+    findAll(status, priority, assigneeId, clientId, startDate, endDate, isOverdue, page, limit, req) {
         try {
             const pageNum = page ? parseInt(page, 10) : 1;
             const limitNum = limit ? parseInt(limit, 10) : Number(process.env.DEFAULT_PAGE_LIMIT);
@@ -72,6 +72,12 @@ let TasksController = class TasksController {
             if (isOverdue && isOverdue !== 'undefined' && isOverdue !== '') {
                 filters.isOverdue = isOverdue.toLowerCase() === 'true';
             }
+            if (req?.user?.organisationRef) {
+                filters.organisationRef = req.user.organisationRef;
+            }
+            if (req?.user?.branch?.uid) {
+                filters.branchId = req.user.branch.uid;
+            }
             return this.tasksService.findAll(Object.keys(filters).length > 0 ? filters : undefined, pageNum, limitNum);
         }
         catch (error) {
@@ -79,22 +85,28 @@ let TasksController = class TasksController {
                 data: [],
                 meta: {
                     total: 0,
-                    page: parseInt(page, 10) || 1,
-                    limit: parseInt(limit, 10) || Number(process.env.DEFAULT_PAGE_LIMIT),
+                    page: parseInt(page, 20) || 1,
+                    limit: parseInt(limit, 20) || Number(process.env.DEFAULT_PAGE_LIMIT),
                     totalPages: 0,
                 },
                 message: error?.message || 'An error occurred while fetching tasks',
             };
         }
     }
-    findOne(ref) {
-        return this.tasksService.findOne(ref);
+    findOne(ref, req) {
+        const organisationRef = req?.user?.organisationRef;
+        const branchId = req?.user?.branch?.uid;
+        return this.tasksService.findOne(ref, organisationRef, branchId);
     }
-    tasksByUser(ref) {
-        return this.tasksService.tasksByUser(ref);
+    tasksByUser(ref, req) {
+        const organisationRef = req?.user?.organisationRef;
+        const branchId = req?.user?.branch?.uid;
+        return this.tasksService.tasksByUser(ref, organisationRef, branchId);
     }
-    findOneSubTask(ref) {
-        return this.tasksService.findOneSubTask(ref);
+    findOneSubTask(ref, req) {
+        const organisationRef = req?.user?.organisationRef;
+        const branchId = req?.user?.branch?.uid;
+        return this.tasksService.findOneSubTask(ref, organisationRef, branchId);
     }
     update(ref, updateTaskDto) {
         return this.tasksService.update(ref, updateTaskDto);
@@ -111,9 +123,11 @@ let TasksController = class TasksController {
     remove(ref) {
         return this.tasksService.remove(ref);
     }
-    async getOptimizedRoutes(dateStr) {
+    async getOptimizedRoutes(dateStr, req) {
         const date = dateStr ? new Date(dateStr) : new Date();
-        const routes = await this.taskRouteService.getRoutes(date);
+        const organisationRef = req?.user?.organisationRef;
+        const branchId = req?.user?.branch?.uid;
+        const routes = await this.taskRouteService.getRoutes(date, organisationRef, branchId);
         return routes.map((route) => ({
             userId: route.assignee.uid,
             stops: route.waypoints.map((wp) => ({
@@ -129,9 +143,11 @@ let TasksController = class TasksController {
             totalDistance: route.totalDistance,
         }));
     }
-    async calculateOptimizedRoutes(dateStr) {
+    async calculateOptimizedRoutes(dateStr, req) {
         const date = dateStr ? new Date(dateStr) : new Date();
-        await this.taskRouteService.planRoutes(date);
+        const organisationRef = req?.user?.organisationRef;
+        const branchId = req?.user?.branch?.uid;
+        await this.taskRouteService.planRoutes(date, organisationRef, branchId);
         return { message: 'Routes calculated successfully' };
     }
 };
@@ -236,8 +252,9 @@ __decorate([
     __param(6, (0, common_1.Query)('isOverdue')),
     __param(7, (0, common_1.Query)('page')),
     __param(8, (0, common_1.Query)('limit')),
+    __param(9, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, String, String, String, String, String, String, String]),
+    __metadata("design:paramtypes", [String, String, String, String, String, String, String, String, String, Object]),
     __metadata("design:returntype", void 0)
 ], TasksController.prototype, "findAll", null);
 __decorate([
@@ -284,8 +301,9 @@ __decorate([
         },
     }),
     __param(0, (0, common_1.Param)('ref')),
+    __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
+    __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", void 0)
 ], TasksController.prototype, "findOne", null);
 __decorate([
@@ -330,8 +348,9 @@ __decorate([
         },
     }),
     __param(0, (0, common_1.Param)('ref')),
+    __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
+    __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", void 0)
 ], TasksController.prototype, "tasksByUser", null);
 __decorate([
@@ -372,8 +391,9 @@ __decorate([
         },
     }),
     __param(0, (0, common_1.Param)('ref')),
+    __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
+    __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", void 0)
 ], TasksController.prototype, "findOneSubTask", null);
 __decorate([
@@ -599,8 +619,9 @@ __decorate([
     }),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER, user_enums_1.AccessLevel.OWNER, user_enums_1.AccessLevel.TECHNICIAN),
     __param(0, (0, common_1.Query)('date')),
+    __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], TasksController.prototype, "getOptimizedRoutes", null);
 __decorate([
@@ -635,8 +656,9 @@ __decorate([
     }),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER, user_enums_1.AccessLevel.OWNER, user_enums_1.AccessLevel.TECHNICIAN),
     __param(0, (0, common_1.Query)('date')),
+    __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], TasksController.prototype, "calculateOptimizedRoutes", null);
 exports.TasksController = TasksController = __decorate([

@@ -22,7 +22,7 @@ import { UpdateSubtaskDto } from './dto/update-subtask.dto';
 import { EnterpriseOnly } from '../decorators/enterprise-only.decorator';
 import { TaskStatus, TaskPriority } from '../lib/enums/task.enums';
 import { OptimizedRoute } from './interfaces/route.interface';
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, Request } from '@nestjs/common';
 
 @ApiTags('tasks')
 @Controller('tasks')
@@ -147,6 +147,7 @@ export class TasksController {
 		@Query('isOverdue') isOverdue?: string,
 		@Query('page') page?: string,
 		@Query('limit') limit?: string,
+		@Request() req?: any,
 	) {
 		try {
 			// Convert page and limit to numbers first
@@ -191,6 +192,15 @@ export class TasksController {
 				filters.isOverdue = isOverdue.toLowerCase() === 'true';
 			}
 
+			// Add organization and branch filters from the authenticated user
+			if (req?.user?.organisationRef) {
+				filters.organisationRef = req.user.organisationRef;
+			}
+
+			if (req?.user?.branch?.uid) {
+				filters.branchId = req.user.branch.uid;
+			}
+
 			// Call service with filters only if we have any
 			return this.tasksService.findAll(Object.keys(filters).length > 0 ? filters : undefined, pageNum, limitNum);
 		} catch (error) {
@@ -198,8 +208,8 @@ export class TasksController {
 				data: [],
 				meta: {
 					total: 0,
-					page: parseInt(page, 10) || 1,
-					limit: parseInt(limit, 10) || Number(process.env.DEFAULT_PAGE_LIMIT),
+					page: parseInt(page, 20) || 1,
+					limit: parseInt(limit, 20) || Number(process.env.DEFAULT_PAGE_LIMIT),
 					totalPages: 0,
 				},
 				message: error?.message || 'An error occurred while fetching tasks',
@@ -257,8 +267,10 @@ export class TasksController {
 			},
 		},
 	})
-	findOne(@Param('ref') ref: number) {
-		return this.tasksService.findOne(ref);
+	findOne(@Param('ref') ref: number, @Request() req?: any) {
+		const organisationRef = req?.user?.organisationRef;
+		const branchId = req?.user?.branch?.uid;
+		return this.tasksService.findOne(ref, organisationRef, branchId);
 	}
 
 	@Get('for/:ref')
@@ -309,8 +321,10 @@ export class TasksController {
 			},
 		},
 	})
-	tasksByUser(@Param('ref') ref: number) {
-		return this.tasksService.tasksByUser(ref);
+	tasksByUser(@Param('ref') ref: number, @Request() req?: any) {
+		const organisationRef = req?.user?.organisationRef;
+		const branchId = req?.user?.branch?.uid;
+		return this.tasksService.tasksByUser(ref, organisationRef, branchId);
 	}
 
 	@Get('sub-task/:ref')
@@ -357,8 +371,10 @@ export class TasksController {
 			},
 		},
 	})
-	findOneSubTask(@Param('ref') ref: number) {
-		return this.tasksService.findOneSubTask(ref);
+	findOneSubTask(@Param('ref') ref: number, @Request() req?: any) {
+		const organisationRef = req?.user?.organisationRef;
+		const branchId = req?.user?.branch?.uid;
+		return this.tasksService.findOneSubTask(ref, organisationRef, branchId);
 	}
 
 	@Patch(':ref')
@@ -619,10 +635,12 @@ export class TasksController {
 		AccessLevel.OWNER,
 		AccessLevel.TECHNICIAN,
 	)
-	async getOptimizedRoutes(@Query('date') dateStr?: string): Promise<OptimizedRoute[]> {
+	async getOptimizedRoutes(@Query('date') dateStr?: string, @Request() req?: any): Promise<OptimizedRoute[]> {
 		const date = dateStr ? new Date(dateStr) : new Date();
+		const organisationRef = req?.user?.organisationRef;
+		const branchId = req?.user?.branch?.uid;
 
-		const routes = await this.taskRouteService.getRoutes(date);
+		const routes = await this.taskRouteService.getRoutes(date, organisationRef, branchId);
 
 		return routes.map((route) => ({
 			userId: route.assignee.uid,
@@ -678,10 +696,12 @@ export class TasksController {
 		AccessLevel.OWNER,
 		AccessLevel.TECHNICIAN,
 	)
-	async calculateOptimizedRoutes(@Query('date') dateStr?: string): Promise<{ message: string }> {
+	async calculateOptimizedRoutes(@Query('date') dateStr?: string, @Request() req?: any): Promise<{ message: string }> {
 		const date = dateStr ? new Date(dateStr) : new Date();
+		const organisationRef = req?.user?.organisationRef;
+		const branchId = req?.user?.branch?.uid;
 
-		await this.taskRouteService.planRoutes(date);
+		await this.taskRouteService.planRoutes(date, organisationRef, branchId);
 
 		return { message: 'Routes calculated successfully' };
 	}

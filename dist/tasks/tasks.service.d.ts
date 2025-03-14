@@ -33,11 +33,11 @@ export declare class TasksService {
         message: string;
     }>;
     private populateTaskRelations;
-    findOne(ref: number): Promise<{
+    findOne(ref: number, organisationRef?: string, branchId?: number): Promise<{
         message: string;
         task: Task | null;
     }>;
-    tasksByUser(ref: number): Promise<{
+    tasksByUser(ref: number, organisationRef?: string, branchId?: number): Promise<{
         message: string;
         tasks: Task[];
     }>;
@@ -49,6 +49,8 @@ export declare class TasksService {
         startDate?: Date;
         endDate?: Date;
         isOverdue?: boolean;
+        organisationRef?: string;
+        branchId?: number;
     }, page?: number, limit?: number): Promise<PaginatedResponse<Task>>;
     update(ref: number, updateTaskDto: UpdateTaskDto): Promise<{
         message: string;
@@ -63,7 +65,7 @@ export declare class TasksService {
     getTasksForDate(date: Date): Promise<{
         total: number;
     }>;
-    findOneSubTask(ref: number): Promise<{
+    findOneSubTask(ref: number, organisationRef?: string, branchId?: number): Promise<{
         tasks: SubTask | null;
         message: string;
     }>;

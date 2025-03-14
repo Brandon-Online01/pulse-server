@@ -11,7 +11,7 @@ export declare class TasksController {
     create(createTaskDto: CreateTaskDto): Promise<{
         message: string;
     }>;
-    findAll(status?: string, priority?: string, assigneeId?: string, clientId?: string, startDate?: string, endDate?: string, isOverdue?: string, page?: string, limit?: string): Promise<import("../lib/interfaces/product.interfaces").PaginatedResponse<import("./entities/task.entity").Task>> | {
+    findAll(status?: string, priority?: string, assigneeId?: string, clientId?: string, startDate?: string, endDate?: string, isOverdue?: string, page?: string, limit?: string, req?: any): Promise<import("../lib/interfaces/product.interfaces").PaginatedResponse<import("./entities/task.entity").Task>> | {
         data: any[];
         meta: {
             total: number;
@@ -21,15 +21,15 @@ export declare class TasksController {
         };
         message: any;
     };
-    findOne(ref: number): Promise<{
+    findOne(ref: number, req?: any): Promise<{
         message: string;
         task: import("./entities/task.entity").Task | null;
     }>;
-    tasksByUser(ref: number): Promise<{
+    tasksByUser(ref: number, req?: any): Promise<{
         message: string;
         tasks: import("./entities/task.entity").Task[];
     }>;
-    findOneSubTask(ref: number): Promise<{
+    findOneSubTask(ref: number, req?: any): Promise<{
         tasks: import("./entities/subtask.entity").SubTask | null;
         message: string;
     }>;
@@ -48,8 +48,8 @@ export declare class TasksController {
     remove(ref: number): Promise<{
         message: string;
     }>;
-    getOptimizedRoutes(dateStr?: string): Promise<OptimizedRoute[]>;
-    calculateOptimizedRoutes(dateStr?: string): Promise<{
+    getOptimizedRoutes(dateStr?: string, req?: any): Promise<OptimizedRoute[]>;
+    calculateOptimizedRoutes(dateStr?: string, req?: any): Promise<{
         message: string;
     }>;
 }
