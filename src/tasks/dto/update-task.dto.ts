@@ -1,5 +1,5 @@
 import { IsString, IsOptional, IsEnum, IsArray, IsDate, IsNumber, ValidateNested } from 'class-validator';
-import { TaskStatus, TaskPriority, RepetitionType, TaskType } from '../../lib/enums/task.enums';
+import { TaskStatus, TaskPriority, RepetitionType, TaskType, JobStatus } from '../../lib/enums/task.enums';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import { AssigneeDto, ClientDto, CreatorDto, SubtaskDto } from './create-task.dto';
@@ -148,4 +148,39 @@ export class UpdateTaskDto {
 	@IsString()
 	@IsOptional()
 	comment?: string;
+
+	@ApiProperty({
+		description: 'Job start time',
+		example: new Date().toISOString(),
+	})
+	@Type(() => Date)
+	@IsDate()
+	@IsOptional()
+	jobStartTime?: Date;
+
+	@ApiProperty({
+		description: 'Job end time',
+		example: new Date().toISOString(),
+	})
+	@Type(() => Date)
+	@IsDate()
+	@IsOptional()
+	jobEndTime?: Date;
+
+	@ApiProperty({
+		description: 'Job duration in minutes',
+		example: 60,
+	})
+	@IsNumber()
+	@IsOptional()
+	jobDuration?: number;
+
+	@ApiProperty({
+		description: 'Job status',
+		enum: JobStatus,
+		example: JobStatus.RUNNING,
+	})
+	@IsEnum(JobStatus)
+	@IsOptional()
+	jobStatus?: JobStatus;
 }

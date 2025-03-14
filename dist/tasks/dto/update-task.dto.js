@@ -178,4 +178,43 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], UpdateTaskDto.prototype, "comment", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Job start time',
+        example: new Date().toISOString(),
+    }),
+    (0, class_transformer_1.Type)(() => Date),
+    (0, class_validator_1.IsDate)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Date)
+], UpdateTaskDto.prototype, "jobStartTime", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Job end time',
+        example: new Date().toISOString(),
+    }),
+    (0, class_transformer_1.Type)(() => Date),
+    (0, class_validator_1.IsDate)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Date)
+], UpdateTaskDto.prototype, "jobEndTime", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Job duration in minutes',
+        example: 60,
+    }),
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], UpdateTaskDto.prototype, "jobDuration", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Job status',
+        enum: task_enums_1.JobStatus,
+        example: task_enums_1.JobStatus.RUNNING,
+    }),
+    (0, class_validator_1.IsEnum)(task_enums_1.JobStatus),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], UpdateTaskDto.prototype, "jobStatus", void 0);
 //# sourceMappingURL=update-task.dto.js.map

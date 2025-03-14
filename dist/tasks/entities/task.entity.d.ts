@@ -1,5 +1,5 @@
 import { SubTask } from './subtask.entity';
-import { TaskStatus, TaskPriority, RepetitionType, TaskType } from '../../lib/enums/task.enums';
+import { TaskStatus, TaskPriority, RepetitionType, TaskType, JobStatus } from '../../lib/enums/task.enums';
 import { Organisation } from '../../organisation/entities/organisation.entity';
 import { Branch } from '../../branch/entities/branch.entity';
 import { User } from 'src/user/entities/user.entity';
@@ -22,6 +22,10 @@ export declare class Task {
     updatedAt: Date;
     isDeleted: boolean;
     attachments?: string[];
+    jobStartTime?: Date;
+    jobEndTime?: Date;
+    jobDuration?: number;
+    jobStatus?: JobStatus;
     creator: User;
     assignees: {
         uid: number;

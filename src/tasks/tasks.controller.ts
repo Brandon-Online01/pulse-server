@@ -20,7 +20,7 @@ import { AuthGuard } from '../guards/auth.guard';
 import { AccessLevel } from '../lib/enums/user.enums';
 import { UpdateSubtaskDto } from './dto/update-subtask.dto';
 import { EnterpriseOnly } from '../decorators/enterprise-only.decorator';
-import { TaskStatus, TaskPriority } from '../lib/enums/task.enums';
+import { TaskStatus, TaskPriority, JobStatus } from '../lib/enums/task.enums';
 import { OptimizedRoute } from './interfaces/route.interface';
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, Request } from '@nestjs/common';
 
@@ -704,5 +704,54 @@ export class TasksController {
 		await this.taskRouteService.planRoutes(date, organisationRef, branchId);
 
 		return { message: 'Routes calculated successfully' };
+	}
+
+	@Patch('toggle-job-status/:id')
+	@Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
+	@ApiOperation({
+		summary: 'Toggle job status',
+		description: 'Toggles job status between QUEUED, RUNNING, and COMPLETED. Updates start/end times and calculates duration.'
+	})
+	@ApiParam({ name: 'id', description: 'Task ID', type: 'number' })
+	@ApiOkResponse({
+		description: 'Job status toggled successfully',
+		schema: {
+			type: 'object',
+			properties: {
+				task: { 
+					type: 'object',
+					properties: {
+						uid: { type: 'number' },
+						title: { type: 'string' },
+						status: { type: 'string' },
+						jobStatus: { type: 'string' },
+						jobStartTime: { type: 'string', format: 'date-time' },
+						jobEndTime: { type: 'string', format: 'date-time' },
+						jobDuration: { type: 'number' }
+					}
+				},
+				message: { type: 'string', example: 'Job status updated successfully' }
+			}
+		}
+	})
+	@ApiNotFoundResponse({
+		description: 'Task not found',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', example: 'Task not found' }
+			}
+		}
+	})
+	toggleJobStatus(@Param('id') id: string) {
+		return this.tasksService.toggleJobStatus(+id);
 	}
 }

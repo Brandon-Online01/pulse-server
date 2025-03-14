@@ -1007,6 +1007,81 @@ let TasksService = class TasksService {
         });
         return clients.map((client) => ({ name: client.name }));
     }
+    async toggleJobStatus(taskId) {
+        try {
+            const task = await this.taskRepository.findOne({
+                where: {
+                    uid: taskId,
+                    isDeleted: false
+                },
+                relations: ['subtasks']
+            });
+            if (!task) {
+                throw new common_1.NotFoundException(`Task with ID ${taskId} not found`);
+            }
+            const now = new Date();
+            switch (task.jobStatus) {
+                case task_enums_1.JobStatus.QUEUED:
+                    task.jobStartTime = now;
+                    task.jobEndTime = null;
+                    task.jobDuration = null;
+                    task.jobStatus = task_enums_1.JobStatus.RUNNING;
+                    task.status = task_enums_1.TaskStatus.IN_PROGRESS;
+                    break;
+                case task_enums_1.JobStatus.RUNNING:
+                    task.jobEndTime = now;
+                    task.jobStatus = task_enums_1.JobStatus.COMPLETED;
+                    if (task.jobStartTime) {
+                        const durationMs = task.jobEndTime.getTime() - task.jobStartTime.getTime();
+                        task.jobDuration = Math.round(durationMs / (1000 * 60));
+                    }
+                    if (!task.subtasks?.length) {
+                        task.status = task_enums_1.TaskStatus.COMPLETED;
+                        task.completionDate = now;
+                    }
+                    else if (task.subtasks.every(subtask => !subtask.isDeleted && subtask.status === status_enums_1.SubTaskStatus.COMPLETED)) {
+                        task.status = task_enums_1.TaskStatus.COMPLETED;
+                        task.completionDate = now;
+                    }
+                    break;
+                case task_enums_1.JobStatus.COMPLETED:
+                    task.jobStartTime = now;
+                    task.jobEndTime = null;
+                    task.jobDuration = null;
+                    task.jobStatus = task_enums_1.JobStatus.RUNNING;
+                    task.status = task_enums_1.TaskStatus.IN_PROGRESS;
+                    break;
+                default:
+                    task.jobStatus = task_enums_1.JobStatus.RUNNING;
+                    task.jobStartTime = now;
+                    task.jobEndTime = null;
+                    task.jobDuration = null;
+                    task.status = task_enums_1.TaskStatus.IN_PROGRESS;
+                    break;
+            }
+            const savedTask = await this.taskRepository.save(task);
+            this.eventEmitter.emit('task.jobStatusChanged', {
+                task: savedTask,
+                previousStatus: task.jobStatus
+            });
+            await this.clearTaskCache();
+            return {
+                task: {
+                    uid: savedTask.uid,
+                    title: savedTask.title,
+                    status: savedTask.status,
+                    jobStatus: savedTask.jobStatus,
+                    jobStartTime: savedTask.jobStartTime,
+                    jobEndTime: savedTask.jobEndTime,
+                    jobDuration: savedTask.jobDuration
+                },
+                message: 'Job status updated successfully'
+            };
+        }
+        catch (error) {
+            throw error;
+        }
+    }
 };
 exports.TasksService = TasksService;
 exports.TasksService = TasksService = __decorate([

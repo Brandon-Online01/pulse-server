@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TaskType = exports.RepetitionType = exports.TaskPriority = exports.TaskStatus = void 0;
+exports.JobStatus = exports.TaskType = exports.RepetitionType = exports.TaskPriority = exports.TaskStatus = void 0;
 var TaskStatus;
 (function (TaskStatus) {
     TaskStatus["PENDING"] = "PENDING";
@@ -41,4 +41,10 @@ var TaskType;
     TaskType["VISIT"] = "VISIT";
     TaskType["OTHER"] = "OTHER";
 })(TaskType || (exports.TaskType = TaskType = {}));
+var JobStatus;
+(function (JobStatus) {
+    JobStatus["QUEUED"] = "QUEUED";
+    JobStatus["RUNNING"] = "RUNNING";
+    JobStatus["COMPLETED"] = "COMPLETED";
+})(JobStatus || (exports.JobStatus = JobStatus = {}));
 //# sourceMappingURL=task.enums.js.map

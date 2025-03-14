@@ -34,3 +34,8 @@ export declare enum TaskType {
     VISIT = "VISIT",
     OTHER = "OTHER"
 }
+export declare enum JobStatus {
+    QUEUED = "QUEUED",
+    RUNNING = "RUNNING",
+    COMPLETED = "COMPLETED"
+}

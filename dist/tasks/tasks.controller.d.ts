@@ -52,4 +52,8 @@ export declare class TasksController {
     calculateOptimizedRoutes(dateStr?: string, req?: any): Promise<{
         message: string;
     }>;
+    toggleJobStatus(id: string): Promise<{
+        task: Partial<import("./entities/task.entity").Task>;
+        message: string;
+    }>;
 }

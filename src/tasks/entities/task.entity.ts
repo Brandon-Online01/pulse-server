@@ -1,5 +1,5 @@
 import { SubTask } from './subtask.entity';
-import { TaskStatus, TaskPriority, RepetitionType, TaskType } from '../../lib/enums/task.enums';
+import { TaskStatus, TaskPriority, RepetitionType, TaskType, JobStatus } from '../../lib/enums/task.enums';
 import { SubTaskStatus } from '../../lib/enums/status.enums';
 import {
 	Column,
@@ -70,6 +70,18 @@ export class Task {
 	@Column({ type: 'json', nullable: true })
 	attachments?: string[];
 
+	@Column({ type: 'datetime', nullable: true })
+	jobStartTime?: Date;
+
+	@Column({ type: 'datetime', nullable: true })
+	jobEndTime?: Date;
+
+	@Column({ type: 'int', nullable: true })
+	jobDuration?: number;
+
+	@Column({ type: 'enum', enum: JobStatus, default: JobStatus.QUEUED })
+	jobStatus?: JobStatus;
+
 	// Relations
 	@ManyToOne(() => User, (user) => user?.tasks)
 	creator: User;
@@ -96,11 +108,25 @@ export class Task {
 	setInitialStatus() {
 		this.status = TaskStatus.PENDING;
 		this.progress = 0;
+		this.jobStatus = JobStatus.QUEUED;
 	}
 
 	@BeforeUpdate()
 	updateStatus() {
 		const now = new Date();
+
+		// Calculate job duration if both start and end times are set but duration is not
+		if (this.jobStartTime && this.jobEndTime && !this.jobDuration) {
+			const durationMs = this.jobEndTime.getTime() - this.jobStartTime.getTime();
+			this.jobDuration = Math.round(durationMs / (1000 * 60));
+		}
+
+		// Update job status based on times
+		if (this.jobStartTime && !this.jobEndTime && this.jobStatus !== JobStatus.COMPLETED) {
+			this.jobStatus = JobStatus.RUNNING;
+		} else if (this.jobStartTime && this.jobEndTime) {
+			this.jobStatus = JobStatus.COMPLETED;
+		}
 
 		// Calculate progress based on subtasks if they exist
 		if (this.subtasks?.length > 0) {
@@ -117,12 +143,17 @@ export class Task {
 			this.isOverdue = true;
 		}
 
-		// Update status based on progress
+		// Update task status based on progress and job status
 		if (this.progress === 100 && this.status !== TaskStatus.COMPLETED) {
 			this.status = TaskStatus.COMPLETED;
 			this.completionDate = now;
 		} else if (this.progress > 0 && this.progress < 100 && this.status === TaskStatus.PENDING) {
 			this.status = TaskStatus.IN_PROGRESS;
+		} else if (this.jobStatus === JobStatus.RUNNING && this.status === TaskStatus.PENDING) {
+			this.status = TaskStatus.IN_PROGRESS;
+		} else if (this.jobStatus === JobStatus.COMPLETED && this.status !== TaskStatus.COMPLETED && !this.subtasks?.length) {
+			this.status = TaskStatus.COMPLETED;
+			this.completionDate = this.jobEndTime || now;
 		}
 
 		// Reset overdue flag if task is completed

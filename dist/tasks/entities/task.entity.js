@@ -22,9 +22,20 @@ let Task = class Task {
     setInitialStatus() {
         this.status = task_enums_1.TaskStatus.PENDING;
         this.progress = 0;
+        this.jobStatus = task_enums_1.JobStatus.QUEUED;
     }
     updateStatus() {
         const now = new Date();
+        if (this.jobStartTime && this.jobEndTime && !this.jobDuration) {
+            const durationMs = this.jobEndTime.getTime() - this.jobStartTime.getTime();
+            this.jobDuration = Math.round(durationMs / (1000 * 60));
+        }
+        if (this.jobStartTime && !this.jobEndTime && this.jobStatus !== task_enums_1.JobStatus.COMPLETED) {
+            this.jobStatus = task_enums_1.JobStatus.RUNNING;
+        }
+        else if (this.jobStartTime && this.jobEndTime) {
+            this.jobStatus = task_enums_1.JobStatus.COMPLETED;
+        }
         if (this.subtasks?.length > 0) {
             const completedSubtasks = this.subtasks.filter((subtask) => !subtask.isDeleted && subtask.status === status_enums_1.SubTaskStatus.COMPLETED).length;
             const totalSubtasks = this.subtasks.filter((subtask) => !subtask.isDeleted).length;
@@ -40,6 +51,13 @@ let Task = class Task {
         }
         else if (this.progress > 0 && this.progress < 100 && this.status === task_enums_1.TaskStatus.PENDING) {
             this.status = task_enums_1.TaskStatus.IN_PROGRESS;
+        }
+        else if (this.jobStatus === task_enums_1.JobStatus.RUNNING && this.status === task_enums_1.TaskStatus.PENDING) {
+            this.status = task_enums_1.TaskStatus.IN_PROGRESS;
+        }
+        else if (this.jobStatus === task_enums_1.JobStatus.COMPLETED && this.status !== task_enums_1.TaskStatus.COMPLETED && !this.subtasks?.length) {
+            this.status = task_enums_1.TaskStatus.COMPLETED;
+            this.completionDate = this.jobEndTime || now;
         }
         if (this.status === task_enums_1.TaskStatus.COMPLETED) {
             this.isOverdue = false;
@@ -115,6 +133,22 @@ __decorate([
     (0, typeorm_1.Column)({ type: 'json', nullable: true }),
     __metadata("design:type", Array)
 ], Task.prototype, "attachments", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'datetime', nullable: true }),
+    __metadata("design:type", Date)
+], Task.prototype, "jobStartTime", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'datetime', nullable: true }),
+    __metadata("design:type", Date)
+], Task.prototype, "jobEndTime", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'int', nullable: true }),
+    __metadata("design:type", Number)
+], Task.prototype, "jobDuration", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'enum', enum: task_enums_1.JobStatus, default: task_enums_1.JobStatus.QUEUED }),
+    __metadata("design:type", String)
+], Task.prototype, "jobStatus", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => user_entity_1.User, (user) => user?.tasks),
     __metadata("design:type", user_entity_1.User)

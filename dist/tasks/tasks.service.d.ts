@@ -123,4 +123,8 @@ export declare class TasksService {
     private analyzeTaskPriorityDistribution;
     private analyzeAssigneePerformance;
     private getClientNames;
+    toggleJobStatus(taskId: number): Promise<{
+        task: Partial<Task>;
+        message: string;
+    }>;
 }

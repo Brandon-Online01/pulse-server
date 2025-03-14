@@ -150,6 +150,9 @@ let TasksController = class TasksController {
         await this.taskRouteService.planRoutes(date, organisationRef, branchId);
         return { message: 'Routes calculated successfully' };
     }
+    toggleJobStatus(id) {
+        return this.tasksService.toggleJobStatus(+id);
+    }
 };
 exports.TasksController = TasksController;
 __decorate([
@@ -661,6 +664,49 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], TasksController.prototype, "calculateOptimizedRoutes", null);
+__decorate([
+    (0, common_1.Patch)('toggle-job-status/:id'),
+    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER, user_enums_1.AccessLevel.OWNER, user_enums_1.AccessLevel.TECHNICIAN),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Toggle job status',
+        description: 'Toggles job status between QUEUED, RUNNING, and COMPLETED. Updates start/end times and calculates duration.'
+    }),
+    (0, swagger_1.ApiParam)({ name: 'id', description: 'Task ID', type: 'number' }),
+    (0, swagger_1.ApiOkResponse)({
+        description: 'Job status toggled successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                task: {
+                    type: 'object',
+                    properties: {
+                        uid: { type: 'number' },
+                        title: { type: 'string' },
+                        status: { type: 'string' },
+                        jobStatus: { type: 'string' },
+                        jobStartTime: { type: 'string', format: 'date-time' },
+                        jobEndTime: { type: 'string', format: 'date-time' },
+                        jobDuration: { type: 'number' }
+                    }
+                },
+                message: { type: 'string', example: 'Job status updated successfully' }
+            }
+        }
+    }),
+    (0, swagger_1.ApiNotFoundResponse)({
+        description: 'Task not found',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Task not found' }
+            }
+        }
+    }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], TasksController.prototype, "toggleJobStatus", null);
 exports.TasksController = TasksController = __decorate([
     (0, swagger_1.ApiTags)('tasks'),
     (0, common_1.Controller)('tasks'),

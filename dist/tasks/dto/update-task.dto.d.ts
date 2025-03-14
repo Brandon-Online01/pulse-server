@@ -1,4 +1,4 @@
-import { TaskStatus, TaskPriority, RepetitionType, TaskType } from '../../lib/enums/task.enums';
+import { TaskStatus, TaskPriority, RepetitionType, TaskType, JobStatus } from '../../lib/enums/task.enums';
 import { AssigneeDto, ClientDto, CreatorDto } from './create-task.dto';
 import { UpdateSubtaskDto } from './update-subtask.dto';
 export declare class UpdateTaskDto {
@@ -18,4 +18,8 @@ export declare class UpdateTaskDto {
     subtasks?: UpdateSubtaskDto[];
     creators?: CreatorDto[];
     comment?: string;
+    jobStartTime?: Date;
+    jobEndTime?: Date;
+    jobDuration?: number;
+    jobStatus?: JobStatus;
 }

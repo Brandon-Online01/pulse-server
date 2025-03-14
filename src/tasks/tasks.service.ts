@@ -12,7 +12,7 @@ import { addDays, addWeeks, addMonths, addYears } from 'date-fns';
 import { Client } from '../clients/entities/client.entity';
 import { Injectable, NotFoundException, BadRequestException, Inject } from '@nestjs/common';
 import { NotificationType, NotificationStatus } from '../lib/enums/notification.enums';
-import { TaskStatus, TaskPriority, RepetitionType, TaskType } from '../lib/enums/task.enums';
+import { TaskStatus, TaskPriority, RepetitionType, TaskType, JobStatus } from '../lib/enums/task.enums';
 import { PaginatedResponse } from '../lib/interfaces/product.interfaces';
 import { User } from '../user/entities/user.entity';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
@@ -1334,5 +1334,101 @@ export class TasksService {
 			select: ['name'],
 		});
 		return clients.map((client) => ({ name: client.name }));
+	}
+
+	async toggleJobStatus(taskId: number): Promise<{ task: Partial<Task>, message: string }> {
+		try {
+			const task = await this.taskRepository.findOne({
+				where: {
+					uid: taskId,
+					isDeleted: false
+				},
+				relations: ['subtasks']
+			});
+
+			if (!task) {
+				throw new NotFoundException(`Task with ID ${taskId} not found`);
+			}
+
+			const now = new Date();
+
+			// Determine the action based on current job status
+			switch (task.jobStatus) {
+				case JobStatus.QUEUED:
+					// Start the job
+					task.jobStartTime = now;
+					task.jobEndTime = null;
+					task.jobDuration = null;
+					task.jobStatus = JobStatus.RUNNING;
+					task.status = TaskStatus.IN_PROGRESS;
+					break;
+
+				case JobStatus.RUNNING:
+					// Complete the job
+					task.jobEndTime = now;
+					task.jobStatus = JobStatus.COMPLETED;
+					
+					// Calculate duration in minutes
+					if (task.jobStartTime) {
+						const durationMs = task.jobEndTime.getTime() - task.jobStartTime.getTime();
+						task.jobDuration = Math.round(durationMs / (1000 * 60));
+					}
+					
+					// Update task status if appropriate (no subtasks or all subtasks completed)
+					if (!task.subtasks?.length) {
+						task.status = TaskStatus.COMPLETED;
+						task.completionDate = now;
+					} else if (task.subtasks.every(subtask => !subtask.isDeleted && subtask.status === SubTaskStatus.COMPLETED)) {
+						task.status = TaskStatus.COMPLETED;
+						task.completionDate = now;
+					}
+					break;
+
+				case JobStatus.COMPLETED:
+					// Reset the job to start again
+					task.jobStartTime = now;
+					task.jobEndTime = null;
+					task.jobDuration = null;
+					task.jobStatus = JobStatus.RUNNING;
+					task.status = TaskStatus.IN_PROGRESS;
+					break;
+
+				default:
+					// Default to starting a job if status is not set
+					task.jobStatus = JobStatus.RUNNING;
+					task.jobStartTime = now;
+					task.jobEndTime = null;
+					task.jobDuration = null;
+					task.status = TaskStatus.IN_PROGRESS;
+					break;
+			}
+
+			// Save the updated task
+			const savedTask = await this.taskRepository.save(task);
+
+			// Emit event
+			this.eventEmitter.emit('task.jobStatusChanged', {
+				task: savedTask,
+				previousStatus: task.jobStatus
+			});
+
+			await this.clearTaskCache();
+
+			// Return the task with relevant fields
+			return {
+				task: {
+					uid: savedTask.uid,
+					title: savedTask.title,
+					status: savedTask.status,
+					jobStatus: savedTask.jobStatus,
+					jobStartTime: savedTask.jobStartTime,
+					jobEndTime: savedTask.jobEndTime,
+					jobDuration: savedTask.jobDuration
+				},
+				message: 'Job status updated successfully'
+			};
+		} catch (error) {
+			throw error;
+		}
 	}
 }
