@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TaskReminderCreator = exports.TaskReminderAssignee = exports.TaskUpdated = exports.NewTask = exports.LicenseActivated = exports.LicenseSuspended = exports.LicenseRenewed = exports.LicenseLimitReached = exports.LicenseUpdated = exports.LicenseCreated = exports.DailyReport = exports.Invoice = exports.QuotationStatusUpdate = exports.NewQuotationReseller = exports.NewQuotationInternal = exports.NewQuotationClient = exports.PasswordChanged = exports.PasswordReset = exports.Verification = exports.Signup = void 0;
+exports.NewUserAdminNotification = exports.TaskReminderCreator = exports.TaskReminderAssignee = exports.TaskUpdated = exports.NewTask = exports.LicenseActivated = exports.LicenseSuspended = exports.LicenseRenewed = exports.LicenseLimitReached = exports.LicenseUpdated = exports.LicenseCreated = exports.DailyReport = exports.Invoice = exports.QuotationStatusUpdate = exports.NewQuotationReseller = exports.NewQuotationInternal = exports.NewQuotationClient = exports.PasswordChanged = exports.PasswordReset = exports.Verification = exports.Signup = void 0;
 const date_utils_1 = require("../utils/date.utils");
 const BASE_STYLES = {
     wrapper: '@media (max-width: 600px) { width: 100% !important; padding: 10px !important; } width: 100%; padding: 20px; background-color: #f9fafb;',
@@ -39,13 +39,22 @@ const Signup = (data) => `
         <div style="padding: 24px 20px;">
           <div style="${BASE_STYLES.card}">
             <h2 style="${BASE_STYLES.heading}">Hi ${data.name},</h2>
-            <p style="${BASE_STYLES.text}">Thank you for choosing Pulse. Let's get your account set up!</p>
+            <p style="${BASE_STYLES.text}">Thank you for choosing Pulse. Your account has been created successfully!</p>
             
             <div style="text-align: center; margin: 24px 0;">
-              <a href="/sign-in" style="${BASE_STYLES.button}">
+              <a href="${data.webAppLink || '/sign-in'}" style="${BASE_STYLES.button}">
                 Sign In Now
               </a>
             </div>
+
+            ${data.mobileAppLink ? `
+            <div style="${BASE_STYLES.alert}">
+              <p style="margin: 0;">
+                <strong>Mobile App:</strong> You can also access your account on our mobile app.
+                <a href="${data.mobileAppLink}" style="color: #A855F7; font-weight: 500;">Download now</a>
+              </p>
+            </div>
+            ` : ''}
           </div>
 
           ${createSection("🔐 Security Tips", `
@@ -1528,4 +1537,56 @@ const TaskReminderCreator = (data) => {
   `;
 };
 exports.TaskReminderCreator = TaskReminderCreator;
+const NewUserAdminNotification = (data) => `
+    <div style="${BASE_STYLES.wrapper}">
+      <div style="${BASE_STYLES.container}">
+        <div style="${BASE_STYLES.header}">
+          <h1 style="margin: 16px 0 8px; font-size: 24px;">New User Registration 👤</h1>
+          <p style="margin: 0; opacity: 0.9;">Administrator Notification</p>
+        </div>
+
+        <div style="padding: 24px 20px;">
+          <div style="${BASE_STYLES.card}">
+            <h2 style="${BASE_STYLES.heading}">Hello ${data.name},</h2>
+            <p style="${BASE_STYLES.text}">A new user has registered on the platform. Here are the details:</p>
+            
+            <div style="${BASE_STYLES.highlight}">
+              <div style="${BASE_STYLES.flexColumn}">
+                <div style="${BASE_STYLES.flexRow}">
+                  <strong style="width: 120px;">User Name:</strong>
+                  <span>${data.newUserName}</span>
+                </div>
+                <div style="${BASE_STYLES.flexRow}">
+                  <strong style="width: 120px;">Email:</strong>
+                  <span>${data.newUserEmail}</span>
+                </div>
+                <div style="${BASE_STYLES.flexRow}">
+                  <strong style="width: 120px;">Signup Time:</strong>
+                  <span>${data.signupTime}</span>
+                </div>
+              </div>
+            </div>
+            
+            <div style="text-align: center; margin: 24px 0;">
+              <a href="${data.userDetailsLink}" style="${BASE_STYLES.button}">
+                View User Details
+              </a>
+            </div>
+
+            <div style="${BASE_STYLES.alert}">
+              <p style="margin: 0;">
+                <strong>Note:</strong> You're receiving this notification as an administrator.
+                No action is required unless you identify suspicious activity.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div style="${BASE_STYLES.footer}">
+          <p style="margin: 0;">This is an automated message. Please do not reply directly to this email.</p>
+        </div>
+      </div>
+    </div>
+`;
+exports.NewUserAdminNotification = NewUserAdminNotification;
 //# sourceMappingURL=emails.js.map

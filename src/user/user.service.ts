@@ -372,6 +372,35 @@ export class UserService {
 		}
 	}
 
+	async findAdminUsers(): Promise<{ users: Omit<User, 'password'>[] | null; message: string }> {
+		try {
+			const users = await this.userRepository.find({
+				where: { 
+					accessLevel: AccessLevel.ADMIN,
+					isDeleted: false,
+					status: AccountStatus.ACTIVE
+				},
+			});
+
+			if (!users || users.length === 0) {
+				return {
+					users: null,
+					message: 'No admin users found',
+				};
+			}
+
+			return {
+				users: users.map((user) => this.excludePassword(user)),
+				message: process.env.SUCCESS_MESSAGE,
+			};
+		} catch (error) {
+			return {
+				message: error?.message,
+				users: null,
+			};
+		}
+	}
+
 	async update(ref: number, updateUserDto: UpdateUserDto): Promise<{ message: string }> {
 		try {
 			const user = await this.userRepository.findOne({

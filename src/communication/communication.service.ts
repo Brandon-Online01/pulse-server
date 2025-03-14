@@ -11,8 +11,8 @@ import { User } from '../user/entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CommunicationLog } from './entities/communication-log.entity';
-import { LicenseCreated, LicenseUpdated, LicenseLimitReached, LicenseRenewed, LicenseSuspended, LicenseActivated, NewQuotationClient, NewQuotationInternal, NewQuotationReseller, Signup, Verification, PasswordReset, Invoice, PasswordChanged, DailyReport, QuotationStatusUpdate } from '../lib/templates/emails';
-import { DailyReportData, InvoiceData, PasswordChangedData, PasswordResetData, VerificationEmailData, SignupEmailData, EmailTemplateData, LicenseEmailData, LicenseLimitData, QuotationInternalData, QuotationResellerData, QuotationData } from '../lib/types/email-templates.types';
+import { LicenseCreated, LicenseUpdated, LicenseLimitReached, LicenseRenewed, LicenseSuspended, LicenseActivated, NewQuotationClient, NewQuotationInternal, NewQuotationReseller, Signup, Verification, PasswordReset, Invoice, PasswordChanged, DailyReport, QuotationStatusUpdate, NewUserAdminNotification } from '../lib/templates/emails';
+import { DailyReportData, InvoiceData, PasswordChangedData, PasswordResetData, VerificationEmailData, SignupEmailData, EmailTemplateData, LicenseEmailData, LicenseLimitData, QuotationInternalData, QuotationResellerData, QuotationData, NewUserAdminNotificationData } from '../lib/types/email-templates.types';
 import { NewTask, TaskUpdated } from '../lib/templates/emails';
 import { TaskEmailData } from '../lib/types/email-templates.types';
 
@@ -184,6 +184,11 @@ export class CommunicationService {
 				return {
 					subject: 'Quotation Status Update',
 					body: QuotationStatusUpdate(data as QuotationData),
+				};
+			case EmailType.NEW_USER_ADMIN_NOTIFICATION:
+				return {
+					subject: 'New User Registration Alert',
+					body: NewUserAdminNotification(data as NewUserAdminNotificationData),
 				};
 			default:
 				throw new NotFoundException(`Unknown email template type: ${type}`);

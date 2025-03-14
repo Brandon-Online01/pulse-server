@@ -50,6 +50,10 @@ export declare class UserService {
         users: Omit<User, 'password'>[] | null;
         message: string;
     }>;
+    findAdminUsers(): Promise<{
+        users: Omit<User, 'password'>[] | null;
+        message: string;
+    }>;
     update(ref: number, updateUserDto: UpdateUserDto): Promise<{
         message: string;
     }>;

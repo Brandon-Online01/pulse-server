@@ -7,6 +7,8 @@ export interface BaseEmailData {
 export interface SignupEmailData extends BaseEmailData {
     verificationLink: string;
     welcomeOffers?: string[];
+    webAppLink?: string;
+    mobileAppLink?: string;
 }
 export interface VerificationEmailData extends BaseEmailData {
     verificationCode?: string;
@@ -190,6 +192,12 @@ export interface TaskReminderData extends BaseEmailData {
         }>;
     };
 }
+export interface NewUserAdminNotificationData extends BaseEmailData {
+    newUserEmail: string;
+    newUserName: string;
+    signupTime: string;
+    userDetailsLink: string;
+}
 export interface EmailDataMap {
     [EmailType.SIGNUP]: SignupEmailData;
     [EmailType.VERIFICATION]: VerificationEmailData;
@@ -216,5 +224,6 @@ export interface EmailDataMap {
     [EmailType.TASK_UPDATED]: TaskEmailData;
     [EmailType.TASK_REMINDER_ASSIGNEE]: TaskReminderData;
     [EmailType.TASK_REMINDER_CREATOR]: TaskReminderData;
+    [EmailType.NEW_USER_ADMIN_NOTIFICATION]: NewUserAdminNotificationData;
 }
 export type EmailTemplateData<T extends EmailType> = T extends keyof EmailDataMap ? EmailDataMap[T] : never;

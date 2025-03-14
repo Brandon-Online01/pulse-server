@@ -28,5 +28,6 @@ var EmailType;
     EmailType["TASK_UPDATED"] = "task_updated";
     EmailType["TASK_REMINDER_ASSIGNEE"] = "TASK_REMINDER_ASSIGNEE";
     EmailType["TASK_REMINDER_CREATOR"] = "TASK_REMINDER_CREATOR";
+    EmailType["NEW_USER_ADMIN_NOTIFICATION"] = "new_user_admin_notification";
 })(EmailType || (exports.EmailType = EmailType = {}));
 //# sourceMappingURL=email.enums.js.map

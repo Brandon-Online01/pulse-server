@@ -23,5 +23,6 @@ export declare enum EmailType {
     NEW_TASK = "new_task",
     TASK_UPDATED = "task_updated",
     TASK_REMINDER_ASSIGNEE = "TASK_REMINDER_ASSIGNEE",
-    TASK_REMINDER_CREATOR = "TASK_REMINDER_CREATOR"
+    TASK_REMINDER_CREATOR = "TASK_REMINDER_CREATOR",
+    NEW_USER_ADMIN_NOTIFICATION = "new_user_admin_notification"
 }

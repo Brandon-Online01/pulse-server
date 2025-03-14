@@ -178,6 +178,11 @@ let CommunicationService = class CommunicationService {
                     subject: 'Quotation Status Update',
                     body: (0, emails_1.QuotationStatusUpdate)(data),
                 };
+            case email_enums_1.EmailType.NEW_USER_ADMIN_NOTIFICATION:
+                return {
+                    subject: 'New User Registration Alert',
+                    body: (0, emails_1.NewUserAdminNotification)(data),
+                };
             default:
                 throw new common_1.NotFoundException(`Unknown email template type: ${type}`);
         }

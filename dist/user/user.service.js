@@ -19,6 +19,7 @@ const user_entity_1 = require("./entities/user.entity");
 const typeorm_2 = require("@nestjs/typeorm");
 const common_1 = require("@nestjs/common");
 const status_enums_1 = require("../lib/enums/status.enums");
+const user_enums_1 = require("../lib/enums/user.enums");
 const cache_manager_1 = require("@nestjs/cache-manager");
 const event_emitter_1 = require("@nestjs/event-emitter");
 const config_1 = require("@nestjs/config");
@@ -298,6 +299,33 @@ let UserService = class UserService {
                 users: null,
             };
             return response;
+        }
+    }
+    async findAdminUsers() {
+        try {
+            const users = await this.userRepository.find({
+                where: {
+                    accessLevel: user_enums_1.AccessLevel.ADMIN,
+                    isDeleted: false,
+                    status: status_enums_1.AccountStatus.ACTIVE
+                },
+            });
+            if (!users || users.length === 0) {
+                return {
+                    users: null,
+                    message: 'No admin users found',
+                };
+            }
+            return {
+                users: users.map((user) => this.excludePassword(user)),
+                message: process.env.SUCCESS_MESSAGE,
+            };
+        }
+        catch (error) {
+            return {
+                message: error?.message,
+                users: null,
+            };
         }
     }
     async update(ref, updateUserDto) {

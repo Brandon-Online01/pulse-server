@@ -276,7 +276,7 @@ export class AuthService {
 			const username = pendingSignup.email.split('@')[0].toLowerCase();
 			const hashedPassword = await bcrypt.hash(password, 10);
 
-			await this.userService.create({
+			const createdUser = await this.userService.create({
 				email: pendingSignup.email,
 				username,
 				password: hashedPassword,
@@ -291,10 +291,33 @@ export class AuthService {
 			// Delete the pending signup
 			await this.pendingSignupService.delete(pendingSignup.uid);
 
-			// Send welcome email
+			// Get the web and mobile app links from environment variables
+			const webAppLink = `${process.env.WEBSITE_DOMAIN}/sign-in` || '/sign-in';
+			const mobileAppLink = `${process.env.WEBSITE_DOMAIN}/mobile-app` || null;
+
+			// Send welcome email to the new user
 			this.eventEmitter.emit('send.email', EmailType.SIGNUP, [pendingSignup.email], {
 				name: username,
+				webAppLink: webAppLink,
+				mobileAppLink: mobileAppLink
 			});
+
+			// Notify admin users about the new user registration
+			const { users: adminUsers } = await this.userService.findAdminUsers();
+			
+			if (adminUsers && adminUsers.length > 0) {
+				const adminEmails = adminUsers.map(user => user.email);
+				const dashboardUrl = process.env.WEBSITE_DOMAIN || 'https://dashboard.loro.co.za';
+				const userDetailsLink = `${dashboardUrl}/users/${username}`;
+				
+				this.eventEmitter.emit('send.email', EmailType.NEW_USER_ADMIN_NOTIFICATION, adminEmails, {
+					name: 'Administrator',
+					newUserEmail: pendingSignup.email,
+					newUserName: username,
+					signupTime: new Date().toLocaleString(),
+					userDetailsLink: userDetailsLink
+				});
+			}
 
 			const response = {
 				status: 'success',
