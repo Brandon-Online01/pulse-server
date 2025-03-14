@@ -26,8 +26,8 @@ let Task = class Task {
     updateStatus() {
         const now = new Date();
         if (this.subtasks?.length > 0) {
-            const completedSubtasks = this.subtasks.filter(subtask => !subtask.isDeleted && subtask.status === status_enums_1.SubTaskStatus.COMPLETED).length;
-            const totalSubtasks = this.subtasks.filter(subtask => !subtask.isDeleted).length;
+            const completedSubtasks = this.subtasks.filter((subtask) => !subtask.isDeleted && subtask.status === status_enums_1.SubTaskStatus.COMPLETED).length;
+            const totalSubtasks = this.subtasks.filter((subtask) => !subtask.isDeleted).length;
             this.progress = totalSubtasks > 0 ? Math.round((completedSubtasks / totalSubtasks) * 100) : this.progress;
         }
         if (this.deadline && now > this.deadline && this.status !== task_enums_1.TaskStatus.COMPLETED) {
@@ -112,6 +112,10 @@ __decorate([
     __metadata("design:type", Boolean)
 ], Task.prototype, "isDeleted", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ type: 'json', nullable: true }),
+    __metadata("design:type", Array)
+], Task.prototype, "attachments", void 0);
+__decorate([
     (0, typeorm_1.ManyToOne)(() => user_entity_1.User, (user) => user?.tasks),
     __metadata("design:type", user_entity_1.User)
 ], Task.prototype, "creator", void 0);
@@ -128,7 +132,7 @@ __decorate([
     __metadata("design:type", Array)
 ], Task.prototype, "subtasks", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => route_entity_1.Route, route => route.task),
+    (0, typeorm_1.OneToMany)(() => route_entity_1.Route, (route) => route.task),
     __metadata("design:type", Array)
 ], Task.prototype, "routes", void 0);
 __decorate([

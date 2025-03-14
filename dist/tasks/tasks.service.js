@@ -139,7 +139,7 @@ let TasksService = class TasksService {
             ? ((sequenceNumber - 1) % 13) + 1
             : ((sequenceNumber - 1) % 30) + 1;
         const repeatedTask = this.taskRepository.create({
-            title: `${createTaskDto.title} S${seasonNumber.toString().padStart(2, '0')} E${episodeNumber
+            title: `${createTaskDto.title} S${seasonNumber.toString().padStart(2, '0')}  E${episodeNumber
                 .toString()
                 .padStart(2, '0')} - ${formattedDate}`,
             description: `${createTaskDto.description}\n\n---\nSeries Information:\n- Season ${seasonNumber}, Episode ${episodeNumber}\n- Series: ${createTaskDto.title}\n- Repeats: ${repetitionTypeDisplay}\n- Air Date: ${formattedDate}\n- Series Start: ${seriesStart.toLocaleDateString()}\n- Series Finale: ${seriesEnd.toLocaleDateString()}`,
@@ -159,6 +159,7 @@ let TasksService = class TasksService {
             isDeleted: false,
             organisation: baseTask.organisation,
             branch: baseTask.branch,
+            attachments: createTaskDto.attachments || [],
         });
         const savedTask = await this.taskRepository.save(repeatedTask);
         if (createTaskDto.subtasks?.length > 0) {
@@ -251,6 +252,7 @@ let TasksService = class TasksService {
                     branch: creator?.branch || null,
                     assignees,
                     clients,
+                    attachments: createTaskDto.attachments || [],
                 };
                 const task = this.taskRepository.create(taskData);
                 const savedTask = await this.taskRepository.save(task);
@@ -317,6 +319,13 @@ let TasksService = class TasksService {
                             assignedBy: creator ? `${creator?.name} ${creator?.surname}` : 'System',
                             subtasks: [],
                             clients: clients.length > 0 ? await this.getClientNames(clients.map((c) => c?.uid)) : [],
+                            attachments: savedTask.attachments?.map(url => {
+                                const filename = url.split('/').pop() || 'file';
+                                return {
+                                    name: filename,
+                                    url: url
+                                };
+                            }) || [],
                         });
                     }
                 }
@@ -561,6 +570,42 @@ let TasksService = class TasksService {
                 this.eventEmitter.emit('task.deadlineChanged', {
                     task: savedTask,
                 });
+            }
+            if (savedTask.assignees?.length > 0) {
+                const assigneeUsers = await this.userRepository.find({
+                    where: { uid: (0, typeorm_3.In)(savedTask.assignees.map((a) => a?.uid)) },
+                    select: ['uid', 'email', 'name', 'surname'],
+                });
+                const creator = await this.userRepository.findOne({
+                    where: { uid: savedTask.creator?.uid },
+                    select: ['name', 'surname'],
+                });
+                for (const assignee of assigneeUsers) {
+                    await this.communicationService.sendEmail(email_enums_1.EmailType.TASK_UPDATED, [assignee.email], {
+                        name: `${assignee?.name} ${assignee?.surname}`,
+                        taskId: savedTask?.uid?.toString(),
+                        title: savedTask?.title,
+                        description: savedTask?.description,
+                        deadline: savedTask?.deadline?.toISOString(),
+                        priority: savedTask?.priority,
+                        taskType: savedTask?.taskType,
+                        status: savedTask?.status,
+                        assignedBy: creator ? `${creator?.name} ${creator?.surname}` : 'System',
+                        subtasks: savedTask.subtasks?.map(subtask => ({
+                            title: subtask.title,
+                            status: subtask.status,
+                            description: subtask.description
+                        })) || [],
+                        clients: savedTask.clients?.length > 0 ? await this.getClientNames(savedTask.clients.map((c) => c?.uid)) : [],
+                        attachments: savedTask.attachments?.map(url => {
+                            const filename = url.split('/').pop() || 'file';
+                            return {
+                                name: filename,
+                                url: url
+                            };
+                        }) || [],
+                    });
+                }
             }
             await this.clearTaskCache(ref);
             return {

@@ -21,6 +21,7 @@ export declare class Task {
     createdAt: Date;
     updatedAt: Date;
     isDeleted: boolean;
+    attachments?: string[];
     creator: User;
     assignees: {
         uid: number;

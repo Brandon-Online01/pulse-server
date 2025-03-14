@@ -201,6 +201,16 @@ __decorate([
 ], CreateTaskDto.prototype, "subtasks", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
+        description: 'Array of file attachments for the task',
+        example: ['https://cdn-icons-png.flaticon.com/512/3607/3607444.png'],
+        type: [String],
+    }),
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Array)
+], CreateTaskDto.prototype, "attachments", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
         description: 'Array of creators',
         type: [CreatorDto],
     }),

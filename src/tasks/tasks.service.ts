@@ -210,7 +210,7 @@ export class TasksService {
 
 		// Create the repeated task with TV show style naming
 		const repeatedTask = this.taskRepository.create({
-			title: `${createTaskDto.title} S${seasonNumber.toString().padStart(2, '0')} E${episodeNumber
+			title: `${createTaskDto.title} S${seasonNumber.toString().padStart(2, '0')}  E${episodeNumber
 				.toString()
 				.padStart(2, '0')} - ${formattedDate}`,
 			description: `${
@@ -234,6 +234,7 @@ export class TasksService {
 			isDeleted: false,
 			organisation: baseTask.organisation,
 			branch: baseTask.branch,
+			attachments: createTaskDto.attachments || [],
 		});
 
 		// Save the task
@@ -352,6 +353,7 @@ export class TasksService {
 					branch: creator?.branch || null,
 					assignees,
 					clients,
+					attachments: createTaskDto.attachments || [],
 				};
 
 				// Create and save the task
@@ -443,6 +445,14 @@ export class TasksService {
 							assignedBy: creator ? `${creator?.name} ${creator?.surname}` : 'System',
 							subtasks: [],
 							clients: clients.length > 0 ? await this.getClientNames(clients.map((c) => c?.uid)) : [],
+							attachments: savedTask.attachments?.map(url => {
+								// Extract filename from URL
+								const filename = url.split('/').pop() || 'file';
+								return {
+									name: filename,
+									url: url
+								};
+							}) || [],
 						});
 					}
 				}
@@ -771,6 +781,49 @@ export class TasksService {
 				this.eventEmitter.emit('task.deadlineChanged', {
 					task: savedTask,
 				});
+			}
+
+			// Send email notifications to assignees about the task update
+			if (savedTask.assignees?.length > 0) {
+				const assigneeUsers = await this.userRepository.find({
+					where: { uid: In(savedTask.assignees.map((a) => a?.uid)) },
+					select: ['uid', 'email', 'name', 'surname'],
+				});
+
+				// Get creator info
+				const creator = await this.userRepository.findOne({
+					where: { uid: savedTask.creator?.uid },
+					select: ['name', 'surname'],
+				});
+
+				// Send email notification to each assignee
+				for (const assignee of assigneeUsers) {
+					await this.communicationService.sendEmail(EmailType.TASK_UPDATED, [assignee.email], {
+						name: `${assignee?.name} ${assignee?.surname}`,
+						taskId: savedTask?.uid?.toString(),
+						title: savedTask?.title,
+						description: savedTask?.description,
+						deadline: savedTask?.deadline?.toISOString(),
+						priority: savedTask?.priority,
+						taskType: savedTask?.taskType,
+						status: savedTask?.status,
+						assignedBy: creator ? `${creator?.name} ${creator?.surname}` : 'System',
+						subtasks: savedTask.subtasks?.map(subtask => ({
+							title: subtask.title,
+							status: subtask.status,
+							description: subtask.description
+						})) || [],
+						clients: savedTask.clients?.length > 0 ? await this.getClientNames(savedTask.clients.map((c) => c?.uid)) : [],
+						attachments: savedTask.attachments?.map(url => {
+							// Extract filename from URL
+							const filename = url.split('/').pop() || 'file';
+							return {
+								name: filename,
+								url: url
+							};
+						}) || [],
+					});
+				}
 			}
 
 			// Clear all task-related caches

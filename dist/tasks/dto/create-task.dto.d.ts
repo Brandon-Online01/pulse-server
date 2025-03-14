@@ -29,6 +29,7 @@ export declare class CreateTaskDto {
     client?: ClientDto[];
     targetCategory?: string;
     subtasks?: SubtaskDto[];
+    attachments?: string[];
     creators: CreatorDto[];
     comment?: string;
     organisationId?: number;

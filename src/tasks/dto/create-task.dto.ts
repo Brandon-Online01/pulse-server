@@ -172,6 +172,15 @@ export class CreateTaskDto {
 	subtasks?: SubtaskDto[];
 
 	@ApiProperty({
+		description: 'Array of file attachments for the task',
+		example: ['https://cdn-icons-png.flaticon.com/512/3607/3607444.png'],
+		type: [String],
+	})
+	@IsArray()
+	@IsOptional()
+	attachments?: string[];
+
+	@ApiProperty({
 		description: 'Array of creators',
 		type: [CreatorDto],
 	})

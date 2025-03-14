@@ -67,6 +67,9 @@ export class Task {
 	@Column({ type: 'boolean', default: false })
 	isDeleted: boolean;
 
+	@Column({ type: 'json', nullable: true })
+	attachments?: string[];
+
 	// Relations
 	@ManyToOne(() => User, (user) => user?.tasks)
 	creator: User;
@@ -80,7 +83,7 @@ export class Task {
 	@OneToMany(() => SubTask, (subtask) => subtask.task)
 	subtasks: SubTask[];
 
-	@OneToMany(() => Route, route => route.task)
+	@OneToMany(() => Route, (route) => route.task)
 	routes: Route[];
 
 	@ManyToOne(() => Organisation, (organisation) => organisation.tasks)
@@ -102,9 +105,9 @@ export class Task {
 		// Calculate progress based on subtasks if they exist
 		if (this.subtasks?.length > 0) {
 			const completedSubtasks = this.subtasks.filter(
-				subtask => !subtask.isDeleted && subtask.status === SubTaskStatus.COMPLETED
+				(subtask) => !subtask.isDeleted && subtask.status === SubTaskStatus.COMPLETED,
 			).length;
-			const totalSubtasks = this.subtasks.filter(subtask => !subtask.isDeleted).length;
+			const totalSubtasks = this.subtasks.filter((subtask) => !subtask.isDeleted).length;
 			this.progress = totalSubtasks > 0 ? Math.round((completedSubtasks / totalSubtasks) * 100) : this.progress;
 		}
 
