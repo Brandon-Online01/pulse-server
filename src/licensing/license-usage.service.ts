@@ -128,6 +128,13 @@ export class LicenseUsageService {
 
                 const license = specificLicense || latestUsage?.license;
                 const limit = this.getLimitForMetric(license, MetricType.API_CALLS);
+                
+                // Check if limit is valid and greater than zero to prevent Infinity values
+                if (!limit || limit <= 0) {
+                    this.logger.warn(`Invalid API call limit (${limit}) for license ${licenseId}. Skipping usage update.`);
+                    continue;
+                }
+                
                 const utilizationPercentage = Number(((totalCalls / limit) * 100).toFixed(2));
 
                 const usage = this.usageRepository.create({
@@ -268,6 +275,12 @@ export class LicenseUsageService {
                 throw new Error('Invalid license object');
             }
 
+            if (!limit || limit <= 0) {
+                throw new Error(`Invalid limit (${limit}) for metric ${metricType}`);
+            }
+
+            const utilizationPercentage = Number(((currentValue / limit) * 100).toFixed(2));
+
             const event = this.eventRepository.create({
                 license,
                 licenseId: license.uid.toString(),
@@ -276,7 +289,7 @@ export class LicenseUsageService {
                     metricType,
                     currentValue,
                     limit,
-                    utilizationPercentage: Number(((currentValue / limit) * 100).toFixed(2)),
+                    utilizationPercentage,
                     timestamp: new Date().toISOString()
                 },
             });
