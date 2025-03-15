@@ -458,10 +458,25 @@ let AttendanceService = class AttendanceService {
             if (!activeShift) {
                 throw new common_1.NotFoundException('No active shift found to start break');
             }
+            const breakDetails = activeShift.breakDetails || [];
             const breakStartTime = new Date();
+            const newBreakEntry = {
+                startTime: breakStartTime,
+                endTime: null,
+                duration: null,
+                latitude: breakDto.breakLatitude ? String(breakDto.breakLatitude) : null,
+                longitude: breakDto.breakLongitude ? String(breakDto.breakLongitude) : null,
+                notes: breakDto.breakNotes
+            };
+            breakDetails.push(newBreakEntry);
+            const breakCount = (activeShift.breakCount || 0) + 1;
             const updatedShift = {
                 ...activeShift,
                 breakStartTime,
+                breakLatitude: breakDto.breakLatitude,
+                breakLongitude: breakDto.breakLongitude,
+                breakCount,
+                breakDetails,
                 status: attendance_enums_1.AttendanceStatus.ON_BREAK,
             };
             await this.attendanceRepository.save(updatedShift);
@@ -507,12 +522,29 @@ let AttendanceService = class AttendanceService {
                 totalBreakMinutes = totalBreakMinutes % 60;
             }
             const totalBreakTime = `${totalBreakHours}h ${totalBreakMinutes}m`;
-            const breakCount = (shiftOnBreak.breakCount || 0) + 1;
+            const breakDetails = shiftOnBreak.breakDetails || [];
+            if (breakDetails.length > 0) {
+                const latestBreak = breakDetails[breakDetails.length - 1];
+                latestBreak.endTime = breakEndTime;
+                latestBreak.duration = currentBreakDuration;
+                latestBreak.notes = breakDto.breakNotes || latestBreak.notes;
+            }
+            else {
+                breakDetails.push({
+                    startTime: breakStartTime,
+                    endTime: breakEndTime,
+                    duration: currentBreakDuration,
+                    latitude: shiftOnBreak.breakLatitude ? String(shiftOnBreak.breakLatitude) : null,
+                    longitude: shiftOnBreak.breakLongitude ? String(shiftOnBreak.breakLongitude) : null,
+                    notes: breakDto.breakNotes
+                });
+            }
             const updatedShift = {
                 ...shiftOnBreak,
                 breakEndTime,
                 totalBreakTime,
-                breakCount,
+                breakNotes: breakDto.breakNotes,
+                breakDetails,
                 status: attendance_enums_1.AttendanceStatus.PRESENT,
             };
             await this.attendanceRepository.save(updatedShift);
@@ -562,41 +594,70 @@ let AttendanceService = class AttendanceService {
                 const checkInTime = new Date(shift.checkIn);
                 const checkOutTime = new Date(shift.checkOut);
                 const shiftDuration = (0, date_fns_2.differenceInMilliseconds)(checkOutTime, checkInTime);
-                if (shift.totalBreakTime) {
+                let breakMs = 0;
+                if (shift.breakDetails && shift.breakDetails.length > 0) {
+                    for (const breakEntry of shift.breakDetails) {
+                        if (breakEntry.startTime && breakEntry.endTime) {
+                            const breakStart = new Date(breakEntry.startTime);
+                            const breakEnd = new Date(breakEntry.endTime);
+                            const breakDuration = (0, date_fns_2.differenceInMilliseconds)(breakEnd, breakStart);
+                            breakMs += breakDuration;
+                        }
+                    }
+                }
+                else if (shift.totalBreakTime) {
                     const breakMinutes = this.parseBreakTime(shift.totalBreakTime);
-                    const breakMs = breakMinutes * 60 * 1000;
-                    totalBreakTimeMs += breakMs;
-                    totalWorkTimeMs += shiftDuration - breakMs;
+                    breakMs = breakMinutes * 60 * 1000;
                 }
-                else {
-                    totalWorkTimeMs += shiftDuration;
-                }
+                totalBreakTimeMs += breakMs;
+                totalWorkTimeMs += shiftDuration - breakMs;
             }
             if (activeShift) {
                 const now = new Date();
                 const checkInTime = new Date(activeShift.checkIn);
                 const currentDuration = (0, date_fns_2.differenceInMilliseconds)(now, checkInTime);
+                let breakMs = 0;
                 if (activeShift.status === attendance_enums_1.AttendanceStatus.ON_BREAK && activeShift.breakStartTime) {
                     const breakStartTime = new Date(activeShift.breakStartTime);
                     const currentBreakDuration = (0, date_fns_2.differenceInMilliseconds)(now, breakStartTime);
-                    let previousBreakMs = 0;
-                    if (activeShift.totalBreakTime) {
-                        const breakMinutes = this.parseBreakTime(activeShift.totalBreakTime);
-                        previousBreakMs = breakMinutes * 60 * 1000;
+                    if (activeShift.breakDetails && activeShift.breakDetails.length > 0) {
+                        for (const breakEntry of activeShift.breakDetails) {
+                            if (breakEntry.startTime && breakEntry.endTime) {
+                                const breakStart = new Date(breakEntry.startTime);
+                                const breakEnd = new Date(breakEntry.endTime);
+                                const breakDuration = (0, date_fns_2.differenceInMilliseconds)(breakEnd, breakStart);
+                                breakMs += breakDuration;
+                            }
+                        }
+                        breakMs += currentBreakDuration;
                     }
-                    totalBreakTimeMs += previousBreakMs + currentBreakDuration;
-                    totalWorkTimeMs += currentDuration - currentBreakDuration - previousBreakMs;
-                }
-                else {
-                    if (activeShift.totalBreakTime) {
+                    else if (activeShift.totalBreakTime) {
                         const breakMinutes = this.parseBreakTime(activeShift.totalBreakTime);
-                        const breakMs = breakMinutes * 60 * 1000;
-                        totalBreakTimeMs += breakMs;
-                        totalWorkTimeMs += currentDuration - breakMs;
+                        breakMs = breakMinutes * 60 * 1000 + currentBreakDuration;
                     }
                     else {
-                        totalWorkTimeMs += currentDuration;
+                        breakMs = currentBreakDuration;
                     }
+                    totalBreakTimeMs += breakMs;
+                    totalWorkTimeMs += currentDuration - breakMs;
+                }
+                else {
+                    if (activeShift.breakDetails && activeShift.breakDetails.length > 0) {
+                        for (const breakEntry of activeShift.breakDetails) {
+                            if (breakEntry.startTime && breakEntry.endTime) {
+                                const breakStart = new Date(breakEntry.startTime);
+                                const breakEnd = new Date(breakEntry.endTime);
+                                const breakDuration = (0, date_fns_2.differenceInMilliseconds)(breakEnd, breakStart);
+                                breakMs += breakDuration;
+                            }
+                        }
+                    }
+                    else if (activeShift.totalBreakTime) {
+                        const breakMinutes = this.parseBreakTime(activeShift.totalBreakTime);
+                        breakMs = breakMinutes * 60 * 1000;
+                    }
+                    totalBreakTimeMs += breakMs;
+                    totalWorkTimeMs += currentDuration - breakMs;
                 }
             }
             return {

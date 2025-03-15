@@ -83,6 +83,22 @@ __decorate([
     __metadata("design:type", Number)
 ], Attendance.prototype, "breakCount", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ type: 'simple-json', nullable: true }),
+    __metadata("design:type", Array)
+], Attendance.prototype, "breakDetails", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'decimal', precision: 10, scale: 6, nullable: true }),
+    __metadata("design:type", Number)
+], Attendance.prototype, "breakLatitude", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'decimal', precision: 10, scale: 6, nullable: true }),
+    __metadata("design:type", Number)
+], Attendance.prototype, "breakLongitude", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    __metadata("design:type", String)
+], Attendance.prototype, "breakNotes", void 0);
+__decorate([
     (0, typeorm_1.Column)({ type: 'timestamp', nullable: false, default: () => 'CURRENT_TIMESTAMP' }),
     __metadata("design:type", Date)
 ], Attendance.prototype, "createdAt", void 0);

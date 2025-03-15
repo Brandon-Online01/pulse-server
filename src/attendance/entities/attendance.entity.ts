@@ -3,6 +3,7 @@ import { Branch } from '../../branch/entities/branch.entity';
 import { AttendanceStatus } from '../../lib/enums/attendance.enums';
 import { User } from '../../user/entities/user.entity';
 import { Column, Entity, PrimaryGeneratedColumn, ManyToOne } from 'typeorm';
+import { BreakDetail } from '../interfaces/break-detail.interface';
 
 @Entity('attendance')
 export class Attendance {
@@ -54,6 +55,18 @@ export class Attendance {
 
 	@Column({ type: 'int', nullable: true, default: 0 })
 	breakCount: number;
+
+	@Column({ type: 'simple-json', nullable: true })
+	breakDetails: BreakDetail[];
+
+	@Column({ type: 'decimal', precision: 10, scale: 6, nullable: true })
+	breakLatitude: number;
+
+	@Column({ type: 'decimal', precision: 10, scale: 6, nullable: true })
+	breakLongitude: number;
+
+	@Column({ type: 'text', nullable: true })
+	breakNotes: string;
 
 	@Column({ type: 'timestamp', nullable: false, default: () => 'CURRENT_TIMESTAMP' })
 	createdAt: Date;

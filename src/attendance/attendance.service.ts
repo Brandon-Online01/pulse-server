@@ -7,13 +7,14 @@ import { CreateCheckInDto } from './dto/create-attendance-check-in.dto';
 import { CreateCheckOutDto } from './dto/create-attendance-check-out.dto';
 import { CreateBreakDto } from './dto/create-attendance-break.dto';
 import { isToday } from 'date-fns';
-import { differenceInMinutes, differenceInHours, differenceInMilliseconds, startOfMonth, endOfMonth } from 'date-fns';
+import { differenceInMinutes, differenceInMilliseconds, startOfMonth, endOfMonth } from 'date-fns';
 import { UserService } from '../user/user.service';
 import { RewardsService } from '../rewards/rewards.service';
 import { XP_VALUES_TYPES } from '../lib/constants/constants';
 import { XP_VALUES } from '../lib/constants/constants';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ReportType, ReportFormat, ReportTimeframe } from '../lib/enums/report.enums';
+import { BreakDetail } from './interfaces/break-detail.interface';
 
 @Injectable()
 export class AttendanceService {
@@ -553,11 +554,34 @@ export class AttendanceService {
         throw new NotFoundException('No active shift found to start break');
       }
 
-      // Update shift with break start time and status
+      // Initialize the breakDetails array if it doesn't exist
+      const breakDetails: BreakDetail[] = activeShift.breakDetails || [];
+      
+      // Create a new break entry
       const breakStartTime = new Date();
+      const newBreakEntry: BreakDetail = {
+        startTime: breakStartTime,
+        endTime: null,
+        duration: null,
+        latitude: breakDto.breakLatitude ? String(breakDto.breakLatitude) : null,
+        longitude: breakDto.breakLongitude ? String(breakDto.breakLongitude) : null,
+        notes: breakDto.breakNotes
+      };
+      
+      // Add to break details array
+      breakDetails.push(newBreakEntry);
+
+      // Increment break count
+      const breakCount = (activeShift.breakCount || 0) + 1;
+
+      // Update shift with break start time and status
       const updatedShift = {
         ...activeShift,
         breakStartTime,
+        breakLatitude: breakDto.breakLatitude,
+        breakLongitude: breakDto.breakLongitude,
+        breakCount,
+        breakDetails,
         status: AttendanceStatus.ON_BREAK,
       };
 
@@ -616,15 +640,34 @@ export class AttendanceService {
 
       const totalBreakTime = `${totalBreakHours}h ${totalBreakMinutes}m`;
 
-      // Increment break count
-      const breakCount = (shiftOnBreak.breakCount || 0) + 1;
+      // Initialize or get the breakDetails array 
+      const breakDetails: BreakDetail[] = shiftOnBreak.breakDetails || [];
+      
+      // Update the latest break entry if it exists
+      if (breakDetails.length > 0) {
+        const latestBreak = breakDetails[breakDetails.length - 1];
+        latestBreak.endTime = breakEndTime;
+        latestBreak.duration = currentBreakDuration;
+        latestBreak.notes = breakDto.breakNotes || latestBreak.notes;
+      } else {
+        // If no breakDetails exist, create a new entry for backward compatibility
+        breakDetails.push({
+          startTime: breakStartTime,
+          endTime: breakEndTime,
+          duration: currentBreakDuration,
+          latitude: shiftOnBreak.breakLatitude ? String(shiftOnBreak.breakLatitude) : null,
+          longitude: shiftOnBreak.breakLongitude ? String(shiftOnBreak.breakLongitude) : null,
+          notes: breakDto.breakNotes
+        });
+      }
 
       // Update shift with break end time and status
       const updatedShift = {
         ...shiftOnBreak,
         breakEndTime,
         totalBreakTime,
-        breakCount,
+        breakNotes: breakDto.breakNotes,
+        breakDetails,
         status: AttendanceStatus.PRESENT,
       };
 
@@ -688,15 +731,28 @@ export class AttendanceService {
         // Calculate total shift duration in milliseconds
         const shiftDuration = differenceInMilliseconds(checkOutTime, checkInTime);
         
-        // Calculate break time if exists
-        if (shift.totalBreakTime) {
+        // Calculate break time
+        let breakMs = 0;
+        
+        // Use breakDetails array if available for more accurate break tracking
+        if (shift.breakDetails && shift.breakDetails.length > 0) {
+          for (const breakEntry of shift.breakDetails) {
+            if (breakEntry.startTime && breakEntry.endTime) {
+              const breakStart = new Date(breakEntry.startTime);
+              const breakEnd = new Date(breakEntry.endTime);
+              const breakDuration = differenceInMilliseconds(breakEnd, breakStart);
+              breakMs += breakDuration;
+            }
+          }
+        } 
+        // Fallback to totalBreakTime for backward compatibility
+        else if (shift.totalBreakTime) {
           const breakMinutes = this.parseBreakTime(shift.totalBreakTime);
-          const breakMs = breakMinutes * 60 * 1000;
-          totalBreakTimeMs += breakMs;
-          totalWorkTimeMs += shiftDuration - breakMs;
-        } else {
-          totalWorkTimeMs += shiftDuration;
+          breakMs = breakMinutes * 60 * 1000;
         }
+        
+        totalBreakTimeMs += breakMs;
+        totalWorkTimeMs += shiftDuration - breakMs;
       }
 
       // Add time from active shift
@@ -705,30 +761,62 @@ export class AttendanceService {
         const checkInTime = new Date(activeShift.checkIn);
         const currentDuration = differenceInMilliseconds(now, checkInTime);
         
+        // Calculate break time
+        let breakMs = 0;
+        
         // If on break, add the current break time
         if (activeShift.status === AttendanceStatus.ON_BREAK && activeShift.breakStartTime) {
           const breakStartTime = new Date(activeShift.breakStartTime);
           const currentBreakDuration = differenceInMilliseconds(now, breakStartTime);
           
-          // Add existing breaks
-          let previousBreakMs = 0;
-          if (activeShift.totalBreakTime) {
+          // Use breakDetails array if available
+          if (activeShift.breakDetails && activeShift.breakDetails.length > 0) {
+            // Add all completed breaks from breakDetails
+            for (const breakEntry of activeShift.breakDetails) {
+              if (breakEntry.startTime && breakEntry.endTime) {
+                const breakStart = new Date(breakEntry.startTime);
+                const breakEnd = new Date(breakEntry.endTime);
+                const breakDuration = differenceInMilliseconds(breakEnd, breakStart);
+                breakMs += breakDuration;
+              }
+            }
+            
+            // Add current ongoing break (the last one without an end time)
+            breakMs += currentBreakDuration;
+          } 
+          // Fallback to totalBreakTime for backward compatibility
+          else if (activeShift.totalBreakTime) {
             const breakMinutes = this.parseBreakTime(activeShift.totalBreakTime);
-            previousBreakMs = breakMinutes * 60 * 1000;
+            breakMs = breakMinutes * 60 * 1000 + currentBreakDuration;
+          } else {
+            breakMs = currentBreakDuration;
           }
           
-          totalBreakTimeMs += previousBreakMs + currentBreakDuration;
-          totalWorkTimeMs += currentDuration - currentBreakDuration - previousBreakMs;
+          totalBreakTimeMs += breakMs;
+          totalWorkTimeMs += currentDuration - breakMs;
         } else {
           // If actively working, add previous breaks
-          if (activeShift.totalBreakTime) {
+          
+          // Use breakDetails array if available
+          if (activeShift.breakDetails && activeShift.breakDetails.length > 0) {
+            // Add all completed breaks from breakDetails
+            for (const breakEntry of activeShift.breakDetails) {
+              if (breakEntry.startTime && breakEntry.endTime) {
+                const breakStart = new Date(breakEntry.startTime);
+                const breakEnd = new Date(breakEntry.endTime);
+                const breakDuration = differenceInMilliseconds(breakEnd, breakStart);
+                breakMs += breakDuration;
+              }
+            }
+          } 
+          // Fallback to totalBreakTime for backward compatibility
+          else if (activeShift.totalBreakTime) {
             const breakMinutes = this.parseBreakTime(activeShift.totalBreakTime);
-            const breakMs = breakMinutes * 60 * 1000;
-            totalBreakTimeMs += breakMs;
-            totalWorkTimeMs += currentDuration - breakMs;
-          } else {
-            totalWorkTimeMs += currentDuration;
+            breakMs = breakMinutes * 60 * 1000;
           }
+          
+          totalBreakTimeMs += breakMs;
+          totalWorkTimeMs += currentDuration - breakMs;
         }
       }
 

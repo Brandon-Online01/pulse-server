@@ -2,6 +2,7 @@ import { Organisation } from 'src/organisation/entities/organisation.entity';
 import { Branch } from '../../branch/entities/branch.entity';
 import { AttendanceStatus } from '../../lib/enums/attendance.enums';
 import { User } from '../../user/entities/user.entity';
+import { BreakDetail } from '../interfaces/break-detail.interface';
 export declare class Attendance {
     uid: number;
     status: AttendanceStatus;
@@ -18,6 +19,10 @@ export declare class Attendance {
     breakEndTime: Date;
     totalBreakTime: string;
     breakCount: number;
+    breakDetails: BreakDetail[];
+    breakLatitude: number;
+    breakLongitude: number;
+    breakNotes: string;
     createdAt: Date;
     updatedAt: Date;
     verifiedAt: Date;
