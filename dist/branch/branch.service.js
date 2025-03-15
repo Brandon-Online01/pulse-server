@@ -25,6 +25,7 @@ let BranchService = class BranchService {
         this.cacheManager = cacheManager;
         this.CACHE_PREFIX = 'branch';
         this.ALL_BRANCHES_CACHE_KEY = `${this.CACHE_PREFIX}:all`;
+        this.DEFAULT_CACHE_TTL = 3600;
     }
     getBranchCacheKey(ref) {
         return `${this.CACHE_PREFIX}:${ref}`;
@@ -67,7 +68,9 @@ let BranchService = class BranchService {
             if (!branches) {
                 throw new common_1.NotFoundException(process.env.SEARCH_ERROR_MESSAGE);
             }
-            await this.cacheManager.set(this.ALL_BRANCHES_CACHE_KEY, branches);
+            await this.cacheManager.set(this.ALL_BRANCHES_CACHE_KEY, branches, {
+                ttl: this.DEFAULT_CACHE_TTL
+            });
             return {
                 branches,
                 message: process.env.SUCCESS_MESSAGE,
@@ -97,7 +100,9 @@ let BranchService = class BranchService {
             if (!branch) {
                 throw new common_1.NotFoundException(process.env.SEARCH_ERROR_MESSAGE);
             }
-            await this.cacheManager.set(cacheKey, branch);
+            await this.cacheManager.set(cacheKey, branch, {
+                ttl: this.DEFAULT_CACHE_TTL
+            });
             return {
                 branch,
                 message: process.env.SUCCESS_MESSAGE,

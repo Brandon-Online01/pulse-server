@@ -10,6 +10,7 @@ export declare class BranchService {
     private readonly CACHE_PREFIX;
     private readonly ALL_BRANCHES_CACHE_KEY;
     private getBranchCacheKey;
+    private readonly DEFAULT_CACHE_TTL;
     private clearBranchCache;
     create(createBranchDto: CreateBranchDto): Promise<{
         message: string;

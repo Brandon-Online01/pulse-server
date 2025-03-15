@@ -10,6 +10,7 @@ export declare class OrganisationService {
     private readonly CACHE_PREFIX;
     private readonly ALL_ORGS_CACHE_KEY;
     private getOrgCacheKey;
+    private readonly DEFAULT_CACHE_TTL;
     private clearOrganisationCache;
     create(createOrganisationDto: CreateOrganisationDto): Promise<{
         message: string;

@@ -22,6 +22,9 @@ export class BranchService {
 		return `${this.CACHE_PREFIX}:${ref}`;
 	}
 
+	// Default cache TTL (in seconds)
+	private readonly DEFAULT_CACHE_TTL = 3600; // 1 hour
+
 	private async clearBranchCache(ref?: string): Promise<void> {
 		// Clear the all branches cache
 		await this.cacheManager.del(this.ALL_BRANCHES_CACHE_KEY);
@@ -75,7 +78,9 @@ export class BranchService {
 			}
 
 			// Store in cache
-			await this.cacheManager.set(this.ALL_BRANCHES_CACHE_KEY, branches);
+			await this.cacheManager.set(this.ALL_BRANCHES_CACHE_KEY, branches, {
+				ttl: this.DEFAULT_CACHE_TTL
+			});
 
 			return {
 				branches,
@@ -113,7 +118,9 @@ export class BranchService {
 			}
 
 			// Store in cache
-			await this.cacheManager.set(cacheKey, branch);
+			await this.cacheManager.set(cacheKey, branch, {
+				ttl: this.DEFAULT_CACHE_TTL
+			});
 
 			return {
 				branch,

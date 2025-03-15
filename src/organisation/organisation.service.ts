@@ -23,6 +23,9 @@ export class OrganisationService {
 		return `${this.CACHE_PREFIX}:${ref}`;
 	}
 
+	// Default cache TTL (in seconds)
+	private readonly DEFAULT_CACHE_TTL = 3600; // 1 hour
+
 	private async clearOrganisationCache(ref?: string): Promise<void> {
 		// Clear the all organisations cache
 		await this.cacheManager.del(this.ALL_ORGS_CACHE_KEY);
@@ -86,7 +89,9 @@ export class OrganisationService {
 			}
 
 			// Store in cache
-			await this.cacheManager.set(this.ALL_ORGS_CACHE_KEY, organisations);
+			await this.cacheManager.set(this.ALL_ORGS_CACHE_KEY, organisations, {
+				ttl: this.DEFAULT_CACHE_TTL
+			});
 
 			return {
 				organisations,
@@ -127,7 +132,9 @@ export class OrganisationService {
 			}
 
 			// Store in cache
-			await this.cacheManager.set(cacheKey, organisation);
+			await this.cacheManager.set(cacheKey, organisation, {
+				ttl: this.DEFAULT_CACHE_TTL
+			});
 
 			return {
 				organisation,

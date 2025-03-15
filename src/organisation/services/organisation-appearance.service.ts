@@ -25,6 +25,9 @@ export class OrganisationAppearanceService {
         return `${this.CACHE_PREFIX}:${orgRef}`;
     }
 
+    // Default cache TTL (in seconds)
+    private readonly DEFAULT_CACHE_TTL = 3600; // 1 hour
+
     private async clearAppearanceCache(orgRef: string): Promise<void> {
         await this.cacheManager.del(this.getAppearanceCacheKey(orgRef));
     }
@@ -72,7 +75,9 @@ export class OrganisationAppearanceService {
         }
 
         // Store in cache
-        await this.cacheManager.set(cacheKey, appearance);
+        await this.cacheManager.set(cacheKey, appearance, {
+            ttl: this.DEFAULT_CACHE_TTL
+        });
 
         return appearance;
     }

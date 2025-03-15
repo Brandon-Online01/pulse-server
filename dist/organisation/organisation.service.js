@@ -26,6 +26,7 @@ let OrganisationService = class OrganisationService {
         this.cacheManager = cacheManager;
         this.CACHE_PREFIX = 'organisation';
         this.ALL_ORGS_CACHE_KEY = `${this.CACHE_PREFIX}:all`;
+        this.DEFAULT_CACHE_TTL = 3600;
     }
     getOrgCacheKey(ref) {
         return `${this.CACHE_PREFIX}:${ref}`;
@@ -78,7 +79,9 @@ let OrganisationService = class OrganisationService {
             if (!organisations) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
-            await this.cacheManager.set(this.ALL_ORGS_CACHE_KEY, organisations);
+            await this.cacheManager.set(this.ALL_ORGS_CACHE_KEY, organisations, {
+                ttl: this.DEFAULT_CACHE_TTL
+            });
             return {
                 organisations,
                 message: process.env.SUCCESS_MESSAGE,
@@ -111,7 +114,9 @@ let OrganisationService = class OrganisationService {
                     message: process.env.NOT_FOUND_MESSAGE,
                 };
             }
-            await this.cacheManager.set(cacheKey, organisation);
+            await this.cacheManager.set(cacheKey, organisation, {
+                ttl: this.DEFAULT_CACHE_TTL
+            });
             return {
                 organisation,
                 message: process.env.SUCCESS_MESSAGE,
