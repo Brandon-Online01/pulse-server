@@ -375,10 +375,10 @@ export class UserService {
 	async findAdminUsers(): Promise<{ users: Omit<User, 'password'>[] | null; message: string }> {
 		try {
 			const users = await this.userRepository.find({
-				where: { 
+				where: {
 					accessLevel: AccessLevel.ADMIN,
 					isDeleted: false,
-					status: AccountStatus.ACTIVE
+					status: AccountStatus.ACTIVE,
 				},
 			});
 
@@ -410,6 +410,11 @@ export class UserService {
 
 			if (!user) {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
+			}
+
+			// Hash the password if it's included in the update data
+			if (updateUserDto.password) {
+				updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
 			}
 
 			await this.userRepository.update(ref, updateUserDto);

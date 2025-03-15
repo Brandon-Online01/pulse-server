@@ -307,7 +307,7 @@ let UserService = class UserService {
                 where: {
                     accessLevel: user_enums_1.AccessLevel.ADMIN,
                     isDeleted: false,
-                    status: status_enums_1.AccountStatus.ACTIVE
+                    status: status_enums_1.AccountStatus.ACTIVE,
                 },
             });
             if (!users || users.length === 0) {
@@ -336,6 +336,9 @@ let UserService = class UserService {
             });
             if (!user) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
+            }
+            if (updateUserDto.password) {
+                updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
             }
             await this.userRepository.update(ref, updateUserDto);
             await this.invalidateUserCache(user);
