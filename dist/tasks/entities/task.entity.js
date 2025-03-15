@@ -55,7 +55,9 @@ let Task = class Task {
         else if (this.jobStatus === task_enums_1.JobStatus.RUNNING && this.status === task_enums_1.TaskStatus.PENDING) {
             this.status = task_enums_1.TaskStatus.IN_PROGRESS;
         }
-        else if (this.jobStatus === task_enums_1.JobStatus.COMPLETED && this.status !== task_enums_1.TaskStatus.COMPLETED && !this.subtasks?.length) {
+        else if (this.jobStatus === task_enums_1.JobStatus.COMPLETED &&
+            this.status !== task_enums_1.TaskStatus.COMPLETED &&
+            !this.subtasks?.length) {
             this.status = task_enums_1.TaskStatus.COMPLETED;
             this.completionDate = this.jobEndTime || now;
         }

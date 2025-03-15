@@ -151,7 +151,11 @@ export class Task {
 			this.status = TaskStatus.IN_PROGRESS;
 		} else if (this.jobStatus === JobStatus.RUNNING && this.status === TaskStatus.PENDING) {
 			this.status = TaskStatus.IN_PROGRESS;
-		} else if (this.jobStatus === JobStatus.COMPLETED && this.status !== TaskStatus.COMPLETED && !this.subtasks?.length) {
+		} else if (
+			this.jobStatus === JobStatus.COMPLETED &&
+			this.status !== TaskStatus.COMPLETED &&
+			!this.subtasks?.length
+		) {
 			this.status = TaskStatus.COMPLETED;
 			this.completionDate = this.jobEndTime || now;
 		}

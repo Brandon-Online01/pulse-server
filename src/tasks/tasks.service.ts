@@ -445,14 +445,15 @@ export class TasksService {
 							assignedBy: creator ? `${creator?.name} ${creator?.surname}` : 'System',
 							subtasks: [],
 							clients: clients.length > 0 ? await this.getClientNames(clients.map((c) => c?.uid)) : [],
-							attachments: savedTask.attachments?.map(url => {
-								// Extract filename from URL
-								const filename = url.split('/').pop() || 'file';
-								return {
-									name: filename,
-									url: url
-								};
-							}) || [],
+							attachments:
+								savedTask.attachments?.map((url) => {
+									// Extract filename from URL
+									const filename = url.split('/').pop() || 'file';
+									return {
+										name: filename,
+										url: url,
+									};
+								}) || [],
 						});
 					}
 				}
@@ -494,7 +495,11 @@ export class TasksService {
 		return task;
 	}
 
-	async findOne(ref: number, organisationRef?: string, branchId?: number): Promise<{ message: string; task: Task | null }> {
+	async findOne(
+		ref: number,
+		organisationRef?: string,
+		branchId?: number,
+	): Promise<{ message: string; task: Task | null }> {
 		try {
 			const cacheKey = this.getCacheKey(`${ref}_${organisationRef}_${branchId}`);
 			const cachedTask = await this.cacheManager.get<Task>(cacheKey);
@@ -546,7 +551,11 @@ export class TasksService {
 		}
 	}
 
-	public async tasksByUser(ref: number, organisationRef?: string, branchId?: number): Promise<{ message: string; tasks: Task[] }> {
+	public async tasksByUser(
+		ref: number,
+		organisationRef?: string,
+		branchId?: number,
+	): Promise<{ message: string; tasks: Task[] }> {
 		try {
 			// Apply base filters
 			const where: any = {
@@ -808,20 +817,25 @@ export class TasksService {
 						taskType: savedTask?.taskType,
 						status: savedTask?.status,
 						assignedBy: creator ? `${creator?.name} ${creator?.surname}` : 'System',
-						subtasks: savedTask.subtasks?.map(subtask => ({
-							title: subtask.title,
-							status: subtask.status,
-							description: subtask.description
-						})) || [],
-						clients: savedTask.clients?.length > 0 ? await this.getClientNames(savedTask.clients.map((c) => c?.uid)) : [],
-						attachments: savedTask.attachments?.map(url => {
-							// Extract filename from URL
-							const filename = url.split('/').pop() || 'file';
-							return {
-								name: filename,
-								url: url
-							};
-						}) || [],
+						subtasks:
+							savedTask.subtasks?.map((subtask) => ({
+								title: subtask.title,
+								status: subtask.status,
+								description: subtask.description,
+							})) || [],
+						clients:
+							savedTask.clients?.length > 0
+								? await this.getClientNames(savedTask.clients.map((c) => c?.uid))
+								: [],
+						attachments:
+							savedTask.attachments?.map((url) => {
+								// Extract filename from URL
+								const filename = url.split('/').pop() || 'file';
+								return {
+									name: filename,
+									url: url,
+								};
+							}) || [],
 					});
 				}
 			}
@@ -981,7 +995,7 @@ export class TasksService {
 				if (!parentTask) {
 					return {
 						tasks: null,
-						message: "Subtask does not belong to the specified organization or branch",
+						message: 'Subtask does not belong to the specified organization or branch',
 					};
 				}
 			}
@@ -1336,14 +1350,14 @@ export class TasksService {
 		return clients.map((client) => ({ name: client.name }));
 	}
 
-	async toggleJobStatus(taskId: number): Promise<{ task: Partial<Task>, message: string }> {
+	async toggleJobStatus(taskId: number): Promise<{ task: Partial<Task>; message: string }> {
 		try {
 			const task = await this.taskRepository.findOne({
 				where: {
 					uid: taskId,
-					isDeleted: false
+					isDeleted: false,
 				},
-				relations: ['subtasks']
+				relations: ['subtasks'],
 			});
 
 			if (!task) {
@@ -1367,18 +1381,22 @@ export class TasksService {
 					// Complete the job
 					task.jobEndTime = now;
 					task.jobStatus = JobStatus.COMPLETED;
-					
+
 					// Calculate duration in minutes
 					if (task.jobStartTime) {
 						const durationMs = task.jobEndTime.getTime() - task.jobStartTime.getTime();
 						task.jobDuration = Math.round(durationMs / (1000 * 60));
 					}
-					
+
 					// Update task status if appropriate (no subtasks or all subtasks completed)
 					if (!task.subtasks?.length) {
 						task.status = TaskStatus.COMPLETED;
 						task.completionDate = now;
-					} else if (task.subtasks.every(subtask => !subtask.isDeleted && subtask.status === SubTaskStatus.COMPLETED)) {
+					} else if (
+						task.subtasks.every(
+							(subtask) => !subtask.isDeleted && subtask.status === SubTaskStatus.COMPLETED,
+						)
+					) {
 						task.status = TaskStatus.COMPLETED;
 						task.completionDate = now;
 					}
@@ -1409,7 +1427,7 @@ export class TasksService {
 			// Emit event
 			this.eventEmitter.emit('task.jobStatusChanged', {
 				task: savedTask,
-				previousStatus: task.jobStatus
+				previousStatus: task.jobStatus,
 			});
 
 			await this.clearTaskCache();
@@ -1423,9 +1441,9 @@ export class TasksService {
 					jobStatus: savedTask.jobStatus,
 					jobStartTime: savedTask.jobStartTime,
 					jobEndTime: savedTask.jobEndTime,
-					jobDuration: savedTask.jobDuration
+					jobDuration: savedTask.jobDuration,
 				},
-				message: 'Job status updated successfully'
+				message: 'Job status updated successfully',
 			};
 		} catch (error) {
 			throw error;

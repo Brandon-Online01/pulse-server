@@ -319,11 +319,11 @@ let TasksService = class TasksService {
                             assignedBy: creator ? `${creator?.name} ${creator?.surname}` : 'System',
                             subtasks: [],
                             clients: clients.length > 0 ? await this.getClientNames(clients.map((c) => c?.uid)) : [],
-                            attachments: savedTask.attachments?.map(url => {
+                            attachments: savedTask.attachments?.map((url) => {
                                 const filename = url.split('/').pop() || 'file';
                                 return {
                                     name: filename,
-                                    url: url
+                                    url: url,
                                 };
                             }) || [],
                         });
@@ -591,17 +591,19 @@ let TasksService = class TasksService {
                         taskType: savedTask?.taskType,
                         status: savedTask?.status,
                         assignedBy: creator ? `${creator?.name} ${creator?.surname}` : 'System',
-                        subtasks: savedTask.subtasks?.map(subtask => ({
+                        subtasks: savedTask.subtasks?.map((subtask) => ({
                             title: subtask.title,
                             status: subtask.status,
-                            description: subtask.description
+                            description: subtask.description,
                         })) || [],
-                        clients: savedTask.clients?.length > 0 ? await this.getClientNames(savedTask.clients.map((c) => c?.uid)) : [],
-                        attachments: savedTask.attachments?.map(url => {
+                        clients: savedTask.clients?.length > 0
+                            ? await this.getClientNames(savedTask.clients.map((c) => c?.uid))
+                            : [],
+                        attachments: savedTask.attachments?.map((url) => {
                             const filename = url.split('/').pop() || 'file';
                             return {
                                 name: filename,
-                                url: url
+                                url: url,
                             };
                         }) || [],
                     });
@@ -726,7 +728,7 @@ let TasksService = class TasksService {
                 if (!parentTask) {
                     return {
                         tasks: null,
-                        message: "Subtask does not belong to the specified organization or branch",
+                        message: 'Subtask does not belong to the specified organization or branch',
                     };
                 }
             }
@@ -1012,9 +1014,9 @@ let TasksService = class TasksService {
             const task = await this.taskRepository.findOne({
                 where: {
                     uid: taskId,
-                    isDeleted: false
+                    isDeleted: false,
                 },
-                relations: ['subtasks']
+                relations: ['subtasks'],
             });
             if (!task) {
                 throw new common_1.NotFoundException(`Task with ID ${taskId} not found`);
@@ -1039,7 +1041,7 @@ let TasksService = class TasksService {
                         task.status = task_enums_1.TaskStatus.COMPLETED;
                         task.completionDate = now;
                     }
-                    else if (task.subtasks.every(subtask => !subtask.isDeleted && subtask.status === status_enums_1.SubTaskStatus.COMPLETED)) {
+                    else if (task.subtasks.every((subtask) => !subtask.isDeleted && subtask.status === status_enums_1.SubTaskStatus.COMPLETED)) {
                         task.status = task_enums_1.TaskStatus.COMPLETED;
                         task.completionDate = now;
                     }
@@ -1062,7 +1064,7 @@ let TasksService = class TasksService {
             const savedTask = await this.taskRepository.save(task);
             this.eventEmitter.emit('task.jobStatusChanged', {
                 task: savedTask,
-                previousStatus: task.jobStatus
+                previousStatus: task.jobStatus,
             });
             await this.clearTaskCache();
             return {
@@ -1073,9 +1075,9 @@ let TasksService = class TasksService {
                     jobStatus: savedTask.jobStatus,
                     jobStartTime: savedTask.jobStartTime,
                     jobEndTime: savedTask.jobEndTime,
-                    jobDuration: savedTask.jobDuration
+                    jobDuration: savedTask.jobDuration,
                 },
-                message: 'Job status updated successfully'
+                message: 'Job status updated successfully',
             };
         }
         catch (error) {
