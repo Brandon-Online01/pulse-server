@@ -1,6 +1,7 @@
 import { AttendanceService } from './attendance.service';
 import { CreateCheckInDto } from './dto/create-attendance-check-in.dto';
 import { CreateCheckOutDto } from './dto/create-attendance-check-out.dto';
+import { CreateBreakDto } from './dto/create-attendance-break.dto';
 import { Attendance } from './entities/attendance.entity';
 export declare class AttendanceController {
     private readonly attendanceService;
@@ -11,6 +12,9 @@ export declare class AttendanceController {
     checkOut(createAttendanceDto: CreateCheckOutDto): Promise<{
         message: string;
         duration?: string;
+    }>;
+    manageBreak(breakDto: CreateBreakDto): Promise<{
+        message: string;
     }>;
     allCheckIns(): Promise<{
         message: string;
@@ -35,5 +39,10 @@ export declare class AttendanceController {
     checkInsByBranch(ref: string): Promise<{
         message: string;
         checkIns: Attendance[];
+    }>;
+    getDailyStats(uid: number, date: string): Promise<{
+        message: string;
+        dailyWorkTime: number;
+        dailyBreakTime: number;
     }>;
 }

@@ -18,6 +18,7 @@ const swagger_1 = require("@nestjs/swagger");
 const common_1 = require("@nestjs/common");
 const create_attendance_check_in_dto_1 = require("./dto/create-attendance-check-in.dto");
 const create_attendance_check_out_dto_1 = require("./dto/create-attendance-check-out.dto");
+const create_attendance_break_dto_1 = require("./dto/create-attendance-break.dto");
 const role_decorator_1 = require("../decorators/role.decorator");
 const user_enums_1 = require("../lib/enums/user.enums");
 const auth_guard_1 = require("../guards/auth.guard");
@@ -31,6 +32,9 @@ let AttendanceController = class AttendanceController {
     }
     checkOut(createAttendanceDto) {
         return this.attendanceService.checkOut(createAttendanceDto);
+    }
+    manageBreak(breakDto) {
+        return this.attendanceService.manageBreak(breakDto);
     }
     allCheckIns() {
         return this.attendanceService.allCheckIns();
@@ -46,6 +50,9 @@ let AttendanceController = class AttendanceController {
     }
     checkInsByBranch(ref) {
         return this.attendanceService.checkInsByBranch(ref);
+    }
+    getDailyStats(uid, date) {
+        return this.attendanceService.getDailyStats(uid, date);
     }
 };
 exports.AttendanceController = AttendanceController;
@@ -111,6 +118,37 @@ __decorate([
     __metadata("design:paramtypes", [create_attendance_check_out_dto_1.CreateCheckOutDto]),
     __metadata("design:returntype", void 0)
 ], AttendanceController.prototype, "checkOut", null);
+__decorate([
+    (0, common_1.Post)('break'),
+    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER, user_enums_1.AccessLevel.OWNER, user_enums_1.AccessLevel.TECHNICIAN),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Manage break',
+        description: 'Start or end a break during a shift',
+    }),
+    (0, swagger_1.ApiBody)({ type: create_attendance_break_dto_1.CreateBreakDto }),
+    (0, swagger_1.ApiCreatedResponse)({
+        description: 'Break action processed successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Break started/ended successfully' },
+            },
+        },
+    }),
+    (0, swagger_1.ApiBadRequestResponse)({
+        description: 'Bad Request - Invalid data provided',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Error processing break action' },
+            },
+        },
+    }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [create_attendance_break_dto_1.CreateBreakDto]),
+    __metadata("design:returntype", void 0)
+], AttendanceController.prototype, "manageBreak", null);
 __decorate([
     (0, common_1.Get)(),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER, user_enums_1.AccessLevel.OWNER, user_enums_1.AccessLevel.TECHNICIAN),
@@ -266,6 +304,31 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], AttendanceController.prototype, "checkInsByBranch", null);
+__decorate([
+    (0, common_1.Get)('daily-stats/:uid'),
+    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER, user_enums_1.AccessLevel.OWNER, user_enums_1.AccessLevel.TECHNICIAN),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Get daily attendance stats',
+        description: 'Retrieves work and break times for a specific user for a day',
+    }),
+    (0, swagger_1.ApiParam)({ name: 'uid', description: 'User ID', type: 'number' }),
+    (0, swagger_1.ApiOkResponse)({
+        description: 'Daily stats retrieved successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                dailyWorkTime: { type: 'number', example: 28800000 },
+                dailyBreakTime: { type: 'number', example: 3600000 },
+                message: { type: 'string', example: 'Success' },
+            },
+        },
+    }),
+    __param(0, (0, common_1.Param)('uid')),
+    __param(1, (0, common_1.Query)('date')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, String]),
+    __metadata("design:returntype", void 0)
+], AttendanceController.prototype, "getDailyStats", null);
 exports.AttendanceController = AttendanceController = __decorate([
     (0, swagger_1.ApiTags)('att'),
     (0, common_1.Controller)('att'),

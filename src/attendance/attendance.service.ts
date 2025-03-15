@@ -1,12 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { IsNull, MoreThanOrEqual, Not, Repository, LessThanOrEqual } from 'typeorm';
+import { IsNull, MoreThanOrEqual, Not, Repository, LessThanOrEqual, In } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Attendance } from './entities/attendance.entity';
 import { AttendanceStatus } from '../lib/enums/attendance.enums';
 import { CreateCheckInDto } from './dto/create-attendance-check-in.dto';
 import { CreateCheckOutDto } from './dto/create-attendance-check-out.dto';
+import { CreateBreakDto } from './dto/create-attendance-break.dto';
 import { isToday } from 'date-fns';
-import { differenceInMinutes, differenceInHours, startOfMonth, endOfMonth } from 'date-fns';
+import { differenceInMinutes, differenceInHours, differenceInMilliseconds, startOfMonth, endOfMonth } from 'date-fns';
 import { UserService } from '../user/user.service';
 import { RewardsService } from '../rewards/rewards.service';
 import { XP_VALUES_TYPES } from '../lib/constants/constants';
@@ -76,9 +77,18 @@ export class AttendanceService {
         const checkOutTime = new Date();
         const checkInTime = new Date(activeShift.checkIn);
 
-        const minutesWorked = differenceInMinutes(checkOutTime, checkInTime);
-        const hoursWorked = differenceInHours(checkOutTime, checkInTime);
-        const remainingMinutes = minutesWorked % 60;
+        const totalMinutesWorked = differenceInMinutes(checkOutTime, checkInTime);
+        
+        // Calculate break time if exists
+        const totalBreakMinutes = activeShift.totalBreakTime 
+          ? this.parseBreakTime(activeShift.totalBreakTime) 
+          : 0;
+        
+        // Actual work time = total time - break time
+        const actualMinutesWorked = totalMinutesWorked - totalBreakMinutes;
+        
+        const hoursWorked = Math.floor(actualMinutesWorked / 60);
+        const remainingMinutes = actualMinutesWorked % 60;
 
         const duration = `${hoursWorked}h ${remainingMinutes}m`;
 
@@ -507,6 +517,232 @@ export class AttendanceService {
       return 0;
     } catch (error) {
       return 0;
+    }
+  }
+
+  public async manageBreak(breakDto: CreateBreakDto): Promise<{ message: string }> {
+    try {
+      if (breakDto.isStartingBreak) {
+        return this.startBreak(breakDto);
+      } else {
+        return this.endBreak(breakDto);
+      }
+    } catch (error) {
+      return {
+        message: error?.message,
+      };
+    }
+  }
+
+  private async startBreak(breakDto: CreateBreakDto): Promise<{ message: string }> {
+    try {
+      // Find the active shift
+      const activeShift = await this.attendanceRepository.findOne({
+        where: {
+          status: AttendanceStatus.PRESENT,
+          owner: breakDto.owner,
+          checkIn: Not(IsNull()),
+          checkOut: IsNull(),
+        },
+        order: {
+          checkIn: 'DESC',
+        },
+      });
+
+      if (!activeShift) {
+        throw new NotFoundException('No active shift found to start break');
+      }
+
+      // Update shift with break start time and status
+      const breakStartTime = new Date();
+      const updatedShift = {
+        ...activeShift,
+        breakStartTime,
+        status: AttendanceStatus.ON_BREAK,
+      };
+
+      await this.attendanceRepository.save(updatedShift);
+
+      return {
+        message: 'Break started successfully',
+      };
+    } catch (error) {
+      return {
+        message: error?.message,
+      };
+    }
+  }
+
+  private async endBreak(breakDto: CreateBreakDto): Promise<{ message: string }> {
+    try {
+      // Find the shift on break
+      const shiftOnBreak = await this.attendanceRepository.findOne({
+        where: {
+          status: AttendanceStatus.ON_BREAK,
+          owner: breakDto.owner,
+          checkIn: Not(IsNull()),
+          checkOut: IsNull(),
+          breakStartTime: Not(IsNull()),
+        },
+        order: {
+          checkIn: 'DESC',
+        },
+      });
+
+      if (!shiftOnBreak) {
+        throw new NotFoundException('No shift on break found');
+      }
+
+      // Calculate break duration
+      const breakEndTime = new Date();
+      const breakStartTime = new Date(shiftOnBreak.breakStartTime);
+
+      const breakMinutes = differenceInMinutes(breakEndTime, breakStartTime);
+      const breakHours = Math.floor(breakMinutes / 60);
+      const remainingBreakMinutes = breakMinutes % 60;
+
+      const currentBreakDuration = `${breakHours}h ${remainingBreakMinutes}m`;
+
+      // Calculate total break time (including previous breaks)
+      let totalBreakHours = breakHours;
+      let totalBreakMinutes = remainingBreakMinutes;
+
+      if (shiftOnBreak.totalBreakTime) {
+        const previousBreakMinutes = this.parseBreakTime(shiftOnBreak.totalBreakTime);
+        totalBreakMinutes += previousBreakMinutes % 60;
+        totalBreakHours += Math.floor(previousBreakMinutes / 60) + Math.floor(totalBreakMinutes / 60);
+        totalBreakMinutes = totalBreakMinutes % 60;
+      }
+
+      const totalBreakTime = `${totalBreakHours}h ${totalBreakMinutes}m`;
+
+      // Increment break count
+      const breakCount = (shiftOnBreak.breakCount || 0) + 1;
+
+      // Update shift with break end time and status
+      const updatedShift = {
+        ...shiftOnBreak,
+        breakEndTime,
+        totalBreakTime,
+        breakCount,
+        status: AttendanceStatus.PRESENT,
+      };
+
+      await this.attendanceRepository.save(updatedShift);
+
+      return {
+        message: 'Break ended successfully',
+      };
+    } catch (error) {
+      return {
+        message: error?.message,
+      };
+    }
+  }
+
+  private parseBreakTime(breakTime: string): number {
+    try {
+      // Format: "Xh Ym"
+      const hours = parseInt(breakTime.split('h')[0].trim()) || 0;
+      const minutes = parseInt(breakTime.split('h')[1].split('m')[0].trim()) || 0;
+      return hours * 60 + minutes;
+    } catch (error) {
+      return 0;
+    }
+  }
+
+  public async getDailyStats(userId: number, dateStr?: string): Promise<{ message: string, dailyWorkTime: number, dailyBreakTime: number }> {
+    try {
+      // Set date to today if not provided
+      const date = dateStr ? new Date(dateStr) : new Date();
+      const startOfDayDate = new Date(date.setHours(0, 0, 0, 0));
+      const endOfDayDate = new Date(date.setHours(23, 59, 59, 999));
+
+      // Get completed shifts for the day
+      const completedShifts = await this.attendanceRepository.find({
+        where: {
+          owner: { uid: userId },
+          checkIn: MoreThanOrEqual(startOfDayDate),
+          checkOut: LessThanOrEqual(endOfDayDate),
+          status: AttendanceStatus.COMPLETED
+        }
+      });
+
+      // Get active shift (if any)
+      const activeShift = await this.attendanceRepository.findOne({
+        where: {
+          owner: { uid: userId },
+          checkIn: MoreThanOrEqual(startOfDayDate),
+          checkOut: IsNull(),
+        }
+      });
+
+      let totalWorkTimeMs = 0;
+      let totalBreakTimeMs = 0;
+
+      // Calculate time from completed shifts
+      for (const shift of completedShifts) {
+        const checkInTime = new Date(shift.checkIn);
+        const checkOutTime = new Date(shift.checkOut);
+        
+        // Calculate total shift duration in milliseconds
+        const shiftDuration = differenceInMilliseconds(checkOutTime, checkInTime);
+        
+        // Calculate break time if exists
+        if (shift.totalBreakTime) {
+          const breakMinutes = this.parseBreakTime(shift.totalBreakTime);
+          const breakMs = breakMinutes * 60 * 1000;
+          totalBreakTimeMs += breakMs;
+          totalWorkTimeMs += shiftDuration - breakMs;
+        } else {
+          totalWorkTimeMs += shiftDuration;
+        }
+      }
+
+      // Add time from active shift
+      if (activeShift) {
+        const now = new Date();
+        const checkInTime = new Date(activeShift.checkIn);
+        const currentDuration = differenceInMilliseconds(now, checkInTime);
+        
+        // If on break, add the current break time
+        if (activeShift.status === AttendanceStatus.ON_BREAK && activeShift.breakStartTime) {
+          const breakStartTime = new Date(activeShift.breakStartTime);
+          const currentBreakDuration = differenceInMilliseconds(now, breakStartTime);
+          
+          // Add existing breaks
+          let previousBreakMs = 0;
+          if (activeShift.totalBreakTime) {
+            const breakMinutes = this.parseBreakTime(activeShift.totalBreakTime);
+            previousBreakMs = breakMinutes * 60 * 1000;
+          }
+          
+          totalBreakTimeMs += previousBreakMs + currentBreakDuration;
+          totalWorkTimeMs += currentDuration - currentBreakDuration - previousBreakMs;
+        } else {
+          // If actively working, add previous breaks
+          if (activeShift.totalBreakTime) {
+            const breakMinutes = this.parseBreakTime(activeShift.totalBreakTime);
+            const breakMs = breakMinutes * 60 * 1000;
+            totalBreakTimeMs += breakMs;
+            totalWorkTimeMs += currentDuration - breakMs;
+          } else {
+            totalWorkTimeMs += currentDuration;
+          }
+        }
+      }
+
+      return {
+        message: process.env.SUCCESS_MESSAGE || 'Success',
+        dailyWorkTime: totalWorkTimeMs,
+        dailyBreakTime: totalBreakTimeMs
+      };
+    } catch (error) {
+      return {
+        message: error?.message || 'Error retrieving daily stats',
+        dailyWorkTime: 0,
+        dailyBreakTime: 0
+      };
     }
   }
 }

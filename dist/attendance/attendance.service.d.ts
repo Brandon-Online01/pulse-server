@@ -2,6 +2,7 @@ import { Repository } from 'typeorm';
 import { Attendance } from './entities/attendance.entity';
 import { CreateCheckInDto } from './dto/create-attendance-check-in.dto';
 import { CreateCheckOutDto } from './dto/create-attendance-check-out.dto';
+import { CreateBreakDto } from './dto/create-attendance-break.dto';
 import { UserService } from '../user/user.service';
 import { RewardsService } from '../rewards/rewards.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -65,4 +66,15 @@ export declare class AttendanceService {
         };
     }>;
     getCurrentShiftHours(userId: number): Promise<number>;
+    manageBreak(breakDto: CreateBreakDto): Promise<{
+        message: string;
+    }>;
+    private startBreak;
+    private endBreak;
+    private parseBreakTime;
+    getDailyStats(userId: number, dateStr?: string): Promise<{
+        message: string;
+        dailyWorkTime: number;
+        dailyBreakTime: number;
+    }>;
 }

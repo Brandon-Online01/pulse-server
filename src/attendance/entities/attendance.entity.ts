@@ -49,6 +49,12 @@ export class Attendance {
 	@Column({ type: 'timestamp', nullable: true })
 	breakEndTime: Date;
 
+	@Column({ type: 'varchar', nullable: true })
+	totalBreakTime: string;
+
+	@Column({ type: 'int', nullable: true, default: 0 })
+	breakCount: number;
+
 	@Column({ type: 'timestamp', nullable: false, default: () => 'CURRENT_TIMESTAMP' })
 	createdAt: Date;
 

@@ -75,6 +75,14 @@ __decorate([
     __metadata("design:type", Date)
 ], Attendance.prototype, "breakEndTime", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
+    __metadata("design:type", String)
+], Attendance.prototype, "totalBreakTime", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'int', nullable: true, default: 0 }),
+    __metadata("design:type", Number)
+], Attendance.prototype, "breakCount", void 0);
+__decorate([
     (0, typeorm_1.Column)({ type: 'timestamp', nullable: false, default: () => 'CURRENT_TIMESTAMP' }),
     __metadata("design:type", Date)
 ], Attendance.prototype, "createdAt", void 0);

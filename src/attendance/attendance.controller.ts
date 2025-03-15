@@ -10,9 +10,10 @@ import {
 	ApiNotFoundResponse,
 	ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { Controller, Post, Body, Param, Get, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Param, Get, UseGuards, Query } from '@nestjs/common';
 import { CreateCheckInDto } from './dto/create-attendance-check-in.dto';
 import { CreateCheckOutDto } from './dto/create-attendance-check-out.dto';
+import { CreateBreakDto } from './dto/create-attendance-break.dto';
 import { Roles } from '../decorators/role.decorator';
 import { AccessLevel } from '../lib/enums/user.enums';
 import { AuthGuard } from '../guards/auth.guard';
@@ -98,6 +99,43 @@ export class AttendanceController {
 	})
 	checkOut(@Body() createAttendanceDto: CreateCheckOutDto) {
 		return this.attendanceService.checkOut(createAttendanceDto);
+	}
+
+	@Post('break')
+	@Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
+	@ApiOperation({
+		summary: 'Manage break',
+		description: 'Start or end a break during a shift',
+	})
+	@ApiBody({ type: CreateBreakDto })
+	@ApiCreatedResponse({
+		description: 'Break action processed successfully',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', example: 'Break started/ended successfully' },
+			},
+		},
+	})
+	@ApiBadRequestResponse({
+		description: 'Bad Request - Invalid data provided',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', example: 'Error processing break action' },
+			},
+		},
+	})
+	manageBreak(@Body() breakDto: CreateBreakDto) {
+		return this.attendanceService.manageBreak(breakDto);
 	}
 
 	@Get()
@@ -285,5 +323,35 @@ export class AttendanceController {
 	})
 	checkInsByBranch(@Param('ref') ref: string) {
 		return this.attendanceService.checkInsByBranch(ref);
+	}
+
+	@Get('daily-stats/:uid')
+	@Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
+	@ApiOperation({
+		summary: 'Get daily attendance stats',
+		description: 'Retrieves work and break times for a specific user for a day',
+	})
+	@ApiParam({ name: 'uid', description: 'User ID', type: 'number' })
+	@ApiOkResponse({
+		description: 'Daily stats retrieved successfully',
+		schema: {
+			type: 'object',
+			properties: {
+				dailyWorkTime: { type: 'number', example: 28800000 },
+				dailyBreakTime: { type: 'number', example: 3600000 },
+				message: { type: 'string', example: 'Success' },
+			},
+		},
+	})
+	getDailyStats(@Param('uid') uid: number, @Query('date') date: string) {
+		return this.attendanceService.getDailyStats(uid, date);
 	}
 }
