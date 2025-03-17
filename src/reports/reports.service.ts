@@ -1121,6 +1121,14 @@ export class ReportsService {
 			lng: this.configService.get<number>('MAP_DEFAULT_LNG', 28.0473),
 		};
 		
+		// Helper function to generate location image URL
+		const getLocationImageUrl = (address: string, markerType: MapMarkerType, position?: [number, number]): string => {
+			// Use the specified Pexels image for all tasks/locations
+			return "https://images.pexels.com/photos/2464890/pexels-photo-2464890.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2";
+			
+			// TODO: In the future, we'll implement different images for different marker types
+		};
+		
 		// Generate mock data that matches dashboard expected format
 		const mockWorkers: WorkerLocationDto[] = [
 			// South Africa (Johannesburg area) - reduced density
@@ -1139,6 +1147,7 @@ export class ReportsService {
 				},
 				location: {
 					address: "Nelson Mandela Square, Sandton, Johannesburg",
+					imageUrl: getLocationImageUrl("Nelson Mandela Square, Sandton, Johannesburg", MapMarkerType.CHECK_IN, [-26.2041, 28.0473])
 				},
 				schedule: {
 					current: "09:30 AM - 12:45 PM",
@@ -1166,6 +1175,7 @@ export class ReportsService {
 				},
 				location: {
 					address: "O.R. Tambo International Airport, Kempton Park",
+					imageUrl: getLocationImageUrl("O.R. Tambo International Airport, Kempton Park", MapMarkerType.TASK, [-26.2485, 28.13])
 				},
 				schedule: {
 					current: "11:00 AM - 02:00 PM",
@@ -1193,6 +1203,7 @@ export class ReportsService {
 				},
 				location: {
 					address: "Chris Hani Road, Soweto, Johannesburg",
+					imageUrl: getLocationImageUrl("Chris Hani Road, Soweto, Johannesburg", MapMarkerType.JOURNAL, [-26.3354, 27.8888])
 				},
 				schedule: {
 					current: "10:00 AM - 02:00 PM",
@@ -1223,6 +1234,7 @@ export class ReportsService {
 				},
 				location: {
 					address: "V&A Waterfront, Cape Town",
+					imageUrl: getLocationImageUrl("V&A Waterfront, Cape Town", MapMarkerType.LEAD, [-33.9249, 18.4241])
 				},
 				schedule: {
 					current: "10:00 AM - 12:00 PM",
@@ -1250,6 +1262,7 @@ export class ReportsService {
 				},
 				location: {
 					address: "Newlands Rugby Stadium, Cape Town",
+					imageUrl: getLocationImageUrl("Newlands Rugby Stadium, Cape Town", MapMarkerType.TASK, [-33.9791, 18.4651])
 				},
 				schedule: {
 					current: "09:00 AM - 03:00 PM",
@@ -1279,6 +1292,7 @@ export class ReportsService {
 				},
 				location: {
 					address: "Gateway Theatre of Shopping, Umhlanga, Durban",
+					imageUrl: getLocationImageUrl("Gateway Theatre of Shopping, Umhlanga, Durban", MapMarkerType.CHECK_IN, [-29.8587, 31.0218])
 				},
 				schedule: {
 					current: "08:30 AM - 01:30 PM",
@@ -1308,6 +1322,7 @@ export class ReportsService {
 				},
 				location: {
 					address: "Maerua Mall, Windhoek, Namibia",
+					imageUrl: getLocationImageUrl("Maerua Mall, Windhoek, Namibia", MapMarkerType.TASK, [-22.5609, 17.0658])
 				},
 				schedule: {
 					current: "10:00 AM - 04:00 PM",
@@ -1337,6 +1352,7 @@ export class ReportsService {
 				},
 				location: {
 					address: "Airport Junction Mall, Gaborone, Botswana",
+					imageUrl: getLocationImageUrl("Airport Junction Mall, Gaborone, Botswana", MapMarkerType.JOURNAL, [-24.6282, 25.9231])
 				},
 				schedule: {
 					current: "09:30 AM - 02:30 PM",
@@ -1367,6 +1383,7 @@ export class ReportsService {
 				},
 				location: {
 					address: "Sam Levy's Village, Harare, Zimbabwe",
+					imageUrl: getLocationImageUrl("Sam Levy's Village, Harare, Zimbabwe", MapMarkerType.LEAD, [-17.8252, 31.0335])
 				},
 				schedule: {
 					current: "11:00 AM - 01:00 PM",
@@ -1394,8 +1411,9 @@ export class ReportsService {
 					title: "Software deployment",
 					client: "Two Rivers Mall",
 				},
-				location: {
+					location: {
 					address: "Two Rivers Mall, Nairobi, Kenya",
+					imageUrl: getLocationImageUrl("Two Rivers Mall, Nairobi, Kenya", MapMarkerType.TASK, [-1.2921, 36.8219])
 				},
 				schedule: {
 					current: "09:00 AM - 05:00 PM",
@@ -1425,6 +1443,7 @@ export class ReportsService {
 				},
 				location: {
 					address: "Ikeja City Mall, Lagos, Nigeria",
+					imageUrl: getLocationImageUrl("Ikeja City Mall, Lagos, Nigeria", MapMarkerType.SHIFT_START, [6.5244, 3.3792])
 				},
 				schedule: {
 					current: "10:00 AM - 03:00 PM",
@@ -1455,6 +1474,7 @@ export class ReportsService {
 				},
 				location: {
 					address: "Dubai Mall, Dubai, UAE",
+					imageUrl: getLocationImageUrl("Dubai Mall, Dubai, UAE", MapMarkerType.LEAD, [25.2048, 55.2708])
 				},
 				schedule: {
 					current: "11:00 AM - 01:00 PM",
@@ -1482,8 +1502,9 @@ export class ReportsService {
 					title: "European market analysis",
 					client: "Canary Wharf Group",
 				},
-				location: {
+							location: {
 					address: "Canary Wharf, London, UK",
+					imageUrl: getLocationImageUrl("Canary Wharf, London, UK", MapMarkerType.JOURNAL, [51.5074, -0.1278])
 				},
 				schedule: {
 					current: "09:00 AM - 04:00 PM",
@@ -1514,6 +1535,7 @@ export class ReportsService {
 				},
 				location: {
 					address: "Hudson Yards, New York, USA",
+					imageUrl: getLocationImageUrl("Hudson Yards, New York, USA", MapMarkerType.LEAD, [40.7128, -74.0060])
 				},
 				schedule: {
 					current: "10:30 AM - 12:30 PM",
@@ -1543,6 +1565,7 @@ export class ReportsService {
 				},
 				location: {
 					address: "Westfield Sydney, Sydney, Australia",
+					imageUrl: getLocationImageUrl("Westfield Sydney, Sydney, Australia", MapMarkerType.TASK, [-33.8688, 151.2093])
 				},
 				schedule: {
 					current: "09:00 AM - 03:00 PM",
@@ -1573,6 +1596,7 @@ export class ReportsService {
 				},
 				location: {
 					address: "Shopping Cidade Jardim, São Paulo, Brazil",
+					imageUrl: getLocationImageUrl("Shopping Cidade Jardim, São Paulo, Brazil", MapMarkerType.LEAD, [-23.5505, -46.6333])
 				},
 				schedule: {
 					current: "11:00 AM - 02:00 PM",
@@ -1602,6 +1626,7 @@ export class ReportsService {
 				},
 				location: {
 					address: "Galeries Lafayette, Paris, France",
+					imageUrl: getLocationImageUrl("Galeries Lafayette, Paris, France", MapMarkerType.CHECK_IN, [48.8566, 2.3522])
 				},
 				schedule: {
 					current: "09:30 AM - 05:30 PM",
@@ -1638,6 +1663,7 @@ export class ReportsService {
 				},
 				location: {
 					address: "Tokyo Midtown, Minato City, Tokyo",
+					imageUrl: getLocationImageUrl("Tokyo Midtown, Minato City, Tokyo", MapMarkerType.CHECK_IN, [35.6762, 139.6503])
 				},
 				schedule: {
 					current: "08:00 AM - 06:00 PM",
@@ -1872,6 +1898,7 @@ export class ReportsService {
 				canAddTask: true,
 				location: {
 					address: "Current Location",
+					imageUrl: getLocationImageUrl("Current Location", MapMarkerType.CHECK_IN, [defaultCenter.lat, defaultCenter.lng])
 				},
 				schedule: {
 					current: "Now",
@@ -1896,7 +1923,26 @@ export class ReportsService {
 			});
 		}
 
-		// Return the mock data
+		// After all workers have been defined and before returning the response
+		// Add the following code to ensure all workers have imageUrl in their location object
+		for (const worker of mockWorkers) {
+			// Skip if the worker has no location or address
+			if (!worker.location || !worker.location.address) continue;
+			
+			// Skip if the worker already has an imageUrl
+			if (worker.location.imageUrl) continue;
+			
+			// Check if worker has valid position coordinates
+			if (worker.position && Array.isArray(worker.position) && worker.position.length === 2) {
+				// Add imageUrl to the worker's location object
+				worker.location.imageUrl = getLocationImageUrl(worker.location.address, worker.markerType, worker.position);
+			} else {
+				// Fallback to address-based image if no valid position
+				worker.location.imageUrl = getLocationImageUrl(worker.location.address, worker.markerType);
+			}
+		}
+		
+		// Return the mock data with added imageUrls
 		return {
 			workers: mockWorkers,
 			events: mockEvents,

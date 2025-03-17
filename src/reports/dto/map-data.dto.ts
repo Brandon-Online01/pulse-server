@@ -6,11 +6,24 @@ export enum MapMarkerType {
   LEAD = 'lead',
   JOURNAL = 'journal',
   TASK = 'task',
+  CHECK_OUT = 'check-out',
+  SHIFT_END = 'shift-end',
+  BREAK_START = 'break-start',
+  BREAK_END = 'break-end',
+  JOB_START = 'job-start',
+  JOB_END = 'job-end',
+  JOB_PAUSE = 'job-pause',
+  JOB_RESUME = 'job-resume',
+  JOB_CANCEL = 'job-cancel',
+  JOB_COMPLETE = 'job-complete',
 }
 
 export class LocationDto {
   @ApiProperty({ description: 'Physical address of the location (if available)' })
   address: string;
+
+  @ApiProperty({ description: 'Image URL of the location', required: false })
+  imageUrl?: string;
 }
 
 export class TaskDto {
