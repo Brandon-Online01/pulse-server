@@ -1,6 +1,7 @@
 import { PartialType } from '@nestjs/swagger';
 import { CreateJournalDto } from './create-journal.dto';
-import { IsOptional, IsString, IsObject } from 'class-validator';
+import { IsOptional, IsString, IsObject, IsEnum } from 'class-validator';
+import { JournalStatus } from 'src/lib/enums/journal.enums';
 
 export class UpdateJournalDto extends PartialType(CreateJournalDto) {
     @IsOptional()
@@ -22,4 +23,8 @@ export class UpdateJournalDto extends PartialType(CreateJournalDto) {
     @IsOptional()
     @IsObject()
     branch?: { uid: number };
+
+    @IsOptional()
+    @IsEnum(JournalStatus)
+    status?: JournalStatus;
 }

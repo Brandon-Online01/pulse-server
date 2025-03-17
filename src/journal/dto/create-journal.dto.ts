@@ -1,5 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsNotEmpty, IsString, IsObject } from "class-validator";
+import { IsNotEmpty, IsString, IsObject, IsOptional, IsEnum } from "class-validator";
+import { JournalStatus } from "src/lib/enums/journal.enums";
 
 export class CreateJournalDto {
     @IsNotEmpty()
@@ -41,4 +42,14 @@ export class CreateJournalDto {
         example: 'This is a comment',
     })
     comments: string;
+
+    @IsOptional()
+    @IsEnum(JournalStatus)
+    @ApiProperty({
+        description: 'Journal status',
+        enum: JournalStatus,
+        default: JournalStatus.PENDING_REVIEW,
+        example: JournalStatus.PENDING_REVIEW
+    })
+    status?: JournalStatus;
 }

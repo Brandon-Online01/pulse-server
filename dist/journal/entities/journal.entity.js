@@ -14,6 +14,7 @@ const typeorm_1 = require("typeorm");
 const user_entity_1 = require("../../user/entities/user.entity");
 const branch_entity_1 = require("../../branch/entities/branch.entity");
 const organisation_entity_1 = require("../../organisation/entities/organisation.entity");
+const journal_enums_1 = require("../../lib/enums/journal.enums");
 let Journal = class Journal {
 };
 exports.Journal = Journal;
@@ -33,6 +34,14 @@ __decorate([
     (0, typeorm_1.Column)({ nullable: false }),
     __metadata("design:type", String)
 ], Journal.prototype, "comments", void 0);
+__decorate([
+    (0, typeorm_1.Column)({
+        type: 'enum',
+        enum: journal_enums_1.JournalStatus,
+        default: journal_enums_1.JournalStatus.PENDING_REVIEW
+    }),
+    __metadata("design:type", String)
+], Journal.prototype, "status", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'timestamp', nullable: false, default: () => 'CURRENT_TIMESTAMP' }),
     __metadata("design:type", Date)

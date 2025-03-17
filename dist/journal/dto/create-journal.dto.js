@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateJournalDto = void 0;
 const swagger_1 = require("@nestjs/swagger");
 const class_validator_1 = require("class-validator");
+const journal_enums_1 = require("../../lib/enums/journal.enums");
 class CreateJournalDto {
 }
 exports.CreateJournalDto = CreateJournalDto;
@@ -60,4 +61,15 @@ __decorate([
     }),
     __metadata("design:type", String)
 ], CreateJournalDto.prototype, "comments", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(journal_enums_1.JournalStatus),
+    (0, swagger_1.ApiProperty)({
+        description: 'Journal status',
+        enum: journal_enums_1.JournalStatus,
+        default: journal_enums_1.JournalStatus.PENDING_REVIEW,
+        example: journal_enums_1.JournalStatus.PENDING_REVIEW
+    }),
+    __metadata("design:type", String)
+], CreateJournalDto.prototype, "status", void 0);
 //# sourceMappingURL=create-journal.dto.js.map

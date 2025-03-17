@@ -13,6 +13,7 @@ exports.UpdateJournalDto = void 0;
 const swagger_1 = require("@nestjs/swagger");
 const create_journal_dto_1 = require("./create-journal.dto");
 const class_validator_1 = require("class-validator");
+const journal_enums_1 = require("../../lib/enums/journal.enums");
 class UpdateJournalDto extends (0, swagger_1.PartialType)(create_journal_dto_1.CreateJournalDto) {
 }
 exports.UpdateJournalDto = UpdateJournalDto;
@@ -41,4 +42,9 @@ __decorate([
     (0, class_validator_1.IsObject)(),
     __metadata("design:type", Object)
 ], UpdateJournalDto.prototype, "branch", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(journal_enums_1.JournalStatus),
+    __metadata("design:type", String)
+], UpdateJournalDto.prototype, "status", void 0);
 //# sourceMappingURL=update-journal.dto.js.map

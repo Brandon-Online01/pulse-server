@@ -2,6 +2,7 @@ import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
 import { Branch } from '../../branch/entities/branch.entity';
 import { Organisation } from 'src/organisation/entities/organisation.entity';
+import { JournalStatus } from 'src/lib/enums/journal.enums';
 
 @Entity('journal')
 export class Journal {
@@ -16,6 +17,13 @@ export class Journal {
 
     @Column({ nullable: false })
     comments: string;
+
+    @Column({ 
+        type: 'enum', 
+        enum: JournalStatus, 
+        default: JournalStatus.PENDING_REVIEW 
+    })
+    status: JournalStatus;
 
     @Column({ type: 'timestamp', nullable: false, default: () => 'CURRENT_TIMESTAMP' })
     timestamp: Date;

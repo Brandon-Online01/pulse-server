@@ -1,3 +1,4 @@
+import { JournalStatus } from "src/lib/enums/journal.enums";
 export declare class CreateJournalDto {
     clientRef: string;
     fileURL: string;
@@ -8,4 +9,5 @@ export declare class CreateJournalDto {
         uid: number;
     };
     comments: string;
+    status?: JournalStatus;
 }
