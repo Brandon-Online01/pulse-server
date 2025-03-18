@@ -79,6 +79,23 @@ export class BreakDataDto {
   remainingTime: string;
 }
 
+export class ActivityDto {
+  @ApiProperty({ description: 'Number of claims created by the worker' })
+  claims: number;
+
+  @ApiProperty({ description: 'Number of journal entries created by the worker' })
+  journals: number;
+
+  @ApiProperty({ description: 'Number of leads created by the worker' })
+  leads: number;
+
+  @ApiProperty({ description: 'Number of check-ins performed by the worker' })
+  checkIns: number;
+
+  @ApiProperty({ description: 'Number of tasks completed by the worker' })
+  tasks: number;
+}
+
 export class WorkerLocationDto {
   @ApiProperty({ description: 'Unique identifier for the worker' })
   id: string;
@@ -121,6 +138,9 @@ export class WorkerLocationDto {
 
   @ApiProperty({ description: 'Break details if worker is on break', type: BreakDataDto, required: false })
   breakData?: BreakDataDto;
+
+  @ApiProperty({ description: 'Activity statistics for the worker', type: ActivityDto, required: false })
+  activity?: ActivityDto;
 }
 
 export class MapEventDto {

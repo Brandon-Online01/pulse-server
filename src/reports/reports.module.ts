@@ -30,6 +30,7 @@ import { Branch } from '../branch/entities/branch.entity';
 import { CommunicationModule } from '../communication/communication.module';
 import { Tracking } from '../tracking/entities/tracking.entity';
 import { LiveUserReportService } from './live-user-report.service';
+import { MapDataService } from './map-data.service';
 
 @Module({
   imports: [
@@ -64,7 +65,7 @@ import { LiveUserReportService } from './live-user-report.service';
     CommunicationModule
   ],
   controllers: [ReportsController],
-  providers: [ReportsService, LiveUserReportService],
+  providers: [ReportsService, LiveUserReportService, MapDataService],
   exports: [ReportsService, LiveUserReportService]
 })
 export class ReportsModule { }
