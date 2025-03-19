@@ -18,6 +18,18 @@ export enum MapMarkerType {
   JOB_COMPLETE = 'job-complete',
 }
 
+export enum MapEventCategory {
+  TASK = 'task',
+  LEAD = 'lead',
+  CHECK_IN = 'check-in',
+  JOURNAL = 'journal',
+  CLAIM = 'claim',
+  QUOTATION = 'quotation',
+  ATTENDANCE = 'attendance',
+  SYSTEM = 'system',
+  SUMMARY = 'summary'
+}
+
 export class LocationDto {
   @ApiProperty({ description: 'Physical address of the location (if available)' })
   address: string;
@@ -157,6 +169,9 @@ export class MapEventDto {
   @ApiProperty({ description: 'Type of event', enum: MapMarkerType })
   type: MapMarkerType;
 
+  @ApiProperty({ description: 'Category of event for filtering/grouping', enum: MapEventCategory })
+  category: MapEventCategory;
+
   @ApiProperty({ description: 'Human-readable time string' })
   time: string;
 
@@ -165,6 +180,12 @@ export class MapEventDto {
 
   @ApiProperty({ description: 'Title of the event' })
   title: string;
+
+  @ApiProperty({ description: 'Time period (Today, Yesterday, This Week, Earlier)', required: false })
+  timePeriod?: string;
+
+  @ApiProperty({ description: 'Additional event context data', required: false })
+  context?: Record<string, any>;
 }
 
 export class MapConfigDto {

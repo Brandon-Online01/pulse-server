@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, Not, IsNull, EntityManager, In } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
-import { subDays } from 'date-fns';
 
 // Entity imports
 import { Tracking } from '../tracking/entities/tracking.entity';
@@ -22,8 +21,7 @@ import {
 	MapEventDto,
 	MapDataResponseDto,
 	MapMarkerType,
-	LocationDto,
-	TaskDto,
+	MapEventCategory,
 	ScheduleDto,
 	JobStatusDto,
 	BreakDataDto,
@@ -32,10 +30,14 @@ import {
 } from './dto/map-data.dto';
 
 // Enum imports
-import { TaskStatus, TaskPriority, JobStatus } from '../lib/enums/task.enums';
+import { TaskStatus } from '../lib/enums/task.enums';
 
 @Injectable()
 export class MapDataService {
+	// Static properties to track quotations repository availability
+	private static quotationsRepoChecked = false;
+	private static quotationsRepoAvailable = false;
+
 	constructor(
 		private readonly configService: ConfigService,
 		@InjectRepository(User)
@@ -141,7 +143,7 @@ export class MapDataService {
 					address = latestTracking.address || 'Unknown location';
 				} else {
 					// No tracking data, leave position null
-					
+
 					// Try to get org/branch name for the address at least
 					if (user.branch) {
 						address = `${user.branch.name || 'Branch'} location`;
@@ -177,7 +179,9 @@ export class MapDataService {
 					image: user.photoURL || '/placeholder.svg?height=100&width=100',
 					location: {
 						address,
-						imageUrl: latestTracking ? 'https://images.pexels.com/photos/2464890/pexels-photo-2464890.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2' : undefined,
+						imageUrl: latestTracking
+							? 'https://images.pexels.com/photos/2464890/pexels-photo-2464890.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2'
+							: undefined,
 					},
 					schedule: await this.getUserSchedule(user.uid),
 					jobStatus: await this.getUserJobStatus(user.uid),
@@ -234,7 +238,7 @@ export class MapDataService {
 		const results = await Promise.all(workerPromises);
 
 		// Filter out any null results from failed worker data processing
-		return results.filter(worker => worker !== null) as WorkerLocationDto[];
+		return results.filter((worker) => worker !== null) as WorkerLocationDto[];
 	}
 
 	// New helper method to get comprehensive worker activity data
@@ -249,73 +253,83 @@ export class MapDataService {
 					where: {
 						owner: { uid: userId },
 						createdAt: Between(startDate, endDate),
-						isDeleted: false
-					}
+						isDeleted: false,
+					},
 				});
 			} catch (error) {
-				console.warn(`Claims repository access error: ${error.message}. Setting claims count to 0.`);
-				// Continue with claimsCount = 0
+				// Silent fail - use default 0
 			}
 
 			// Count journals
 			const journalsCount = await this.journalRepository.count({
 				where: {
 					owner: { uid: userId },
-					createdAt: Between(startDate, endDate)
-				}
+					createdAt: Between(startDate, endDate),
+				},
 			});
 
 			// Count leads
 			const leadsCount = await this.leadRepository.count({
 				where: {
 					owner: { uid: userId },
-					createdAt: Between(startDate, endDate)
-				}
+					createdAt: Between(startDate, endDate),
+				},
 			});
 
 			// Count check-ins
 			const checkInsCount = await this.checkInRepository.count({
 				where: {
 					owner: { uid: userId },
-					checkInTime: Between(startDate, endDate)
-				}
+					checkInTime: Between(startDate, endDate),
+				},
 			});
 
 			// Count tasks (both created and assigned)
 			const createdTasksCount = await this.taskRepository.count({
 				where: {
 					creator: { uid: userId },
-					updatedAt: Between(startDate, endDate)
-				}
+					updatedAt: Between(startDate, endDate),
+				},
 			});
 
 			// Count assigned tasks (more complex due to JSON array storage)
 			const allTasks = await this.taskRepository.find({
 				where: {
-					updatedAt: Between(startDate, endDate)
-				}
+					updatedAt: Between(startDate, endDate),
+				},
 			});
 
 			// Filter tasks where user is in assignees
-			const assignedTasksCount = allTasks.filter(task => {
+			const assignedTasksCount = allTasks.filter((task) => {
 				if (task.assignees && Array.isArray(task.assignees)) {
-					return task.assignees.some(assignee => assignee.uid === userId);
+					return task.assignees.some((assignee) => assignee.uid === userId);
 				}
 				return false;
 			}).length;
 
 			// Get quotations count if that repository exists
 			let quotationsCount = 0;
-			try {
-				const quotationsRepository = this.entityManager.getRepository('quotations');
-				quotationsCount = await quotationsRepository.count({
-					where: {
-						ownerUid: userId,
-						createdAt: Between(startDate, endDate)
+			// Only try once per server startup to access quotations
+			if (!MapDataService.quotationsRepoChecked || MapDataService.quotationsRepoAvailable) {
+				try {
+					// Use the more reliable approach with getRepository from dataSource
+					const quotationsRepository = this.taskRepository.manager.getRepository('quotations');
+					quotationsCount = await quotationsRepository.count({
+						where: {
+							ownerUid: userId,
+							createdAt: Between(startDate, endDate),
+						},
+					});
+					MapDataService.quotationsRepoAvailable = true;
+				} catch (error) {
+					if (!MapDataService.quotationsRepoChecked) {
+						console.warn(
+							`Quotations repository not available: ${error.message}. This warning will only show once.`,
+						);
 					}
-				});
-			} catch (error) {
-				console.warn(`Quotations repository not available: ${error.message}`);
+					MapDataService.quotationsRepoAvailable = false;
+				}
+				MapDataService.quotationsRepoChecked = true;
 			}
 
 			// Total unique tasks (avoiding double-counting)
@@ -327,7 +341,7 @@ export class MapDataService {
 				leads: leadsCount,
 				checkIns: checkInsCount,
 				tasks: tasksCount,
-				quotations: quotationsCount || 0
+				quotations: quotationsCount || 0,
 			};
 		} catch (error) {
 			console.error(`Error fetching activity stats for user ${userId}:`, error);
@@ -337,22 +351,20 @@ export class MapDataService {
 				leads: 0,
 				checkIns: 0,
 				tasks: 0,
-				quotations: 0
+				quotations: 0,
 			};
 		}
 	}
 
 	// Helper method to get map events from real data
 	private async getMapEvents(orgId: string, branchId: string): Promise<MapEventDto[]> {
+		console.log("Starting to fetch map events...");
 		const events: MapEventDto[] = [];
 
-		// Define date ranges - focus more on today's data
+		// Define date ranges - focus only on today's data
 		const now = new Date();
 		const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
-		const startOfYesterday = new Date(startOfToday);
-		startOfYesterday.setDate(startOfYesterday.getDate() - 1);
-		const startOfPeriod = new Date(startOfToday);
-		startOfPeriod.setDate(startOfPeriod.getDate() - 7); // Look back 7 days for better activity coverage
+		const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
 
 		// Define query conditions
 		const orgCondition = orgId ? { organisation: { ref: orgId } } : {};
@@ -369,6 +381,13 @@ export class MapDataService {
 				relations: ['organisation', 'branch'],
 			});
 
+			if (users.length === 0) {
+				console.warn("No users found for map events");
+				return [];
+			}
+
+			console.log(`Found ${users.length} users for map events`);
+			
 			// Get all users' IDs for easy querying
 			const userIds = users.map(user => user.uid);
 			
@@ -378,350 +397,208 @@ export class MapDataService {
 				userNameMap.set(user.uid, `${user.name || ''} ${user.surname || ''}`.trim());
 			}
 
-			// 1. TRACKING DATA - Get latest tracking data for all users
-			const trackings = await this.trackingRepository.find({
-				where: {
-					owner: { uid: In(userIds) },
-					createdAt: Between(startOfToday, now),
-				},
-				relations: ['owner'],
-				order: {
-					createdAt: 'DESC',
-				},
-			});
-			
-			// Process tracking data for location events
-			for (const tracking of trackings) {
-				if (!tracking.owner) continue;
-				
-				const userName = userNameMap.get(tracking.owner.uid) || 'Unknown user';
-				const address = tracking.address || 'Unknown location';
-				
-				events.push({
-					id: `tracking-${tracking.owner.uid}-${tracking.uid}`,
-					user: userName,
-					type: MapMarkerType.CHECK_IN,
-					time: this.formatEventTime(tracking.createdAt),
-					location: address,
-					title: `Tracked at ${address}`,
-				});
-			}
-
-			// 2. TASKS - Get all tasks created or updated today
-			const tasks = await this.taskRepository.find({
-				where: [
-					{
-						assignees: Not(IsNull()),
-						createdAt: Between(startOfToday, now),
-					},
-					{
-						assignees: Not(IsNull()),
-						updatedAt: Between(startOfToday, now),
-					},
-					{
-						assignees: Not(IsNull()),
-						completionDate: Between(startOfToday, now),
-					},
-					{
-						assignees: Not(IsNull()),
-						status: TaskStatus.IN_PROGRESS,
-					}
-				],
-				relations: ['creator', 'clients'],
-				order: {
-					updatedAt: 'DESC',
-				},
-			});
-			
-			// Process tasks events
-			for (const task of tasks) {
-				if (!task.assignees || task.assignees.length === 0) continue;
-				
-				const userId = task.assignees[0]?.uid;
-				const userName = userNameMap.get(userId) || 'Unknown user';
-				
-				// Find client for this task
-				let clientName = 'No client';
-				if (task.clients && Array.isArray(task.clients) && task.clients.length > 0) {
-					try {
-						const clientUid = task.clients[0].uid;
-						const client = await this.clientRepository.findOne({
-							where: { uid: clientUid },
-						});
-						if (client) {
-							clientName = client.name;
-						}
-					} catch (error) {
-						console.error(`Error fetching client for task ${task.uid}:`, error);
-					}
-				}
-				
-				// Generate task event
-				let eventTitle = '';
-				let eventType = MapMarkerType.TASK;
-				
-				if (task.completionDate && task.completionDate >= startOfToday) {
-					// Task was completed today
-					eventTitle = `Completed task: ${task.title}`;
-					eventType = MapMarkerType.JOB_COMPLETE;
-				} else if (task.createdAt >= startOfToday) {
-					// Task was created today
-					eventTitle = `New task created: ${task.title}`;
-				} else if (task.status === TaskStatus.IN_PROGRESS) {
-					// Task is in progress
-					eventTitle = `Working on: ${task.title} (Progress: ${task.progress || 0}%)`;
-				} else {
-					// Task was updated today
-					eventTitle = `Updated task: ${task.title} (Status: ${task.status})`;
-				}
-				
-				events.push({
-					id: `task-${task.uid}`,
-					user: userName,
-					type: eventType,
-					time: this.formatEventTime(task.updatedAt || task.createdAt),
-					location: clientName,
-					title: eventTitle,
-				});
-			}
-
-			// 3. CHECK-INS - Get all check-ins from today
-			const checkIns = await this.checkInRepository.find({
-				where: {
-					owner: { uid: In(userIds) },
-					checkInTime: Between(startOfToday, now),
-				},
-				relations: ['owner', 'client'],
-				order: {
-					checkInTime: 'DESC',
-				},
-			});
-
-			for (const checkIn of checkIns) {
-				if (!checkIn.owner) continue;
-
-				const userName = userNameMap.get(checkIn.owner.uid) || 'Unknown user';
-				const locationText = checkIn.client 
-					? `${checkIn.client.name}${checkIn.checkInLocation ? ` (${checkIn.checkInLocation})` : ''}` 
-					: checkIn.checkInLocation || 'Unknown location';
-
-				// Add check-in event
-				events.push({
-					id: `checkin-${checkIn.uid}`,
-					user: userName,
-					type: MapMarkerType.CHECK_IN,
-					time: this.formatEventTime(new Date(checkIn.checkInTime)),
-					location: locationText,
-					title: checkIn.client 
-						? `Visit to ${checkIn.client.name}${(checkIn as any).purpose ? ` - ${(checkIn as any).purpose}` : ''}` 
-						: 'Client check-in',
-				});
-
-				// Add check-out event if available
-				if (checkIn.checkOutTime) {
-					const durationMinutes = Math.round((new Date(checkIn.checkOutTime).getTime() - new Date(checkIn.checkInTime).getTime()) / (1000 * 60));
-					const hours = Math.floor(durationMinutes / 60);
-					const minutes = durationMinutes % 60;
-					const durationText = hours > 0 
-						? `${hours}h ${minutes}m` 
-						: `${minutes}m`;
-
-					events.push({
-						id: `checkout-${checkIn.uid}`,
-						user: userName,
-						type: MapMarkerType.CHECK_OUT,
-						time: this.formatEventTime(new Date(checkIn.checkOutTime)),
-						location: checkIn.checkOutLocation || locationText,
-						title: checkIn.client 
-							? `Completed visit to ${checkIn.client.name} (Duration: ${durationText})` 
-							: `Client check-out (Duration: ${durationText})`,
-					});
-				}
-			}
-
-			// 4. LEADS - Get all leads created or updated today
-			const leads = await this.leadRepository.find({
-				where: [
-					{
-						owner: { uid: In(userIds) },
-						createdAt: Between(startOfToday, now),
-					},
-					{
-						owner: { uid: In(userIds) },
-						updatedAt: Between(startOfToday, now),
-					}
-				],
-				relations: ['owner', 'client'],
-				order: {
-					updatedAt: 'DESC',
-				},
-			});
-			
-			// Process leads events
-			for (const lead of leads) {
-				if (!lead.owner) continue;
-				
-				const userName = userNameMap.get(lead.owner.uid) || 'Unknown user';
-				let locationText = 'Unknown location';
-				
-				if (lead.client) {
-					locationText = lead.client.name;
-				} else if (lead.name) {
-					locationText = lead.name;
-				}
-				
-				// Determine if lead was created or updated today
-				let eventTitle = '';
-				if (lead.createdAt >= startOfToday) {
-					eventTitle = `New lead created: ${lead.name || 'Untitled'}`;
-				} else {
-					eventTitle = `Updated lead: ${lead.name || 'Untitled'} (Status: ${lead.status})`;
-				}
-				
-				events.push({
-					id: `lead-${lead.uid}`,
-					user: userName,
-					type: MapMarkerType.LEAD,
-					time: this.formatEventTime(lead.updatedAt || lead.createdAt),
-					location: locationText,
-					title: eventTitle,
-				});
-			}
-
-			// 5. JOURNALS - Get all journals created today
-			const journals = await this.journalRepository.find({
-				where: {
-					owner: { uid: In(userIds) },
-					createdAt: Between(startOfToday, now),
-				},
-				relations: ['owner'],
-				order: {
-					createdAt: 'DESC',
-				},
-			});
-			
-			// Process journal events
-			for (const journal of journals) {
-				if (!journal.owner) continue;
-				
-				const userName = userNameMap.get(journal.owner.uid) || 'Unknown user';
-				
-				events.push({
-					id: `journal-${journal.uid}`,
-					user: userName,
-					type: MapMarkerType.JOURNAL,
-					time: this.formatEventTime(journal.createdAt),
-					location: 'Office',
-					title: `Journal entry: ${journal.comments?.substring(0, 30) + '...' || 'No content'}`,
-				});
-			}
-
-			// 6. CLAIMS - Get all claims created today using entity manager
+			// 1. Process TASKS - only today's tasks
 			try {
-				// Use the proper entity name 'claim' (singular) instead of 'claims'
-				const claimsRepository = this.entityManager.getRepository('claim');
-				const claims = await claimsRepository.find({
-					where: {
-						owner: { uid: In(userIds) },
-						createdAt: Between(startOfToday, now),
-						isDeleted: false
-					},
-					relations: ['owner'],
+				const tasks = await this.taskRepository.find({
+					where: [
+						// Tasks created today
+						{
+							assignees: Not(IsNull()),
+							createdAt: Between(startOfToday, endOfToday),
+						},
+						// Tasks updated today
+						{
+							assignees: Not(IsNull()),
+							updatedAt: Between(startOfToday, endOfToday),
+						},
+						// Tasks completed today
+						{
+							assignees: Not(IsNull()),
+							completionDate: Between(startOfToday, endOfToday),
+						}
+					],
+					relations: ['creator'],
 					order: {
-						createdAt: 'DESC',
-					},
+						updatedAt: 'DESC',
+					}
 				});
 				
-				// Process claims events
-				for (const claim of claims) {
-					if (!claim.owner) continue;
+				console.log(`Found ${tasks.length} task records`);
+				
+				// Process tasks events
+				for (const task of tasks) {
+					if (!task.assignees || task.assignees.length === 0) continue;
 					
-					const userName = userNameMap.get(claim.owner.uid) || 'Unknown user';
+					const userId = task.assignees[0]?.uid;
+					if (!userNameMap.has(userId)) continue;
 					
-					events.push({
-						id: `claim-${claim.uid}`,
+					const userName = userNameMap.get(userId) || 'Unknown user';
+					
+					// Find client for this task
+					let clientName = 'No client';
+					if (task.clients && Array.isArray(task.clients) && task.clients.length > 0) {
+						try {
+							const clientUid = task.clients[0].uid;
+							if (clientUid) {
+								const client = await this.clientRepository.findOne({
+									where: { uid: clientUid },
+								});
+								if (client) {
+									clientName = client.name;
+								}
+							}
+						} catch (error) {
+							console.error(`Error fetching client for task ${task.uid}:`, error);
+						}
+					}
+					
+					// Create event object
+					const eventObj = {
+						id: `task-${task.uid}`,
 						user: userName,
-						type: MapMarkerType.TASK,  // Using task marker type since there's no specific claim type
-						time: this.formatEventTime(claim.createdAt),
-						location: 'Office', // Using default location since location field may not exist
-						title: `New claim: ${claim.comments?.substring(0, 30) || `Amount: ${claim.amount}`}`,
+						type: MapMarkerType.TASK,
+						category: MapEventCategory.TASK,
+						time: this.formatEventTime(task.updatedAt || task.createdAt),
+						timePeriod: 'Today',
+						location: clientName,
+						title: task.status === TaskStatus.COMPLETED 
+							? `Completed task: ${task.title}`
+							: `New task created: ${task.title}`,
+						context: {
+							taskId: task.uid,
+							taskStatus: task.status,
+							progress: task.progress || 0,
+							createdAt: task.createdAt,
+							dateKey: this.formatDateShort(task.createdAt)
+						}
+					};
+					
+					events.push(eventObj);
+				}
+				
+				// Add summary if needed
+				if (tasks.length >= 3) {
+					const users = new Set(tasks.map(t => t.assignees[0]?.uid).filter(Boolean));
+					events.push({
+						id: `task-summary-${this.formatDateShort(now)}`,
+						user: 'Multiple Users',
+						type: MapMarkerType.TASK,
+						category: MapEventCategory.SUMMARY,
+						time: this.formatEventTime(now),
+						timePeriod: 'Today',
+						location: 'Various Locations',
+						title: `${tasks.length} tasks created/updated (${users.size} users)`
 					});
 				}
 			} catch (error) {
-				console.warn(`Error fetching claims data: ${error.message}. Skipping claims in events.`);
-				// Continue execution without claims data
+				console.error('Error processing task data:', error.message);
 			}
 
-			// 7. ATTENDANCE - Get attendance records for today
-			const attendances = await this.attendanceRepository.find({
-				where: {
-					owner: { uid: In(userIds) },
-					checkIn: Between(startOfToday, now),
-				},
-				relations: ['owner'],
-				order: {
-					checkIn: 'DESC',
-				},
-			});
-
-			for (const attendance of attendances) {
-				if (!attendance.owner) continue;
-
-				const userName = userNameMap.get(attendance.owner.uid) || 'Unknown user';
-
-				// Add shift start
-				events.push({
-					id: `shift-start-${attendance.uid}`,
-					user: userName,
-					type: MapMarkerType.SHIFT_START,
-					time: this.formatEventTime(attendance.checkIn),
-					location: attendance.checkInNotes || 'Office',
-					title: `Started shift${attendance.status ? ` (${attendance.status})` : ''}`,
+			// 2. Process LEADS - only today's leads
+			try {
+				const leads = await this.leadRepository.find({
+					where: {
+						owner: { uid: In(userIds) },
+						createdAt: Between(startOfToday, endOfToday)
+					},
+					relations: ['owner', 'client'],
+					order: { createdAt: 'DESC' }
 				});
-
-				// Add shift end if available
-				if (attendance.checkOut) {
-					const durationMinutes = Math.round((attendance.checkOut.getTime() - attendance.checkIn.getTime()) / (1000 * 60));
-					const hours = Math.floor(durationMinutes / 60);
-					const minutes = durationMinutes % 60;
-					const durationText = hours > 0 
-						? `${hours}h ${minutes}m` 
-						: `${minutes}m`;
-						
+				
+				console.log(`Found ${leads.length} lead records`);
+				
+				for (const lead of leads) {
+					if (!lead.owner) continue;
+					
+					const userName = userNameMap.get(lead.owner.uid) || 'Unknown user';
+					const clientName = lead.client ? lead.client.name : 'No client';
+					
 					events.push({
-						id: `shift-end-${attendance.uid}`,
+						id: `lead-${lead.uid}`,
 						user: userName,
-						type: MapMarkerType.SHIFT_END,
-						time: this.formatEventTime(attendance.checkOut),
-						location: attendance.checkOutNotes || 'Office',
-						title: `Ended shift${durationText ? ` (Duration: ${durationText})` : ''}`,
+						type: MapMarkerType.LEAD,
+						category: MapEventCategory.LEAD,
+						time: this.formatEventTime(lead.createdAt),
+						timePeriod: 'Today',
+						location: clientName,
+						title: `New lead created: ${(lead as any).title || 'Untitled lead'}`
 					});
 				}
+			} catch (error) {
+				console.error('Error processing lead data:', error.message);
+			}
 
-				// Add break events if available
-				if (attendance.breakStartTime) {
-					events.push({
-						id: `break-start-${attendance.uid}`,
-						user: userName,
-						type: MapMarkerType.BREAK_START,
-						time: this.formatEventTime(attendance.breakStartTime),
-						location: attendance.breakNotes || 'Office',
-						title: `Started break`,
-					});
+			// 3. Process JOURNALS - only today's journals
+			try {
+				const journals = await this.journalRepository.find({
+					where: {
+						owner: { uid: In(userIds) },
+						createdAt: Between(startOfToday, endOfToday)
+					},
+					relations: ['owner'],
+					order: { createdAt: 'DESC' }
+				});
+				
+				console.log(`Found ${journals.length} journal records`);
+				
+				for (const journal of journals) {
+					if (!journal.owner) continue;
 					
-					if (attendance.breakEndTime) {
-						const breakDurationMinutes = Math.round((attendance.breakEndTime.getTime() - attendance.breakStartTime.getTime()) / (1000 * 60));
-						
-						events.push({
-							id: `break-end-${attendance.uid}`,
+					const userName = userNameMap.get(journal.owner.uid) || 'Unknown user';
+					
+					events.push({
+						id: `journal-${journal.uid}`,
+						user: userName,
+						type: MapMarkerType.JOURNAL,
+						category: MapEventCategory.JOURNAL,
+						time: this.formatEventTime(journal.createdAt),
+						timePeriod: 'Today',
+						location: (journal as any).location || 'Unknown location',
+						title: `New journal entry: ${(journal as any).title || 'Untitled entry'}`
+					});
+				}
+			} catch (error) {
+				console.error('Error processing journal data:', error.message);
+			}
+
+			// 4. Process CHECK-INS - only today's check-ins
+			try {
+				const checkIns = await this.checkInRepository.find({
+					where: {
+						owner: { uid: In(userIds) },
+						checkInTime: Between(startOfToday, endOfToday)
+					},
+					relations: ['owner'],
+					order: { checkInTime: 'DESC' }
+				});
+				
+				console.log(`Found ${checkIns.length} check-in records`);
+				
+				for (const checkIn of checkIns) {
+					if (!checkIn.owner) continue;
+					
+					const userName = userNameMap.get(checkIn.owner.uid) || 'Unknown user';
+					
+					try {
+						const eventObj = {
+							id: `checkin-${checkIn.uid}`,
 							user: userName,
-							type: MapMarkerType.BREAK_END,
-							time: this.formatEventTime(attendance.breakEndTime),
-							location: attendance.breakNotes || 'Office',
-							title: `Ended break (Duration: ${breakDurationMinutes}m)`,
-						});
+							type: MapMarkerType.CHECK_IN,
+							category: MapEventCategory.CHECK_IN,
+							time: this.formatEventTime(checkIn.checkInTime),
+							timePeriod: 'Today',
+							location: checkIn.checkInLocation || 'Unknown location',
+							title: `Check-in at ${this.formatEventTime(checkIn.checkInTime)}`
+						};
+						
+						events.push(eventObj);
+					} catch (error) {
+						console.error(`Error processing check-in ${checkIn.uid}:`, error.message);
+						continue;
 					}
 				}
+			} catch (error) {
+				console.error('Error processing check-in data:', error.message);
 			}
 
 			// Sort events by time, most recent first
@@ -731,10 +608,11 @@ export class MapDataService {
 				return timeB.getTime() - timeA.getTime();
 			});
 
+			console.log(`Returning ${events.length} map events in total`);
 			return events;
 		} catch (error) {
 			console.error('Error fetching events data:', error);
-			return []; // Return empty array on error
+			return events;
 		}
 	}
 
@@ -742,31 +620,33 @@ export class MapDataService {
 	private getMapConfig(): MapConfigDto {
 		const defaultLat = this.configService.get<number>('MAP_DEFAULT_LAT', -26.2041);
 		const defaultLng = this.configService.get<number>('MAP_DEFAULT_LNG', 28.0473);
-		
+
 		// Ensure we have numbers, not strings
 		return {
 			defaultCenter: {
 				lat: typeof defaultLat === 'string' ? parseFloat(defaultLat) : defaultLat,
 				lng: typeof defaultLng === 'string' ? parseFloat(defaultLng) : defaultLng,
 			},
-			orgRegions: this.configService.get<any[]>('MAP_ORG_REGIONS', [
-				{
-					name: 'Africa Operations',
-					center: { lat: -8.7832, lng: 34.5085 },
-					zoom: 4,
-				},
-				{
-					name: 'Global Operations',
-					center: { lat: 20.5937, lng: 78.9629 },
-					zoom: 2,
-				},
-			]).map(region => ({
-				...region,
-				center: {
-					lat: typeof region.center.lat === 'string' ? parseFloat(region.center.lat) : region.center.lat,
-					lng: typeof region.center.lng === 'string' ? parseFloat(region.center.lng) : region.center.lng
-				}
-			})),
+			orgRegions: this.configService
+				.get<any[]>('MAP_ORG_REGIONS', [
+					{
+						name: 'Africa Operations',
+						center: { lat: -8.7832, lng: 34.5085 },
+						zoom: 4,
+					},
+					{
+						name: 'Global Operations',
+						center: { lat: 20.5937, lng: 78.9629 },
+						zoom: 2,
+					},
+				])
+				.map((region) => ({
+					...region,
+					center: {
+						lat: typeof region.center.lat === 'string' ? parseFloat(region.center.lat) : region.center.lat,
+						lng: typeof region.center.lng === 'string' ? parseFloat(region.center.lng) : region.center.lng,
+					},
+				})),
 		};
 	}
 
@@ -1082,76 +962,40 @@ export class MapDataService {
 
 	// Helper method to format event time
 	private formatEventTime(date: Date): string {
-		const today = new Date();
-		today.setHours(0, 0, 0, 0);
-
-		const yesterday = new Date(today);
-		yesterday.setDate(yesterday.getDate() - 1);
-
-		if (date >= today) {
-			return `Today, ${date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
-		} else if (date >= yesterday) {
-			return `Yesterday, ${date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
-		} else {
-			return (
-				date.toLocaleDateString('en-US', {
-					month: 'short',
-					day: 'numeric',
-				}) +
-				', ' +
-				date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
-			);
+		try {
+			return date.toLocaleTimeString('en-US', {
+				hour: 'numeric',
+				minute: '2-digit',
+				hour12: true
+			});
+		} catch (error) {
+			return new Date().toLocaleTimeString('en-US', {
+				hour: 'numeric',
+				minute: '2-digit',
+				hour12: true
+			});
 		}
 	}
 
 	// Helper method to parse event time string back to Date
-	private parseEventTime(timeString: string): Date {
-		const now = new Date();
-
-		if (timeString.startsWith('Today')) {
-			const timePart = timeString.split(', ')[1];
-			const [timePortion, ampm] = timePart.split(' ');
-			const [hours, minutes] = timePortion.split(':');
-			const isPM = ampm === 'PM';
-
-			const date = new Date();
-			date.setHours(
-				isPM && parseInt(hours) !== 12
-					? parseInt(hours) + 12
-					: !isPM && parseInt(hours) === 12
-					? 0
-					: parseInt(hours),
-				parseInt(minutes),
-				0,
-				0,
-			);
-			return date;
-		} else if (timeString.startsWith('Yesterday')) {
-			const timePart = timeString.split(', ')[1];
-			const [timePortion, ampm] = timePart.split(' ');
-			const [hours, minutes] = timePortion.split(':');
-			const isPM = ampm === 'PM';
-
-			const date = new Date();
-			date.setDate(date.getDate() - 1);
-			date.setHours(
-				isPM && parseInt(hours) !== 12
-					? parseInt(hours) + 12
-					: !isPM && parseInt(hours) === 12
-					? 0
-					: parseInt(hours),
-				parseInt(minutes),
-				0,
-				0,
-			);
-			return date;
-		} else {
-			// For other dates, try to parse it
-			try {
-				return new Date(timeString);
-			} catch (e) {
-				return now; // Fallback to current time if parsing fails
+	private parseEventTime(timeStr: string): Date {
+		try {
+			const [time, period] = timeStr.split(' ');
+			const [hours, minutes] = time.split(':').map(Number);
+			const now = new Date();
+			const result = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+			
+			let hour = hours;
+			if (period === 'PM' && hours !== 12) {
+				hour += 12;
+			} else if (period === 'AM' && hours === 12) {
+				hour = 0;
 			}
+			
+			result.setHours(hour, minutes);
+			return result;
+		} catch (error) {
+			return new Date();
 		}
 	}
 
@@ -1161,7 +1005,7 @@ export class MapDataService {
 			style: 'currency',
 			currency: 'ZAR',
 			minimumFractionDigits: 0,
-			maximumFractionDigits: 0
+			maximumFractionDigits: 0,
 		}).format(value);
 	}
 }

@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, In, Not, IsNull } from 'typeorm';
+import { Repository, Between, In } from 'typeorm';
 import { CheckIn } from '../check-ins/entities/check-in.entity';
 import { Task } from '../tasks/entities/task.entity';
 import { Claim } from '../claims/entities/claim.entity';
@@ -41,9 +41,7 @@ import { LiveUserReportService } from './live-user-report.service';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { Inject } from '@nestjs/common';
-import { MapDataResponseDto, WorkerLocationDto, MapEventDto, MapMarkerType, LocationDto } from './dto/map-data.dto';
-import { subDays } from 'date-fns';
-import { AttendanceStatus } from '../lib/enums/attendance.enums';
+import { MapDataResponseDto, MapMarkerType } from './dto/map-data.dto';
 import { MapDataService } from './map-data.service';
 
 @Injectable()
