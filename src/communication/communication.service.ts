@@ -11,8 +11,8 @@ import { User } from '../user/entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CommunicationLog } from './entities/communication-log.entity';
-import { LicenseCreated, LicenseUpdated, LicenseLimitReached, LicenseRenewed, LicenseSuspended, LicenseActivated, NewQuotationClient, NewQuotationInternal, NewQuotationReseller, Signup, Verification, PasswordReset, Invoice, PasswordChanged, DailyReport, QuotationStatusUpdate, NewUserAdminNotification } from '../lib/templates/emails';
-import { DailyReportData, InvoiceData, PasswordChangedData, PasswordResetData, VerificationEmailData, SignupEmailData, EmailTemplateData, LicenseEmailData, LicenseLimitData, QuotationInternalData, QuotationResellerData, QuotationData, NewUserAdminNotificationData } from '../lib/types/email-templates.types';
+import { LicenseCreated, LicenseUpdated, LicenseLimitReached, LicenseRenewed, LicenseSuspended, LicenseActivated, NewQuotationClient, NewQuotationInternal, NewQuotationReseller, Signup, Verification, PasswordReset, Invoice, PasswordChanged, DailyReport, QuotationStatusUpdate, NewUserAdminNotification, TaskReminderAssignee, TaskReminderCreator } from '../lib/templates/emails';
+import { DailyReportData, InvoiceData, PasswordChangedData, PasswordResetData, VerificationEmailData, SignupEmailData, EmailTemplateData, LicenseEmailData, LicenseLimitData, QuotationInternalData, QuotationResellerData, QuotationData, NewUserAdminNotificationData, TaskReminderData } from '../lib/types/email-templates.types';
 import { NewTask, TaskUpdated } from '../lib/templates/emails';
 import { TaskEmailData } from '../lib/types/email-templates.types';
 
@@ -189,6 +189,16 @@ export class CommunicationService {
 				return {
 					subject: 'New User Registration Alert',
 					body: NewUserAdminNotification(data as NewUserAdminNotificationData),
+				};
+			case EmailType.TASK_REMINDER_ASSIGNEE:
+				return {
+					subject: 'Task Deadline Approaching',
+					body: TaskReminderAssignee(data as TaskReminderData),
+				};
+			case EmailType.TASK_REMINDER_CREATOR:
+				return {
+					subject: 'Task Deadline Alert',
+					body: TaskReminderCreator(data as TaskReminderData),
 				};
 			default:
 				throw new NotFoundException(`Unknown email template type: ${type}`);

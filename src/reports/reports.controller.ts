@@ -38,20 +38,41 @@ export class ReportsController {
 		description: 'Map data retrieved successfully',
 		type: MapDataResponseDto,
 	})
+	@ApiResponse({
+		status: 404,
+		description: 'Organisation or branch not found',
+	})
+	@ApiResponse({
+		status: 500,
+		description: 'Error retrieving map data',
+	})
 	async getMapData(@Request() req: any): Promise<MapDataResponseDto> {
-		// Extract organization and branch info from the token
-		const {
-			organisationRef,
-			branch: { uid },
-			uid: userUid,
-		} = req.user || {};
+		try {
+			// Extract organization and branch info from the token
+			const {
+				organisationRef,
+				branch: { uid: branchUid },
+				uid: userUid,
+			} = req.user || {};
 
-		console.log(organisationRef, uid, userUid);
+			console.log('Map data requested for:', { organisationRef, branchUid, userUid });
 
-		if (!organisationRef) {
-			throw new NotFoundException('Organisation ID not found in request');
+			if (!organisationRef) {
+				throw new NotFoundException('Organisation ID not found in request');
+			}
+
+			return this.reportsService.getMapData(organisationRef, branchUid, userUid);
+		} catch (error) {
+			// Log the detailed error for debugging
+			console.error('Error in getMapData controller:', error);
+			
+			// Re-throw NotFoundException as-is so it returns a 404 status
+			if (error instanceof NotFoundException) {
+				throw error;
+			}
+			
+			// For other errors, throw a more generic error message
+			throw new Error(`Failed to retrieve map data: ${error.message}`);
 		}
-
-		return this.reportsService.getMapData(organisationRef, uid, userUid);
 	}
 }

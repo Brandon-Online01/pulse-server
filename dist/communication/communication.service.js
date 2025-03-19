@@ -183,6 +183,16 @@ let CommunicationService = class CommunicationService {
                     subject: 'New User Registration Alert',
                     body: (0, emails_1.NewUserAdminNotification)(data),
                 };
+            case email_enums_1.EmailType.TASK_REMINDER_ASSIGNEE:
+                return {
+                    subject: 'Task Deadline Approaching',
+                    body: (0, emails_1.TaskReminderAssignee)(data),
+                };
+            case email_enums_1.EmailType.TASK_REMINDER_CREATOR:
+                return {
+                    subject: 'Task Deadline Alert',
+                    body: (0, emails_1.TaskReminderCreator)(data),
+                };
             default:
                 throw new common_1.NotFoundException(`Unknown email template type: ${type}`);
         }

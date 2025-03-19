@@ -94,6 +94,9 @@ export class ActivityDto {
 
   @ApiProperty({ description: 'Number of tasks completed by the worker' })
   tasks: number;
+  
+  @ApiProperty({ description: 'Number of quotations created by the worker', required: false })
+  quotations?: number;
 }
 
 export class WorkerLocationDto {
@@ -108,9 +111,10 @@ export class WorkerLocationDto {
     type: 'array',
     items: {
       type: 'number'
-    }
+    },
+    required: false
   })
-  position: [number, number];
+  position?: [number, number];
 
   @ApiProperty({ description: 'Type of marker to display for this worker', enum: MapMarkerType })
   markerType: MapMarkerType;

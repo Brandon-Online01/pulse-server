@@ -1116,26 +1116,11 @@ export class ReportsService {
 	 */
 	async getMapData(orgId: string, branchId: string, userId: string): Promise<MapDataResponseDto> {
 		try {
-			// Check if we should use real or mock data
-			const useRealData = this.configService.get<boolean>('USE_REAL_MAP_DATA', true);
-
-			if (useRealData) {
-				try {
-					// Try to get real data from the new service
-					return await this.mapDataService.getRealMapData(orgId, branchId, userId);
-				} catch (error) {
-					// Fall back to mock data if real data fails
-					return this.mapDataService.getMockMapData();
-				}
-			} else {
-				// Use mock data for testing
-				const mockData = this.mapDataService.getMockMapData();
-				return mockData;
-			}
+			// Always use real data, no fallback to mock data
+			return await this.mapDataService.getRealMapData(orgId, branchId, userId);
 		} catch (error) {
 			console.error('Error in getMapData:', error);
-			// Always provide mock data as a fallback to prevent dashboard errors
-			return this.mapDataService.getMockMapData();
+			throw error; // Propagate the error instead of falling back to mock data
 		}
 	}
 
@@ -1143,8 +1128,8 @@ export class ReportsService {
 	 * Helper to format time range for schedules
 	 */
 	private formatTimeRange(date: Date, hours: number): string {
-		const startTime = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-		const endTime = new Date(date.getTime() + hours * 60 * 60 * 1000).toLocaleTimeString('en-US', {
+		const startTime = date.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' });
+		const endTime = new Date(date.getTime() + hours * 60 * 60 * 1000).toLocaleTimeString('en-ZA', {
 			hour: '2-digit',
 			minute: '2-digit',
 		});
@@ -1162,17 +1147,17 @@ export class ReportsService {
 		yesterday.setDate(yesterday.getDate() - 1);
 
 		if (date >= today) {
-			return `Today, ${date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
+			return `Today, ${date.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' })}`;
 		} else if (date >= yesterday) {
-			return `Yesterday, ${date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
+			return `Yesterday, ${date.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' })}`;
 		} else {
 			return (
-				date.toLocaleDateString('en-US', {
+				date.toLocaleDateString('en-ZA', {
 					month: 'short',
 					day: 'numeric',
 				}) +
 				', ' +
-				date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+				date.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' })
 			);
 		}
 	}
