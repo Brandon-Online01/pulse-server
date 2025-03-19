@@ -12,6 +12,12 @@ import { User } from '../user/entities/user.entity';
 import { Cache } from 'cache-manager';
 import { ConfigService } from '@nestjs/config';
 import { CommunicationService } from '../communication/communication.service';
+import { TaskFlag } from './entities/task-flag.entity';
+import { TaskFlagItem } from './entities/task-flag-item.entity';
+import { CreateTaskFlagDto } from './dto/create-task-flag.dto';
+import { UpdateTaskFlagDto } from './dto/update-task-flag.dto';
+import { UpdateTaskFlagItemDto } from './dto/update-task-flag-item.dto';
+import { AddCommentDto } from './dto/add-comment.dto';
 export declare class TasksService {
     private taskRepository;
     private subtaskRepository;
@@ -21,11 +27,17 @@ export declare class TasksService {
     private cacheManager;
     private readonly configService;
     private readonly communicationService;
+    private taskFlagRepository;
+    private taskFlagItemRepository;
     private readonly CACHE_TTL;
     private readonly CACHE_PREFIX;
-    constructor(taskRepository: Repository<Task>, subtaskRepository: Repository<SubTask>, eventEmitter: EventEmitter2, clientRepository: Repository<Client>, userRepository: Repository<User>, cacheManager: Cache, configService: ConfigService, communicationService: CommunicationService);
+    constructor(taskRepository: Repository<Task>, subtaskRepository: Repository<SubTask>, eventEmitter: EventEmitter2, clientRepository: Repository<Client>, userRepository: Repository<User>, cacheManager: Cache, configService: ConfigService, communicationService: CommunicationService, taskFlagRepository: Repository<TaskFlag>, taskFlagItemRepository: Repository<TaskFlagItem>);
     private getCacheKey;
     private clearTaskCache;
+    private getTaskFlagCacheKey;
+    private getTaskFlagDetailCacheKey;
+    private getTaskFlagReportsCacheKey;
+    private clearTaskFlagCache;
     private createRepeatingTasks;
     private createSingleRepeatingTask;
     private calculateTotalTasks;
@@ -127,4 +139,12 @@ export declare class TasksService {
         task: Partial<Task>;
         message: string;
     }>;
+    createTaskFlag(createTaskFlagDto: CreateTaskFlagDto, userId: number): Promise<any>;
+    addComment(flagId: number, commentDto: AddCommentDto, userId: number): Promise<any>;
+    getTaskFlags(taskId: number, page?: number, limit?: number): Promise<any>;
+    getTaskFlag(flagId: number): Promise<any>;
+    updateTaskFlag(flagId: number, updateTaskFlagDto: UpdateTaskFlagDto): Promise<any>;
+    updateTaskFlagItem(itemId: number, updateDto: UpdateTaskFlagItemDto): Promise<any>;
+    deleteTaskFlag(flagId: number): Promise<any>;
+    getTaskFlagReports(filters?: any, page?: number, limit?: number): Promise<any>;
 }

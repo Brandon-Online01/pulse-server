@@ -18,6 +18,7 @@ const organisation_entity_1 = require("../../organisation/entities/organisation.
 const branch_entity_1 = require("../../branch/entities/branch.entity");
 const user_entity_1 = require("../../user/entities/user.entity");
 const route_entity_1 = require("./route.entity");
+const task_flag_entity_1 = require("./task-flag.entity");
 let Task = class Task {
     setInitialStatus() {
         this.status = task_enums_1.TaskStatus.PENDING;
@@ -171,6 +172,10 @@ __decorate([
     (0, typeorm_1.OneToMany)(() => route_entity_1.Route, (route) => route.task),
     __metadata("design:type", Array)
 ], Task.prototype, "routes", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => task_flag_entity_1.TaskFlag, (flag) => flag.task),
+    __metadata("design:type", Array)
+], Task.prototype, "flags", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => organisation_entity_1.Organisation, (organisation) => organisation.tasks),
     __metadata("design:type", organisation_entity_1.Organisation)

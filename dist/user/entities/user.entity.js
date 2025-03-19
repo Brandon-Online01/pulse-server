@@ -32,6 +32,7 @@ const notification_entity_1 = require("../../notifications/entities/notification
 const typeorm_1 = require("typeorm");
 const journal_entity_1 = require("../../journal/entities/journal.entity");
 const route_entity_1 = require("../../tasks/entities/route.entity");
+const task_flag_entity_1 = require("../../tasks/entities/task-flag.entity");
 let User = class User {
 };
 exports.User = User;
@@ -196,6 +197,10 @@ __decorate([
     (0, typeorm_1.OneToMany)(() => route_entity_1.Route, (route) => route?.assignee),
     __metadata("design:type", Array)
 ], User.prototype, "routes", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => task_flag_entity_1.TaskFlag, (taskFlag) => taskFlag.createdBy),
+    __metadata("design:type", Array)
+], User.prototype, "taskFlags", void 0);
 exports.User = User = __decorate([
     (0, typeorm_1.Entity)('users')
 ], User);

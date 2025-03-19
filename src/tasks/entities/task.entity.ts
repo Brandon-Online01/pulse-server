@@ -16,6 +16,7 @@ import { Organisation } from '../../organisation/entities/organisation.entity';
 import { Branch } from '../../branch/entities/branch.entity';
 import { User } from 'src/user/entities/user.entity';
 import { Route } from './route.entity';
+import { TaskFlag } from './task-flag.entity';
 
 @Entity('tasks')
 export class Task {
@@ -97,6 +98,9 @@ export class Task {
 
 	@OneToMany(() => Route, (route) => route.task)
 	routes: Route[];
+
+	@OneToMany(() => TaskFlag, (flag) => flag.task)
+	flags: TaskFlag[]; 
 
 	@ManyToOne(() => Organisation, (organisation) => organisation.tasks)
 	organisation: Organisation;

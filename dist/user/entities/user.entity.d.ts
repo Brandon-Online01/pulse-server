@@ -19,6 +19,7 @@ import { Organisation } from '../../organisation/entities/organisation.entity';
 import { Notification } from '../../notifications/entities/notification.entity';
 import { Journal } from 'src/journal/entities/journal.entity';
 import { Route } from 'src/tasks/entities/route.entity';
+import { TaskFlag } from '../../tasks/entities/task-flag.entity';
 export declare class User {
     uid: number;
     username: string;
@@ -59,4 +60,5 @@ export declare class User {
     isDeleted: boolean;
     tasks: Task[];
     routes: Route[];
+    taskFlags: TaskFlag[];
 }

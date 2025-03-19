@@ -4,6 +4,11 @@ import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { UpdateSubtaskDto } from './dto/update-subtask.dto';
 import { OptimizedRoute } from './interfaces/route.interface';
+import { CreateTaskFlagDto } from './dto/create-task-flag.dto';
+import { UpdateTaskFlagDto } from './dto/update-task-flag.dto';
+import { UpdateTaskFlagItemDto } from './dto/update-task-flag-item.dto';
+import { AddCommentDto } from './dto/add-comment.dto';
+import { TaskFlagStatus } from '../lib/enums/task.enums';
 export declare class TasksController {
     private readonly tasksService;
     private readonly taskRouteService;
@@ -56,4 +61,12 @@ export declare class TasksController {
         task: Partial<import("./entities/task.entity").Task>;
         message: string;
     }>;
+    createTaskFlag(createTaskFlagDto: CreateTaskFlagDto, req: any): Promise<any>;
+    addComment(flagId: number, commentDto: AddCommentDto, req: any): Promise<any>;
+    getTaskFlags(taskId: number, page?: string, limit?: string): Promise<any>;
+    getTaskFlag(flagId: number): Promise<any>;
+    updateTaskFlag(flagId: number, updateTaskFlagDto: UpdateTaskFlagDto): Promise<any>;
+    updateTaskFlagItem(itemId: number, updateTaskFlagItemDto: UpdateTaskFlagItemDto): Promise<any>;
+    deleteTaskFlag(flagId: number): Promise<any>;
+    getTaskFlagReports(status?: TaskFlagStatus, startDate?: string, endDate?: string, deadlineBefore?: string, deadlineAfter?: string, userId?: number, page?: string, limit?: string, req?: any): Promise<any>;
 }

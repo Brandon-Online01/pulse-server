@@ -26,6 +26,11 @@ const update_subtask_dto_1 = require("./dto/update-subtask.dto");
 const enterprise_only_decorator_1 = require("../decorators/enterprise-only.decorator");
 const task_enums_1 = require("../lib/enums/task.enums");
 const common_1 = require("@nestjs/common");
+const create_task_flag_dto_1 = require("./dto/create-task-flag.dto");
+const update_task_flag_dto_1 = require("./dto/update-task-flag.dto");
+const update_task_flag_item_dto_1 = require("./dto/update-task-flag-item.dto");
+const add_comment_dto_1 = require("./dto/add-comment.dto");
+const task_enums_2 = require("../lib/enums/task.enums");
 let TasksController = class TasksController {
     constructor(tasksService, taskRouteService) {
         this.tasksService = tasksService;
@@ -152,6 +157,53 @@ let TasksController = class TasksController {
     }
     toggleJobStatus(id) {
         return this.tasksService.toggleJobStatus(+id);
+    }
+    createTaskFlag(createTaskFlagDto, req) {
+        return this.tasksService.createTaskFlag(createTaskFlagDto, req.user.uid);
+    }
+    addComment(flagId, commentDto, req) {
+        return this.tasksService.addComment(flagId, commentDto, req.user.uid);
+    }
+    getTaskFlags(taskId, page, limit) {
+        const pageNum = page ? parseInt(page, 10) : 1;
+        const limitNum = limit ? parseInt(limit, 10) : 10;
+        return this.tasksService.getTaskFlags(taskId, pageNum, limitNum);
+    }
+    getTaskFlag(flagId) {
+        return this.tasksService.getTaskFlag(flagId);
+    }
+    updateTaskFlag(flagId, updateTaskFlagDto) {
+        return this.tasksService.updateTaskFlag(flagId, updateTaskFlagDto);
+    }
+    updateTaskFlagItem(itemId, updateTaskFlagItemDto) {
+        return this.tasksService.updateTaskFlagItem(itemId, updateTaskFlagItemDto);
+    }
+    deleteTaskFlag(flagId) {
+        return this.tasksService.deleteTaskFlag(flagId);
+    }
+    getTaskFlagReports(status, startDate, endDate, deadlineBefore, deadlineAfter, userId, page, limit, req) {
+        const pageNum = page ? parseInt(page, 10) : 1;
+        const limitNum = limit ? parseInt(limit, 10) : 10;
+        const filters = {};
+        if (status)
+            filters.status = status;
+        if (startDate)
+            filters.startDate = new Date(startDate);
+        if (endDate)
+            filters.endDate = new Date(endDate);
+        if (deadlineBefore)
+            filters.deadlineBefore = new Date(deadlineBefore);
+        if (deadlineAfter)
+            filters.deadlineAfter = new Date(deadlineAfter);
+        if (userId)
+            filters.userId = userId;
+        if (req?.user?.organisationRef) {
+            filters.organisationRef = req.user.organisationRef;
+        }
+        if (req?.user?.branch?.uid) {
+            filters.branchId = req.user.branch.uid;
+        }
+        return this.tasksService.getTaskFlagReports(filters, pageNum, limitNum);
     }
 };
 exports.TasksController = TasksController;
@@ -707,6 +759,173 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], TasksController.prototype, "toggleJobStatus", null);
+__decorate([
+    (0, common_1.Post)('flags'),
+    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER, user_enums_1.AccessLevel.OWNER, user_enums_1.AccessLevel.TECHNICIAN),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Flag a completed task',
+        description: 'Creates a new flag for a completed task with a checklist of issues that need to be addressed',
+    }),
+    (0, swagger_1.ApiBody)({ type: create_task_flag_dto_1.CreateTaskFlagDto }),
+    (0, swagger_1.ApiCreatedResponse)({
+        description: 'Task flag created successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Task flag created successfully' },
+                flagId: { type: 'number', example: 123 },
+            },
+        },
+    }),
+    (0, swagger_1.ApiBadRequestResponse)({
+        description: 'Bad Request - Invalid data provided',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Error creating task flag' },
+            },
+        },
+    }),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [create_task_flag_dto_1.CreateTaskFlagDto, Object]),
+    __metadata("design:returntype", void 0)
+], TasksController.prototype, "createTaskFlag", null);
+__decorate([
+    (0, common_1.Post)('flags/:flagId/comments'),
+    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER, user_enums_1.AccessLevel.OWNER, user_enums_1.AccessLevel.TECHNICIAN),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Add a comment to a task flag',
+        description: 'Adds a new comment to an existing task flag',
+    }),
+    (0, swagger_1.ApiParam)({ name: 'flagId', description: 'Task flag ID', type: 'number' }),
+    (0, swagger_1.ApiBody)({ type: add_comment_dto_1.AddCommentDto }),
+    (0, swagger_1.ApiCreatedResponse)({
+        description: 'Comment added successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                message: { type: 'string', example: 'Comment added successfully' },
+            },
+        },
+    }),
+    __param(0, (0, common_1.Param)('flagId')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, add_comment_dto_1.AddCommentDto, Object]),
+    __metadata("design:returntype", void 0)
+], TasksController.prototype, "addComment", null);
+__decorate([
+    (0, common_1.Get)('tasks/:taskId/flags'),
+    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER, user_enums_1.AccessLevel.OWNER, user_enums_1.AccessLevel.TECHNICIAN),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Get flags for a specific task',
+        description: 'Retrieves all flags created for a specific task',
+    }),
+    (0, swagger_1.ApiParam)({ name: 'taskId', description: 'Task ID', type: 'number' }),
+    (0, swagger_1.ApiQuery)({ name: 'page', type: Number, required: false, description: 'Page number, defaults to 1' }),
+    (0, swagger_1.ApiQuery)({
+        name: 'limit',
+        type: Number,
+        required: false,
+        description: 'Number of records per page, defaults to 10',
+    }),
+    __param(0, (0, common_1.Param)('taskId')),
+    __param(1, (0, common_1.Query)('page')),
+    __param(2, (0, common_1.Query)('limit')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, String, String]),
+    __metadata("design:returntype", void 0)
+], TasksController.prototype, "getTaskFlags", null);
+__decorate([
+    (0, common_1.Get)('flags/:flagId'),
+    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER, user_enums_1.AccessLevel.OWNER, user_enums_1.AccessLevel.TECHNICIAN),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Get a specific task flag',
+        description: 'Retrieves detailed information about a specific task flag',
+    }),
+    (0, swagger_1.ApiParam)({ name: 'flagId', description: 'Flag ID', type: 'number' }),
+    __param(0, (0, common_1.Param)('flagId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", void 0)
+], TasksController.prototype, "getTaskFlag", null);
+__decorate([
+    (0, common_1.Patch)('flags/:flagId'),
+    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER, user_enums_1.AccessLevel.OWNER, user_enums_1.AccessLevel.TECHNICIAN),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Update a task flag',
+        description: 'Updates the details of an existing task flag',
+    }),
+    (0, swagger_1.ApiParam)({ name: 'flagId', description: 'Flag ID', type: 'number' }),
+    __param(0, (0, common_1.Param)('flagId')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, update_task_flag_dto_1.UpdateTaskFlagDto]),
+    __metadata("design:returntype", void 0)
+], TasksController.prototype, "updateTaskFlag", null);
+__decorate([
+    (0, common_1.Patch)('flag-items/:itemId'),
+    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER, user_enums_1.AccessLevel.OWNER, user_enums_1.AccessLevel.TECHNICIAN),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Update a task flag checklist item',
+        description: 'Updates the status or details of a task flag checklist item',
+    }),
+    (0, swagger_1.ApiParam)({ name: 'itemId', description: 'Flag Item ID', type: 'number' }),
+    __param(0, (0, common_1.Param)('itemId')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, update_task_flag_item_dto_1.UpdateTaskFlagItemDto]),
+    __metadata("design:returntype", void 0)
+], TasksController.prototype, "updateTaskFlagItem", null);
+__decorate([
+    (0, common_1.Delete)('flags/:flagId'),
+    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER, user_enums_1.AccessLevel.OWNER, user_enums_1.AccessLevel.TECHNICIAN),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Delete a task flag',
+        description: 'Soft deletes a task flag',
+    }),
+    (0, swagger_1.ApiParam)({ name: 'flagId', description: 'Flag ID', type: 'number' }),
+    __param(0, (0, common_1.Param)('flagId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", void 0)
+], TasksController.prototype, "deleteTaskFlag", null);
+__decorate([
+    (0, common_1.Get)('flags/reports'),
+    (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.OWNER),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Get task flag reports',
+        description: 'Retrieves reports on task flags with filtering options',
+    }),
+    (0, swagger_1.ApiQuery)({ name: 'status', enum: task_enums_2.TaskFlagStatus, required: false, description: 'Filter by flag status' }),
+    (0, swagger_1.ApiQuery)({ name: 'startDate', type: String, required: false, description: 'Filter by start date (ISO format)' }),
+    (0, swagger_1.ApiQuery)({ name: 'endDate', type: String, required: false, description: 'Filter by end date (ISO format)' }),
+    (0, swagger_1.ApiQuery)({ name: 'deadlineBefore', type: String, required: false, description: 'Filter by deadline before date (ISO format)' }),
+    (0, swagger_1.ApiQuery)({ name: 'deadlineAfter', type: String, required: false, description: 'Filter by deadline after date (ISO format)' }),
+    (0, swagger_1.ApiQuery)({ name: 'userId', type: Number, required: false, description: 'Filter by user who created the flag' }),
+    (0, swagger_1.ApiQuery)({ name: 'page', type: Number, required: false, description: 'Page number, defaults to 1' }),
+    (0, swagger_1.ApiQuery)({
+        name: 'limit',
+        type: Number,
+        required: false,
+        description: 'Number of records per page, defaults to 10',
+    }),
+    __param(0, (0, common_1.Query)('status')),
+    __param(1, (0, common_1.Query)('startDate')),
+    __param(2, (0, common_1.Query)('endDate')),
+    __param(3, (0, common_1.Query)('deadlineBefore')),
+    __param(4, (0, common_1.Query)('deadlineAfter')),
+    __param(5, (0, common_1.Query)('userId')),
+    __param(6, (0, common_1.Query)('page')),
+    __param(7, (0, common_1.Query)('limit')),
+    __param(8, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, String, String, String, Number, String, String, Object]),
+    __metadata("design:returntype", void 0)
+], TasksController.prototype, "getTaskFlagReports", null);
 exports.TasksController = TasksController = __decorate([
     (0, swagger_1.ApiTags)('tasks'),
     (0, common_1.Controller)('tasks'),

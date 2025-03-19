@@ -30,8 +30,11 @@ const cache_manager_1 = require("@nestjs/cache-manager");
 const config_1 = require("@nestjs/config");
 const communication_service_1 = require("../communication/communication.service");
 const email_enums_1 = require("../lib/enums/email.enums");
+const task_flag_entity_1 = require("./entities/task-flag.entity");
+const task_flag_item_entity_1 = require("./entities/task-flag-item.entity");
+const task_enums_2 = require("../lib/enums/task.enums");
 let TasksService = class TasksService {
-    constructor(taskRepository, subtaskRepository, eventEmitter, clientRepository, userRepository, cacheManager, configService, communicationService) {
+    constructor(taskRepository, subtaskRepository, eventEmitter, clientRepository, userRepository, cacheManager, configService, communicationService, taskFlagRepository, taskFlagItemRepository) {
         this.taskRepository = taskRepository;
         this.subtaskRepository = subtaskRepository;
         this.eventEmitter = eventEmitter;
@@ -40,6 +43,8 @@ let TasksService = class TasksService {
         this.cacheManager = cacheManager;
         this.configService = configService;
         this.communicationService = communicationService;
+        this.taskFlagRepository = taskFlagRepository;
+        this.taskFlagItemRepository = taskFlagItemRepository;
         this.CACHE_PREFIX = 'task:';
         this.CACHE_TTL = this.configService.get('CACHE_EXPIRATION_TIME') || 30;
     }
@@ -61,6 +66,26 @@ let TasksService = class TasksService {
         }
         catch (error) {
             return error;
+        }
+    }
+    getTaskFlagCacheKey(taskId) {
+        return `${this.CACHE_PREFIX}flags:${taskId}`;
+    }
+    getTaskFlagDetailCacheKey(flagId) {
+        return `${this.CACHE_PREFIX}flag:${flagId}`;
+    }
+    getTaskFlagReportsCacheKey(filterHash) {
+        return `${this.CACHE_PREFIX}flagreports:${filterHash}`;
+    }
+    async clearTaskFlagCache(taskId, flagId) {
+        if (taskId) {
+            await this.cacheManager.del(this.getTaskFlagCacheKey(taskId));
+        }
+        if (flagId) {
+            await this.cacheManager.del(this.getTaskFlagDetailCacheKey(flagId));
+        }
+        if (taskId) {
+            await this.clearTaskCache(taskId);
         }
     }
     async createRepeatingTasks(baseTask, createTaskDto) {
@@ -1084,6 +1109,300 @@ let TasksService = class TasksService {
             throw error;
         }
     }
+    async createTaskFlag(createTaskFlagDto, userId) {
+        try {
+            const task = await this.taskRepository.findOne({ where: { uid: createTaskFlagDto.taskId } });
+            if (!task) {
+                throw new Error(`Task with ID ${createTaskFlagDto.taskId} not found`);
+            }
+            const user = await this.userRepository.findOne({ where: { uid: userId } });
+            if (!user) {
+                throw new Error('User not found');
+            }
+            const taskFlag = new task_flag_entity_1.TaskFlag();
+            taskFlag.title = createTaskFlagDto.title;
+            taskFlag.description = createTaskFlagDto.description;
+            taskFlag.status = task_enums_2.TaskFlagStatus.OPEN;
+            taskFlag.task = task;
+            taskFlag.createdBy = user;
+            if (createTaskFlagDto.deadline) {
+                taskFlag.deadline = new Date(createTaskFlagDto.deadline);
+            }
+            taskFlag.comments = [];
+            if (createTaskFlagDto.comment) {
+                taskFlag.comments.push({
+                    uid: Date.now(),
+                    content: createTaskFlagDto.comment,
+                    createdAt: new Date(),
+                    createdBy: {
+                        uid: user.uid,
+                        name: `${user.name} ${user.surname}`,
+                    },
+                });
+            }
+            const savedFlag = await this.taskFlagRepository.save(taskFlag);
+            if (createTaskFlagDto.items?.length) {
+                const items = createTaskFlagDto.items.map((item) => {
+                    const flagItem = new task_flag_item_entity_1.TaskFlagItem();
+                    flagItem.title = item.title;
+                    flagItem.description = item.description;
+                    flagItem.status = task_enums_2.TaskFlagItemStatus.PENDING;
+                    flagItem.taskFlag = savedFlag;
+                    return flagItem;
+                });
+                await this.taskFlagItemRepository.save(items);
+            }
+            await this.clearTaskFlagCache(task.uid);
+            return {
+                message: 'Task flag created successfully',
+                flagId: savedFlag.uid,
+            };
+        }
+        catch (error) {
+            throw new Error(`Failed to create task flag: ${error.message}`);
+        }
+    }
+    async addComment(flagId, commentDto, userId) {
+        try {
+            const taskFlag = await this.taskFlagRepository.findOne({
+                where: { uid: flagId },
+                relations: ['task']
+            });
+            if (!taskFlag) {
+                throw new Error(`Task flag with ID ${flagId} not found`);
+            }
+            const user = await this.userRepository.findOne({ where: { uid: userId } });
+            if (!user) {
+                throw new Error('User not found');
+            }
+            if (!taskFlag.comments) {
+                taskFlag.comments = [];
+            }
+            taskFlag.comments.push({
+                uid: Date.now(),
+                content: commentDto.content,
+                createdAt: new Date(),
+                createdBy: {
+                    uid: user.uid,
+                    name: `${user.name} ${user.surname}`,
+                },
+            });
+            await this.taskFlagRepository.save(taskFlag);
+            await this.clearTaskFlagCache(taskFlag.task?.uid, flagId);
+            return {
+                message: 'Comment added successfully'
+            };
+        }
+        catch (error) {
+            throw new Error(`Failed to add comment: ${error.message}`);
+        }
+    }
+    async getTaskFlags(taskId, page = 1, limit = 10) {
+        try {
+            const cacheKey = this.getTaskFlagCacheKey(taskId);
+            const cacheKeyWithPagination = `${cacheKey}:${page}:${limit}`;
+            const cachedFlags = await this.cacheManager.get(cacheKeyWithPagination);
+            if (cachedFlags) {
+                return cachedFlags;
+            }
+            const [flags, total] = await this.taskFlagRepository.findAndCount({
+                where: { task: { uid: taskId }, isDeleted: false },
+                relations: ['createdBy', 'items'],
+                skip: (page - 1) * limit,
+                take: limit,
+                order: { createdAt: 'DESC' }
+            });
+            const result = {
+                data: flags,
+                meta: {
+                    total,
+                    page,
+                    limit,
+                    totalPages: Math.ceil(total / limit)
+                },
+                message: 'Task flags retrieved successfully'
+            };
+            await this.cacheManager.set(cacheKeyWithPagination, result, this.CACHE_TTL);
+            return result;
+        }
+        catch (error) {
+            throw new Error(`Failed to get task flags: ${error.message}`);
+        }
+    }
+    async getTaskFlag(flagId) {
+        try {
+            const cacheKey = this.getTaskFlagDetailCacheKey(flagId);
+            const cachedFlag = await this.cacheManager.get(cacheKey);
+            if (cachedFlag) {
+                return cachedFlag;
+            }
+            const taskFlag = await this.taskFlagRepository.findOne({
+                where: { uid: flagId, isDeleted: false },
+                relations: ['createdBy', 'items', 'task']
+            });
+            if (!taskFlag) {
+                throw new Error(`Task flag with ID ${flagId} not found`);
+            }
+            const result = {
+                data: taskFlag,
+                message: 'Task flag retrieved successfully'
+            };
+            await this.cacheManager.set(cacheKey, result, this.CACHE_TTL);
+            return result;
+        }
+        catch (error) {
+            throw new Error(`Failed to get task flag: ${error.message}`);
+        }
+    }
+    async updateTaskFlag(flagId, updateTaskFlagDto) {
+        try {
+            const taskFlag = await this.taskFlagRepository.findOne({
+                where: { uid: flagId, isDeleted: false },
+                relations: ['task']
+            });
+            if (!taskFlag) {
+                throw new Error(`Task flag with ID ${flagId} not found`);
+            }
+            if (updateTaskFlagDto.title)
+                taskFlag.title = updateTaskFlagDto.title;
+            if (updateTaskFlagDto.description)
+                taskFlag.description = updateTaskFlagDto.description;
+            if (updateTaskFlagDto.status)
+                taskFlag.status = updateTaskFlagDto.status;
+            if (updateTaskFlagDto.deadline)
+                taskFlag.deadline = new Date(updateTaskFlagDto.deadline);
+            await this.taskFlagRepository.save(taskFlag);
+            await this.clearTaskFlagCache(taskFlag.task?.uid, flagId);
+            return {
+                message: 'Task flag updated successfully'
+            };
+        }
+        catch (error) {
+            throw new Error(`Failed to update task flag: ${error.message}`);
+        }
+    }
+    async updateTaskFlagItem(itemId, updateDto) {
+        try {
+            const flagItem = await this.taskFlagItemRepository.findOne({
+                where: { uid: itemId, isDeleted: false },
+                relations: ['taskFlag', 'taskFlag.task']
+            });
+            if (!flagItem) {
+                throw new Error(`Task flag item with ID ${itemId} not found`);
+            }
+            if (updateDto.title)
+                flagItem.title = updateDto.title;
+            if (updateDto.description)
+                flagItem.description = updateDto.description;
+            if (updateDto.status)
+                flagItem.status = updateDto.status;
+            await this.taskFlagItemRepository.save(flagItem);
+            if (updateDto.status === task_enums_2.TaskFlagItemStatus.COMPLETED) {
+                const allItems = await this.taskFlagItemRepository.find({
+                    where: { taskFlag: { uid: flagItem.taskFlag.uid }, isDeleted: false }
+                });
+                const allCompleted = allItems.every(item => item.status === task_enums_2.TaskFlagItemStatus.COMPLETED ||
+                    item.status === task_enums_2.TaskFlagItemStatus.SKIPPED);
+                if (allCompleted) {
+                    flagItem.taskFlag.status = task_enums_2.TaskFlagStatus.RESOLVED;
+                    await this.taskFlagRepository.save(flagItem.taskFlag);
+                }
+            }
+            await this.clearTaskFlagCache(flagItem.taskFlag?.task?.uid, flagItem.taskFlag?.uid);
+            return {
+                message: 'Task flag item updated successfully'
+            };
+        }
+        catch (error) {
+            throw new Error(`Failed to update task flag item: ${error.message}`);
+        }
+    }
+    async deleteTaskFlag(flagId) {
+        try {
+            const taskFlag = await this.taskFlagRepository.findOne({
+                where: { uid: flagId },
+                relations: ['task']
+            });
+            if (!taskFlag) {
+                throw new Error(`Task flag with ID ${flagId} not found`);
+            }
+            taskFlag.isDeleted = true;
+            await this.taskFlagRepository.save(taskFlag);
+            await this.clearTaskFlagCache(taskFlag.task?.uid, flagId);
+            return {
+                message: 'Task flag deleted successfully'
+            };
+        }
+        catch (error) {
+            throw new Error(`Failed to delete task flag: ${error.message}`);
+        }
+    }
+    async getTaskFlagReports(filters = {}, page = 1, limit = 10) {
+        try {
+            const filterHash = JSON.stringify(filters) + `:${page}:${limit}`;
+            const cacheKey = this.getTaskFlagReportsCacheKey(filterHash);
+            const cachedReports = await this.cacheManager.get(cacheKey);
+            if (cachedReports) {
+                return cachedReports;
+            }
+            const queryBuilder = this.taskFlagRepository.createQueryBuilder('taskFlag')
+                .leftJoinAndSelect('taskFlag.task', 'task')
+                .leftJoinAndSelect('taskFlag.createdBy', 'user')
+                .leftJoinAndSelect('taskFlag.items', 'items')
+                .where('taskFlag.isDeleted = :isDeleted', { isDeleted: false });
+            if (filters.status) {
+                queryBuilder.andWhere('taskFlag.status = :status', { status: filters.status });
+            }
+            if (filters.startDate) {
+                queryBuilder.andWhere('taskFlag.createdAt >= :startDate', { startDate: filters.startDate });
+            }
+            if (filters.endDate) {
+                queryBuilder.andWhere('taskFlag.createdAt <= :endDate', { endDate: filters.endDate });
+            }
+            if (filters.deadlineBefore) {
+                queryBuilder.andWhere('taskFlag.deadline <= :deadlineBefore', {
+                    deadlineBefore: filters.deadlineBefore
+                });
+            }
+            if (filters.deadlineAfter) {
+                queryBuilder.andWhere('taskFlag.deadline >= :deadlineAfter', {
+                    deadlineAfter: filters.deadlineAfter
+                });
+            }
+            if (filters.userId) {
+                queryBuilder.andWhere('user.uid = :userId', { userId: filters.userId });
+            }
+            if (filters.organisationRef) {
+                queryBuilder.andWhere('task.organisation.uid = :organisationRef', {
+                    organisationRef: filters.organisationRef
+                });
+            }
+            if (filters.branchId) {
+                queryBuilder.andWhere('task.branch.uid = :branchId', { branchId: filters.branchId });
+            }
+            const total = await queryBuilder.getCount();
+            queryBuilder
+                .skip((page - 1) * limit)
+                .take(limit)
+                .orderBy('taskFlag.createdAt', 'DESC');
+            const flags = await queryBuilder.getMany();
+            const result = {
+                data: flags,
+                meta: {
+                    total,
+                    page,
+                    limit,
+                    totalPages: Math.ceil(total / limit)
+                },
+                message: 'Task flag reports retrieved successfully'
+            };
+            await this.cacheManager.set(cacheKey, result, this.CACHE_TTL);
+            return result;
+        }
+        catch (error) {
+            throw new Error(`Failed to get task flag reports: ${error.message}`);
+        }
+    }
 };
 exports.TasksService = TasksService;
 exports.TasksService = TasksService = __decorate([
@@ -1093,11 +1412,15 @@ exports.TasksService = TasksService = __decorate([
     __param(3, (0, typeorm_2.InjectRepository)(client_entity_1.Client)),
     __param(4, (0, typeorm_2.InjectRepository)(user_entity_1.User)),
     __param(5, (0, common_1.Inject)(cache_manager_1.CACHE_MANAGER)),
+    __param(8, (0, typeorm_2.InjectRepository)(task_flag_entity_1.TaskFlag)),
+    __param(9, (0, typeorm_2.InjectRepository)(task_flag_item_entity_1.TaskFlagItem)),
     __metadata("design:paramtypes", [typeorm_1.Repository,
         typeorm_1.Repository,
         event_emitter_1.EventEmitter2,
         typeorm_1.Repository,
         typeorm_1.Repository, Object, config_1.ConfigService,
-        communication_service_1.CommunicationService])
+        communication_service_1.CommunicationService,
+        typeorm_1.Repository,
+        typeorm_1.Repository])
 ], TasksService);
 //# sourceMappingURL=tasks.service.js.map

@@ -27,6 +27,10 @@ const task_route_service_1 = require("./task-route.service");
 const route_entity_1 = require("./entities/route.entity");
 const google_maps_service_1 = require("../lib/services/google-maps.service");
 const schedule_1 = require("@nestjs/schedule");
+const task_flag_entity_1 = require("./entities/task-flag.entity");
+const task_flag_item_entity_1 = require("./entities/task-flag-item.entity");
+const user_module_1 = require("../user/user.module");
+const user_service_1 = require("../user/user.service");
 let TasksModule = class TasksModule {
 };
 exports.TasksModule = TasksModule;
@@ -34,15 +38,16 @@ exports.TasksModule = TasksModule = __decorate([
     (0, common_1.Module)({
         imports: [
             licensing_module_1.LicensingModule,
-            typeorm_1.TypeOrmModule.forFeature([task_entity_1.Task, subtask_entity_1.SubTask, client_entity_1.Client, user_entity_1.User, organisation_entity_1.Organisation, branch_entity_1.Branch, route_entity_1.Route]),
+            typeorm_1.TypeOrmModule.forFeature([task_entity_1.Task, subtask_entity_1.SubTask, client_entity_1.Client, user_entity_1.User, organisation_entity_1.Organisation, branch_entity_1.Branch, route_entity_1.Route, task_flag_entity_1.TaskFlag, task_flag_item_entity_1.TaskFlagItem]),
             rewards_module_1.RewardsModule,
             config_1.ConfigModule,
             communication_module_1.CommunicationModule,
             notifications_module_1.NotificationsModule,
             schedule_1.ScheduleModule.forRoot(),
+            user_module_1.UserModule,
         ],
         controllers: [tasks_controller_1.TasksController],
-        providers: [tasks_service_1.TasksService, task_reminder_service_1.TaskReminderService, task_route_service_1.TaskRouteService, google_maps_service_1.GoogleMapsService],
+        providers: [tasks_service_1.TasksService, task_reminder_service_1.TaskReminderService, task_route_service_1.TaskRouteService, google_maps_service_1.GoogleMapsService, user_service_1.UserService],
         exports: [tasks_service_1.TasksService]
     })
 ], TasksModule);

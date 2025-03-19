@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.JobStatus = exports.TaskType = exports.RepetitionType = exports.TaskPriority = exports.TaskStatus = void 0;
+exports.TaskFlagItemStatus = exports.TaskFlagStatus = exports.JobStatus = exports.TaskType = exports.RepetitionType = exports.TaskPriority = exports.TaskStatus = void 0;
 var TaskStatus;
 (function (TaskStatus) {
     TaskStatus["PENDING"] = "PENDING";
@@ -47,4 +47,17 @@ var JobStatus;
     JobStatus["RUNNING"] = "RUNNING";
     JobStatus["COMPLETED"] = "COMPLETED";
 })(JobStatus || (exports.JobStatus = JobStatus = {}));
+var TaskFlagStatus;
+(function (TaskFlagStatus) {
+    TaskFlagStatus["OPEN"] = "OPEN";
+    TaskFlagStatus["IN_PROGRESS"] = "IN_PROGRESS";
+    TaskFlagStatus["RESOLVED"] = "RESOLVED";
+    TaskFlagStatus["CLOSED"] = "CLOSED";
+})(TaskFlagStatus || (exports.TaskFlagStatus = TaskFlagStatus = {}));
+var TaskFlagItemStatus;
+(function (TaskFlagItemStatus) {
+    TaskFlagItemStatus["PENDING"] = "PENDING";
+    TaskFlagItemStatus["COMPLETED"] = "COMPLETED";
+    TaskFlagItemStatus["SKIPPED"] = "SKIPPED";
+})(TaskFlagItemStatus || (exports.TaskFlagItemStatus = TaskFlagItemStatus = {}));
 //# sourceMappingURL=task.enums.js.map

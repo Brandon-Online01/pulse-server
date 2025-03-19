@@ -43,3 +43,16 @@ export enum JobStatus {
 	RUNNING = 'RUNNING',
 	COMPLETED = 'COMPLETED',
 }
+
+export enum TaskFlagStatus {
+	OPEN = 'OPEN',
+	IN_PROGRESS = 'IN_PROGRESS',
+	RESOLVED = 'RESOLVED',
+	CLOSED = 'CLOSED',
+}
+
+export enum TaskFlagItemStatus {
+	PENDING = 'PENDING',
+	COMPLETED = 'COMPLETED',
+	SKIPPED = 'SKIPPED',
+}

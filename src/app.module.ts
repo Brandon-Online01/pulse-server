@@ -25,6 +25,10 @@ import { JournalModule } from './journal/journal.module';
 import { Journal } from './journal/entities/journal.entity';
 import { TasksModule } from './tasks/tasks.module';
 import { Task } from './tasks/entities/task.entity';
+import { SubTask } from './tasks/entities/subtask.entity';
+import { Route } from './tasks/entities/route.entity';
+import { TaskFlag } from './tasks/entities/task-flag.entity';
+import { TaskFlagItem } from './tasks/entities/task-flag-item.entity';
 import { OrganisationModule } from './organisation/organisation.module';
 import { BranchModule } from './branch/branch.module';
 import { Branch } from './branch/entities/branch.entity';
@@ -47,7 +51,6 @@ import { Reseller } from './resellers/entities/reseller.entity';
 import { ReportsModule } from './reports/reports.module';
 import { QuotationItem } from './shop/entities/quotation-item.entity';
 import { Banners } from './shop/entities/banners.entity';
-import { SubTask } from './tasks/entities/subtask.entity';
 import { CommunicationLog } from './communication/entities/communication-log.entity';
 import { CheckInsModule } from './check-ins/check-ins.module';
 import { CheckIn } from './check-ins/entities/check-in.entity';
@@ -69,7 +72,6 @@ import { OrganisationSettings } from './organisation/entities/organisation-setti
 import { OrganisationAppearance } from './organisation/entities/organisation-appearance.entity';
 import { OrganisationHours } from './organisation/entities/organisation-hours.entity';
 import { ProductAnalytics } from './products/entities/product-analytics.entity';
-import { Route } from './tasks/entities/route.entity';
 
 @Module({
 	imports: [
@@ -115,6 +117,8 @@ import { Route } from './tasks/entities/route.entity';
 				Banners,
 				SubTask,
 				Route,
+				TaskFlag,
+				TaskFlagItem,
 				CommunicationLog,
 				CheckIn,
 				UserRewards,

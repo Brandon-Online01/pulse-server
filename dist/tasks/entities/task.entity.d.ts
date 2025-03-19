@@ -4,6 +4,7 @@ import { Organisation } from '../../organisation/entities/organisation.entity';
 import { Branch } from '../../branch/entities/branch.entity';
 import { User } from 'src/user/entities/user.entity';
 import { Route } from './route.entity';
+import { TaskFlag } from './task-flag.entity';
 export declare class Task {
     uid: number;
     title: string;
@@ -35,6 +36,7 @@ export declare class Task {
     }[];
     subtasks: SubTask[];
     routes: Route[];
+    flags: TaskFlag[];
     organisation: Organisation;
     branch: Branch;
     setInitialStatus(): void;

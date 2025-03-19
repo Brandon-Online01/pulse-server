@@ -30,6 +30,7 @@ import {
 } from 'typeorm';
 import { Journal } from 'src/journal/entities/journal.entity';
 import { Route } from 'src/tasks/entities/route.entity';
+import { TaskFlag } from '../../tasks/entities/task-flag.entity';
 
 @Entity('users')
 export class User {
@@ -154,4 +155,7 @@ export class User {
 
 	@OneToMany(() => Route, (route) => route?.assignee)
 	routes: Route[];
+
+	@OneToMany(() => TaskFlag, (taskFlag) => taskFlag.createdBy)
+	taskFlags: TaskFlag[];
 }

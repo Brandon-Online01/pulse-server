@@ -23,6 +23,11 @@ import { EnterpriseOnly } from '../decorators/enterprise-only.decorator';
 import { TaskStatus, TaskPriority, JobStatus } from '../lib/enums/task.enums';
 import { OptimizedRoute } from './interfaces/route.interface';
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, Request } from '@nestjs/common';
+import { CreateTaskFlagDto } from './dto/create-task-flag.dto';
+import { UpdateTaskFlagDto } from './dto/update-task-flag.dto';
+import { UpdateTaskFlagItemDto } from './dto/update-task-flag-item.dto';
+import { AddCommentDto } from './dto/add-comment.dto';
+import { TaskFlagStatus } from '../lib/enums/task.enums';
 
 @ApiTags('tasks')
 @Controller('tasks')
@@ -753,5 +758,251 @@ export class TasksController {
 	})
 	toggleJobStatus(@Param('id') id: string) {
 		return this.tasksService.toggleJobStatus(+id);
+	}
+
+	@Post('flags')
+	@Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
+	@ApiOperation({
+		summary: 'Flag a completed task',
+		description: 'Creates a new flag for a completed task with a checklist of issues that need to be addressed',
+	})
+	@ApiBody({ type: CreateTaskFlagDto })
+	@ApiCreatedResponse({
+		description: 'Task flag created successfully',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', example: 'Task flag created successfully' },
+				flagId: { type: 'number', example: 123 },
+			},
+		},
+	})
+	@ApiBadRequestResponse({
+		description: 'Bad Request - Invalid data provided',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', example: 'Error creating task flag' },
+			},
+		},
+	})
+	createTaskFlag(@Body() createTaskFlagDto: CreateTaskFlagDto, @Request() req: any) {
+		return this.tasksService.createTaskFlag(createTaskFlagDto, req.user.uid);
+	}
+
+	@Post('flags/:flagId/comments')
+	@Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
+	@ApiOperation({
+		summary: 'Add a comment to a task flag',
+		description: 'Adds a new comment to an existing task flag',
+	})
+	@ApiParam({ name: 'flagId', description: 'Task flag ID', type: 'number' })
+	@ApiBody({ type: AddCommentDto })
+	@ApiCreatedResponse({
+		description: 'Comment added successfully',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', example: 'Comment added successfully' },
+			},
+		},
+	})
+	addComment(
+		@Param('flagId') flagId: number,
+		@Body() commentDto: AddCommentDto,
+		@Request() req: any
+	) {
+		return this.tasksService.addComment(flagId, commentDto, req.user.uid);
+	}
+
+	@Get('tasks/:taskId/flags')
+	@Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
+	@ApiOperation({
+		summary: 'Get flags for a specific task',
+		description: 'Retrieves all flags created for a specific task',
+	})
+	@ApiParam({ name: 'taskId', description: 'Task ID', type: 'number' })
+	@ApiQuery({ name: 'page', type: Number, required: false, description: 'Page number, defaults to 1' })
+	@ApiQuery({
+		name: 'limit',
+		type: Number,
+		required: false,
+		description: 'Number of records per page, defaults to 10',
+	})
+	getTaskFlags(
+		@Param('taskId') taskId: number,
+		@Query('page') page?: string,
+		@Query('limit') limit?: string,
+	) {
+		const pageNum = page ? parseInt(page, 10) : 1;
+		const limitNum = limit ? parseInt(limit, 10) : 10;
+		return this.tasksService.getTaskFlags(taskId, pageNum, limitNum);
+	}
+
+	@Get('flags/:flagId')
+	@Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
+	@ApiOperation({
+		summary: 'Get a specific task flag',
+		description: 'Retrieves detailed information about a specific task flag',
+	})
+	@ApiParam({ name: 'flagId', description: 'Flag ID', type: 'number' })
+	getTaskFlag(@Param('flagId') flagId: number) {
+		return this.tasksService.getTaskFlag(flagId);
+	}
+
+	@Patch('flags/:flagId')
+	@Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
+	@ApiOperation({
+		summary: 'Update a task flag',
+		description: 'Updates the details of an existing task flag',
+	})
+	@ApiParam({ name: 'flagId', description: 'Flag ID', type: 'number' })
+	updateTaskFlag(
+		@Param('flagId') flagId: number,
+		@Body() updateTaskFlagDto: UpdateTaskFlagDto
+	) {
+		return this.tasksService.updateTaskFlag(flagId, updateTaskFlagDto);
+	}
+
+	@Patch('flag-items/:itemId')
+	@Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
+	@ApiOperation({
+		summary: 'Update a task flag checklist item',
+		description: 'Updates the status or details of a task flag checklist item',
+	})
+	@ApiParam({ name: 'itemId', description: 'Flag Item ID', type: 'number' })
+	updateTaskFlagItem(
+		@Param('itemId') itemId: number,
+		@Body() updateTaskFlagItemDto: UpdateTaskFlagItemDto
+	) {
+		return this.tasksService.updateTaskFlagItem(itemId, updateTaskFlagItemDto);
+	}
+
+	@Delete('flags/:flagId')
+	@Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
+	@ApiOperation({
+		summary: 'Delete a task flag',
+		description: 'Soft deletes a task flag',
+	})
+	@ApiParam({ name: 'flagId', description: 'Flag ID', type: 'number' })
+	deleteTaskFlag(@Param('flagId') flagId: number) {
+		return this.tasksService.deleteTaskFlag(flagId);
+	}
+
+	@Get('flags/reports')
+	@Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.OWNER,
+	)
+	@ApiOperation({
+		summary: 'Get task flag reports',
+		description: 'Retrieves reports on task flags with filtering options',
+	})
+	@ApiQuery({ name: 'status', enum: TaskFlagStatus, required: false, description: 'Filter by flag status' })
+	@ApiQuery({ name: 'startDate', type: String, required: false, description: 'Filter by start date (ISO format)' })
+	@ApiQuery({ name: 'endDate', type: String, required: false, description: 'Filter by end date (ISO format)' })
+	@ApiQuery({ name: 'deadlineBefore', type: String, required: false, description: 'Filter by deadline before date (ISO format)' })
+	@ApiQuery({ name: 'deadlineAfter', type: String, required: false, description: 'Filter by deadline after date (ISO format)' })
+	@ApiQuery({ name: 'userId', type: Number, required: false, description: 'Filter by user who created the flag' })
+	@ApiQuery({ name: 'page', type: Number, required: false, description: 'Page number, defaults to 1' })
+	@ApiQuery({
+		name: 'limit',
+		type: Number,
+		required: false,
+		description: 'Number of records per page, defaults to 10',
+	})
+	getTaskFlagReports(
+		@Query('status') status?: TaskFlagStatus,
+		@Query('startDate') startDate?: string,
+		@Query('endDate') endDate?: string,
+		@Query('deadlineBefore') deadlineBefore?: string,
+		@Query('deadlineAfter') deadlineAfter?: string,
+		@Query('userId') userId?: number,
+		@Query('page') page?: string,
+		@Query('limit') limit?: string,
+		@Request() req?: any,
+	) {
+		const pageNum = page ? parseInt(page, 10) : 1;
+		const limitNum = limit ? parseInt(limit, 10) : 10;
+		
+		// Initialize filters object
+		const filters: Record<string, any> = {};
+		
+		// Add filters if provided
+		if (status) filters.status = status;
+		if (startDate) filters.startDate = new Date(startDate);
+		if (endDate) filters.endDate = new Date(endDate);
+		if (deadlineBefore) filters.deadlineBefore = new Date(deadlineBefore);
+		if (deadlineAfter) filters.deadlineAfter = new Date(deadlineAfter);
+		if (userId) filters.userId = userId;
+		
+		// Add organization and branch filters from authenticated user
+		if (req?.user?.organisationRef) {
+			filters.organisationRef = req.user.organisationRef;
+		}
+		if (req?.user?.branch?.uid) {
+			filters.branchId = req.user.branch.uid;
+		}
+		
+		return this.tasksService.getTaskFlagReports(filters, pageNum, limitNum);
 	}
 }
