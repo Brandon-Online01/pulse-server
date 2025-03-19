@@ -5,70 +5,72 @@ A powerful NestJS backend service powering location tracking, geofencing, busine
 ## 🎯 Key Features
 
 ### 1. Authentication & Security 🔐
-- JWT-based authentication
-- Role-based access control
+- JWT-based authentication with refresh tokens
+- Role-based access control (RBAC)
 - API rate limiting
-- Request validation
+- Request validation with class-validator
 - Data encryption
 - Helmet protection for HTTP headers
 
-### 2. File Storage & Document Management 📄
-- Google Cloud Storage integration
-- File uploads stored in dedicated 'loro' folder
-- Document metadata tracking
-- Content-type based categorization
-- Automatic organization and user association
-- Secure file access control
-- Public/private file management
-
-### 3. Location Services 📍
-- Real-time tracking
+### 2. Location & Tracking Services 📍
+- Real-time GPS tracking
 - Geofencing with entry/exit events
 - Intelligent stop detection
 - Address resolution using Google Maps API
 - Battery-optimized tracking intervals
 - Offline data sync support
+- Worker status management
 
-### 4. Business Logic 💼
-- Multi-tenant architecture
-- Organization management
-- Branch management with location mapping
-- User management with role-based permissions
-- Task tracking and assignment
-- Client management
-- Analytics and reporting
+### 3. Business Modules 💼
+- **Attendance System**
+  - Check-in/check-out tracking
+  - Work hour calculations
+  - Break management
+  - Location verification
+
+- **Task Management**
+  - Task assignment and tracking
+  - Priority management
+  - Deadline monitoring
+  - Progress tracking
+
+- **Client & Lead Management**
+  - Client profiles and communication
+  - Lead tracking and conversion
+  - Client location mapping
+  - Client-based task organization
+
+- **Journal & Reports**
+  - Daily activity logging
+  - Custom report generation
+  - Performance analytics
+  - Data visualization APIs
+
+### 4. Document Management 📄
+- File uploads with Google Cloud Storage integration
+- Document metadata tracking
+- Content-type based categorization
+- Secure file access control
+- Public/private file management
 
 ### 5. Route Optimization 🗺️
 - Real-time route planning
-- Google Maps integration
 - Multi-stop optimization
 - Distance and duration calculations
-- Automatic route updates
-- Route caching for performance
 - Assignee-based routing
 - Client location optimization
-
-### 6. Real-time Communication 📨
-- WebSocket support
-- Real-time notifications
-- Event-driven architecture
-- Socket.IO integration
-- Communication logs
 
 ## 🚀 Technical Architecture
 
 ### Core Framework
-- **NestJS**: A progressive Node.js framework for building efficient and scalable server-side applications
-- **TypeScript**: Strongly typed programming language that builds on JavaScript
+- **NestJS**: Progressive Node.js framework
+- **TypeScript**: Strongly typed programming language
 - **Express**: Underlying web server framework
 
 ### Database & Storage
-- **TypeORM**: ORM for TypeScript and JavaScript
+- **TypeORM**: ORM for TypeScript
 - **MySQL**: Primary database
 - **Google Cloud Storage**: File storage service
-  - Files stored in 'loro' folder within bucket
-  - Automatic metadata extraction and association
-  - User and organization mapping from file metadata
 
 ### Authentication & Security
 - **JWT**: JSON Web Tokens for authentication
@@ -77,47 +79,58 @@ A powerful NestJS backend service powering location tracking, geofencing, busine
 - **Throttler**: Rate limiting protection
 
 ### APIs & Documentation
-- **Swagger/OpenAPI**: API documentation
-- **GraphQL**: Alternative query language support
+- **Swagger/OpenAPI**: API documentation at `/api`
 - **REST**: Primary API architecture
-
-### Caching & Performance
-- **Cache Manager**: Configurable caching
-- **Compression**: Response compression
-- **Redis**: Optional distributed caching
 
 ### Real-time Communication
 - **Socket.IO**: WebSocket implementation
 - **Event Emitter**: Event-driven architecture
 
+## 🔍 Module Structure
+
+The server is organized into feature modules:
+
+```
+src/
+├── auth/           # Authentication & authorization
+├── user/           # User management
+├── organisation/   # Organization & branch management
+├── tracking/       # Location tracking services
+├── attendance/     # Attendance management
+├── tasks/          # Task management
+├── clients/        # Client management
+├── leads/          # Lead generation & tracking
+├── journal/        # Activity logging
+├── reports/        # Reporting & analytics
+├── claims/         # Claims processing
+├── docs/           # Document management
+├── shop/           # E-commerce functionality
+└── config/         # Application configuration
+```
+
 ## 📊 API Documentation
 
-Access Swagger docs at: http://localhost:4400/api
+Access Swagger docs at: `http://localhost:4400/api`
 
 Key endpoints:
 
 1. **Authentication**
-   - POST /auth/login
-   - POST /auth/register
-   - POST /auth/refresh
+   - POST `/auth/login`
+   - POST `/auth/register`
+   - POST `/auth/refresh`
 
-2. **File Management**
-   - POST /docs/upload - Upload files to 'loro' folder in Google Cloud Storage
-   - GET /docs/:id - Get document by ID
-   - GET /docs/download/:id - Get download URL for document
+2. **Location Tracking**
+   - POST `/tracking/location` - Send location updates
+   - GET `/tracking/history` - Get location history
+   - GET `/tracking/stops` - Get stop events
 
-3. **Location Services**
-   - POST /gps - Save location data
-   - POST /gps/stops - Record stop events
-   - GET /gps/stops - Retrieve stop history
+3. **Business Operations**
+   - GET/POST `/tasks` - Task management
+   - GET/POST `/clients` - Client management
+   - GET/POST `/attendance` - Attendance tracking
+   - GET/POST `/reports` - Report generation
 
-4. **Route Optimization**
-   - GET /tasks/routes - Get optimized routes
-   - Parameters:
-     - date (optional): YYYY-MM-DD format
-   - Returns optimized routes with details
-
-## 🧪 Testing Guide
+## 🧪 Testing
 
 1. **Unit Tests**
    ```bash
@@ -125,8 +138,8 @@ Key endpoints:
    yarn test
    
    # Run specific feature tests
-   yarn test storage
    yarn test tracking
+   yarn test auth
    ```
 
 2. **E2E Tests**
@@ -134,10 +147,10 @@ Key endpoints:
    yarn test:e2e
    ```
 
-## 🔧 Environment Variables
+## 🔧 Environment Configuration
 
-Key variables:
-```env
+Key variables in `.env`:
+```
 # Server Configuration
 API_PORT=4400
 NODE_ENV=development
@@ -154,58 +167,33 @@ JWT_SECRET=your_jwt_secret
 JWT_EXPIRES_IN=1d
 JWT_REFRESH_EXPIRES_IN=7d
 
-# Google Cloud Storage Configuration
+# Google Cloud & Maps Configuration
 GOOGLE_CLOUD_PROJECT_ID=your_project_id
 GOOGLE_CLOUD_PROJECT_BUCKET=crmapplications
-GOOGLE_CLOUD_KEYFILE_JSON=your_keyfile_json
-
-# Google Maps Configuration
 GOOGLE_MAPS_API_KEY=your_api_key
-GOOGLE_MAPS_GEOCODING_ENABLED=true
-GOOGLE_MAPS_DIRECTIONS_ENABLED=true
-GOOGLE_MAPS_PLACES_ENABLED=true
-
-# Email Configuration
-MAIL_HOST=smtp.example.com
-MAIL_PORT=587
-MAIL_USER=user@example.com
-MAIL_PASS=password
-MAIL_FROM=noreply@example.com
 ```
 
-## 📁 File Storage Setup
+## 🚀 Getting Started
 
-The system uses Google Cloud Storage for file management with the following features:
+1. **Installation**
+   ```bash
+   git clone <repository-url>
+   cd server
+   yarn install
+   ```
 
-1. **Folder Structure**:
-   - Files are stored in a dedicated `loro` folder within the bucket
-   - This provides organization and separation from other files
+2. **Database Setup**
+   ```bash
+   # Configure your database in .env
+   # Run migrations
+   yarn migration:run
+   ```
 
-2. **File Naming**:
-   - Files are stored with a unique hash-based filename to prevent collisions
-   - Original filenames are preserved in the document metadata
-
-3. **Metadata Handling**:
-   - File metadata includes:
-     - Original filename
-     - MIME type
-     - File size
-     - Upload timestamp
-     - User information (from uploadedBy metadata)
-     - Branch information (from branch metadata)
-
-4. **Document Entity**:
-   - Files are tracked in the database with the following key fields:
-     - `content`: Uses the content type (e.g., 'image' for image files)
-     - `description`: Contains the document ID for reference
-     - `fileType`: Type of file (image, document, etc.)
-     - `url`: Public URL to access the file
-     - Relationships to user, branch, and organization
-
-5. **Security Considerations**:
-   - Files can be marked as public or private
-   - Access control based on user permissions
-   - Signed URLs for temporary access
+3. **Start Development Server**
+   ```bash
+   yarn start:dev
+   # Server runs at http://localhost:4400
+   ```
 
 ## 🤝 Support
 

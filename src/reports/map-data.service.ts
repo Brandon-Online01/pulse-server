@@ -107,135 +107,279 @@ export class MapDataService {
 			return 'https://images.pexels.com/photos/2464890/pexels-photo-2464890.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2';
 		};
 
-		// Generate mock data that matches dashboard expected format
-		const mockWorkers: WorkerLocationDto[] = [
-			// South Africa (Johannesburg area)
-			{
-				id: 'worker-1',
-				name: 'Thabo Mbeki',
-				status: 'Work in progress',
-				position: [-26.2041, 28.0473], // Johannesburg CBD
-				markerType: MapMarkerType.CHECK_IN,
-				image: '/placeholder.svg?height=100&width=100',
-				canAddTask: true,
-				task: {
-					id: 'J22008',
-					title: 'Fix broken heating vent',
-					client: 'Sandton City Mall',
-				},
-				location: {
-					address: 'Nelson Mandela Square, Sandton, Johannesburg',
-					imageUrl: getLocationImageUrl(
-						'Nelson Mandela Square, Sandton, Johannesburg',
-						MapMarkerType.CHECK_IN,
-						[-26.2041, 28.0473],
-					),
-				},
-				schedule: {
-					current: '09:30 AM - 12:45 PM',
-					next: '02:00 PM - 04:00 PM',
-				},
-				jobStatus: {
-					startTime: '08:15 AM',
-					endTime: '12:45 PM',
-					duration: '4h 30m',
-					status: 'In Progress',
-					completionPercentage: 65,
-				},
-			},
-			{
-				id: 'worker-4',
-				name: 'Nomsa Dlamini',
-				status: 'En route to next job',
-				position: [-26.2485, 28.13], // Kempton Park
-				markerType: MapMarkerType.TASK,
-				image: '/placeholder.svg?height=100&width=100',
-				task: {
-					id: 'J22011',
-					title: 'Plumbing inspection',
-					client: 'OR Tambo International Airport',
-				},
-				location: {
-					address: 'O.R. Tambo International Airport, Kempton Park',
-					imageUrl: getLocationImageUrl(
-						'O.R. Tambo International Airport, Kempton Park',
-						MapMarkerType.TASK,
-						[-26.2485, 28.13],
-					),
-				},
-				schedule: {
-					current: '11:00 AM - 02:00 PM',
-					next: '03:30 PM - 05:30 PM',
-				},
-				jobStatus: {
-					startTime: '09:00 AM',
-					endTime: '02:00 PM',
-					duration: '5h 0m',
-					status: 'Traveling',
-					completionPercentage: 20,
-				},
-			},
-			{
-				id: 'worker-14',
-				name: 'Nkosinathi Mthembu',
-				status: 'Writing report',
-				position: [-26.3354, 27.8888], // Soweto
-				markerType: MapMarkerType.JOURNAL,
-				image: '/placeholder.svg?height=100&width=100',
-				task: {
-					id: 'J22023',
-					title: 'Site assessment',
-					client: 'Maponya Mall',
-				},
-				location: {
-					address: 'Chris Hani Road, Soweto, Johannesburg',
-					imageUrl: getLocationImageUrl(
-						'Chris Hani Road, Soweto, Johannesburg',
-						MapMarkerType.JOURNAL,
-						[-26.3354, 27.8888],
-					),
-				},
-				schedule: {
-					current: '10:00 AM - 02:00 PM',
-					next: 'Tomorrow 10:00 AM',
-				},
-				jobStatus: {
-					startTime: '10:00 AM',
-					endTime: '02:00 PM',
-					duration: '4h 0m',
-					status: 'Documentation',
-					completionPercentage: 80,
-				},
-			},
+		// Mock locations across the world for better coverage
+		const locations = [
+			// Africa
+			{ name: 'Sandton City Mall', address: 'Nelson Mandela Square, Sandton, Johannesburg, South Africa', position: [-26.1052, 28.0560] },
+			{ name: 'Cairo Mall', address: 'El-Nasr Road, Cairo, Egypt', position: [30.0444, 31.2357] },
+			{ name: 'Kigali Convention Centre', address: 'KG 2 Roundabout, Kigali, Rwanda', position: [-1.9441, 30.0619] },
+			{ name: 'Victoria Falls Hotel', address: 'Victoria Falls, Zimbabwe', position: [-17.9315, 25.8307] },
+			{ name: 'Two Oceans Aquarium', address: 'V&A Waterfront, Cape Town, South Africa', position: [-33.9032, 18.4195] },
+			
+			// Europe
+			{ name: 'Eiffel Tower', address: 'Champ de Mars, Paris, France', position: [48.8584, 2.2945] },
+			{ name: 'Colosseum', address: 'Piazza del Colosseo, Rome, Italy', position: [41.8902, 12.4922] },
+			{ name: 'Sagrada Familia', address: 'Carrer de Mallorca, Barcelona, Spain', position: [41.4036, 2.1744] },
+			{ name: 'Harrods', address: 'Brompton Road, London, UK', position: [51.4994, -0.1631] },
+			{ name: 'Brandenburg Gate', address: 'Pariser Platz, Berlin, Germany', position: [52.5163, 13.3777] },
+			
+			// Asia
+			{ name: 'Tokyo Skytree', address: 'Sumida City, Tokyo, Japan', position: [35.7101, 139.8107] },
+			{ name: 'Marina Bay Sands', address: 'Bayfront Avenue, Singapore', position: [1.2834, 103.8607] },
+			{ name: 'Burj Khalifa', address: 'Sheikh Mohammed bin Rashid Boulevard, Dubai, UAE', position: [25.1972, 55.2744] },
+			{ name: 'Taj Mahal', address: 'Dharmapuri, Agra, India', position: [27.1751, 78.0421] },
+			{ name: 'Great Wall of China', address: 'Huairou District, Beijing, China', position: [40.4319, 116.5704] },
+			
+			// North America
+			{ name: 'Empire State Building', address: '350 Fifth Avenue, New York, USA', position: [40.7484, -73.9857] },
+			{ name: 'Golden Gate Bridge', address: 'Golden Gate Bridge, San Francisco, USA', position: [37.8199, -122.4783] },
+			{ name: 'CN Tower', address: 'Front Street West, Toronto, Canada', position: [43.6426, -79.3871] },
+			{ name: 'Cancun Hotel Zone', address: 'Kukulkan Boulevard, Cancun, Mexico', position: [21.1289, -86.7486] },
+			{ name: 'Disney World', address: 'Walt Disney World Resort, Orlando, USA', position: [28.3772, -81.5707] },
+			
+			// South America
+			{ name: 'Christ the Redeemer', address: 'Corcovado Mountain, Rio de Janeiro, Brazil', position: [-22.9519, -43.2106] },
+			{ name: 'Machu Picchu', address: 'Machu Picchu, Peru', position: [-13.1631, -72.5450] },
+			{ name: 'Casa Rosada', address: 'Plaza de Mayo, Buenos Aires, Argentina', position: [-34.6083, -58.3712] },
+			{ name: 'Cartagena Old Town', address: 'Cartagena, Colombia', position: [10.4236, -75.5503] },
+			{ name: 'Plaza de Armas', address: 'Santiago, Chile', position: [-33.4378, -70.6504] },
+			
+			// Oceania
+			{ name: 'Sydney Opera House', address: 'Bennelong Point, Sydney, Australia', position: [-33.8568, 151.2153] },
+			{ name: 'Sky Tower', address: 'Victoria Street West, Auckland, New Zealand', position: [-36.8485, 174.7633] },
+			{ name: 'Fiji Marriott Resort', address: 'Momi Bay, Fiji', position: [-17.9068, 177.2065] },
+			{ name: 'Port Vila Market', address: 'Port Vila, Vanuatu', position: [-17.7405, 168.3123] },
+			{ name: 'Royal Palace', address: "Nuku'alofa, Tonga", position: [-21.1343, -175.1962] },
 		];
 
-		const mockEvents: MapEventDto[] = [
-			// South Africa events
-			{
-				id: 'event-1',
-				type: MapMarkerType.CHECK_IN,
-				title: 'Morning check-in',
-				time: 'Today, 08:15 AM',
-				location: 'Nelson Mandela Square, Sandton, Johannesburg',
-				user: 'Thabo Mbeki',
-			},
-			{
-				id: 'event-4',
-				type: MapMarkerType.TASK,
-				title: 'Plumbing inspection started',
-				time: 'Today, 11:15 AM',
-				location: 'O.R. Tambo International Airport, Kempton Park',
-				user: 'Nomsa Dlamini',
-			},
-			{
-				id: 'event-20',
-				type: MapMarkerType.JOURNAL,
-				title: 'Site assessment documentation',
-				time: 'Today, 01:30 PM',
-				location: 'Chris Hani Road, Soweto, Johannesburg',
-				user: 'Nkosinathi Mthembu',
-			},
+		// Mock worker names - expanded with international names
+		const workerNames = [
+			// African names
+			'Thabo Mbeki', 'Nomsa Dlamini', 'Ahmed Hassan', 'Fatima Nkosi', 'Kofi Mensah',
+			// European names
+			'Sophie Müller', 'Pierre Dubois', 'Elena Rossi', 'James Wilson', 'Ana García',
+			// Asian names
+			'Wei Zhang', 'Hiroshi Tanaka', 'Priya Sharma', 'Min-Jun Kim', 'Fatima Al-Fasi',
+			// North American names
+			'Michael Johnson', 'Maria Rodriguez', 'Robert Smith', 'Emily Wilson', 'Juan Hernandez',
+			// South American names
+			'Carlos Oliveira', 'Isabella Fernandez', 'Mateo Santos', 'Gabriela Perez', 'Luis Martinez',
+			// Oceania names
+			'Jackson Cooper', 'Olivia Williams', 'Tane Hohepa', 'Aroha Bennett', 'Noah Patel'
 		];
+
+		// Task titles - expanded with more international variety
+		const taskTitles = [
+			// Infrastructure
+			'HVAC system maintenance', 'Electrical wiring repair', 'Plumbing inspection', 'Security system installation',
+			'Emergency generator testing', 'Elevator maintenance', 'Roofing repair', 'Solar panel inspection', 
+			'Water filtration maintenance', 'Concrete repair', 'Fiber optic cable installation',
+			// Facilities
+			'Office renovation', 'Retail fixture installation', 'Hotel room refurbishment', 'Exhibition setup',
+			'Restaurant kitchen inspection', 'Stadium seating repair', 'Airport terminal maintenance',
+			// Technology
+			'Network infrastructure audit', 'IoT sensor deployment', 'CCTV camera installation', 'Digital signage setup',
+			'Payment terminal maintenance', 'Datacenter cooling inspection', 'Smart building system integration',
+			// Specialized
+			'Historical site preservation', 'Museum display installation', 'UNESCO site assessment',
+			'Resort beach facilities setup', 'Winter equipment maintenance'
+		];
+
+		// Status options - expanded with more variety
+		const statusOptions = [
+			'Working on site', 'En route to next job', 'On break', 'Writing report', 'Client meeting',
+			'Equipment setup', 'Troubleshooting', 'Final inspection', 'Material delivery', 'Team briefing',
+			'Consulting with expert', 'Awaiting permits', 'Safety briefing', 'Training local staff', 'Quality control'
+		];
+
+		// Generate 50 mock workers for worldwide coverage
+		const mockWorkers: WorkerLocationDto[] = [];
+		
+		for (let i = 0; i < 50; i++) {
+			const locationIndex = i % locations.length;
+			const location = locations[locationIndex];
+			const workerIndex = i % workerNames.length;
+			const workerName = workerNames[workerIndex];
+			
+			// Add slight position variance to prevent markers from overlapping
+			const positionVariance = 0.005; // About 500m
+			const position: [number, number] = [
+				location.position[0] + (Math.random() * positionVariance * 2 - positionVariance),
+				location.position[1] + (Math.random() * positionVariance * 2 - positionVariance)
+			];
+			
+			// Determine marker type based on index
+			let markerType: MapMarkerType;
+			if (i % 5 === 0) markerType = MapMarkerType.CHECK_IN;
+			else if (i % 5 === 1) markerType = MapMarkerType.TASK;
+			else if (i % 5 === 2) markerType = MapMarkerType.JOURNAL;
+			else if (i % 5 === 3) markerType = MapMarkerType.LEAD;
+			else markerType = MapMarkerType.BREAK_START;
+			
+			// Generate completion percentage between 10-95%
+			const completionPercentage = Math.floor(Math.random() * 85) + 10;
+			
+			// Generate start and end times - use different time zones to simulate global operations
+			// Adjust hours based on rough time zone offset to simulate different times around the world
+			const timeZoneOffset = Math.floor(location.position[1] / 15); // Rough time zone calculation
+			let startHour = (7 + Math.floor(Math.random() * 4) + timeZoneOffset) % 24; // Between 7-10 AM local time
+			let endHour = (startHour + 2 + Math.floor(Math.random() * 4)) % 24; // 2-5 hours later
+			
+			const startAmPm = startHour >= 12 ? 'PM' : 'AM';
+			const endAmPm = endHour >= 12 ? 'PM' : 'AM';
+			
+			// Convert to 12-hour format
+			startHour = startHour > 12 ? startHour - 12 : startHour === 0 ? 12 : startHour;
+			endHour = endHour > 12 ? endHour - 12 : endHour === 0 ? 12 : endHour;
+			
+			const startTime = `${startHour < 10 ? '0' : ''}${startHour}:${Math.random() > 0.5 ? '00' : '30'} ${startAmPm}`;
+			const endTime = `${endHour < 10 ? '0' : ''}${endHour}:${Math.random() > 0.5 ? '00' : '30'} ${endAmPm}`;
+			
+			// Create worker object
+			const worker: WorkerLocationDto = {
+				id: `worker-${i + 1}`,
+				name: workerName,
+				status: statusOptions[i % statusOptions.length],
+				position,
+				markerType,
+				image: '/placeholder.svg?height=100&width=100',
+				canAddTask: i % 3 === 0, // Every 3rd worker can add tasks
+				task: {
+					id: `J22${(i + 1).toString().padStart(3, '0')}`,
+					title: taskTitles[i % taskTitles.length],
+					client: location.name,
+				},
+				location: {
+					address: location.address,
+					imageUrl: getLocationImageUrl(location.address, markerType, position),
+				},
+				schedule: {
+					current: `${startTime} - ${endTime}`,
+					next: i % 3 === 0 ? 'Tomorrow 09:00 AM' : `${(endHour + 1) % 12 || 12}:00 ${endAmPm} - ${(endHour + 3) % 12 || 12}:00 ${endAmPm}`,
+				},
+				jobStatus: {
+					startTime,
+					endTime,
+					duration: `${2 + Math.floor(Math.random() * 4)}h ${Math.floor(Math.random() * 60)}m`,
+					status: i % 8 === 0 ? 'Completed' : i % 4 === 0 ? 'Traveling' : 'In Progress',
+					completionPercentage,
+				},
+				// Add activity stats for some workers
+				activity: i % 3 === 0 ? {
+					claims: Math.floor(Math.random() * 5),
+					journals: Math.floor(Math.random() * 8),
+					leads: Math.floor(Math.random() * 3),
+					checkIns: Math.floor(Math.random() * 10),
+					tasks: Math.floor(Math.random() * 6)
+				} : undefined,
+				// Add break data for workers on break
+				breakData: markerType === MapMarkerType.BREAK_START ? {
+					startTime: `${startHour}:${Math.random() > 0.5 ? '00' : '30'} ${startAmPm}`,
+					endTime: `${startHour}:${Math.random() > 0.5 ? '30' : '00'} ${startAmPm}`,
+					duration: '30m',
+					location: 'Nearby cafe',
+					remainingTime: `${Math.floor(Math.random() * 30)}m`,
+				} : undefined
+			};
+			
+			mockWorkers.push(worker);
+		}
+
+		// Generate 50 mock events for worldwide coverage
+		const mockEvents: MapEventDto[] = [];
+		
+		// Event types to cycle through
+		const eventTypes = [
+			MapMarkerType.CHECK_IN,
+			MapMarkerType.CHECK_OUT,
+			MapMarkerType.TASK,
+			MapMarkerType.JOURNAL,
+			MapMarkerType.LEAD,
+			MapMarkerType.SHIFT_START,
+			MapMarkerType.SHIFT_END,
+			MapMarkerType.BREAK_START,
+			MapMarkerType.BREAK_END,
+			MapMarkerType.JOB_START,
+			MapMarkerType.JOB_COMPLETE
+		];
+		
+		for (let i = 0; i < 50; i++) {
+			const locationIndex = i % locations.length;
+			const location = locations[locationIndex];
+			const workerIndex = i % workerNames.length;
+			const workerName = workerNames[workerIndex];
+			const eventType = eventTypes[i % eventTypes.length];
+			
+			// Determine time base (today, yesterday, or earlier)
+			let timeBase = 'Today';
+			if (i % 4 === 1) timeBase = 'Yesterday';
+			if (i % 4 === 2) timeBase = 'Feb 15';
+			if (i % 4 === 3) timeBase = 'Mar 2';
+			
+			// Generate random time - adjust for rough time zones
+			const timeZoneOffset = Math.floor(location.position[1] / 15); // Rough time zone calculation
+			let hour = (7 + Math.floor(Math.random() * 10) + timeZoneOffset) % 24; // Between 7 AM and 5 PM local time
+			const minute = Math.floor(Math.random() * 60);
+			const ampm = hour >= 12 ? 'PM' : 'AM';
+			
+			// Convert to 12-hour format
+			hour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
+			
+			const timeStr = `${timeBase}, ${hour < 10 ? '0' : ''}${hour}:${minute < 10 ? '0' : ''}${minute} ${ampm}`;
+			
+			// Generate event title based on type
+			let title = '';
+			
+			switch(eventType) {
+				case MapMarkerType.CHECK_IN:
+					title = `Visit to ${location.name}`;
+					break;
+				case MapMarkerType.CHECK_OUT:
+					title = `Completed visit to ${location.name}`;
+					break;
+				case MapMarkerType.TASK:
+					title = `Working on: ${taskTitles[i % taskTitles.length]}`;
+					break;
+				case MapMarkerType.JOURNAL:
+					title = `Documentation: ${taskTitles[i % taskTitles.length]} progress`;
+					break;
+				case MapMarkerType.LEAD:
+					title = `New lead: ${location.name} opportunity`;
+					break;
+				case MapMarkerType.SHIFT_START:
+					title = 'Started shift';
+					break;
+				case MapMarkerType.SHIFT_END:
+					title = 'Ended shift';
+					break;
+				case MapMarkerType.BREAK_START:
+					title = 'Started break';
+					break;
+				case MapMarkerType.BREAK_END:
+					title = 'Ended break';
+					break;
+				case MapMarkerType.JOB_START:
+					title = `Started: ${taskTitles[i % taskTitles.length]}`;
+					break;
+				case MapMarkerType.JOB_COMPLETE:
+					title = `Completed: ${taskTitles[i % taskTitles.length]}`;
+					break;
+				default:
+					title = 'Activity logged';
+			}
+			
+			// Create event object
+			const event: MapEventDto = {
+				id: `event-${i + 1}`,
+				type: eventType,
+				title,
+				time: timeStr,
+				location: location.address,
+				user: workerName
+			};
+			
+			mockEvents.push(event);
+		}
 
 		return {
 			workers: mockWorkers,
