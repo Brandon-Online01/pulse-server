@@ -720,7 +720,7 @@ export class TasksService {
 			const [tasks, total] = await this.taskRepository.findAndCount({
 				where: whereClause,
 				skip: skip,
-				relations: ['creator', 'subtasks', 'organisation', 'branch', 'routes'],
+				relations: ['creator', 'subtasks', 'organisation', 'branch', 'routes', 'flags'],
 				take: limit,
 				order: {
 					createdAt: 'DESC',
@@ -1201,7 +1201,9 @@ export class TasksService {
 			for (const client of clients) {
 				// Generate unique feedback link for this client and task
 				const feedbackToken = Buffer.from(`${client.uid}-${task.uid}-${Date.now()}`).toString('base64');
-				const feedbackLink = `${this.configService.get('APP_URL')}/feedback?token=${feedbackToken}&type=${task.taskType || 'TASK'}`;
+				const feedbackLink = `${this.configService.get('APP_URL')}/feedback?token=${feedbackToken}&type=${
+					task.taskType || 'TASK'
+				}`;
 
 				// Send the email
 				await this.communicationService.sendEmail(EmailType.TASK_COMPLETED, [client.email], {
