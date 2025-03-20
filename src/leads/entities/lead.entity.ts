@@ -3,6 +3,7 @@ import { User } from '../../user/entities/user.entity';
 import { Branch } from '../../branch/entities/branch.entity';
 import { Client } from '../../clients/entities/client.entity';
 import { LeadStatus } from '../../lib/enums/lead.enums';
+import { Organisation } from 'src/organisation/entities/organisation.entity';
 
 @Entity('leads')
 export class Lead {
@@ -39,6 +40,13 @@ export class Lead {
 
     @Column({ nullable: true })
     ownerUid: number;
+
+    @ManyToOne(() => Organisation, { onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'organisationUid' })
+    organisation: Organisation;
+
+    @Column({ nullable: true })
+    organisationUid: number;
 
     @ManyToOne(() => Branch, { onDelete: 'SET NULL' })
     @JoinColumn({ name: 'branchUid' })

@@ -1,6 +1,6 @@
 import { Between, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { Lead } from './entities/lead.entity';
 import { CreateLeadDto } from './dto/create-lead.dto';
 import { UpdateLeadDto } from './dto/update-lead.dto';
@@ -14,6 +14,8 @@ import { RewardsService } from '../rewards/rewards.service';
 import { XP_VALUES } from '../lib/constants/constants';
 import { XP_VALUES_TYPES } from '../lib/constants/constants';
 import { PaginatedResponse } from 'src/lib/types/paginated-response';
+import { Organisation } from '../organisation/entities/organisation.entity';
+import { Branch } from '../branch/entities/branch.entity';
 
 @Injectable()
 export class LeadsService {
@@ -24,13 +26,32 @@ export class LeadsService {
     private readonly rewardsService: RewardsService
   ) { }
 
-  async create(createLeadDto: CreateLeadDto): Promise<{ message: string, data: Lead | null }> {
+  async create(createLeadDto: CreateLeadDto, orgId?: number, branchId?: number): Promise<{ message: string, data: Lead | null }> {
     try {
-      const lead = await this.leadRepository.save(createLeadDto as unknown as Lead);
+      if (!orgId) {
+        throw new BadRequestException('Organization ID is required');
+      }
+
+      // Create the lead entity
+      const lead = this.leadRepository.create(createLeadDto as unknown as Lead);
+      
+      // Set organization
+      if (orgId) {
+        const organisation = { uid: orgId } as Organisation;
+        lead.organisation = organisation;
+      }
+      
+      // Set branch if provided
+      if (branchId) {
+        const branch = { uid: branchId } as Branch;
+        lead.branch = branch;
+      }
+
+      const savedLead = await this.leadRepository.save(lead);
 
       const response = {
         message: process.env.SUCCESS_MESSAGE,
-        data: lead
+        data: savedLead
       };
 
       await this.rewardsService.awardXP({
@@ -49,7 +70,7 @@ export class LeadsService {
         title: 'Lead Created',
         message: `A lead has been created`,
         status: NotificationStatus.UNREAD,
-        owner: lead?.owner
+        owner: savedLead?.owner
       }
 
       const recipients = [AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.OWNER, AccessLevel.SUPERVISOR, AccessLevel.USER]
@@ -87,14 +108,27 @@ export class LeadsService {
       endDate?: Date;
     },
     page: number = 1,
-    limit: number = 25
+    limit: number = 25,
+    orgId?: number,
+    branchId?: number
   ): Promise<PaginatedResponse<Lead>> {
     try {
+      if (!orgId) {
+        throw new BadRequestException('Organization ID is required');
+      }
+
       const queryBuilder = this.leadRepository
         .createQueryBuilder('lead')
         .leftJoinAndSelect('lead.owner', 'owner')
         .leftJoinAndSelect('lead.branch', 'branch')
-        .where('lead.isDeleted = :isDeleted', { isDeleted: false });
+        .leftJoinAndSelect('lead.organisation', 'organisation')
+        .where('lead.isDeleted = :isDeleted', { isDeleted: false })
+        .andWhere('organisation.uid = :orgId', { orgId });
+
+      // Add branch filter if provided
+      if (branchId) {
+        queryBuilder.andWhere('branch.uid = :branchId', { branchId });
+      }
 
       if (filters?.status) {
         queryBuilder.andWhere('lead.status = :status', { status: filters.status });
@@ -151,11 +185,25 @@ export class LeadsService {
     }
   }
 
-  async findOne(ref: number): Promise<{ lead: Lead | null, message: string, stats: any }> {
+  async findOne(ref: number, orgId?: number, branchId?: number): Promise<{ lead: Lead | null, message: string, stats: any }> {
     try {
+      if (!orgId) {
+        throw new BadRequestException('Organization ID is required');
+      }
+
+      const whereClause: any = {
+        uid: ref, 
+        isDeleted: false,
+        organisation: { uid: orgId }
+      };
+
+      if (branchId) {
+        whereClause.branch = { uid: branchId };
+      }
+
       const lead = await this.leadRepository.findOne({
-        where: { uid: ref, isDeleted: false },
-        relations: ['owner']
+        where: whereClause,
+        relations: ['owner', 'organisation', 'branch']
       });
 
       if (!lead) {
@@ -166,7 +214,12 @@ export class LeadsService {
         };
       }
 
-      const allLeads = await this.leadRepository.find();
+      const allLeads = await this.leadRepository.find({
+        where: {
+          isDeleted: false,
+          organisation: { uid: orgId }
+        }
+      });
       const stats = this.calculateStats(allLeads);
 
       const response = {
@@ -187,10 +240,25 @@ export class LeadsService {
     }
   }
 
-  public async leadsByUser(ref: number): Promise<{ message: string, leads: Lead[], stats: any }> {
+  public async leadsByUser(ref: number, orgId?: number, branchId?: number): Promise<{ message: string, leads: Lead[], stats: any }> {
     try {
+      if (!orgId) {
+        throw new BadRequestException('Organization ID is required');
+      }
+
+      const whereClause: any = {
+        owner: { uid: ref },
+        isDeleted: false,
+        organisation: { uid: orgId }
+      };
+
+      if (branchId) {
+        whereClause.branch = { uid: branchId };
+      }
+
       const leads = await this.leadRepository.find({
-        where: { owner: { uid: ref } }
+        where: whereClause,
+        relations: ['owner', 'organisation', 'branch']
       });
 
       if (!leads) {
@@ -217,10 +285,37 @@ export class LeadsService {
     }
   }
 
-  async update(ref: number, updateLeadDto: UpdateLeadDto): Promise<{ message: string }> {
+  async update(ref: number, updateLeadDto: UpdateLeadDto, orgId?: number, branchId?: number): Promise<{ message: string }> {
     try {
+      if (!orgId) {
+        throw new BadRequestException('Organization ID is required');
+      }
+
+      const whereClause: any = {
+        uid: ref,
+        isDeleted: false,
+        organisation: { uid: orgId }
+      };
+
+      if (branchId) {
+        whereClause.branch = { uid: branchId };
+      }
+
+      // First check if the lead exists with these constraints
+      const leadExists = await this.leadRepository.findOne({
+        where: whereClause,
+      });
+
+      if (!leadExists) {
+        return {
+          message: process.env.NOT_FOUND_MESSAGE,
+        };
+      }
+
+      // Update the lead
       await this.leadRepository.update(ref, updateLeadDto);
 
+      // Get the updated lead for notification
       const updatedLead = await this.leadRepository.findOne({
         where: { uid: ref, isDeleted: false },
         relations: ['owner']
@@ -260,63 +355,88 @@ export class LeadsService {
       });
 
       return response;
-
     } catch (error) {
-      const response = {
-        message: error?.message,
-      }
-
-      return response;
+      return {
+        message: error?.message
+      };
     }
   }
 
-  async remove(ref: number): Promise<{ message: string }> {
+  async remove(ref: number, orgId?: number, branchId?: number): Promise<{ message: string }> {
     try {
+      if (!orgId) {
+        throw new BadRequestException('Organization ID is required');
+      }
+
+      const whereClause: any = {
+        uid: ref,
+        isDeleted: false,
+        organisation: { uid: orgId }
+      };
+
+      if (branchId) {
+        whereClause.branch = { uid: branchId };
+      }
+
       const lead = await this.leadRepository.findOne({
-        where: { uid: ref, isDeleted: false }
+        where: whereClause
       });
 
       if (!lead) {
-        throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
-      };
-
-      await this.leadRepository.update(
-        { uid: ref },
-        { isDeleted: true }
-      );
-
-      const response = {
-        message: process.env.SUCCESS_MESSAGE,
-      };
-
-      return response;
-    } catch (error) {
-      const response = {
-        message: error?.message,
+        return {
+          message: process.env.NOT_FOUND_MESSAGE,
+        };
       }
 
-      return response;
+      // Use soft delete by updating isDeleted flag
+      await this.leadRepository.update(ref, { isDeleted: true });
+
+      return {
+        message: process.env.SUCCESS_MESSAGE,
+      };
+    } catch (error) {
+      return {
+        message: error?.message
+      };
     }
   }
 
-  async restore(ref: number): Promise<{ message: string }> {
+  async restore(ref: number, orgId?: number, branchId?: number): Promise<{ message: string }> {
     try {
-      await this.leadRepository.update(
-        { uid: ref },
-        { isDeleted: false }
-      );
-
-      const response = {
-        message: process.env.SUCCESS_MESSAGE,
-      };
-
-      return response;
-    } catch (error) {
-      const response = {
-        message: error?.message,
+      if (!orgId) {
+        throw new BadRequestException('Organization ID is required');
       }
 
-      return response;
+      const whereClause: any = {
+        uid: ref,
+        isDeleted: true,
+        organisation: { uid: orgId }
+      };
+
+      if (branchId) {
+        whereClause.branch = { uid: branchId };
+      }
+
+      const lead = await this.leadRepository.findOne({
+        where: whereClause
+      });
+
+      if (!lead) {
+        return {
+          message: process.env.NOT_FOUND_MESSAGE,
+        };
+      }
+
+      // Restore by setting isDeleted to false
+      await this.leadRepository.update(ref, { isDeleted: false });
+
+      return {
+        message: process.env.SUCCESS_MESSAGE,
+      };
+    } catch (error) {
+      return {
+        message: error?.message
+      };
     }
   }
 

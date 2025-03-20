@@ -9,5 +9,6 @@ export interface AuthenticatedRequest extends Request {
 		org?: {
 			uid: number;
 		};
+		organisationRef?: number;
 	};
 }

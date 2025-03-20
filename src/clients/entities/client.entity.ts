@@ -7,7 +7,7 @@ import { Column, Entity, OneToMany, ManyToOne, PrimaryGeneratedColumn } from 'ty
 import { CheckIn } from '../../check-ins/entities/check-in.entity';
 import { Organisation } from 'src/organisation/entities/organisation.entity';
 import { Branch } from 'src/branch/entities/branch.entity';
-import { ClientType } from 'src/lib/enums/client.enums';
+import { ClientType, ClientContactPreference, PriceTier, AcquisitionChannel, ClientRiskLevel, PaymentMethod } from 'src/lib/enums/client.enums';
 
 @Entity('client')
 export class Client {
@@ -62,6 +62,112 @@ export class Client {
 
     @Column({ default: false })
     isDeleted: boolean;
+
+    // CRM Enhancement: Credit limit
+    @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true, default: 0 })
+    creditLimit: number;
+
+    // CRM Enhancement: Current balance/outstanding amount
+    @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true, default: 0 })
+    outstandingBalance: number;
+
+    // CRM Enhancement: Price tier - determines pricing structure for this client
+    @Column({ type: 'enum', enum: PriceTier, default: PriceTier.STANDARD })
+    priceTier: PriceTier;
+
+    // CRM Enhancement: Preferred contact method
+    @Column({ type: 'enum', enum: ClientContactPreference, default: ClientContactPreference.EMAIL })
+    preferredContactMethod: ClientContactPreference;
+
+    // CRM Enhancement: Last visit/interaction date
+    @Column({ type: 'timestamp', nullable: true })
+    lastVisitDate: Date;
+
+    // CRM Enhancement: Next scheduled contact date
+    @Column({ type: 'timestamp', nullable: true })
+    nextContactDate: Date;
+
+    // CRM Enhancement: Store/Product categories this client can access
+    @Column({ type: 'json', nullable: true })
+    visibleCategories: string[];
+
+    // CRM Enhancement: Client tags for better categorization
+    @Column({ type: 'json', nullable: true })
+    tags: string[];
+
+    // CRM Enhancement: Birthday for sending special offers
+    @Column({ type: 'date', nullable: true })
+    birthday: Date;
+
+    // CRM Enhancement: Anniversary date (like client since date)
+    @Column({ type: 'date', nullable: true })
+    anniversaryDate: Date;
+
+    // CRM Enhancement: Lifetime value
+    @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true, default: 0 })
+    lifetimeValue: number;
+
+    // CRM Enhancement: Discount percentage (if client has a specific discount)
+    @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true, default: 0 })
+    discountPercentage: number;
+
+    // CRM Enhancement: Payment terms (net 30, etc.)
+    @Column({ nullable: true, default: 'Net 30' })
+    paymentTerms: string;
+
+    // CRM Enhancement: Acquisition channel - how the client was acquired
+    @Column({ type: 'enum', enum: AcquisitionChannel, nullable: true })
+    acquisitionChannel: AcquisitionChannel;
+
+    // CRM Enhancement: Acquisition date - when the client was acquired
+    @Column({ type: 'date', nullable: true })
+    acquisitionDate: Date;
+
+    // CRM Enhancement: Client risk level - for financial assessment
+    @Column({ type: 'enum', enum: ClientRiskLevel, default: ClientRiskLevel.LOW })
+    riskLevel: ClientRiskLevel;
+
+    // CRM Enhancement: Preferred payment method
+    @Column({ type: 'enum', enum: PaymentMethod, nullable: true })
+    preferredPaymentMethod: PaymentMethod;
+
+    // CRM Enhancement: Preferred language
+    @Column({ nullable: true, default: 'English' })
+    preferredLanguage: string;
+
+    // CRM Enhancement: Industry
+    @Column({ nullable: true })
+    industry: string;
+
+    // CRM Enhancement: Company size (number of employees)
+    @Column({ type: 'integer', nullable: true })
+    companySize: number;
+
+    // CRM Enhancement: Annual revenue
+    @Column({ type: 'decimal', precision: 16, scale: 2, nullable: true })
+    annualRevenue: number;
+
+    // CRM Enhancement: Customer satisfaction score (CSAT)
+    @Column({ type: 'decimal', precision: 3, scale: 1, nullable: true })
+    satisfactionScore: number;
+
+    // CRM Enhancement: Net Promoter Score (NPS)
+    @Column({ type: 'integer', nullable: true })
+    npsScore: number;
+
+    // CRM Enhancement: Custom fields for client-specific data
+    @Column({ type: 'json', nullable: true })
+    customFields: Record<string, any>;
+
+    // CRM Enhancement: Social media profiles
+    @Column({ type: 'json', nullable: true })
+    socialProfiles: {
+        linkedin?: string;
+        twitter?: string;
+        facebook?: string;
+        instagram?: string;
+        [key: string]: string;
+    };
 
     // Relations
     @ManyToOne(() => User, (user) => user?.clients, { nullable: true })
