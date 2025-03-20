@@ -1,18 +1,20 @@
 import { JournalService } from './journal.service';
 import { CreateJournalDto } from './dto/create-journal.dto';
-import { ApiOperation, ApiTags, ApiParam, ApiBody, ApiOkResponse, ApiCreatedResponse, ApiBadRequestResponse, ApiNotFoundResponse, ApiUnauthorizedResponse } from '@nestjs/swagger';
+import { ApiOperation, ApiTags, ApiParam, ApiBody, ApiOkResponse, ApiCreatedResponse, ApiBadRequestResponse, ApiNotFoundResponse, ApiUnauthorizedResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { RoleGuard } from '../guards/role.guard';
 import { Roles } from '../decorators/role.decorator';
 import { AccessLevel } from '../lib/enums/user.enums';
 import { UpdateJournalDto } from './dto/update-journal.dto';
 import { AuthGuard } from '../guards/auth.guard';
 import { EnterpriseOnly } from '../decorators/enterprise-only.decorator';
-import { Controller, Get, Post, Body, Param, UseGuards, Patch, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Patch, Delete, Req } from '@nestjs/common';
+import { AuthenticatedRequest } from '../lib/interfaces/authenticated-request.interface';
 
 @ApiTags('journal')
 @Controller('journal')
 @UseGuards(AuthGuard, RoleGuard)
 @EnterpriseOnly('journal')
+@ApiBearerAuth('JWT-auth')
 @ApiUnauthorizedResponse({ description: 'Unauthorized access due to invalid credentials or missing token' })
 export class JournalController {
   constructor(private readonly journalService: JournalService) { }
@@ -34,8 +36,10 @@ export class JournalController {
     }
   })
   @ApiBadRequestResponse({ description: 'Invalid input data provided' })
-  create(@Body() createJournalDto: CreateJournalDto) {
-    return this.journalService.create(createJournalDto);
+  create(@Body() createJournalDto: CreateJournalDto, @Req() req: AuthenticatedRequest) {
+    const orgId = req.user?.org?.uid;
+    const branchId = req.user?.branch?.uid;
+    return this.journalService.create(createJournalDto, orgId, branchId);
   }
 
   @Get()
@@ -87,8 +91,10 @@ export class JournalController {
       }
     }
   })
-  findAll() {
-    return this.journalService.findAll();
+  findAll(@Req() req: AuthenticatedRequest) {
+    const orgId = req.user?.org?.uid;
+    const branchId = req.user?.branch?.uid;
+    return this.journalService.findAll({}, 1, 25, orgId, branchId);
   }
 
   @Get(':ref')
@@ -138,8 +144,10 @@ export class JournalController {
     }
   })
   @ApiNotFoundResponse({ description: 'Journal entry not found' })
-  findOne(@Param('ref') ref: number) {
-    return this.journalService.findOne(ref);
+  findOne(@Param('ref') ref: number, @Req() req: AuthenticatedRequest) {
+    const orgId = req.user?.org?.uid;
+    const branchId = req.user?.branch?.uid;
+    return this.journalService.findOne(ref, orgId, branchId);
   }
 
   @Get('for/:ref')
@@ -207,8 +215,10 @@ export class JournalController {
     }
   })
   @ApiNotFoundResponse({ description: 'User not found or has no journal entries' })
-  journalsByUser(@Param('ref') ref: number) {
-    return this.journalService.journalsByUser(ref);
+  journalsByUser(@Param('ref') ref: number, @Req() req: AuthenticatedRequest) {
+    const orgId = req.user?.org?.uid;
+    const branchId = req.user?.branch?.uid;
+    return this.journalService.journalsByUser(ref, orgId, branchId);
   }
 
   @Patch(':ref')
@@ -235,8 +245,10 @@ export class JournalController {
   })
   @ApiNotFoundResponse({ description: 'Journal entry not found' })
   @ApiBadRequestResponse({ description: 'Invalid input data provided' })
-  update(@Param('ref') ref: number, @Body() updateJournalDto: UpdateJournalDto) {
-    return this.journalService.update(ref, updateJournalDto);
+  update(@Param('ref') ref: number, @Body() updateJournalDto: UpdateJournalDto, @Req() req: AuthenticatedRequest) {
+    const orgId = req.user?.org?.uid;
+    const branchId = req.user?.branch?.uid;
+    return this.journalService.update(ref, updateJournalDto, orgId, branchId);
   }
 
   @Patch('restore/:ref')
@@ -261,8 +273,10 @@ export class JournalController {
     }
   })
   @ApiNotFoundResponse({ description: 'Journal entry not found' })
-  restore(@Param('ref') ref: number) {
-    return this.journalService.restore(ref);
+  restore(@Param('ref') ref: number, @Req() req: AuthenticatedRequest) {
+    const orgId = req.user?.org?.uid;
+    const branchId = req.user?.branch?.uid;
+    return this.journalService.restore(ref, orgId, branchId);
   }
 
   @Delete(':ref')
@@ -287,7 +301,9 @@ export class JournalController {
     }
   })
   @ApiNotFoundResponse({ description: 'Journal entry not found' })
-  remove(@Param('ref') ref: number) {
-    return this.journalService.remove(ref);
+  remove(@Param('ref') ref: number, @Req() req: AuthenticatedRequest) {
+    const orgId = req.user?.org?.uid;
+    const branchId = req.user?.branch?.uid;
+    return this.journalService.remove(ref, orgId, branchId);
   }
 }

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, Req } from '@nestjs/common';
 import { ClientsService } from './clients.service';
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
@@ -13,6 +13,7 @@ import {
 	ApiBadRequestResponse,
 	ApiNotFoundResponse,
 	ApiUnauthorizedResponse,
+	ApiBearerAuth,
 } from '@nestjs/swagger';
 import { AuthGuard } from '../guards/auth.guard';
 import { RoleGuard } from '../guards/role.guard';
@@ -20,12 +21,14 @@ import { AccessLevel } from '../lib/enums/user.enums';
 import { Roles } from '../decorators/role.decorator';
 import { EnterpriseOnly } from '../decorators/enterprise-only.decorator';
 import { Client } from './entities/client.entity';
-import { PaginatedResponse } from '../lib/interfaces/product.interfaces';
+import { AuthenticatedRequest } from '../lib/interfaces/authenticated-request.interface';
+import { GeneralStatus } from '../lib/enums/status.enums';
 
 @ApiTags('clients')
 @Controller('clients')
 @UseGuards(AuthGuard, RoleGuard)
 @EnterpriseOnly('clients')
+@ApiBearerAuth('JWT-auth')
 @ApiUnauthorizedResponse({ description: 'Unauthorized - Invalid credentials or missing token' })
 export class ClientsController {
 	constructor(private readonly clientsService: ClientsService) {}
@@ -62,8 +65,10 @@ export class ClientsController {
 			},
 		},
 	})
-	create(@Body() createClientDto: CreateClientDto) {
-		return this.clientsService.create(createClientDto);
+	create(@Body() createClientDto: CreateClientDto, @Req() req: AuthenticatedRequest) {
+		const orgId = req.user?.org?.uid;
+		const branchId = req.user?.branch?.uid;
+		return this.clientsService.create(createClientDto, orgId, branchId);
 	}
 
 	@Get()
@@ -85,6 +90,24 @@ export class ClientsController {
 		type: Number,
 		required: false,
 		description: 'Number of records per page, defaults to system setting',
+	})
+	@ApiQuery({
+		name: 'status',
+		enum: GeneralStatus,
+		required: false,
+		description: 'Filter by client status',
+	})
+	@ApiQuery({
+		name: 'category',
+		type: String,
+		required: false,
+		description: 'Filter by client category',
+	})
+	@ApiQuery({
+		name: 'search',
+		type: String,
+		required: false,
+		description: 'Search term for client name, email, or phone',
 	})
 	@ApiOkResponse({
 		description: 'List of clients retrieved successfully',
@@ -108,10 +131,24 @@ export class ClientsController {
 			},
 		},
 	})
-	findAll(@Query('page') page?: number, @Query('limit') limit?: number) {
+	findAll(
+		@Req() req: AuthenticatedRequest,
+		@Query('page') page?: number,
+		@Query('limit') limit?: number,
+		@Query('status') status?: GeneralStatus,
+		@Query('category') category?: string,
+		@Query('search') search?: string,
+	) {
+		const orgId = req.user?.org?.uid;
+		const branchId = req.user?.branch?.uid;
+		const filters = { status, category, search };
+
 		return this.clientsService.findAll(
 			page ? Number(page) : 1,
 			limit ? Number(limit) : Number(process.env.DEFAULT_PAGE_LIMIT),
+			orgId,
+			branchId,
+			filters,
 		);
 	}
 
@@ -158,8 +195,10 @@ export class ClientsController {
 			},
 		},
 	})
-	findOne(@Param('ref') ref: number) {
-		return this.clientsService.findOne(ref);
+	findOne(@Param('ref') ref: number, @Req() req: AuthenticatedRequest) {
+		const orgId = req.user?.org?.uid;
+		const branchId = req.user?.branch?.uid;
+		return this.clientsService.findOne(ref, orgId, branchId);
 	}
 
 	@Patch(':ref')
@@ -204,8 +243,10 @@ export class ClientsController {
 			},
 		},
 	})
-	update(@Param('ref') ref: number, @Body() updateClientDto: UpdateClientDto) {
-		return this.clientsService.update(ref, updateClientDto);
+	update(@Param('ref') ref: number, @Body() updateClientDto: UpdateClientDto, @Req() req: AuthenticatedRequest) {
+		const orgId = req.user?.org?.uid;
+		const branchId = req.user?.branch?.uid;
+		return this.clientsService.update(ref, updateClientDto, orgId, branchId);
 	}
 
 	@Patch('restore/:ref')
@@ -240,8 +281,10 @@ export class ClientsController {
 			},
 		},
 	})
-	restore(@Param('ref') ref: number) {
-		return this.clientsService.restore(ref);
+	restore(@Param('ref') ref: number, @Req() req: AuthenticatedRequest) {
+		const orgId = req.user?.org?.uid;
+		const branchId = req.user?.branch?.uid;
+		return this.clientsService.restore(ref, orgId, branchId);
 	}
 
 	@Delete(':ref')
@@ -277,7 +320,9 @@ export class ClientsController {
 			},
 		},
 	})
-	remove(@Param('ref') ref: number) {
-		return this.clientsService.remove(ref);
+	remove(@Param('ref') ref: number, @Req() req: AuthenticatedRequest) {
+		const orgId = req.user?.org?.uid;
+		const branchId = req.user?.branch?.uid;
+		return this.clientsService.remove(ref, orgId, branchId);
 	}
 }

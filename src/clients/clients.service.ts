@@ -89,13 +89,13 @@ export class ClientsService {
 		}
 	}
 
-	async create(createClientDto: CreateClientDto, user?: any): Promise<{ message: string }> {
+	async create(createClientDto: CreateClientDto, orgId?: number, branchId?: number): Promise<{ message: string }> {
 		try {
-			// Add organization and branch from user token
+			// Add organization and branch
 			const clientData = {
 				...createClientDto,
-				organisation: user?.organisationRef ? { uid: user.organisationRef } : undefined,
-				branch: user?.branch?.uid ? { uid: user.branch.uid } : undefined,
+				organisation: orgId ? { uid: orgId } : undefined,
+				branch: branchId ? { uid: branchId } : undefined,
 			} as DeepPartial<Client>;
 
 			const client = await this.clientsRepository.save(clientData);
@@ -120,7 +120,8 @@ export class ClientsService {
 	async findAll(
 		page: number = 1,
 		limit: number = Number(process.env.DEFAULT_PAGE_LIMIT),
-		user?: any,
+		orgId?: number,
+		branchId?: number,
 		filters?: {
 			status?: GeneralStatus;
 			category?: string;
@@ -128,7 +129,9 @@ export class ClientsService {
 		},
 	): Promise<PaginatedResponse<Client>> {
 		try {
-			const cacheKey = `${this.CACHE_PREFIX}page${page}_limit${limit}_${JSON.stringify(filters)}`;
+			const cacheKey = `${
+				this.CACHE_PREFIX
+			}page${page}_limit${limit}_org${orgId}_branch${branchId}_${JSON.stringify(filters)}`;
 			const cachedClients = await this.cacheManager.get<PaginatedResponse<Client>>(cacheKey);
 
 			if (cachedClients) {
@@ -138,13 +141,13 @@ export class ClientsService {
 			// Create find options with relationships
 			const where: FindOptionsWhere<Client> = { isDeleted: false };
 
-			// Security: Always filter by organization and branch
-			if (user?.organisationRef) {
-				where.organisation = { uid: user.organisationRef };
+			// Filter by organization and branch
+			if (orgId) {
+				where.organisation = { uid: orgId };
 			}
 
-			if (user?.branch?.uid) {
-				where.branch = { uid: user.branch.uid };
+			if (branchId) {
+				where.branch = { uid: branchId };
 			}
 
 			if (filters?.status) {
@@ -157,7 +160,7 @@ export class ClientsService {
 
 			if (filters?.search) {
 				// Handle search across multiple fields
-				return this.clientsBySearchTerm(filters.search, page, limit, user);
+				return this.clientsBySearchTerm(filters.search, page, limit, orgId, branchId);
 			}
 
 			// Find clients with pagination
@@ -200,9 +203,9 @@ export class ClientsService {
 		}
 	}
 
-	async findOne(ref: number, user?: any): Promise<{ message: string; client: Client | null }> {
+	async findOne(ref: number, orgId?: number, branchId?: number): Promise<{ message: string; client: Client | null }> {
 		try {
-			const cacheKey = this.getCacheKey(ref);
+			const cacheKey = `${this.getCacheKey(ref)}_org${orgId}_branch${branchId}`;
 			const cachedClient = await this.cacheManager.get<Client>(cacheKey);
 
 			if (cachedClient) {
@@ -218,13 +221,13 @@ export class ClientsService {
 				isDeleted: false,
 			};
 
-			// Security: Always filter by organization and branch
-			if (user?.organisationRef) {
-				where.organisation = { uid: user.organisationRef };
+			// Filter by organization and branch
+			if (orgId) {
+				where.organisation = { uid: orgId };
 			}
 
-			if (user?.branch?.uid) {
-				where.branch = { uid: user.branch.uid };
+			if (branchId) {
+				where.branch = { uid: branchId };
 			}
 
 			const client = await this.clientsRepository.findOne({
@@ -250,14 +253,33 @@ export class ClientsService {
 		}
 	}
 
-	async update(ref: number, updateClientDto: UpdateClientDto, user?: any): Promise<{ message: string }> {
+	async update(
+		ref: number,
+		updateClientDto: UpdateClientDto,
+		orgId?: number,
+		branchId?: number,
+	): Promise<{ message: string }> {
 		try {
-			const existingClient = await this.findOne(ref, user);
+			const existingClient = await this.findOne(ref, orgId, branchId);
 			if (!existingClient.client) {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
-			await this.clientsRepository.update(ref, updateClientDto as DeepPartial<Client>);
+			// Create where conditions including organization and branch
+			const whereConditions: FindOptionsWhere<Client> = { uid: ref };
+
+			// Add organization filter if provided
+			if (orgId) {
+				whereConditions.organisation = { uid: orgId };
+			}
+
+			// Add branch filter if provided
+			if (branchId) {
+				whereConditions.branch = { uid: branchId };
+			}
+
+			// Update with proper filtering
+			await this.clientsRepository.update(whereConditions, updateClientDto as DeepPartial<Client>);
 
 			// Invalidate cache after update
 			await this.invalidateClientCache(existingClient.client);
@@ -272,14 +294,28 @@ export class ClientsService {
 		}
 	}
 
-	async remove(ref: number, user?: any): Promise<{ message: string }> {
+	async remove(ref: number, orgId?: number, branchId?: number): Promise<{ message: string }> {
 		try {
-			const existingClient = await this.findOne(ref, user);
+			const existingClient = await this.findOne(ref, orgId, branchId);
 			if (!existingClient.client) {
 				throw new NotFoundException(process.env.DELETE_ERROR_MESSAGE);
 			}
 
-			await this.clientsRepository.update({ uid: ref }, { isDeleted: true });
+			// Create where conditions including organization and branch
+			const whereConditions: FindOptionsWhere<Client> = { uid: ref };
+
+			// Add organization filter if provided
+			if (orgId) {
+				whereConditions.organisation = { uid: orgId };
+			}
+
+			// Add branch filter if provided
+			if (branchId) {
+				whereConditions.branch = { uid: branchId };
+			}
+
+			// Update with proper filtering
+			await this.clientsRepository.update(whereConditions, { isDeleted: true });
 
 			// Invalidate cache after deletion
 			await this.invalidateClientCache(existingClient.client);
@@ -293,16 +329,25 @@ export class ClientsService {
 			};
 		}
 	}
-	async restore(ref: number, user?: any): Promise<{ message: string }> {
+	async restore(ref: number, orgId?: number, branchId?: number): Promise<{ message: string }> {
 		try {
 			// Find the deleted client specifically
+			const where: FindOptionsWhere<Client> = {
+				uid: ref,
+				isDeleted: true,
+			};
+
+			// Filter by organization and branch
+			if (orgId) {
+				where.organisation = { uid: orgId };
+			}
+
+			if (branchId) {
+				where.branch = { uid: branchId };
+			}
+
 			const existingClient = await this.clientsRepository.findOne({
-				where: {
-					uid: ref,
-					isDeleted: true,
-					...(user?.organisationRef && { organisation: { uid: user.organisationRef } }),
-					...(user?.branch?.uid && { branch: { uid: user.branch.uid } }),
-				},
+				where,
 				relations: ['branch', 'organisation'],
 			});
 
@@ -310,8 +355,9 @@ export class ClientsService {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
+			// Use the same where conditions for the update
 			await this.clientsRepository.update(
-				{ uid: ref },
+				where,
 				{
 					isDeleted: false,
 					status: GeneralStatus.ACTIVE,
@@ -335,10 +381,13 @@ export class ClientsService {
 		searchTerm: string,
 		page: number = 1,
 		limit: number = 10,
-		user?: any,
+		orgId?: number,
+		branchId?: number,
 	): Promise<PaginatedResponse<Client>> {
 		try {
-			const cacheKey = `${this.CACHE_PREFIX}search_${searchTerm?.toLowerCase()}_page${page}_limit${limit}`;
+			const cacheKey = `${
+				this.CACHE_PREFIX
+			}search_${searchTerm?.toLowerCase()}_page${page}_limit${limit}_org${orgId}_branch${branchId}`;
 			const cachedResults = await this.cacheManager.get<PaginatedResponse<Client>>(cacheKey);
 
 			if (cachedResults) {
@@ -348,13 +397,13 @@ export class ClientsService {
 			// Build where conditions for search
 			const where: FindOptionsWhere<Client> = { isDeleted: false };
 
-			// Security: Always filter by organization and branch
-			if (user?.organisationRef) {
-				where.organisation = { uid: user.organisationRef };
+			// Filter by organization and branch
+			if (orgId) {
+				where.organisation = { uid: orgId };
 			}
 
-			if (user?.branch?.uid) {
-				where.branch = { uid: user.branch.uid };
+			if (branchId) {
+				where.branch = { uid: branchId };
 			}
 
 			// Find clients with search criteria across multiple fields

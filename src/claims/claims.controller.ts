@@ -1,18 +1,20 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req } from '@nestjs/common';
 import { ClaimsService } from './claims.service';
 import { CreateClaimDto } from './dto/create-claim.dto';
 import { UpdateClaimDto } from './dto/update-claim.dto';
-import { ApiOperation, ApiTags, ApiParam, ApiBody, ApiOkResponse, ApiCreatedResponse, ApiBadRequestResponse, ApiNotFoundResponse, ApiUnauthorizedResponse } from '@nestjs/swagger';
+import { ApiOperation, ApiTags, ApiParam, ApiBody, ApiOkResponse, ApiCreatedResponse, ApiBadRequestResponse, ApiNotFoundResponse, ApiUnauthorizedResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { Roles } from '../decorators/role.decorator';
 import { AccessLevel } from '../lib/enums/user.enums';
 import { RoleGuard } from '../guards/role.guard';
 import { AuthGuard } from '../guards/auth.guard';
 import { EnterpriseOnly } from '../decorators/enterprise-only.decorator';
+import { AuthenticatedRequest } from '../lib/interfaces/authenticated-request.interface';
 
 @ApiTags('claims')
 @Controller('claims')
 @UseGuards(AuthGuard, RoleGuard)
 @EnterpriseOnly('claims')
+@ApiBearerAuth('JWT-auth')
 @ApiUnauthorizedResponse({ description: 'Unauthorized access due to invalid credentials or missing token' })
 export class ClaimsController {
   constructor(private readonly claimsService: ClaimsService) { }
@@ -70,8 +72,10 @@ export class ClaimsController {
     }
   })
   @ApiBadRequestResponse({ description: 'Invalid input data provided' })
-  create(@Body() createClaimDto: CreateClaimDto) {
-    return this.claimsService.create(createClaimDto);
+  create(@Body() createClaimDto: CreateClaimDto, @Req() req: AuthenticatedRequest) {
+    const orgId = req.user?.org?.uid;
+    const branchId = req.user?.branch?.uid;
+    return this.claimsService.create(createClaimDto, orgId, branchId);
   }
 
   @Get()
@@ -127,8 +131,10 @@ export class ClaimsController {
       }
     }
   })
-  findAll() {
-    return this.claimsService.findAll();
+  findAll(@Req() req: AuthenticatedRequest) {
+    const orgId = req.user?.org?.uid;
+    const branchId = req.user?.branch?.uid;
+    return this.claimsService.findAll({}, 1, 25, orgId, branchId);
   }
 
   @Get(':ref')
@@ -190,8 +196,10 @@ export class ClaimsController {
     }
   })
   @ApiNotFoundResponse({ description: 'Claim not found' })
-  findOne(@Param('ref') ref: number) {
-    return this.claimsService.findOne(ref);
+  findOne(@Param('ref') ref: number, @Req() req: AuthenticatedRequest) {
+    const orgId = req.user?.org?.uid;
+    const branchId = req.user?.branch?.uid;
+    return this.claimsService.findOne(ref, orgId, branchId);
   }
 
   @Patch(':ref')
@@ -226,8 +234,10 @@ export class ClaimsController {
   })
   @ApiNotFoundResponse({ description: 'Claim not found' })
   @ApiBadRequestResponse({ description: 'Invalid input data provided' })
-  update(@Param('ref') ref: number, @Body() updateClaimDto: UpdateClaimDto) {
-    return this.claimsService.update(ref, updateClaimDto);
+  update(@Param('ref') ref: number, @Body() updateClaimDto: UpdateClaimDto, @Req() req: AuthenticatedRequest) {
+    const orgId = req.user?.org?.uid;
+    const branchId = req.user?.branch?.uid;
+    return this.claimsService.update(ref, updateClaimDto, orgId, branchId);
   }
 
   @Patch('restore/:ref')
@@ -260,8 +270,10 @@ export class ClaimsController {
     }
   })
   @ApiNotFoundResponse({ description: 'Claim not found' })
-  restore(@Param('ref') ref: number) {
-    return this.claimsService.restore(ref);
+  restore(@Param('ref') ref: number, @Req() req: AuthenticatedRequest) {
+    const orgId = req.user?.org?.uid;
+    const branchId = req.user?.branch?.uid;
+    return this.claimsService.restore(ref, orgId, branchId);
   }
 
   @Get('for/:ref')
@@ -324,8 +336,10 @@ export class ClaimsController {
     }
   })
   @ApiNotFoundResponse({ description: 'User not found or has no claims' })
-  claimsByUser(@Param('ref') ref: number) {
-    return this.claimsService.claimsByUser(ref);
+  claimsByUser(@Param('ref') ref: number, @Req() req: AuthenticatedRequest) {
+    const orgId = req.user?.org?.uid;
+    const branchId = req.user?.branch?.uid;
+    return this.claimsService.claimsByUser(ref, orgId, branchId);
   }
 
   @Delete(':ref')
@@ -358,7 +372,9 @@ export class ClaimsController {
     }
   })
   @ApiNotFoundResponse({ description: 'Claim not found' })
-  remove(@Param('ref') ref: number) {
-    return this.claimsService.remove(ref);
+  remove(@Param('ref') ref: number, @Req() req: AuthenticatedRequest) {
+    const orgId = req.user?.org?.uid;
+    const branchId = req.user?.branch?.uid;
+    return this.claimsService.remove(ref, orgId, branchId);
   }
 }

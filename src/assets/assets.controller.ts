@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req } from '@nestjs/common';
 import { AssetsService } from './assets.service';
 import { CreateAssetDto } from './dto/create-asset.dto';
 import { UpdateAssetDto } from './dto/update-asset.dto';
+import { AuthenticatedRequest } from '../lib/interfaces/authenticated-request.interface';
 import { 
   ApiBearerAuth, 
   ApiOperation, 
@@ -33,15 +34,15 @@ export class AssetsController {
   ) { }
 
   @Post()
- @Roles(
-		AccessLevel.ADMIN,
-		AccessLevel.MANAGER,
-		AccessLevel.SUPPORT,
-		AccessLevel.DEVELOPER,
-		AccessLevel.USER,
-		AccessLevel.OWNER,
-		AccessLevel.TECHNICIAN,
-	)
+  @Roles(
+    AccessLevel.ADMIN,
+    AccessLevel.MANAGER,
+    AccessLevel.SUPPORT,
+    AccessLevel.DEVELOPER,
+    AccessLevel.USER,
+    AccessLevel.OWNER,
+    AccessLevel.TECHNICIAN,
+  )
   @ApiOperation({ 
     summary: 'Create a new asset',
     description: 'Creates a new asset with the provided details'
@@ -65,20 +66,22 @@ export class AssetsController {
       }
     }
   })
-  create(@Body() createAssetDto: CreateAssetDto) {
-    return this.assetsService.create(createAssetDto);
+  create(@Body() createAssetDto: CreateAssetDto, @Req() req: AuthenticatedRequest) {
+    const orgId = req.user?.org?.uid;
+    const branchId = req.user?.branch?.uid;
+    return this.assetsService.create(createAssetDto, orgId, branchId);
   }
 
   @Get()
- @Roles(
-		AccessLevel.ADMIN,
-		AccessLevel.MANAGER,
-		AccessLevel.SUPPORT,
-		AccessLevel.DEVELOPER,
-		AccessLevel.USER,
-		AccessLevel.OWNER,
-		AccessLevel.TECHNICIAN,
-	)
+  @Roles(
+    AccessLevel.ADMIN,
+    AccessLevel.MANAGER,
+    AccessLevel.SUPPORT,
+    AccessLevel.DEVELOPER,
+    AccessLevel.USER,
+    AccessLevel.OWNER,
+    AccessLevel.TECHNICIAN,
+  )
   @ApiOperation({ 
     summary: 'Get all assets',
     description: 'Retrieves a list of all non-deleted assets'
@@ -103,20 +106,22 @@ export class AssetsController {
       }
     }
   })
-  findAll() {
-    return this.assetsService.findAll();
+  findAll(@Req() req: AuthenticatedRequest) {
+    const orgId = req.user?.org?.uid;
+    const branchId = req.user?.branch?.uid;
+    return this.assetsService.findAll(orgId, branchId);
   }
 
   @Get(':ref')
- @Roles(
-		AccessLevel.ADMIN,
-		AccessLevel.MANAGER,
-		AccessLevel.SUPPORT,
-		AccessLevel.DEVELOPER,
-		AccessLevel.USER,
-		AccessLevel.OWNER,
-		AccessLevel.TECHNICIAN,
-	)
+  @Roles(
+    AccessLevel.ADMIN,
+    AccessLevel.MANAGER,
+    AccessLevel.SUPPORT,
+    AccessLevel.DEVELOPER,
+    AccessLevel.USER,
+    AccessLevel.OWNER,
+    AccessLevel.TECHNICIAN,
+  )
   @ApiOperation({ 
     summary: 'Get an asset by reference code',
     description: 'Retrieves detailed information about a specific asset'
@@ -149,20 +154,22 @@ export class AssetsController {
       }
     }
   })
-  findOne(@Param('ref') ref: number) {
-    return this.assetsService.findOne(ref);
+  findOne(@Param('ref') ref: number, @Req() req: AuthenticatedRequest) {
+    const orgId = req.user?.org?.uid;
+    const branchId = req.user?.branch?.uid;
+    return this.assetsService.findOne(ref, orgId, branchId);
   }
 
   @Get('/search/:query')
- @Roles(
-		AccessLevel.ADMIN,
-		AccessLevel.MANAGER,
-		AccessLevel.SUPPORT,
-		AccessLevel.DEVELOPER,
-		AccessLevel.USER,
-		AccessLevel.OWNER,
-		AccessLevel.TECHNICIAN,
-	)
+  @Roles(
+    AccessLevel.ADMIN,
+    AccessLevel.MANAGER,
+    AccessLevel.SUPPORT,
+    AccessLevel.DEVELOPER,
+    AccessLevel.USER,
+    AccessLevel.OWNER,
+    AccessLevel.TECHNICIAN,
+  )
   @ApiOperation({ 
     summary: 'Get assets by search term',
     description: 'Searches for assets by brand, model number, or serial number'
@@ -188,20 +195,22 @@ export class AssetsController {
       }
     }
   })
-  findBySearchTerm(@Param('query') query: string) {
-    return this.assetsService.findBySearchTerm(query);
+  findBySearchTerm(@Param('query') query: string, @Req() req: AuthenticatedRequest) {
+    const orgId = req.user?.org?.uid;
+    const branchId = req.user?.branch?.uid;
+    return this.assetsService.findBySearchTerm(query, orgId, branchId);
   }
 
   @Get('for/:ref')
- @Roles(
-		AccessLevel.ADMIN,
-		AccessLevel.MANAGER,
-		AccessLevel.SUPPORT,
-		AccessLevel.DEVELOPER,
-		AccessLevel.USER,
-		AccessLevel.OWNER,
-		AccessLevel.TECHNICIAN,
-	)
+  @Roles(
+    AccessLevel.ADMIN,
+    AccessLevel.MANAGER,
+    AccessLevel.SUPPORT,
+    AccessLevel.DEVELOPER,
+    AccessLevel.USER,
+    AccessLevel.OWNER,
+    AccessLevel.TECHNICIAN,
+  )
   @ApiOperation({ 
     summary: 'Get assets by user',
     description: 'Retrieves all assets assigned to a specific user'
@@ -227,20 +236,22 @@ export class AssetsController {
       }
     }
   })
-  assetsByUser(@Param('ref') ref: number) {
-    return this.assetsService.assetsByUser(ref);
+  assetsByUser(@Param('ref') ref: number, @Req() req: AuthenticatedRequest) {
+    const orgId = req.user?.org?.uid;
+    const branchId = req.user?.branch?.uid;
+    return this.assetsService.assetsByUser(ref, orgId, branchId);
   }
 
   @Patch(':ref')
- @Roles(
-		AccessLevel.ADMIN,
-		AccessLevel.MANAGER,
-		AccessLevel.SUPPORT,
-		AccessLevel.DEVELOPER,
-		AccessLevel.USER,
-		AccessLevel.OWNER,
-		AccessLevel.TECHNICIAN,
-	)
+  @Roles(
+    AccessLevel.ADMIN,
+    AccessLevel.MANAGER,
+    AccessLevel.SUPPORT,
+    AccessLevel.DEVELOPER,
+    AccessLevel.USER,
+    AccessLevel.OWNER,
+    AccessLevel.TECHNICIAN,
+  )
   @ApiOperation({ 
     summary: 'Update an asset',
     description: 'Updates an existing asset with the provided information'
@@ -274,20 +285,22 @@ export class AssetsController {
       }
     }
   })
-  update(@Param('ref') ref: number, @Body() updateAssetDto: UpdateAssetDto) {
-    return this.assetsService.update(ref, updateAssetDto);
+  update(@Param('ref') ref: number, @Body() updateAssetDto: UpdateAssetDto, @Req() req: AuthenticatedRequest) {
+    const orgId = req.user?.org?.uid;
+    const branchId = req.user?.branch?.uid;
+    return this.assetsService.update(ref, updateAssetDto, orgId, branchId);
   }
 
   @Patch('restore/:ref')
- @Roles(
-		AccessLevel.ADMIN,
-		AccessLevel.MANAGER,
-		AccessLevel.SUPPORT,
-		AccessLevel.DEVELOPER,
-		AccessLevel.USER,
-		AccessLevel.OWNER,
-		AccessLevel.TECHNICIAN,
-	)
+  @Roles(
+    AccessLevel.ADMIN,
+    AccessLevel.MANAGER,
+    AccessLevel.SUPPORT,
+    AccessLevel.DEVELOPER,
+    AccessLevel.USER,
+    AccessLevel.OWNER,
+    AccessLevel.TECHNICIAN,
+  )
   @ApiOperation({ 
     summary: 'Restore a deleted asset',
     description: 'Restores a previously deleted asset'
@@ -316,15 +329,15 @@ export class AssetsController {
   }
 
   @Delete(':ref')
- @Roles(
-		AccessLevel.ADMIN,
-		AccessLevel.MANAGER,
-		AccessLevel.SUPPORT,
-		AccessLevel.DEVELOPER,
-		AccessLevel.USER,
-		AccessLevel.OWNER,
-		AccessLevel.TECHNICIAN,
-	)
+  @Roles(
+    AccessLevel.ADMIN,
+    AccessLevel.MANAGER,
+    AccessLevel.SUPPORT,
+    AccessLevel.DEVELOPER,
+    AccessLevel.USER,
+    AccessLevel.OWNER,
+    AccessLevel.TECHNICIAN,
+  )
   @ApiOperation({ 
     summary: 'Soft delete an asset',
     description: 'Marks an asset as deleted without removing it from the database'
@@ -348,7 +361,9 @@ export class AssetsController {
       }
     }
   })
-  remove(@Param('ref') ref: number) {
-    return this.assetsService.remove(ref);
+  remove(@Param('ref') ref: number, @Req() req: AuthenticatedRequest) {
+    const orgId = req.user?.org?.uid;
+    const branchId = req.user?.branch?.uid;
+    return this.assetsService.remove(ref, orgId, branchId);
   }
 }

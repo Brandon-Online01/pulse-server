@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { CreateAssetDto } from './dto/create-asset.dto';
 import { UpdateAssetDto } from './dto/update-asset.dto';
 import { Asset } from './entities/asset.entity';
@@ -12,208 +12,255 @@ export class AssetsService {
 		private assetRepository: Repository<Asset>
 	) { }
 
-	async create(createAssetDto: CreateAssetDto): Promise<{ message: string }> {
+	async create(createAssetDto: CreateAssetDto, orgId?: number, branchId?: number): Promise<{ message: string }> {
 		try {
-			const asset = await this.assetRepository.save(createAssetDto);
+			if (!orgId) {
+				throw new BadRequestException('Organization ID is required');
+			}
+
+			const asset = await this.assetRepository.save({
+				...createAssetDto,
+				org: { uid: orgId },
+				branch: branchId ? { uid: branchId } : null
+			});
 
 			if (!asset) {
 				throw new NotFoundException(process.env.CREATE_ERROR_MESSAGE);
 			}
 
-			const response = {
-				message: process.env.SUCCESS_MESSAGE,
-			}
-
-			return response;
+			return { message: process.env.SUCCESS_MESSAGE };
 		} catch (error) {
-			const response = {
-				message: error?.message,
-			}
-
-			return response;
+			return { message: error?.message };
 		}
 	}
 
-	async findAll(): Promise<{ assets: Asset[], message: string }> {
+	async findAll(orgId?: number, branchId?: number): Promise<{ assets: Asset[], message: string }> {
 		try {
-			const assets = await this.assetRepository.find({ where: { isDeleted: false }, relations: ['owner', 'branch'] });
-
-			if (!assets || assets?.length === 0) {
-				const response = {
-					message: process.env.SEARCH_ERROR_MESSAGE,
-					assets: null
-				}
-
-				return response;
+			if (!orgId) {
+				throw new BadRequestException('Organization ID is required');
 			}
 
-			const response = {
+			const whereClause: any = {
+				isDeleted: false,
+				org: { uid: orgId }
+			};
+
+			if (branchId) {
+				whereClause.branch = { uid: branchId };
+			}
+
+			const assets = await this.assetRepository.find({
+				where: whereClause,
+				relations: ['owner', 'branch', 'org']
+			});
+
+			if (!assets || assets?.length === 0) {
+				return {
+					message: process.env.SEARCH_ERROR_MESSAGE,
+					assets: null
+				};
+			}
+
+			return {
 				assets: assets,
 				message: process.env.SUCCESS_MESSAGE
 			};
-
-			return response
 		} catch (error) {
-			const response = {
+			return {
 				message: error?.message,
 				assets: null
-			}
-
-			return response;
+			};
 		}
 	}
 
-	async findOne(ref: number): Promise<{ asset: Asset, message: string }> {
+	async findOne(ref: number, orgId?: number, branchId?: number): Promise<{ asset: Asset, message: string }> {
 		try {
-			const asset = await this.assetRepository.findOne({ where: { uid: ref, isDeleted: false }, relations: ['owner', 'branch'] });
+			if (!orgId) {
+				throw new BadRequestException('Organization ID is required');
+			}
+
+			const whereClause: any = {
+				uid: ref,
+				isDeleted: false,
+				org: { uid: orgId }
+			};
+
+			if (branchId) {
+				whereClause.branch = { uid: branchId };
+			}
+
+			const asset = await this.assetRepository.findOne({
+				where: whereClause,
+				relations: ['owner', 'branch', 'org']
+			});
 
 			if (!asset) {
 				throw new NotFoundException(process.env.SEARCH_ERROR_MESSAGE);
 			}
 
-			const response = {
+			return {
 				asset: asset,
 				message: process.env.SUCCESS_MESSAGE
-			}
-
-			return response;
+			};
 		} catch (error) {
-			const response = {
+			return {
 				message: error?.message,
 				asset: null
-			}
-
-			return response;
+			};
 		}
 	}
 
-	async findBySearchTerm(query: string): Promise<{ assets: Asset[], message: string }> {
+	async findBySearchTerm(query: string, orgId?: number, branchId?: number): Promise<{ assets: Asset[], message: string }> {
 		try {
+			if (!orgId) {
+				throw new BadRequestException('Organization ID is required');
+			}
+
+			const baseWhere = {
+				isDeleted: false,
+				org: { uid: orgId }
+			};
+
+			if (branchId) {
+				baseWhere['branch'] = { uid: branchId };
+			}
+
 			const assets = await this.assetRepository.find({
 				where: [
-					{ brand: Like(`%${query}%`), isDeleted: false },
-					{ serialNumber: Like(`%${query}%`), isDeleted: false },
-					{ modelNumber: Like(`%${query}%`), isDeleted: false },
-					{ owner: { name: Like(`%${query}%`) }, isDeleted: false },
-					{ branch: { name: Like(`%${query}%`) }, isDeleted: false }
+					{ ...baseWhere, brand: Like(`%${query}%`) },
+					{ ...baseWhere, serialNumber: Like(`%${query}%`) },
+					{ ...baseWhere, modelNumber: Like(`%${query}%`) },
+					{ ...baseWhere, owner: { name: Like(`%${query}%`) } },
+					{ ...baseWhere, branch: { name: Like(`%${query}%`) } }
 				],
-				relations: ['owner', 'branch']
+				relations: ['owner', 'branch', 'org']
 			});
 
 			if (!assets || assets?.length === 0) {
 				throw new NotFoundException(process.env.SEARCH_ERROR_MESSAGE);
 			}
 
-			const response = {
+			return {
 				assets: assets,
 				message: process.env.SUCCESS_MESSAGE
-			}
-
-			return response;
+			};
 		} catch (error) {
-			const response = {
+			return {
 				message: error?.message,
 				assets: null
-			}
-
-			return response;
+			};
 		}
 	}
 
-	public async assetsByUser(ref: number): Promise<{ message: string, assets: Asset[] }> {
+	async assetsByUser(ref: number, orgId?: number, branchId?: number): Promise<{ message: string, assets: Asset[] }> {
 		try {
+			if (!orgId) {
+				throw new BadRequestException('Organization ID is required');
+			}
+
+			const whereClause: any = {
+				owner: { uid: ref },
+				org: { uid: orgId },
+				isDeleted: false
+			};
+
+			if (branchId) {
+				whereClause.branch = { uid: branchId };
+			}
+
 			const assets = await this.assetRepository.find({
-				where: { owner: { uid: ref } }
+				where: whereClause,
+				relations: ['owner', 'branch', 'org']
 			});
 
 			if (!assets) {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
-			const response = {
+			return {
 				message: process.env.SUCCESS_MESSAGE,
 				assets
 			};
-
-			return response;
 		} catch (error) {
-			const response = {
+			return {
 				message: `could not get assets by user - ${error?.message}`,
 				assets: null
-			}
-
-			return response;
+			};
 		}
 	}
 
-	async update(ref: number, updateAssetDto: UpdateAssetDto): Promise<{ message: string }> {
+	async update(ref: number, updateAssetDto: UpdateAssetDto, orgId?: number, branchId?: number): Promise<{ message: string }> {
 		try {
-			const asset = await this.assetRepository.update(ref, updateAssetDto);
+			if (!orgId) {
+				throw new BadRequestException('Organization ID is required');
+			}
 
+			// First verify the asset belongs to the org/branch
+			const asset = await this.findOne(ref, orgId, branchId);
 			if (!asset) {
+				throw new NotFoundException('Asset not found in your organization');
+			}
+
+			const result = await this.assetRepository.update(ref, updateAssetDto);
+
+			if (!result) {
 				throw new NotFoundException(process.env.UPDATE_ERROR_MESSAGE);
 			}
 
-			const response = {
-				message: process.env.SUCCESS_MESSAGE,
-			}
-
-			return response;
+			return { message: process.env.SUCCESS_MESSAGE };
 		} catch (error) {
-			const response = {
-				message: error?.message,
-			}
-
-			return response;
+			return { message: error?.message };
 		}
 	}
 
-	async remove(ref: number): Promise<{ message: string }> {
+	async remove(ref: number, orgId?: number, branchId?: number): Promise<{ message: string }> {
 		try {
-			const asset = await this.assetRepository.update(ref, { isDeleted: true });
+			if (!orgId) {
+				throw new BadRequestException('Organization ID is required');
+			}
 
+			// First verify the asset belongs to the org/branch
+			const asset = await this.findOne(ref, orgId, branchId);
 			if (!asset) {
+				throw new NotFoundException('Asset not found in your organization');
+			}
+
+			const result = await this.assetRepository.update(ref, { isDeleted: true });
+
+			if (!result) {
 				throw new NotFoundException(process.env.DELETE_ERROR_MESSAGE);
 			}
 
-			const response = {
-				message: process.env.SUCCESS_MESSAGE,
-			}
-
-			return response;
+			return { message: process.env.SUCCESS_MESSAGE };
 		} catch (error) {
-			const response = {
-				message: error?.message,
-			}
-
-			return response;
+			return { message: error?.message };
 		}
 	}
 
-	async restore(ref: number): Promise<{ message: string }> {
+	async restore(ref: number, orgId?: number, branchId?: number): Promise<{ message: string }> {
 		try {
-			const asset = await this.assetRepository.update(
+			if (!orgId) {
+				throw new BadRequestException('Organization ID is required');
+			}
+
+			// First verify the asset belongs to the org/branch
+			const asset = await this.findOne(ref, orgId, branchId);
+			if (!asset) {
+				throw new NotFoundException('Asset not found in your organization');
+			}
+
+			const result = await this.assetRepository.update(
 				{ uid: ref },
-				{
-					isDeleted: false,
-				}
+				{ isDeleted: false }
 			);
 
-			if (!asset) {
+			if (!result) {
 				throw new NotFoundException(process.env.RESTORE_ERROR_MESSAGE);
 			}
 
-			const response = {
-				message: process.env.SUCCESS_MESSAGE,
-			};
-
-			return response;
+			return { message: process.env.SUCCESS_MESSAGE };
 		} catch (error) {
-			const response = {
-				message: error?.message,
-			}
-
-			return response;
+			return { message: error?.message };
 		}
 	}
 }

@@ -13,6 +13,6 @@ export declare class Asset {
     insuranceExpiryDate: Date;
     isDeleted: boolean;
     owner: User;
-    organisation: Organisation;
+    org: Organisation;
     branch: Branch;
 }

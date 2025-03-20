@@ -76,7 +76,7 @@ export class ClaimsService {
 		};
 	}
 
-	async create(createClaimDto: CreateClaimDto): Promise<{ message: string }> {
+	async create(createClaimDto: CreateClaimDto, orgId?: number, branchId?: number): Promise<{ message: string }> {
 		try {
 			// Get user with organization and branch info
 			const user = await this.userRepository.findOne({
@@ -88,12 +88,16 @@ export class ClaimsService {
 				throw new NotFoundException('User not found');
 			}
 
+			// Use the passed orgId and branchId if present, otherwise use user's
+			const organisation = orgId ? { uid: orgId } : user.organisation;
+			const branch = branchId ? { uid: branchId } : user.branch;
+
 			// Append organization and branch to claim data
 			const claimData = {
 				...createClaimDto,
 				amount: createClaimDto.amount.toString(),
-				organisation: user.organisation,
-				branch: user.branch,
+				organisation: organisation,
+				branch: branch,
 			} as DeepPartial<Claim>;
 
 			const claim = await this.claimsRepository.save(claimData);
@@ -159,12 +163,15 @@ export class ClaimsService {
 		},
 		page: number = 1,
 		limit: number = 25,
+		orgId?: number,
+		branchId?: number,
 	): Promise<PaginatedResponse<Claim>> {
 		try {
 			const queryBuilder = this.claimsRepository
 				.createQueryBuilder('claim')
 				.leftJoinAndSelect('claim.owner', 'owner')
 				.leftJoinAndSelect('claim.branch', 'branch')
+				.leftJoinAndSelect('claim.organisation', 'organisation')
 				.where('claim.isDeleted = :isDeleted', { isDeleted: false });
 
 			if (filters?.status) {
@@ -183,6 +190,16 @@ export class ClaimsService {
 					'(owner.name ILIKE :search OR owner.surname ILIKE :search OR claim.amount ILIKE :search OR claim.category ILIKE :search)',
 					{ search: `%${filters.search}%` },
 				);
+			}
+
+			// Add organization filter if provided
+			if (orgId) {
+				queryBuilder.andWhere('organisation.uid = :orgId', { orgId });
+			}
+			
+			// Add branch filter if provided
+			if (branchId) {
+				queryBuilder.andWhere('branch.uid = :branchId', { branchId });
 			}
 
 			// Add pagination
@@ -226,21 +243,47 @@ export class ClaimsService {
 		}
 	}
 
-	async findOne(ref: number): Promise<{ message: string; claim: Claim | null; stats: any }> {
+	async findOne(ref: number, orgId?: number, branchId?: number): Promise<{ message: string; claim: Claim | null; stats: any }> {
 		try {
-			const claim = await this.claimsRepository.findOne({
-				where: {
-					uid: ref,
-					isDeleted: false,
-				},
-				relations: ['owner'],
-			});
+			const queryBuilder = this.claimsRepository
+				.createQueryBuilder('claim')
+				.leftJoinAndSelect('claim.owner', 'owner')
+				.leftJoinAndSelect('claim.organisation', 'organisation')
+				.leftJoinAndSelect('claim.branch', 'branch')
+				.where('claim.uid = :ref', { ref })
+				.andWhere('claim.isDeleted = :isDeleted', { isDeleted: false });
+			
+			// Add organization filter if provided
+			if (orgId) {
+				queryBuilder.andWhere('organisation.uid = :orgId', { orgId });
+			}
+			
+			// Add branch filter if provided
+			if (branchId) {
+				queryBuilder.andWhere('branch.uid = :branchId', { branchId });
+			}
+			
+			const claim = await queryBuilder.getOne();
 
 			if (!claim) {
 				throw new NotFoundException(process.env.SEARCH_ERROR_MESSAGE);
 			}
 
-			const allClaims = await this.claimsRepository.find();
+			const allClaimsQuery = this.claimsRepository.createQueryBuilder('claim')
+				.leftJoinAndSelect('claim.organisation', 'organisation');
+				
+			// Add organization filter if provided
+			if (orgId) {
+				allClaimsQuery.andWhere('organisation.uid = :orgId', { orgId });
+			}
+			
+			// Add branch filter if provided
+			if (branchId && claim.branch) {
+				allClaimsQuery.leftJoinAndSelect('claim.branch', 'branch')
+					.andWhere('branch.uid = :branchId', { branchId });
+			}
+			
+			const allClaims = await allClaimsQuery.getMany();
 			const stats = this.calculateStats(allClaims);
 
 			const formattedClaim = {
@@ -262,7 +305,7 @@ export class ClaimsService {
 		}
 	}
 
-	public async claimsByUser(ref: number): Promise<{
+	public async claimsByUser(ref: number, orgId?: number, branchId?: number): Promise<{
 		message: string;
 		claims: Claim[];
 		stats: {
@@ -274,9 +317,25 @@ export class ClaimsService {
 		};
 	}> {
 		try {
-			const claims = await this.claimsRepository.find({
-				where: { owner: { uid: ref } },
-			});
+			const queryBuilder = this.claimsRepository
+				.createQueryBuilder('claim')
+				.leftJoinAndSelect('claim.owner', 'owner')
+				.leftJoinAndSelect('claim.organisation', 'organisation')
+				.leftJoinAndSelect('claim.branch', 'branch')
+				.where('owner.uid = :ref', { ref })
+				.andWhere('claim.isDeleted = :isDeleted', { isDeleted: false });
+			
+			// Add organization filter if provided
+			if (orgId) {
+				queryBuilder.andWhere('organisation.uid = :orgId', { orgId });
+			}
+			
+			// Add branch filter if provided
+			if (branchId) {
+				queryBuilder.andWhere('branch.uid = :branchId', { branchId });
+			}
+			
+			const claims = await queryBuilder.getMany();
 
 			if (!claims) {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
@@ -347,27 +406,35 @@ export class ClaimsService {
 		}
 	}
 
-	async update(ref: number, updateClaimDto: UpdateClaimDto): Promise<{ message: string }> {
+	async update(ref: number, updateClaimDto: UpdateClaimDto, orgId?: number, branchId?: number): Promise<{ message: string }> {
 		try {
-			const claim = await this.claimsRepository.findOne({
-				where: { uid: ref, isDeleted: false },
-				relations: ['owner', 'branch'],
-			});
+			// First verify the claim belongs to the org/branch
+			const claimResult = await this.findOne(ref, orgId, branchId);
+			
+			if (!claimResult || !claimResult.claim) {
+				throw new NotFoundException('Claim not found in your organization');
+			}
+			
+			const claim = claimResult.claim;
 
-			if (!claim) {
-				throw new NotFoundException(process.env.SEARCH_ERROR_MESSAGE);
+			// Convert DTO fields to match entity field types
+			const updateData = {
+				comments: updateClaimDto.comment,
+				status: updateClaimDto.status,
+				category: updateClaimDto.category,
+				documentUrl: updateClaimDto.documentUrl,
+			} as DeepPartial<Claim>;
+			
+			// Handle amount conversion from number to string
+			if (updateClaimDto.amount !== undefined) {
+				updateData.amount = updateClaimDto.amount.toString();
 			}
 
-			// Convert the DTO to the correct types for the entity
-			const baseData = {
-				comments: updateClaimDto.comment,
-				amount: updateClaimDto.amount?.toString(),
-				category: updateClaimDto.category,
-				status: updateClaimDto.status,
-				documentUrl: updateClaimDto.documentUrl,
-			};
+			const result = await this.claimsRepository.update({ uid: ref }, updateData);
 
-			const updatedClaim = await this.claimsRepository.update(ref, baseData as DeepPartial<Claim>);
+			if (!result) {
+				throw new NotFoundException(process.env.UPDATE_ERROR_MESSAGE);
+			}
 
 			// Invalidate cache after update
 			this.invalidateClaimsCache(claim);
@@ -415,16 +482,16 @@ export class ClaimsService {
 		}
 	}
 
-	async remove(ref: number): Promise<{ message: string }> {
+	async remove(ref: number, orgId?: number, branchId?: number): Promise<{ message: string }> {
 		try {
-			const claim = await this.claimsRepository.findOne({
-				where: { uid: ref, isDeleted: false },
-				relations: ['owner'], // Add relations to ensure we have owner data for cache invalidation
-			});
-
-			if (!claim) {
-				throw new NotFoundException(process.env.DELETE_ERROR_MESSAGE);
+			// First verify the claim belongs to the org/branch
+			const claimResult = await this.findOne(ref, orgId, branchId);
+			
+			if (!claimResult || !claimResult.claim) {
+				throw new NotFoundException('Claim not found in your organization');
 			}
+			
+			const claim = claimResult.claim;
 
 			await this.claimsRepository.update({ uid: ref }, { isDeleted: true });
 
@@ -445,26 +512,43 @@ export class ClaimsService {
 		}
 	}
 
-	async restore(ref: number): Promise<{ message: string }> {
+	async restore(ref: number, orgId?: number, branchId?: number): Promise<{ message: string }> {
 		try {
-			const claim = await this.claimsRepository.findOne({
-				where: { uid: ref },
-				relations: ['owner'], // Add relations to ensure we have owner data for cache invalidation
-			});
+			// First find the claim with isDeleted=true
+			const queryBuilder = this.claimsRepository
+				.createQueryBuilder('claim')
+				.leftJoinAndSelect('claim.owner', 'owner')
+				.leftJoinAndSelect('claim.organisation', 'organisation')
+				.leftJoinAndSelect('claim.branch', 'branch')
+				.where('claim.uid = :ref', { ref })
+				.andWhere('claim.isDeleted = :isDeleted', { isDeleted: true });
+			
+			// Add organization filter if provided
+			if (orgId) {
+				queryBuilder.andWhere('organisation.uid = :orgId', { orgId });
+			}
+			
+			// Add branch filter if provided
+			if (branchId) {
+				queryBuilder.andWhere('branch.uid = :branchId', { branchId });
+			}
+			
+			const claim = await queryBuilder.getOne();
 
 			if (!claim) {
-				throw new NotFoundException(process.env.SEARCH_ERROR_MESSAGE);
+				throw new NotFoundException('Claim not found in your organization or is not deleted');
 			}
 
-			await this.claimsRepository.update(
+			const result = await this.claimsRepository.update(
 				{ uid: ref },
-				{
-					isDeleted: false,
-					status: ClaimStatus.DELETED,
-				},
+				{ isDeleted: false }
 			);
 
-			// Invalidate cache after restoration
+			if (!result) {
+				throw new NotFoundException(process.env.RESTORE_ERROR_MESSAGE);
+			}
+
+			// Invalidate cache
 			this.invalidateClaimsCache(claim);
 
 			const response = {
@@ -473,11 +557,7 @@ export class ClaimsService {
 
 			return response;
 		} catch (error) {
-			const response = {
-				message: error?.message,
-			};
-
-			return response;
+			return { message: error?.message };
 		}
 	}
 

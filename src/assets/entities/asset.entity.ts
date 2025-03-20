@@ -39,7 +39,7 @@ export class Asset {
 	owner: User;
 
 	@ManyToOne(() => Organisation, (organisation) => organisation?.assets, { nullable: true })
-	organisation: Organisation;
+	org: Organisation;
 
 	@ManyToOne(() => Branch, (branch) => branch?.assets, { nullable: true })
 	branch: Branch;

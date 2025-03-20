@@ -64,7 +64,7 @@ __decorate([
 __decorate([
     (0, typeorm_1.ManyToOne)(() => organisation_entity_1.Organisation, (organisation) => organisation?.assets, { nullable: true }),
     __metadata("design:type", organisation_entity_1.Organisation)
-], Asset.prototype, "organisation", void 0);
+], Asset.prototype, "org", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => branch_entity_1.Branch, (branch) => branch?.assets, { nullable: true }),
     __metadata("design:type", branch_entity_1.Branch)
