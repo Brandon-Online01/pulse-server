@@ -1,5 +1,5 @@
 import { Repository } from 'typeorm';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CheckoutDto } from './dto/checkout.dto';
 import { Quotation } from './entities/quotation.entity';
@@ -24,6 +24,7 @@ export class ShopService {
     private readonly currencyLocale: string;
     private readonly currencyCode: string;
     private readonly currencySymbol: string;
+    private readonly logger = new Logger(ShopService.name);
 
     constructor(
         @InjectRepository(Product)
@@ -162,6 +163,12 @@ export class ShopService {
 
     async createQuotation(quotationData: CheckoutDto, orgId?: number, branchId?: number): Promise<{ message: string }> {
         try {
+            if (!orgId) {
+                throw new BadRequestException('Organization ID is required');
+            }
+            
+            this.logger.log(`Creating quotation for org: ${orgId}${branchId ? `, branch: ${branchId}` : ''}`);
+            
             if (!quotationData?.items?.length) {
                 throw new Error('Quotation items are required');
             }
@@ -323,6 +330,7 @@ export class ShopService {
             };
         }
         catch (error) {
+            this.logger.error(`Error creating quotation: ${error.message}`, error.stack);
             return {
                 message: error?.message,
             };

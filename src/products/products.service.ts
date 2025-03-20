@@ -1,4 +1,4 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { Product } from './entities/product.entity';
@@ -16,6 +16,7 @@ import { ProductAnalyticsDto } from './dto/product-analytics.dto';
 export class ProductsService {
 	private readonly CACHE_PREFIX = 'products:';
 	private readonly CACHE_TTL: number;
+	private readonly logger = new Logger(ProductsService.name);
 
 	constructor(
 		@InjectRepository(Product)
@@ -92,52 +93,22 @@ export class ProductsService {
 		branchId?: number,
 	): Promise<{ product: Product | null; message: string }> {
 		try {
-			// Add organization and branch information if provided
-			const productData = {
+			// Continue with existing implementation but add org and branch
+			const product = this.productRepository.create({
 				...createProductDto,
-				...(orgId && { organisation: { uid: orgId } }),
-				...(branchId && { branch: { uid: branchId } }),
-			};
+				organisation: orgId ? { uid: orgId } : null,
+				branch: branchId ? { uid: branchId } : null
+			});
 
-			const product = await this.productRepository.save(productData);
+			const savedProduct = await this.productRepository.save(product);
 
-			if (!product) {
-				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
-			}
+			// Clear cache
+			await this.cacheManager.del(`${this.CACHE_PREFIX}all`);
 
-			// Initialize analytics with more detailed initial state
-			await this.analyticsRepository.save(
-				this.analyticsRepository.create({
-					productId: product.uid,
-					totalUnitsSold: 0,
-					totalRevenue: 0,
-					salesCount: 0,
-					viewCount: 0,
-					cartAddCount: 0,
-					wishlistCount: 0,
-					stockHistory: [
-						{
-							date: new Date(),
-							quantity: product.stockQuantity || 0,
-							type: 'initial',
-						},
-					],
-					priceHistory: [
-						{
-							date: new Date(),
-							price: product.price || 0,
-							type: 'initial',
-						},
-					],
-				}),
-			);
-
-			// Invalidate cache
-			await this.invalidateProductCache(product);
-
+			// Return the saved product
 			return {
-				product,
-				message: process.env.SUCCESS_MESSAGE,
+				product: savedProduct,
+				message: process.env.SUCCESS_MESSAGE || 'Product created successfully',
 			};
 		} catch (error) {
 			return {
