@@ -29,6 +29,8 @@ import { UpdateTaskFlagItemDto } from './dto/update-task-flag-item.dto';
 import { AddCommentDto } from './dto/add-comment.dto';
 import { TaskFlagStatus, TaskFlagItemStatus } from '../lib/enums/task.enums';
 import { OrganisationSettings } from '../organisation/entities/organisation-settings.entity';
+import { Organisation } from '../organisation/entities/organisation.entity';
+import { Branch } from '../branch/entities/branch.entity';
 
 @Injectable()
 export class TasksService {
@@ -342,179 +344,132 @@ export class TasksService {
 		}
 	}
 
+	/**
+	 * Helper method to check if a task has open flags and update its status to PENDING if needed
+	 * @param taskId The task ID to check
+	 */
+	private async checkFlagsAndUpdateTaskStatus(taskId: number): Promise<void> {
+		try {
+			// Get the task with its flags
+			const task = await this.taskRepository.findOne({
+				where: { uid: taskId },
+				relations: ['flags'],
+			});
+
+			if (!task) {
+				return;
+			}
+
+			// Check if there are any open flags
+			const hasOpenFlags = task.flags?.some(flag => 
+				flag.isDeleted === false && 
+				(flag.status === TaskFlagStatus.OPEN || flag.status === TaskFlagStatus.IN_PROGRESS)
+			);
+
+			// If there are open flags and task is not in PENDING status, update it
+			if (hasOpenFlags && task.status !== TaskStatus.PENDING) {
+				task.status = TaskStatus.PENDING;
+				await this.taskRepository.save(task);
+				
+				// Clear task cache
+				await this.clearTaskCache(taskId);
+			}
+		} catch (error) {
+			// Log error but don't throw to avoid disrupting the main flow
+			console.error(`Error checking task flags for task ${taskId}:`, error.message);
+		}
+	}
+
 	async create(createTaskDto: CreateTaskDto, orgId?: number, branchId?: number): Promise<{ message: string }> {
 		try {
 			if (!orgId) {
 				throw new BadRequestException('Organization ID is required');
 			}
 
-			const now = new Date();
-			const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+			// Creating the task from the DTOs
+			const task = new Task();
 
-			if (createTaskDto.deadline && new Date(createTaskDto.deadline) < startOfToday) {
-				throw new BadRequestException('Task deadline cannot be in the past');
+			// Map DTO fields to task
+			task.title = createTaskDto.title;
+			task.description = createTaskDto.description;
+			task.priority = createTaskDto.priority || TaskPriority.MEDIUM;
+			task.deadline = createTaskDto.deadline ? new Date(createTaskDto.deadline) : null;
+			task.taskType = createTaskDto.taskType || TaskType.OTHER;
+			task.targetCategory = createTaskDto.targetCategory;
+			task.attachments = createTaskDto.attachments || [];
+			task.repetitionType = createTaskDto.repetitionType || RepetitionType.NONE;
+			task.repetitionDeadline = createTaskDto.repetitionDeadline ? new Date(createTaskDto.repetitionDeadline) : null;
+
+			// Handle assignees
+			if (createTaskDto.assignees?.length) {
+				task.assignees = createTaskDto.assignees.map((assignee) => ({ uid: assignee.uid }));
+			} else {
+				task.assignees = [];
 			}
 
-			if (createTaskDto.repetitionDeadline && new Date(createTaskDto.repetitionDeadline) < startOfToday) {
-				throw new BadRequestException('Repetition end date cannot be in the past');
+			// Handle clients
+			if (createTaskDto.client?.length) {
+				task.clients = createTaskDto.client.map((client) => ({ uid: client.uid }));
+			} else {
+				task.clients = [];
 			}
 
-			try {
-				// First get the creator
-				let creator = null;
-				if (createTaskDto.creators?.length > 0) {
-					creator = await this.userRepository.findOne({
-						where: { uid: createTaskDto.creators[0].uid },
-						relations: ['organisation', 'branch'],
-					});
-
-					if (!creator) {
-						throw new BadRequestException(`Creator with ID ${createTaskDto.creators[0].uid} not found`);
-					}
+			// Set creator
+			if (createTaskDto.creators?.[0]) {
+				const creator = await this.userRepository.findOne({
+					where: { uid: createTaskDto.creators[0].uid },
+				});
+				if (creator) {
+					task.creator = creator;
 				}
-
-				// Prepare assignees and clients
-				const assignees = createTaskDto.assignees?.map((a) => ({ uid: a.uid })) || [];
-				const clients = createTaskDto.client?.map((c) => ({ uid: c.uid })) || [];
-
-				// Create base task data with all necessary fields
-				const taskData: DeepPartial<Task> = {
-					title: createTaskDto.title,
-					description: createTaskDto.description,
-					taskType: createTaskDto.taskType,
-					priority: createTaskDto.priority,
-					deadline: createTaskDto.deadline ? new Date(createTaskDto.deadline) : null,
-					repetitionType: createTaskDto.repetitionType || RepetitionType.NONE,
-					repetitionDeadline: createTaskDto.repetitionDeadline
-						? new Date(createTaskDto.repetitionDeadline)
-						: null,
-					targetCategory: createTaskDto.targetCategory,
-					isDeleted: false,
-					isOverdue: false,
-					completionDate: null,
-					creator: creator,
-					organisation: { uid: createTaskDto.organisationId || orgId },
-					branch: createTaskDto.branchId || branchId ? { uid: createTaskDto.branchId || branchId } : null,
-					assignees,
-					clients,
-					attachments: createTaskDto.attachments || [],
-				};
-
-				// Create and save the task
-				const task = this.taskRepository.create(taskData);
-				const savedTask = await this.taskRepository.save(task);
-
-				if (!savedTask) {
-					throw new Error('Failed to save task');
-				}
-
-				// Create subtasks if they exist in the DTO
-				if (createTaskDto.subtasks?.length > 0) {
-					try {
-						// Create subtasks with proper task relation
-						const subtasks = createTaskDto.subtasks.map((subtask) => ({
-							title: subtask.title,
-							description: subtask.description,
-							status: SubTaskStatus.PENDING,
-							task: { uid: savedTask.uid }, // Properly reference the parent task
-							isDeleted: false,
-							createdAt: new Date(),
-							updatedAt: new Date(),
-						}));
-
-						// Save all subtasks
-						const savedSubtasks = await this.subtaskRepository.save(subtasks);
-
-						if (!savedSubtasks) {
-							throw new Error('Failed to save subtasks');
-						}
-
-						// Update the task with subtasks relation
-						savedTask.subtasks = savedSubtasks;
-						await this.taskRepository.save(savedTask);
-					} catch (error) {
-						throw new Error(`Failed to create subtasks: ${error.message}`);
-					}
-				}
-
-				// Create recurring tasks if repetition is specified
-				if (createTaskDto.repetitionType && createTaskDto.repetitionType !== RepetitionType.NONE) {
-					await this.createRepeatingTasks(savedTask, createTaskDto);
-				}
-
-				// Send notifications to assignees
-				if (assignees.length > 0) {
-					const assigneeUsers = await this.userRepository.find({
-						where: { uid: In(assignees.map((a) => a?.uid)) },
-						select: ['uid', 'email', 'name', 'surname'],
-					});
-
-					// Create notification object
-					const notification = {
-						type: NotificationType.USER,
-						title: 'New Task Assigned',
-						message: `You have been assigned a new task: "${savedTask?.title}"`,
-						status: NotificationStatus.UNREAD,
-						metadata: {
-							taskId: savedTask?.uid,
-							priority: savedTask?.priority,
-							deadline: savedTask?.deadline,
-							assignedBy: creator ? `${creator?.name} ${creator?.surname}` : 'System',
-							createdAt: savedTask?.createdAt,
-						},
-					};
-
-					// Send system notification to each assignee
-					for (const assignee of assigneeUsers) {
-						// Send system notification
-						this.eventEmitter.emit(
-							'send.notification',
-							{
-								...notification,
-								owner: { uid: assignee?.uid },
-							},
-							[assignee.uid],
-						);
-
-						// Send email notification
-						await this.communicationService.sendEmail(EmailType.NEW_TASK, [assignee.email], {
-							name: `${assignee?.name} ${assignee?.surname}`,
-							taskId: savedTask?.uid?.toString(),
-							title: savedTask?.title,
-							description: savedTask?.description,
-							deadline: savedTask?.deadline?.toISOString(),
-							priority: savedTask?.priority,
-							taskType: savedTask?.taskType,
-							status: savedTask?.status,
-							assignedBy: creator ? `${creator?.name} ${creator?.surname}` : 'System',
-							subtasks: [],
-							clients: clients.length > 0 ? await this.getClientNames(clients.map((c) => c?.uid)) : [],
-							attachments:
-								savedTask.attachments?.map((url) => {
-									// Extract filename from URL
-									const filename = url.split('/').pop() || 'file';
-									return {
-										name: filename,
-										url: url,
-									};
-								}) || [],
-						});
-					}
-				}
-
-				// Clear cache
-				await this.clearTaskCache();
-
-				return {
-					message: process.env.SUCCESS_MESSAGE,
-				};
-			} catch (error) {
-				return error;
 			}
+
+			// Set organization and branch
+			if (orgId) {
+				const organisation = { uid: orgId } as Organisation;
+				task.organisation = organisation;
+			}
+
+			if (branchId) {
+				const branch = { uid: branchId } as Branch;
+				task.branch = branch;
+			}
+
+			// Save the task
+			const savedTask = await this.taskRepository.save(task);
+
+			// Create subtasks if provided
+			if (createTaskDto.subtasks && createTaskDto.subtasks.length > 0) {
+				const subtasks = createTaskDto.subtasks.map((subtaskDto) => {
+					const subtask = new SubTask();
+					subtask.title = subtaskDto.title;
+					subtask.description = subtaskDto.description || '';
+					subtask.status = SubTaskStatus.PENDING;
+					subtask.task = savedTask;
+					return subtask;
+				});
+
+				await this.subtaskRepository.save(subtasks);
+			}
+
+			// Check if this is a repeating task
+			if (
+				task.repetitionType !== RepetitionType.NONE &&
+				task.repetitionDeadline &&
+				task.deadline
+			) {
+				await this.createRepeatingTasks(savedTask, createTaskDto);
+			}
+
+			// Check for flags and update task status if needed
+			await this.checkFlagsAndUpdateTaskStatus(savedTask.uid);
+
+			// Clear cache
+			await this.clearTaskCache();
+
+			return { message: 'Task created successfully' };
 		} catch (error) {
-			return {
-				message: error?.message,
-			};
+			return { message: error?.message };
 		}
 	}
 
@@ -816,6 +771,9 @@ export class TasksService {
 
 			// Update the task with the new data
 			await this.taskRepository.update(ref, updateTaskDto);
+
+			// Check for flags and update status if needed
+			await this.checkFlagsAndUpdateTaskStatus(ref);
 
 			// Reload the task to get the updated data
 			let updatedTask = task;
@@ -1564,6 +1522,10 @@ export class TasksService {
 				throw new Error('User not found');
 			}
 
+			// Always set task status to PENDING when a flag is added
+			task.status = TaskStatus.PENDING;
+			await this.taskRepository.save(task);
+
 			// Create the flag
 			const taskFlag = new TaskFlag();
 			taskFlag.title = createTaskFlagDto.title;
@@ -1612,9 +1574,9 @@ export class TasksService {
 
 			// Clear cache for this task's flags
 			await this.clearTaskFlagCache(task.uid);
+			await this.clearTaskCache(task.uid);
 
 			return {
-				message: 'Task flag created successfully',
 				flagId: savedFlag.uid,
 			};
 		} catch (error) {
@@ -1762,6 +1724,11 @@ export class TasksService {
 			// Save the updated flag
 			await this.taskFlagRepository.save(taskFlag);
 
+			// Check for flags and update the task status if needed
+			if (taskFlag.task?.uid) {
+				await this.checkFlagsAndUpdateTaskStatus(taskFlag.task.uid);
+			}
+
 			// Clear cache for this flag and its related task
 			await this.clearTaskFlagCache(taskFlag.task?.uid, flagId);
 
@@ -1806,6 +1773,11 @@ export class TasksService {
 				if (allCompleted) {
 					flagItem.taskFlag.status = TaskFlagStatus.RESOLVED;
 					await this.taskFlagRepository.save(flagItem.taskFlag);
+					
+					// After resolving a flag, check and update task status
+					if (flagItem.taskFlag?.task?.uid) {
+						await this.checkFlagsAndUpdateTaskStatus(flagItem.taskFlag.task.uid);
+					}
 				}
 			}
 
@@ -1834,6 +1806,11 @@ export class TasksService {
 			// Soft delete
 			taskFlag.isDeleted = true;
 			await this.taskFlagRepository.save(taskFlag);
+
+			// After deleting a flag, check and update task status
+			if (taskFlag.task?.uid) {
+				await this.checkFlagsAndUpdateTaskStatus(taskFlag.task.uid);
+			}
 
 			// Clear cache for this flag and its related task
 			await this.clearTaskFlagCache(taskFlag.task?.uid, flagId);
