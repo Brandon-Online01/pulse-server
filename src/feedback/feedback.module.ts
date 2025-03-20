@@ -11,6 +11,7 @@ import { User } from '../user/entities/user.entity';
 import { ConfigModule } from '@nestjs/config';
 import { OrganisationSettings } from '../organisation/entities/organisation-settings.entity';
 import { License } from '../licensing/entities/license.entity';
+import { LicensingModule } from '../licensing/licensing.module';
 
 @Module({
 	imports: [
@@ -25,6 +26,7 @@ import { License } from '../licensing/entities/license.entity';
 			License
 		]),
 		ConfigModule,
+		LicensingModule,
 	],
 	controllers: [FeedbackController],
 	providers: [FeedbackService],
