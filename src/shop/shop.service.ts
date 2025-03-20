@@ -1,5 +1,5 @@
 import { Repository } from 'typeorm';
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CheckoutDto } from './dto/checkout.dto';
 import { Quotation } from './entities/quotation.entity';
@@ -53,19 +53,10 @@ export class ShopService {
             .replace(this.currencyCode, this.currencySymbol);
     }
 
-    async categories(orgId?: number, branchId?: number): Promise<{ categories: string[] | null, message: string }> {
+    async categories(): Promise<{ categories: string[] | null, message: string }> {
         try {
-            // Add filters for organization and branch
+            // Remove org and branch filters
             const query = this.productRepository.createQueryBuilder('product');
-            
-            if (orgId) {
-                query.andWhere('product.organisationId = :orgId', { orgId });
-            }
-            
-            if (branchId) {
-                query.andWhere('product.branchId = :branchId', { branchId });
-            }
-            
             const allProducts = await query.getMany();
 
             if (!allProducts) {
@@ -97,18 +88,10 @@ export class ShopService {
         }
     }
 
-    private async getProductsByStatus(status: ProductStatus, orgId?: number, branchId?: number): Promise<{ products: Product[] | null }> {
+    private async getProductsByStatus(status: ProductStatus): Promise<{ products: Product[] | null }> {
         try {
             const query = this.productRepository.createQueryBuilder('product')
                 .where('product.status = :status', { status });
-            
-            if (orgId) {
-                query.andWhere('product.organisationId = :orgId', { orgId });
-            }
-            
-            if (branchId) {
-                query.andWhere('product.branchId = :branchId', { branchId });
-            }
             
             const products = await query.getMany();
             return { products: products ?? null };
@@ -117,8 +100,8 @@ export class ShopService {
         }
     }
 
-    async specials(orgId?: number, branchId?: number): Promise<{ products: Product[] | null, message: string }> {
-        const result = await this.getProductsByStatus(ProductStatus.SPECIAL, orgId, branchId);
+    async specials(): Promise<{ products: Product[] | null, message: string }> {
+        const result = await this.getProductsByStatus(ProductStatus.SPECIAL);
 
         const response = {
             products: result?.products,
@@ -128,8 +111,8 @@ export class ShopService {
         return response;
     }
 
-    async getBestSellers(orgId?: number, branchId?: number): Promise<{ products: Product[] | null, message: string }> {
-        const result = await this.getProductsByStatus(ProductStatus.BEST_SELLER, orgId, branchId);
+    async getBestSellers(): Promise<{ products: Product[] | null, message: string }> {
+        const result = await this.getProductsByStatus(ProductStatus.BEST_SELLER);
 
         const response = {
             products: result.products,
@@ -139,8 +122,8 @@ export class ShopService {
         return response;
     }
 
-    async getNewArrivals(orgId?: number, branchId?: number): Promise<{ products: Product[] | null, message: string }> {
-        const result = await this.getProductsByStatus(ProductStatus.NEW, orgId, branchId);
+    async getNewArrivals(): Promise<{ products: Product[] | null, message: string }> {
+        const result = await this.getProductsByStatus(ProductStatus.NEW);
 
         const response = {
             products: result.products,
@@ -150,8 +133,8 @@ export class ShopService {
         return response;
     }
 
-    async getHotDeals(orgId?: number, branchId?: number): Promise<{ products: Product[] | null, message: string }> {
-        const result = await this.getProductsByStatus(ProductStatus.HOTDEALS, orgId, branchId);
+    async getHotDeals(): Promise<{ products: Product[] | null, message: string }> {
+        const result = await this.getProductsByStatus(ProductStatus.HOTDEALS);
 
         const response = {
             products: result.products,
@@ -163,12 +146,6 @@ export class ShopService {
 
     async createQuotation(quotationData: CheckoutDto, orgId?: number, branchId?: number): Promise<{ message: string }> {
         try {
-            if (!orgId) {
-                throw new BadRequestException('Organization ID is required');
-            }
-            
-            this.logger.log(`Creating quotation for org: ${orgId}${branchId ? `, branch: ${branchId}` : ''}`);
-            
             if (!quotationData?.items?.length) {
                 throw new Error('Quotation items are required');
             }
@@ -227,9 +204,6 @@ export class ShopService {
                 quotationDate: new Date(),
                 createdAt: new Date(),
                 updatedAt: new Date(),
-                // Add organization and branch data if available
-                ...(orgId && { organisation: { uid: orgId } }),
-                ...(branchId && { branch: { uid: branchId } }),
                 quotationItems: quotationData?.items?.map(item => {
                     const product = products.flat().find(p => p.uid === item.uid);
                     return {
@@ -248,6 +222,15 @@ export class ShopService {
                     };
                 })
             };
+
+            // Add organization and branch if available
+            if (orgId) {
+                newQuotation['organisation'] = { uid: orgId };
+            }
+            
+            if (branchId) {
+                newQuotation['branch'] = { uid: branchId };
+            }
 
             const savedQuotation = await this.quotationRepository.save(newQuotation);
 
@@ -339,11 +322,21 @@ export class ShopService {
 
     async createBanner(bannerData: CreateBannerDto, orgId?: number, branchId?: number): Promise<{ banner: Banners | null, message: string }> {
         try {
-            const banner = await this.bannersRepository.save({
-                ...bannerData,
-                ...(orgId && { organisation: { uid: orgId } }),
-                ...(branchId && { branch: { uid: branchId } }),
-            });
+            // Create the banner with the correct field names for organization and branch
+            const bannerToSave = {
+                ...bannerData
+            };
+
+            // Only add organization and branch if they exist
+            if (orgId) {
+                bannerToSave['organisationUid'] = orgId;
+            }
+            
+            if (branchId) {
+                bannerToSave['branchUid'] = branchId;
+            }
+            
+            const banner = await this.bannersRepository.save(bannerToSave);
             
             return {
                 banner,
@@ -362,11 +355,11 @@ export class ShopService {
             const query = this.bannersRepository.createQueryBuilder('banner');
             
             if (orgId) {
-                query.andWhere('banner.organisationId = :orgId', { orgId });
+                query.andWhere('banner.organisationUid = :orgId', { orgId });
             }
             
             if (branchId) {
-                query.andWhere('banner.branchId = :branchId', { branchId });
+                query.andWhere('banner.branchUid = :branchId', { branchId });
             }
             
             const banners = await query.getMany();
@@ -390,24 +383,26 @@ export class ShopService {
                 .where('banner.uid = :uid', { uid });
             
             if (orgId) {
-                query.andWhere('banner.organisationId = :orgId', { orgId });
+                query.andWhere('banner.organisationUid = :orgId', { orgId });
             }
             
             if (branchId) {
-                query.andWhere('banner.branchId = :branchId', { branchId });
+                query.andWhere('banner.branchUid = :branchId', { branchId });
             }
             
             const banner = await query.getOne();
             
             if (!banner) {
-                throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
+                throw new NotFoundException('Banner not found');
             }
             
             // Update the banner
             await this.bannersRepository.update(uid, bannerData);
             
             // Get the updated banner
-            const updatedBanner = await this.bannersRepository.findOne({ where: { uid } });
+            const updatedBanner = await this.bannersRepository.findOne({
+                where: { uid }
+            });
             
             return {
                 banner: updatedBanner,
@@ -428,17 +423,17 @@ export class ShopService {
                 .where('banner.uid = :uid', { uid });
             
             if (orgId) {
-                query.andWhere('banner.organisationId = :orgId', { orgId });
+                query.andWhere('banner.organisationUid = :orgId', { orgId });
             }
             
             if (branchId) {
-                query.andWhere('banner.branchId = :branchId', { branchId });
+                query.andWhere('banner.branchUid = :branchId', { branchId });
             }
             
             const banner = await query.getOne();
             
             if (!banner) {
-                throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
+                throw new NotFoundException('Banner not found');
             }
             
             // Delete the banner

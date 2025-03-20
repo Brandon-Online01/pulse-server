@@ -69,10 +69,8 @@ export class ShopController {
 			},
 		},
 	})
-	getBestSellers(@Req() req: AuthenticatedRequest) {
-		const orgId = req.user?.org?.uid;
-		const branchId = req.user?.branch?.uid;
-		return this.shopService.getBestSellers(orgId, branchId);
+	getBestSellers() {
+		return this.shopService.getBestSellers();
 	}
 
 	@Get('new-arrivals')
@@ -112,10 +110,8 @@ export class ShopController {
 			},
 		},
 	})
-	getNewArrivals(@Req() req: AuthenticatedRequest) {
-		const orgId = req.user?.org?.uid;
-		const branchId = req.user?.branch?.uid;
-		return this.shopService.getNewArrivals(orgId, branchId);
+	getNewArrivals() {
+		return this.shopService.getNewArrivals();
 	}
 
 	@Get('hot-deals')
@@ -156,10 +152,8 @@ export class ShopController {
 			},
 		},
 	})
-	getHotDeals(@Req() req: AuthenticatedRequest) {
-		const orgId = req.user?.org?.uid;
-		const branchId = req.user?.branch?.uid;
-		return this.shopService.getHotDeals(orgId, branchId);
+	getHotDeals() {
+		return this.shopService.getHotDeals();
 	}
 
 	@Get('categories')
@@ -191,10 +185,8 @@ export class ShopController {
 			},
 		},
 	})
-	categories(@Req() req: AuthenticatedRequest) {
-		const orgId = req.user?.org?.uid;
-		const branchId = req.user?.branch?.uid;
-		return this.shopService.categories(orgId, branchId);
+	categories() {
+		return this.shopService.categories();
 	}
 
 	@Get('specials')
@@ -234,10 +226,8 @@ export class ShopController {
 			},
 		},
 	})
-	specials(@Req() req: AuthenticatedRequest) {
-		const orgId = req.user?.org?.uid;
-		const branchId = req.user?.branch?.uid;
-		return this.shopService.specials(orgId, branchId);
+	specials() {
+		return this.shopService.specials();
 	}
 
 	@Post('quotation')

@@ -131,10 +131,8 @@ export class ProductsController {
       }
     }
   })
-  products(@Query() query: PaginationQuery, @Req() req: AuthenticatedRequest) {
-    const orgId = req.user?.org?.uid;
-    const branchId = req.user?.branch?.uid;
-    return this.productsService.products(query.page, query.limit, orgId, branchId);
+  products(@Query() query: PaginationQuery) {
+    return this.productsService.products(query.page, query.limit);
   }
 
   @Get(':ref')
@@ -186,10 +184,8 @@ export class ProductsController {
       }
     }
   })
-  getProductByref(@Param('ref') ref: number, @Req() req: AuthenticatedRequest) {
-    const orgId = req.user?.org?.uid;
-    const branchId = req.user?.branch?.uid;
-    return this.productsService.getProductByref(ref, orgId, branchId);
+  getProductByref(@Param('ref') ref: number) {
+    return this.productsService.getProductByref(ref);
   }
 
   @Get('category/:category')
@@ -241,10 +237,8 @@ export class ProductsController {
       }
     }
   })
-  productsBySearchTerm(@Param('category') category: string, @Req() req: AuthenticatedRequest) {
-    const orgId = req.user?.org?.uid;
-    const branchId = req.user?.branch?.uid;
-    return this.productsService.productsBySearchTerm(category, 1, 10, orgId, branchId);
+  productsBySearchTerm(@Param('category') category: string) {
+    return this.productsService.productsBySearchTerm(category, 1, 10);
   }
 
   @Patch(':ref')
@@ -292,12 +286,9 @@ export class ProductsController {
   })
   updateProduct(
     @Param('ref') ref: number,
-    @Body() updateProductDto: UpdateProductDto,
-    @Req() req: AuthenticatedRequest
+    @Body() updateProductDto: UpdateProductDto
   ) {
-    const orgId = req.user?.org?.uid;
-    const branchId = req.user?.branch?.uid;
-    return this.productsService.updateProduct(ref, updateProductDto, orgId, branchId);
+    return this.productsService.updateProduct(ref, updateProductDto);
   }
 
   @Patch('restore/:ref')
@@ -333,10 +324,8 @@ export class ProductsController {
 		AccessLevel.OWNER,
 		AccessLevel.TECHNICIAN,
 	)
-  restoreProduct(@Param('ref') ref: number, @Req() req: AuthenticatedRequest) {
-    const orgId = req.user?.org?.uid;
-    const branchId = req.user?.branch?.uid;
-    return this.productsService.restoreProduct(ref, orgId, branchId);
+  restoreProduct(@Param('ref') ref: number) {
+    return this.productsService.restoreProduct(ref);
   }
 
   @Delete(':ref')
@@ -372,10 +361,8 @@ export class ProductsController {
       }
     }
   })
-  deleteProduct(@Param('ref') ref: number, @Req() req: AuthenticatedRequest) {
-    const orgId = req.user?.org?.uid;
-    const branchId = req.user?.branch?.uid;
-    return this.productsService.deleteProduct(ref, orgId, branchId);
+  deleteProduct(@Param('ref') ref: number) {
+    return this.productsService.deleteProduct(ref);
   }
 
   @Get('analytics/:id')
@@ -419,7 +406,7 @@ export class ProductsController {
     const branchId = req.user?.branch?.uid;
     // Note: The analytics service methods don't need to filter by org/branch 
     // since we'll be fetching a product that's already filtered
-    const product = await this.productsService.getProductByref(id, orgId, branchId);
+    const product = await this.productsService.getProductByref(id);
     if (!product.product) {
       return { message: 'Product not found', analytics: null };
     }
@@ -469,7 +456,7 @@ export class ProductsController {
     const orgId = req.user?.org?.uid;
     const branchId = req.user?.branch?.uid;
     // First verify the product exists and belongs to the org/branch
-    const product = await this.productsService.getProductByref(id, orgId, branchId);
+    const product = await this.productsService.getProductByref(id);
     if (!product.product) {
       return { message: 'Product not found', analytics: null };
     }
@@ -505,7 +492,7 @@ export class ProductsController {
     const orgId = req.user?.org?.uid;
     const branchId = req.user?.branch?.uid;
     // First verify the product exists and belongs to the org/branch
-    const product = await this.productsService.getProductByref(id, orgId, branchId);
+    const product = await this.productsService.getProductByref(id);
     if (!product.product) {
       return { message: 'Product not found' };
     }
@@ -541,7 +528,7 @@ export class ProductsController {
     const orgId = req.user?.org?.uid;
     const branchId = req.user?.branch?.uid;
     // First verify the product exists and belongs to the org/branch
-    const product = await this.productsService.getProductByref(id, orgId, branchId);
+    const product = await this.productsService.getProductByref(id);
     if (!product.product) {
       return { message: 'Product not found' };
     }
@@ -577,7 +564,7 @@ export class ProductsController {
     const orgId = req.user?.org?.uid;
     const branchId = req.user?.branch?.uid;
     // First verify the product exists and belongs to the org/branch
-    const product = await this.productsService.getProductByref(id, orgId, branchId);
+    const product = await this.productsService.getProductByref(id);
     if (!product.product) {
       return { message: 'Product not found' };
     }
@@ -614,7 +601,7 @@ export class ProductsController {
     const orgId = req.user?.org?.uid;
     const branchId = req.user?.branch?.uid;
     // First verify the product exists and belongs to the org/branch
-    const product = await this.productsService.getProductByref(id, orgId, branchId);
+    const product = await this.productsService.getProductByref(id);
     if (!product.product) {
       return { message: 'Product not found' };
     }

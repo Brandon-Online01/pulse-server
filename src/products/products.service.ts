@@ -90,14 +90,14 @@ export class ProductsService {
 	async createProduct(
 		createProductDto: CreateProductDto,
 		orgId?: number,
-		branchId?: number,
+		branchId?: number
 	): Promise<{ product: Product | null; message: string }> {
 		try {
-			// Continue with existing implementation but add org and branch
+			// Create product with org and branch
 			const product = this.productRepository.create({
 				...createProductDto,
-				organisation: orgId ? { uid: orgId } : null,
-				branch: branchId ? { uid: branchId } : null
+				...(orgId && { organisation: { uid: orgId } }),
+				...(branchId && { branch: { uid: branchId } })
 			});
 
 			const savedProduct = await this.productRepository.save(product);
@@ -121,12 +121,10 @@ export class ProductsService {
 	async updateProduct(
 		ref: number,
 		updateProductDto: UpdateProductDto,
-		orgId?: number,
-		branchId?: number,
 	): Promise<{ message: string }> {
 		try {
-			// First find the product to ensure it exists and belongs to the org/branch
-			const product = await this.getProductByref(ref, orgId, branchId);
+			// First find the product to ensure it exists
+			const product = await this.getProductByref(ref);
 
 			if (!product.product) {
 				throw new NotFoundException('Product not found');
@@ -162,10 +160,10 @@ export class ProductsService {
 		}
 	}
 
-	async deleteProduct(ref: number, orgId?: number, branchId?: number): Promise<{ message: string }> {
+	async deleteProduct(ref: number): Promise<{ message: string }> {
 		try {
-			// First find the product to ensure it exists and belongs to the org/branch
-			const product = await this.getProductByref(ref, orgId, branchId);
+			// First find the product to ensure it exists
+			const product = await this.getProductByref(ref);
 
 			if (!product.product) {
 				throw new NotFoundException('Product not found');
@@ -190,24 +188,11 @@ export class ProductsService {
 		}
 	}
 
-	async restoreProduct(ref: number, orgId?: number, branchId?: number): Promise<{ message: string }> {
+	async restoreProduct(ref: number): Promise<{ message: string }> {
 		try {
-			// Find the deleted product that belongs to the org/branch
-			const whereConditions: any = {
-				uid: ref,
-				isDeleted: true,
-			};
-
-			if (orgId) {
-				whereConditions.organisation = { uid: orgId };
-			}
-
-			if (branchId) {
-				whereConditions.branch = { uid: branchId };
-			}
-
+			// Find the deleted product
 			const product = await this.productRepository.findOne({
-				where: whereConditions,
+				where: { uid: ref, isDeleted: true },
 				relations: ['organisation', 'branch'],
 			});
 
@@ -237,8 +222,6 @@ export class ProductsService {
 	async products(
 		page: number = 1,
 		limit: number = Number(process.env.DEFAULT_PAGE_LIMIT),
-		orgId?: number,
-		branchId?: number,
 	): Promise<PaginatedResponse<Product>> {
 		try {
 			const queryBuilder = this.productRepository
@@ -246,16 +229,6 @@ export class ProductsService {
 				.leftJoinAndSelect('product.organisation', 'organisation')
 				.leftJoinAndSelect('product.branch', 'branch')
 				.where('product.isDeleted = :isDeleted', { isDeleted: false });
-
-			// Apply organization filter if provided
-			if (orgId) {
-				queryBuilder.andWhere('organisation.uid = :orgId', { orgId });
-			}
-
-			// Apply branch filter if provided
-			if (branchId) {
-				queryBuilder.andWhere('branch.uid = :branchId', { branchId });
-			}
 
 			// Add pagination
 			queryBuilder
@@ -304,25 +277,13 @@ export class ProductsService {
 
 	async getProductByref(
 		ref: number,
-		orgId?: number,
-		branchId?: number,
 	): Promise<{ product: Product | null; message: string }> {
 		try {
-			// Build where conditions
-			const whereConditions: any = {
+			// Build where conditions without org and branch
+			const whereConditions = {
 				uid: ref,
 				isDeleted: false,
 			};
-
-			// Add organization filter if provided
-			if (orgId) {
-				whereConditions.organisation = { uid: orgId };
-			}
-
-			// Apply branch filter if provided
-			if (branchId) {
-				whereConditions.branch = { uid: branchId };
-			}
 
 			const product = await this.productRepository.findOne({
 				where: whereConditions,
@@ -349,8 +310,6 @@ export class ProductsService {
 		searchTerm: string,
 		page: number = 1,
 		limit: number = 10,
-		orgId?: number,
-		branchId?: number,
 	): Promise<PaginatedResponse<Product>> {
 		try {
 			const queryBuilder = this.productRepository
@@ -358,16 +317,6 @@ export class ProductsService {
 				.leftJoinAndSelect('product.organisation', 'organisation')
 				.leftJoinAndSelect('product.branch', 'branch')
 				.where('product.isDeleted = :isDeleted', { isDeleted: false });
-
-			// Apply organization filter if provided
-			if (orgId) {
-				queryBuilder.andWhere('organisation.uid = :orgId', { orgId });
-			}
-
-			// Apply branch filter if provided
-			if (branchId) {
-				queryBuilder.andWhere('branch.uid = :branchId', { branchId });
-			}
 
 			// Apply search term - could be category, name, or description
 			queryBuilder.andWhere(
