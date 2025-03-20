@@ -8,7 +8,6 @@ import { CreateBannerDto } from './dto/create-banner.dto';
 import { UpdateBannerDto } from './dto/update-banner.dto';
 import { ProductStatus } from '../lib/enums/product.enums';
 import { Product } from '../products/entities/product.entity';
-import { Between } from 'typeorm';
 import { startOfDay, endOfDay } from 'date-fns';
 import { OrderStatus } from '../lib/enums/status.enums';
 import { ConfigService } from '@nestjs/config';
@@ -53,9 +52,20 @@ export class ShopService {
             .replace(this.currencyCode, this.currencySymbol);
     }
 
-    async categories(): Promise<{ categories: string[] | null, message: string }> {
+    async categories(orgId?: number, branchId?: number): Promise<{ categories: string[] | null, message: string }> {
         try {
-            const allProducts = await this.productRepository.find();
+            // Add filters for organization and branch
+            const query = this.productRepository.createQueryBuilder('product');
+            
+            if (orgId) {
+                query.andWhere('product.organisationId = :orgId', { orgId });
+            }
+            
+            if (branchId) {
+                query.andWhere('product.branchId = :branchId', { branchId });
+            }
+            
+            const allProducts = await query.getMany();
 
             if (!allProducts) {
                 throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
@@ -86,17 +96,28 @@ export class ShopService {
         }
     }
 
-    private async getProductsByStatus(status: ProductStatus): Promise<{ products: Product[] | null }> {
+    private async getProductsByStatus(status: ProductStatus, orgId?: number, branchId?: number): Promise<{ products: Product[] | null }> {
         try {
-            const products = await this.productRepository.find({ where: { status } });
+            const query = this.productRepository.createQueryBuilder('product')
+                .where('product.status = :status', { status });
+            
+            if (orgId) {
+                query.andWhere('product.organisationId = :orgId', { orgId });
+            }
+            
+            if (branchId) {
+                query.andWhere('product.branchId = :branchId', { branchId });
+            }
+            
+            const products = await query.getMany();
             return { products: products ?? null };
         } catch (error) {
             return { products: null };
         }
     }
 
-    async specials(): Promise<{ products: Product[] | null, message: string }> {
-        const result = await this.getProductsByStatus(ProductStatus.SPECIAL);
+    async specials(orgId?: number, branchId?: number): Promise<{ products: Product[] | null, message: string }> {
+        const result = await this.getProductsByStatus(ProductStatus.SPECIAL, orgId, branchId);
 
         const response = {
             products: result?.products,
@@ -106,8 +127,8 @@ export class ShopService {
         return response;
     }
 
-    async getBestSellers(): Promise<{ products: Product[] | null, message: string }> {
-        const result = await this.getProductsByStatus(ProductStatus.BEST_SELLER);
+    async getBestSellers(orgId?: number, branchId?: number): Promise<{ products: Product[] | null, message: string }> {
+        const result = await this.getProductsByStatus(ProductStatus.BEST_SELLER, orgId, branchId);
 
         const response = {
             products: result.products,
@@ -117,8 +138,8 @@ export class ShopService {
         return response;
     }
 
-    async getNewArrivals(): Promise<{ products: Product[] | null, message: string }> {
-        const result = await this.getProductsByStatus(ProductStatus.NEW);
+    async getNewArrivals(orgId?: number, branchId?: number): Promise<{ products: Product[] | null, message: string }> {
+        const result = await this.getProductsByStatus(ProductStatus.NEW, orgId, branchId);
 
         const response = {
             products: result.products,
@@ -128,8 +149,8 @@ export class ShopService {
         return response;
     }
 
-    async getHotDeals(): Promise<{ products: Product[] | null, message: string }> {
-        const result = await this.getProductsByStatus(ProductStatus.HOTDEALS);
+    async getHotDeals(orgId?: number, branchId?: number): Promise<{ products: Product[] | null, message: string }> {
+        const result = await this.getProductsByStatus(ProductStatus.HOTDEALS, orgId, branchId);
 
         const response = {
             products: result.products,
@@ -139,7 +160,7 @@ export class ShopService {
         return response;
     }
 
-    async createQuotation(quotationData: CheckoutDto): Promise<{ message: string }> {
+    async createQuotation(quotationData: CheckoutDto, orgId?: number, branchId?: number): Promise<{ message: string }> {
         try {
             if (!quotationData?.items?.length) {
                 throw new Error('Quotation items are required');
@@ -199,6 +220,9 @@ export class ShopService {
                 quotationDate: new Date(),
                 createdAt: new Date(),
                 updatedAt: new Date(),
+                // Add organization and branch data if available
+                ...(orgId && { organisation: { uid: orgId } }),
+                ...(branchId && { branch: { uid: branchId } }),
                 quotationItems: quotationData?.items?.map(item => {
                     const product = products.flat().find(p => p.uid === item.uid);
                     return {
@@ -305,190 +329,223 @@ export class ShopService {
         }
     }
 
-    async createBanner(bannerData: CreateBannerDto): Promise<{ banner: Banners | null, message: string }> {
+    async createBanner(bannerData: CreateBannerDto, orgId?: number, branchId?: number): Promise<{ banner: Banners | null, message: string }> {
         try {
-            const newBanner = this.bannersRepository.create(bannerData);
-            const savedBanner = await this.bannersRepository.save(newBanner);
-
+            const banner = await this.bannersRepository.save({
+                ...bannerData,
+                ...(orgId && { organisation: { uid: orgId } }),
+                ...(branchId && { branch: { uid: branchId } }),
+            });
+            
             return {
-                banner: savedBanner,
-                message: process.env.SUCCESS_MESSAGE,
+                banner,
+                message: process.env.SUCCESS_MESSAGE
             };
         } catch (error) {
             return {
                 banner: null,
-                message: error?.message,
+                message: error?.message
             };
         }
     }
 
-    async getBanner(): Promise<{ banners: Banners[], message: string }> {
+    async getBanner(orgId?: number, branchId?: number): Promise<{ banners: Banners[], message: string }> {
         try {
-            const banners = await this.bannersRepository.find({
-                take: 5,
-                order: {
-                    createdAt: 'DESC'
-                }
-            });
+            const query = this.bannersRepository.createQueryBuilder('banner');
+            
+            if (orgId) {
+                query.andWhere('banner.organisationId = :orgId', { orgId });
+            }
+            
+            if (branchId) {
+                query.andWhere('banner.branchId = :branchId', { branchId });
+            }
+            
+            const banners = await query.getMany();
+            
+            return {
+                banners,
+                message: process.env.SUCCESS_MESSAGE
+            };
+        } catch (error) {
+            return {
+                banners: [],
+                message: error?.message
+            };
+        }
+    }
 
-            if (!banners) {
+    async updateBanner(uid: number, bannerData: UpdateBannerDto, orgId?: number, branchId?: number): Promise<{ banner: Banners | null, message: string }> {
+        try {
+            // Find the banner first to apply filters
+            const query = this.bannersRepository.createQueryBuilder('banner')
+                .where('banner.uid = :uid', { uid });
+            
+            if (orgId) {
+                query.andWhere('banner.organisationId = :orgId', { orgId });
+            }
+            
+            if (branchId) {
+                query.andWhere('banner.branchId = :branchId', { branchId });
+            }
+            
+            const banner = await query.getOne();
+            
+            if (!banner) {
                 throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
-
-            const response = {
-                banners,
-                message: process.env.SUCCESS_MESSAGE,
-            };
-
-            return response;
-        } catch (error) {
-            const response = {
-                message: error?.message,
-                banners: []
-            }
-
-            return response;
-        }
-    }
-
-    async updateBanner(uid: number, bannerData: UpdateBannerDto): Promise<{ banner: Banners | null, message: string }> {
-        try {
-            const banner = await this.bannersRepository.findOne({ where: { uid } });
-
-            if (!banner) {
-                throw new NotFoundException('Banner not found');
-            }
-
-            await this.bannersRepository.update({ uid }, bannerData);
+            
+            // Update the banner
+            await this.bannersRepository.update(uid, bannerData);
+            
+            // Get the updated banner
             const updatedBanner = await this.bannersRepository.findOne({ where: { uid } });
-
+            
             return {
                 banner: updatedBanner,
-                message: process.env.SUCCESS_MESSAGE,
+                message: process.env.SUCCESS_MESSAGE
             };
         } catch (error) {
             return {
                 banner: null,
-                message: error?.message,
+                message: error?.message
             };
         }
     }
 
-    async deleteBanner(uid: number): Promise<{ message: string }> {
+    async deleteBanner(uid: number, orgId?: number, branchId?: number): Promise<{ message: string }> {
         try {
-            const banner = await this.bannersRepository.findOne({ where: { uid } });
-
+            // Find the banner first to apply filters
+            const query = this.bannersRepository.createQueryBuilder('banner')
+                .where('banner.uid = :uid', { uid });
+            
+            if (orgId) {
+                query.andWhere('banner.organisationId = :orgId', { orgId });
+            }
+            
+            if (branchId) {
+                query.andWhere('banner.branchId = :branchId', { branchId });
+            }
+            
+            const banner = await query.getOne();
+            
             if (!banner) {
-                throw new NotFoundException('Banner not found');
+                throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
-
-            await this.bannersRepository.delete({ uid });
-
+            
+            // Delete the banner
+            await this.bannersRepository.delete(uid);
+            
             return {
-                message: process.env.SUCCESS_MESSAGE,
+                message: process.env.SUCCESS_MESSAGE
             };
         } catch (error) {
             return {
-                message: error?.message,
+                message: error?.message
             };
         }
     }
 
-    async getAllQuotations(): Promise<{ quotations: Quotation[], message: string }> {
+    async getAllQuotations(orgId?: number, branchId?: number): Promise<{ quotations: Quotation[], message: string }> {
         try {
-            const quotations = await this.quotationRepository.find({
-                relations: ['placedBy', 'client', 'quotationItems', 'quotationItems.product'],
-                order: {
-                    createdAt: 'DESC'
-                }
-            });
-
-            if (!quotations) {
-                throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
+            const query = this.quotationRepository.createQueryBuilder('quotation')
+                .leftJoinAndSelect('quotation.placedBy', 'placedBy')
+                .leftJoinAndSelect('quotation.client', 'client')
+                .leftJoinAndSelect('quotation.quotationItems', 'quotationItems')
+                .leftJoinAndSelect('quotationItems.product', 'product');
+            
+            if (orgId) {
+                query.leftJoinAndSelect('quotation.organisation', 'organisation')
+                    .andWhere('organisation.uid = :orgId', { orgId });
             }
-
-            const response = {
+            
+            if (branchId) {
+                query.leftJoinAndSelect('quotation.branch', 'branch')
+                    .andWhere('branch.uid = :branchId', { branchId });
+            }
+            
+            const quotations = await query.getMany();
+            
+            return {
                 quotations,
-                message: process.env.SUCCESS_MESSAGE,
-            };
-
-            return response;
-        } catch (error) {
-            const response = {
-                message: error?.message,
-                quotations: []
-            }
-
-            return response;
-        }
-    }
-
-    async getQuotationsByUser(ref: number): Promise<{ quotations: Quotation[], message: string }> {
-        try {
-            const quotations = await this.quotationRepository.find({
-                where: {
-                    placedBy: {
-                        uid: ref
-                    }
-                },
-                relations: ['placedBy', 'client', 'quotationItems', 'quotationItems.product'],
-                order: {
-                    createdAt: 'DESC'
-                }
-            });
-
-            if (!quotations) {
-                throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
-            }
-
-            const formattedQuotations = quotations.map(quotation => ({
-                ...quotation,
-                totalAmount: Number(quotation.totalAmount)
-            }));
-
-            return {
-                quotations: formattedQuotations,
-                message: process.env.SUCCESS_MESSAGE,
+                message: process.env.SUCCESS_MESSAGE
             };
         } catch (error) {
             return {
-                message: error?.message,
-                quotations: []
-            }
+                quotations: [],
+                message: error?.message
+            };
         }
     }
 
-    async getQuotationByRef(ref: number): Promise<{ quotation: Quotation, message: string }> {
+    async getQuotationsByUser(ref: number, orgId?: number, branchId?: number): Promise<{ quotations: Quotation[], message: string }> {
         try {
-            const quotation = await this.quotationRepository.findOne({
-                where: {
-                    uid: ref
-                },
-                relations: ['placedBy', 'client', 'quotationItems', 'quotationItems.product']
-            });
+            const query = this.quotationRepository.createQueryBuilder('quotation')
+                .leftJoinAndSelect('quotation.placedBy', 'placedBy')
+                .leftJoinAndSelect('quotation.client', 'client')
+                .leftJoinAndSelect('quotation.quotationItems', 'quotationItems')
+                .leftJoinAndSelect('quotationItems.product', 'product')
+                .where('placedBy.uid = :ref', { ref });
+            
+            if (orgId) {
+                query.leftJoinAndSelect('quotation.organisation', 'organisation')
+                    .andWhere('organisation.uid = :orgId', { orgId });
+            }
+            
+            if (branchId) {
+                query.leftJoinAndSelect('quotation.branch', 'branch')
+                    .andWhere('branch.uid = :branchId', { branchId });
+            }
+            
+            const quotations = await query.getMany();
+            
+            return {
+                quotations,
+                message: process.env.SUCCESS_MESSAGE
+            };
+        } catch (error) {
+            return {
+                quotations: [],
+                message: error?.message
+            };
+        }
+    }
 
+    async getQuotationByRef(ref: number, orgId?: number, branchId?: number): Promise<{ quotation: Quotation, message: string }> {
+        try {
+            const query = this.quotationRepository.createQueryBuilder('quotation')
+                .leftJoinAndSelect('quotation.placedBy', 'placedBy')
+                .leftJoinAndSelect('quotation.client', 'client')
+                .leftJoinAndSelect('quotation.quotationItems', 'quotationItems')
+                .leftJoinAndSelect('quotationItems.product', 'product')
+                .where('quotation.uid = :ref', { ref });
+            
+            if (orgId) {
+                query.leftJoinAndSelect('quotation.organisation', 'organisation')
+                    .andWhere('organisation.uid = :orgId', { orgId });
+            }
+            
+            if (branchId) {
+                query.leftJoinAndSelect('quotation.branch', 'branch')
+                    .andWhere('branch.uid = :branchId', { branchId });
+            }
+            
+            const quotation = await query.getOne();
+            
             if (!quotation) {
                 throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
-
-            const formattedQuotation = {
-                ...quotation,
-                totalAmount: Number(quotation.totalAmount)
-            };
-
+            
             return {
-                quotation: formattedQuotation,
-                message: process.env.SUCCESS_MESSAGE,
+                quotation,
+                message: process.env.SUCCESS_MESSAGE
             };
         } catch (error) {
-            return {
-                message: error?.message,
-                quotation: null
-            }
+            throw error;
         }
     }
 
-    async getQuotationsForDate(date: Date): Promise<{
+    async getQuotationsForDate(date: Date, orgId?: number, branchId?: number): Promise<{
         message: string,
         stats: {
             quotations: {
@@ -508,12 +565,24 @@ export class ShopService {
         }
     }> {
         try {
-            const quotations = await this.quotationRepository.find({
-                where: {
-                    createdAt: Between(startOfDay(date), endOfDay(date))
-                },
-                relations: ['quotationItems']
-            });
+            const queryBuilder = this.quotationRepository.createQueryBuilder('quotation')
+                .where('quotation.createdAt BETWEEN :startDate AND :endDate', {
+                    startDate: startOfDay(date),
+                    endDate: endOfDay(date)
+                })
+                .leftJoinAndSelect('quotation.quotationItems', 'quotationItems');
+            
+            if (orgId) {
+                queryBuilder.leftJoinAndSelect('quotation.organisation', 'organisation')
+                    .andWhere('organisation.uid = :orgId', { orgId });
+            }
+            
+            if (branchId) {
+                queryBuilder.leftJoinAndSelect('quotation.branch', 'branch')
+                    .andWhere('branch.uid = :branchId', { branchId });
+            }
+            
+            const quotations = await queryBuilder.getMany();
 
             if (!quotations) {
                 throw new Error(process.env.NOT_FOUND_MESSAGE);
@@ -580,14 +649,107 @@ export class ShopService {
         return this.productRepository.save(product);
     }
 
-    async generateSKUsForExistingProducts(): Promise<{ message: string, updatedCount: number }> {
+    async updateQuotationStatus(quotationId: number, status: OrderStatus, orgId?: number, branchId?: number): Promise<void> {
+        // Build query with org and branch filters
+        const queryBuilder = this.quotationRepository.createQueryBuilder('quotation')
+            .where('quotation.uid = :quotationId', { quotationId });
+        
+        if (orgId) {
+            queryBuilder.leftJoinAndSelect('quotation.organisation', 'organisation')
+                .andWhere('organisation.uid = :orgId', { orgId });
+        }
+        
+        if (branchId) {
+            queryBuilder.leftJoinAndSelect('quotation.branch', 'branch')
+                .andWhere('branch.uid = :branchId', { branchId });
+        }
+        
+        // Add relations
+        queryBuilder.leftJoinAndSelect('quotation.quotationItems', 'quotationItems')
+            .leftJoinAndSelect('quotationItems.product', 'product')
+            .leftJoinAndSelect('quotation.client', 'client');
+        
+        const quotation = await queryBuilder.getOne();
+
+        if (!quotation) return;
+
+        const previousStatus = quotation.status;
+        
+        // If quotation is approved, update product analytics
+        if (status === OrderStatus.APPROVED) {
+            for (const item of quotation?.quotationItems) {
+                await this.productsService?.recordSale(
+                    item?.product?.uid,
+                    item?.quantity,
+                    Number(item?.totalPrice)
+                );
+                await this.productsService?.calculateProductPerformance(item?.product?.uid);
+            }
+        }
+
+        // Update the quotation status
+        await this.quotationRepository.update(quotationId, { status });
+
+        // Only send notification if the status has changed
+        if (previousStatus !== status && quotation.client?.email) {
+            try {
+                // Prepare email data
+                const emailData = {
+                    name: quotation.client.name || quotation.client.email.split('@')[0],
+                    quotationId: quotation.quotationNumber,
+                    validUntil: quotation.validUntil || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now if not set
+                    total: Number(quotation.totalAmount),
+                    currency: this.currencyCode,
+                    status: status.toLowerCase(),
+                    quotationItems: quotation.quotationItems.map(item => ({
+                        quantity: item.quantity,
+                        product: {
+                            uid: item.product.uid,
+                            name: item.product.name,
+                            code: item.product.sku || `SKU-${item.product.uid}`
+                        },
+                        totalPrice: Number(item.totalPrice)
+                    }))
+                };
+
+                // Determine which email template to use based on status
+                let emailType = EmailType.QUOTATION_STATUS_UPDATE;
+                if (status === OrderStatus.APPROVED) {
+                    emailType = EmailType.QUOTATION_APPROVED;
+                } else if (status === OrderStatus.REJECTED) {
+                    emailType = EmailType.QUOTATION_REJECTED;
+                }
+
+                // Emit event for email sending
+                this.eventEmitter.emit('send.email', emailType, [quotation.client.email], emailData);
+                
+                // Also notify internal team about the status change
+                this.shopGateway.notifyQuotationStatusChanged(quotationId, status);
+            } catch (error) {
+                console.error('Failed to send quotation status update email:', error);
+                // Continue with the process even if email sending fails
+            }
+        }
+    }
+
+    async generateSKUsForExistingProducts(orgId?: number, branchId?: number): Promise<{ message: string, updatedCount: number }> {
         try {
-            const productsWithoutSKU = await this.productRepository.find({
-                where: [
+            // Build query with org and branch filters
+            const queryBuilder = this.productRepository.createQueryBuilder('product')
+                .where([
                     { sku: null },
                     { sku: '' }
-                ]
-            });
+                ]);
+            
+            if (orgId) {
+                queryBuilder.andWhere('product.organisationId = :orgId', { orgId });
+            }
+            
+            if (branchId) {
+                queryBuilder.andWhere('product.branchId = :branchId', { branchId });
+            }
+            
+            const productsWithoutSKU = await queryBuilder.getMany();
 
             if (!productsWithoutSKU.length) {
                 return {
@@ -615,10 +777,20 @@ export class ShopService {
         }
     }
 
-    async regenerateAllSKUs(): Promise<{ message: string, updatedCount: number }> {
+    async regenerateAllSKUs(orgId?: number, branchId?: number): Promise<{ message: string, updatedCount: number }> {
         try {
-            // Get all products
-            const allProducts = await this.productRepository.find();
+            // Build query with org and branch filters
+            const queryBuilder = this.productRepository.createQueryBuilder('product');
+            
+            if (orgId) {
+                queryBuilder.andWhere('product.organisationId = :orgId', { orgId });
+            }
+            
+            if (branchId) {
+                queryBuilder.andWhere('product.branchId = :branchId', { branchId });
+            }
+            
+            const allProducts = await queryBuilder.getMany();
 
             // Update each product with a new unique SKU
             const updatePromises = allProducts.map(async (product) => {
@@ -640,11 +812,20 @@ export class ShopService {
         }
     }
 
-    async getQuotationsReport(filter: any) {
+    async getQuotationsReport(filter: any, orgId?: number, branchId?: number) {
         try {
+            // Add org and branch filters if provided
+            if (orgId) {
+                filter = { ...filter, 'organisation.uid': orgId };
+            }
+            
+            if (branchId) {
+                filter = { ...filter, 'branch.uid': branchId };
+            }
+            
             const quotations = await this.quotationRepository.find({
                 where: filter,
-                relations: ['placedBy', 'client', 'quotationItems', 'quotationItems.product']
+                relations: ['placedBy', 'client', 'quotationItems', 'quotationItems.product', 'organisation', 'branch']
             });
 
             if (!quotations) {
@@ -848,142 +1029,78 @@ export class ShopService {
             startDate?: Date;
             endDate?: Date;
             search?: string;
+            orgId?: number;
+            branchId?: number;
         },
         page: number = 1,
         limit: number = Number(process.env.DEFAULT_PAGE_LIMIT)
     ): Promise<PaginatedResponse<Quotation>> {
-        try {
-            const queryBuilder = this.quotationRepository
-                .createQueryBuilder('quotation')
-                .leftJoinAndSelect('quotation.client', 'client')
-                .leftJoinAndSelect('quotation.placedBy', 'placedBy')
-                .leftJoinAndSelect('quotation.quotationItems', 'quotationItems')
-                .where('quotation.isDeleted = :isDeleted', { isDeleted: false });
-
-            if (filters?.status) {
-                queryBuilder.andWhere('quotation.status = :status', { status: filters.status });
-            }
-
-            if (filters?.clientId) {
-                queryBuilder.andWhere('client.uid = :clientId', { clientId: filters.clientId });
-            }
-
-            if (filters?.startDate && filters?.endDate) {
-                queryBuilder.andWhere('quotation.createdAt BETWEEN :startDate AND :endDate', {
-                    startDate: filters.startDate,
-                    endDate: filters.endDate
-                });
-            }
-
-            if (filters?.search) {
-                queryBuilder.andWhere(
-                    '(quotation.quotationNumber ILIKE :search OR client.name ILIKE :search)',
-                    { search: `%${filters.search}%` }
-                );
-            }
-
-            // Add pagination
-            queryBuilder
-                .skip((page - 1) * limit)
-                .take(limit)
-                .orderBy('quotation.createdAt', 'DESC');
-
-            const [quotations, total] = await queryBuilder.getManyAndCount();
-
-            if (!quotations) {
-                throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
-            }
-
-            return {
-                data: quotations,
-                meta: {
-                    total,
-                    page,
-                    limit,
-                    totalPages: Math.ceil(total / limit),
-                },
-                message: process.env.SUCCESS_MESSAGE,
-            };
-        } catch (error) {
-            return {
-                data: [],
-                meta: {
-                    total: 0,
-                    page,
-                    limit,
-                    totalPages: 0,
-                },
-                message: error?.message,
-            };
-        }
-    }
-
-    // Add method to handle quotation status changes
-    async updateQuotationStatus(quotationId: number, status: OrderStatus): Promise<void> {
-        const quotation = await this.quotationRepository.findOne({
-            where: { uid: quotationId },
-            relations: ['quotationItems', 'quotationItems.product', 'client']
-        });
-
-        if (!quotation) return;
-
-        const previousStatus = quotation.status;
+        const skip = (page - 1) * limit;
         
-        // If quotation is approved, update product analytics
-        if (status === OrderStatus.APPROVED) {
-            for (const item of quotation?.quotationItems) {
-                await this.productsService?.recordSale(
-                    item?.product?.uid,
-                    item?.quantity,
-                    Number(item?.totalPrice)
-                );
-                await this.productsService?.calculateProductPerformance(item?.product?.uid);
-            }
+        // Build the query
+        const queryBuilder = this.quotationRepository.createQueryBuilder('quotation')
+            .leftJoinAndSelect('quotation.placedBy', 'placedBy')
+            .leftJoinAndSelect('quotation.client', 'client')
+            .leftJoinAndSelect('quotation.quotationItems', 'quotationItems')
+            .leftJoinAndSelect('quotationItems.product', 'product');
+        
+        // Apply filters
+        if (filters?.status) {
+            queryBuilder.andWhere('quotation.status = :status', { status: filters.status });
         }
-
-        // Update the quotation status
-        await this.quotationRepository.update(quotationId, { status });
-
-        // Only send notification if the status has changed
-        if (previousStatus !== status && quotation.client?.email) {
-            try {
-                // Prepare email data
-                const emailData = {
-                    name: quotation.client.name || quotation.client.email.split('@')[0],
-                    quotationId: quotation.quotationNumber,
-                    validUntil: quotation.validUntil || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now if not set
-                    total: Number(quotation.totalAmount),
-                    currency: this.currencyCode,
-                    status: status.toLowerCase(),
-                    quotationItems: quotation.quotationItems.map(item => ({
-                        quantity: item.quantity,
-                        product: {
-                            uid: item.product.uid,
-                            name: item.product.name,
-                            code: item.product.sku || `SKU-${item.product.uid}`
-                        },
-                        totalPrice: Number(item.totalPrice)
-                    }))
-                };
-
-                // Determine which email template to use based on status
-                let emailType = EmailType.QUOTATION_STATUS_UPDATE;
-                if (status === OrderStatus.APPROVED) {
-                    emailType = EmailType.QUOTATION_APPROVED;
-                } else if (status === OrderStatus.REJECTED) {
-                    emailType = EmailType.QUOTATION_REJECTED;
-                }
-
-                // Emit event for email sending
-                this.eventEmitter.emit('send.email', emailType, [quotation.client.email], emailData);
-                
-                // Also notify internal team about the status change
-                this.shopGateway.notifyQuotationStatusChanged(quotationId, status);
-            } catch (error) {
-                console.error('Failed to send quotation status update email:', error);
-                // Continue with the process even if email sending fails
-            }
+        
+        if (filters?.clientId) {
+            queryBuilder.andWhere('client.uid = :clientId', { clientId: filters.clientId });
         }
+        
+        if (filters?.startDate && filters?.endDate) {
+            queryBuilder.andWhere('quotation.quotationDate BETWEEN :startDate AND :endDate', {
+                startDate: startOfDay(filters.startDate),
+                endDate: endOfDay(filters.endDate)
+            });
+        }
+        
+        if (filters?.search) {
+            queryBuilder.andWhere(
+                '(client.name LIKE :search OR placedBy.name LIKE :search OR quotation.quotationNumber LIKE :search)',
+                { search: `%${filters.search}%` }
+            );
+        }
+        
+        // Add org and branch filters
+        if (filters?.orgId) {
+            queryBuilder.leftJoinAndSelect('quotation.organisation', 'organisation')
+                .andWhere('organisation.uid = :orgId', { orgId: filters.orgId });
+        }
+        
+        if (filters?.branchId) {
+            queryBuilder.leftJoinAndSelect('quotation.branch', 'branch')
+                .andWhere('branch.uid = :branchId', { branchId: filters.branchId });
+        }
+        
+        // Count total records
+        const total = await queryBuilder.getCount();
+        
+        // Get paginated results
+        const quotations = await queryBuilder
+            .orderBy('quotation.quotationDate', 'DESC')
+            .skip(skip)
+            .take(limit)
+            .getMany();
+        
+        // Calculate total pages
+        const totalPages = Math.ceil(total / limit);
+        
+        return {
+            data: quotations,
+            meta: {
+                total,
+                page,
+                limit,
+                totalPages
+            },
+            message: process.env.SUCCESS_MESSAGE
+        };
     }
 }
 

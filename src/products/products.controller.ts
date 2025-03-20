@@ -20,8 +20,9 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { PaginationQuery } from '../lib/interfaces/product.interfaces';
 import { EnterpriseOnly } from '../decorators/enterprise-only.decorator';
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Req } from '@nestjs/common';
 import { ProductAnalyticsDto } from './dto/product-analytics.dto';
+import { AuthenticatedRequest } from '../lib/interfaces/authenticated-request.interface';
 
 @ApiTags('products')
 @Controller('products')
@@ -74,8 +75,10 @@ export class ProductsController {
       }
     }
   })
-  createProduct(@Body() createProductDto: CreateProductDto) {
-    return this.productsService.createProduct(createProductDto);
+  createProduct(@Body() createProductDto: CreateProductDto, @Req() req: AuthenticatedRequest) {
+    const orgId = req.user?.org?.uid;
+    const branchId = req.user?.branch?.uid;
+    return this.productsService.createProduct(createProductDto, orgId, branchId);
   }
 
   @Get()
@@ -128,8 +131,10 @@ export class ProductsController {
       }
     }
   })
-  products(@Query() query: PaginationQuery) {
-    return this.productsService.products(query.page, query.limit);
+  products(@Query() query: PaginationQuery, @Req() req: AuthenticatedRequest) {
+    const orgId = req.user?.org?.uid;
+    const branchId = req.user?.branch?.uid;
+    return this.productsService.products(query.page, query.limit, orgId, branchId);
   }
 
   @Get(':ref')
@@ -181,8 +186,10 @@ export class ProductsController {
       }
     }
   })
-  getProductByref(@Param('ref') ref: number) {
-    return this.productsService.getProductByref(ref);
+  getProductByref(@Param('ref') ref: number, @Req() req: AuthenticatedRequest) {
+    const orgId = req.user?.org?.uid;
+    const branchId = req.user?.branch?.uid;
+    return this.productsService.getProductByref(ref, orgId, branchId);
   }
 
   @Get('category/:category')
@@ -234,8 +241,10 @@ export class ProductsController {
       }
     }
   })
-  productsBySearchTerm(@Param('category') category: string) {
-    return this.productsService.productsBySearchTerm(category);
+  productsBySearchTerm(@Param('category') category: string, @Req() req: AuthenticatedRequest) {
+    const orgId = req.user?.org?.uid;
+    const branchId = req.user?.branch?.uid;
+    return this.productsService.productsBySearchTerm(category, 1, 10, orgId, branchId);
   }
 
   @Patch(':ref')
@@ -283,8 +292,12 @@ export class ProductsController {
   })
   updateProduct(
     @Param('ref') ref: number,
-    @Body() updateProductDto: UpdateProductDto) {
-    return this.productsService.updateProduct(ref, updateProductDto);
+    @Body() updateProductDto: UpdateProductDto,
+    @Req() req: AuthenticatedRequest
+  ) {
+    const orgId = req.user?.org?.uid;
+    const branchId = req.user?.branch?.uid;
+    return this.productsService.updateProduct(ref, updateProductDto, orgId, branchId);
   }
 
   @Patch('restore/:ref')
@@ -320,8 +333,10 @@ export class ProductsController {
 		AccessLevel.OWNER,
 		AccessLevel.TECHNICIAN,
 	)
-  restoreProduct(@Param('ref') ref: number) {
-    return this.productsService.restoreProduct(ref);
+  restoreProduct(@Param('ref') ref: number, @Req() req: AuthenticatedRequest) {
+    const orgId = req.user?.org?.uid;
+    const branchId = req.user?.branch?.uid;
+    return this.productsService.restoreProduct(ref, orgId, branchId);
   }
 
   @Delete(':ref')
@@ -357,11 +372,13 @@ export class ProductsController {
       }
     }
   })
-  deleteProduct(@Param('ref') ref: number) {
-    return this.productsService.deleteProduct(ref);
+  deleteProduct(@Param('ref') ref: number, @Req() req: AuthenticatedRequest) {
+    const orgId = req.user?.org?.uid;
+    const branchId = req.user?.branch?.uid;
+    return this.productsService.deleteProduct(ref, orgId, branchId);
   }
 
-  @Get(':id/analytics')
+  @Get('analytics/:id')
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
   @ApiOperation({ 
     summary: 'Get product analytics',
@@ -397,11 +414,19 @@ export class ProductsController {
       }
     }
   })
-  async getProductAnalytics(@Param('id') id: number) {
+  async getProductAnalytics(@Param('id') id: number, @Req() req: AuthenticatedRequest) {
+    const orgId = req.user?.org?.uid;
+    const branchId = req.user?.branch?.uid;
+    // Note: The analytics service methods don't need to filter by org/branch 
+    // since we'll be fetching a product that's already filtered
+    const product = await this.productsService.getProductByref(id, orgId, branchId);
+    if (!product.product) {
+      return { message: 'Product not found', analytics: null };
+    }
     return this.productsService.getProductAnalytics(id);
   }
 
-  @Post(':id/analytics')
+  @Patch('analytics/:id')
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
   @ApiOperation({ 
     summary: 'Update product analytics',
@@ -438,12 +463,21 @@ export class ProductsController {
   })
   async updateProductAnalytics(
     @Param('id') id: number,
-    @Body() analyticsDto: ProductAnalyticsDto
+    @Body() analyticsDto: ProductAnalyticsDto,
+    @Req() req: AuthenticatedRequest
   ) {
+    const orgId = req.user?.org?.uid;
+    const branchId = req.user?.branch?.uid;
+    // First verify the product exists and belongs to the org/branch
+    const product = await this.productsService.getProductByref(id, orgId, branchId);
+    if (!product.product) {
+      return { message: 'Product not found', analytics: null };
+    }
     return this.productsService.updateProductAnalytics(id, analyticsDto);
   }
 
-  @Post(':id/record-view')
+  @Post('view/:id')
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
   @ApiOperation({ 
     summary: 'Record product view',
     description: 'Increments the view count for a specific product'
@@ -467,11 +501,19 @@ export class ProductsController {
       }
     }
   })
-  async recordProductView(@Param('id') id: number) {
+  async recordProductView(@Param('id') id: number, @Req() req: AuthenticatedRequest) {
+    const orgId = req.user?.org?.uid;
+    const branchId = req.user?.branch?.uid;
+    // First verify the product exists and belongs to the org/branch
+    const product = await this.productsService.getProductByref(id, orgId, branchId);
+    if (!product.product) {
+      return { message: 'Product not found' };
+    }
     return this.productsService.recordView(id);
   }
 
-  @Post(':id/record-cart-add')
+  @Post('cart/:id')
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
   @ApiOperation({ 
     summary: 'Record cart add',
     description: 'Increments the cart add count for a specific product'
@@ -495,11 +537,19 @@ export class ProductsController {
       }
     }
   })
-  async recordCartAdd(@Param('id') id: number) {
+  async recordCartAdd(@Param('id') id: number, @Req() req: AuthenticatedRequest) {
+    const orgId = req.user?.org?.uid;
+    const branchId = req.user?.branch?.uid;
+    // First verify the product exists and belongs to the org/branch
+    const product = await this.productsService.getProductByref(id, orgId, branchId);
+    if (!product.product) {
+      return { message: 'Product not found' };
+    }
     return this.productsService.recordCartAdd(id);
   }
 
-  @Post(':id/record-wishlist')
+  @Post('wishlist/:id')
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
   @ApiOperation({ 
     summary: 'Record wishlist add',
     description: 'Increments the wishlist add count for a specific product'
@@ -523,11 +573,18 @@ export class ProductsController {
       }
     }
   })
-  async recordWishlist(@Param('id') id: number) {
+  async recordWishlist(@Param('id') id: number, @Req() req: AuthenticatedRequest) {
+    const orgId = req.user?.org?.uid;
+    const branchId = req.user?.branch?.uid;
+    // First verify the product exists and belongs to the org/branch
+    const product = await this.productsService.getProductByref(id, orgId, branchId);
+    if (!product.product) {
+      return { message: 'Product not found' };
+    }
     return this.productsService.recordWishlist(id);
   }
 
-  @Post(':id/calculate-performance')
+  @Get('performance/:id')
   @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER)
   @ApiOperation({ 
     summary: 'Calculate product performance',
@@ -553,7 +610,14 @@ export class ProductsController {
       }
     }
   })
-  async calculatePerformance(@Param('id') id: number) {
+  async calculatePerformance(@Param('id') id: number, @Req() req: AuthenticatedRequest) {
+    const orgId = req.user?.org?.uid;
+    const branchId = req.user?.branch?.uid;
+    // First verify the product exists and belongs to the org/branch
+    const product = await this.productsService.getProductByref(id, orgId, branchId);
+    if (!product.product) {
+      return { message: 'Product not found' };
+    }
     return this.productsService.calculateProductPerformance(id);
   }
 }
