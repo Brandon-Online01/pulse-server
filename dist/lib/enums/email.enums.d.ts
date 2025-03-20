@@ -22,6 +22,7 @@ export declare enum EmailType {
     LICENSE_TRANSFERRED_TO = "license.transferred.to",
     NEW_TASK = "new_task",
     TASK_UPDATED = "task_updated",
+    TASK_COMPLETED = "task_completed",
     TASK_REMINDER_ASSIGNEE = "TASK_REMINDER_ASSIGNEE",
     TASK_REMINDER_CREATOR = "TASK_REMINDER_CREATOR",
     NEW_USER_ADMIN_NOTIFICATION = "new_user_admin_notification"

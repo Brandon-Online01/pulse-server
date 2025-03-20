@@ -7,8 +7,8 @@ export class CreateOrganisationDto {
 	@IsNotEmpty()
 	@IsString()
 	@ApiProperty({
-		example: 'Acme Inc.',
-		description: 'The name of the organisation',
+		example: 'ACME Corporation, Inc.',
+		description: 'Official registered business name of the organisation',
 	})
 	name: string;
 
@@ -16,7 +16,7 @@ export class CreateOrganisationDto {
 	@Type(() => AddressDto)
 	@IsNotEmpty()
 	@ApiProperty({
-		description: 'The full address of the client including coordinates',
+		description: 'Physical address of the organisation headquarters including geolocation coordinates',
 		type: AddressDto,
 	})
 	address: AddressDto;
@@ -24,40 +24,40 @@ export class CreateOrganisationDto {
 	@IsNotEmpty()
 	@IsEmail()
 	@ApiProperty({
-		example: 'brandon@loro.co.za',
-		description: 'The email of the organisation',
+		example: 'contact@acmecorp.com',
+		description: 'Primary contact email address for the organisation (used for official communications)',
 	})
 	email: string;
 
 	@IsNotEmpty()
 	@IsString()
 	@ApiProperty({
-		example: '123-456-7890',
-		description: 'The phone number of the organisation',
+		example: '+1 (555) 123-4567',
+		description: 'Main business phone number with country code',
 	})
 	phone: string;
 
 	@IsNotEmpty()
 	@IsString()
 	@ApiProperty({
-		example: 'Brandon Nkawu',
-		description: 'The contact person of the organisation',
+		example: 'Jane Smith, Chief Operations Officer',
+		description: 'Primary point of contact including name and position',
 	})
 	contactPerson: string;
 
 	@IsNotEmpty()
 	@IsUrl()
 	@ApiProperty({
-		example: 'https://www.acme.com',
-		description: 'The website of the organisation',
+		example: 'https://www.acmecorp.com',
+		description: 'Official website URL of the organisation (must include https://)',
 	})
 	website: string;
 
 	@IsOptional()
 	@IsString()
 	@ApiProperty({
-		example: 'https://www.acme.com/logo.png',
-		description: 'The logo of the organisation',
+		example: 'https://storage.googleapis.com/acmecorp-assets/logo-full.png',
+		description: 'URL to high-resolution organization logo (recommended: SVG or PNG with transparency)',
 	})
 	logo?: string;
 }

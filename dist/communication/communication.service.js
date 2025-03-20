@@ -163,6 +163,11 @@ let CommunicationService = class CommunicationService {
                     subject: 'Task Updated',
                     body: (0, emails_2.TaskUpdated)(data),
                 };
+            case email_enums_1.EmailType.TASK_COMPLETED:
+                return {
+                    subject: 'Task Completed Successfully',
+                    body: (0, emails_1.TaskCompleted)(data),
+                };
             case email_enums_1.EmailType.QUOTATION_APPROVED:
                 return {
                     subject: 'Quotation Approved',

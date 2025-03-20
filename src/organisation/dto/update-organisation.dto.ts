@@ -18,7 +18,7 @@ export class UpdateOrganisationDto extends PartialType(CreateOrganisationDto) {
 	@Type(() => AddressDto)
 	@IsOptional()
 	@ApiProperty({
-		description: 'The full address of the client including coordinates',
+		description: 'The full address of the organisation including coordinates',
 		type: AddressDto,
 	})
 	address: AddressDto;

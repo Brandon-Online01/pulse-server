@@ -169,6 +169,15 @@ export interface TaskEmailData extends BaseEmailData {
         url: string;
     }>;
 }
+export interface TaskCompletedEmailData extends TaskEmailData {
+    completionDate: string;
+    completedBy?: string;
+    feedbackLink: string;
+    jobCards?: Array<{
+        name: string;
+        url: string;
+    }>;
+}
 export interface TaskReminderData extends BaseEmailData {
     task: {
         uid: number;
@@ -222,6 +231,7 @@ export interface EmailDataMap {
     [EmailType.LICENSE_TRANSFERRED_TO]: LicenseTransferEmailData;
     [EmailType.NEW_TASK]: TaskEmailData;
     [EmailType.TASK_UPDATED]: TaskEmailData;
+    [EmailType.TASK_COMPLETED]: TaskCompletedEmailData;
     [EmailType.TASK_REMINDER_ASSIGNEE]: TaskReminderData;
     [EmailType.TASK_REMINDER_CREATOR]: TaskReminderData;
     [EmailType.NEW_USER_ADMIN_NOTIFICATION]: NewUserAdminNotificationData;

@@ -11,8 +11,8 @@ import { User } from '../user/entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CommunicationLog } from './entities/communication-log.entity';
-import { LicenseCreated, LicenseUpdated, LicenseLimitReached, LicenseRenewed, LicenseSuspended, LicenseActivated, NewQuotationClient, NewQuotationInternal, NewQuotationReseller, Signup, Verification, PasswordReset, Invoice, PasswordChanged, DailyReport, QuotationStatusUpdate, NewUserAdminNotification, TaskReminderAssignee, TaskReminderCreator } from '../lib/templates/emails';
-import { DailyReportData, InvoiceData, PasswordChangedData, PasswordResetData, VerificationEmailData, SignupEmailData, EmailTemplateData, LicenseEmailData, LicenseLimitData, QuotationInternalData, QuotationResellerData, QuotationData, NewUserAdminNotificationData, TaskReminderData } from '../lib/types/email-templates.types';
+import { LicenseCreated, LicenseUpdated, LicenseLimitReached, LicenseRenewed, LicenseSuspended, LicenseActivated, NewQuotationClient, NewQuotationInternal, NewQuotationReseller, Signup, Verification, PasswordReset, Invoice, PasswordChanged, DailyReport, QuotationStatusUpdate, NewUserAdminNotification, TaskReminderAssignee, TaskReminderCreator, TaskCompleted } from '../lib/templates/emails';
+import { DailyReportData, InvoiceData, PasswordChangedData, PasswordResetData, VerificationEmailData, SignupEmailData, EmailTemplateData, LicenseEmailData, LicenseLimitData, QuotationInternalData, QuotationResellerData, QuotationData, NewUserAdminNotificationData, TaskReminderData, TaskCompletedEmailData } from '../lib/types/email-templates.types';
 import { NewTask, TaskUpdated } from '../lib/templates/emails';
 import { TaskEmailData } from '../lib/types/email-templates.types';
 
@@ -169,6 +169,11 @@ export class CommunicationService {
 				return {
 					subject: 'Task Updated',
 					body: TaskUpdated(data as TaskEmailData),
+				};
+			case EmailType.TASK_COMPLETED:
+				return {
+					subject: 'Task Completed Successfully',
+					body: TaskCompleted(data as TaskCompletedEmailData),
 				};
 			case EmailType.QUOTATION_APPROVED:
 				return {

@@ -28,6 +28,7 @@ import { UpdateTaskFlagDto } from './dto/update-task-flag.dto';
 import { UpdateTaskFlagItemDto } from './dto/update-task-flag-item.dto';
 import { AddCommentDto } from './dto/add-comment.dto';
 import { TaskFlagStatus, TaskFlagItemStatus } from '../lib/enums/task.enums';
+import { OrganisationSettings } from '../organisation/entities/organisation-settings.entity';
 
 @Injectable()
 export class TasksService {
@@ -52,6 +53,8 @@ export class TasksService {
 		private taskFlagRepository: Repository<TaskFlag>,
 		@InjectRepository(TaskFlagItem)
 		private taskFlagItemRepository: Repository<TaskFlagItem>,
+		@InjectRepository(OrganisationSettings)
+		private readonly organisationSettingsRepository: Repository<OrganisationSettings>,
 	) {
 		this.CACHE_TTL = this.configService.get<number>('CACHE_EXPIRATION_TIME') || 30;
 	}
@@ -105,11 +108,11 @@ export class TasksService {
 		if (taskId) {
 			await this.cacheManager.del(this.getTaskFlagCacheKey(taskId));
 		}
-		
+
 		if (flagId) {
 			await this.cacheManager.del(this.getTaskFlagDetailCacheKey(flagId));
 		}
-		
+
 		if (taskId) {
 			await this.clearTaskCache(taskId);
 		}
@@ -391,7 +394,7 @@ export class TasksService {
 					completionDate: null,
 					creator: creator,
 					organisation: { uid: createTaskDto.organisationId || orgId },
-					branch: (createTaskDto.branchId || branchId) ? { uid: createTaskDto.branchId || branchId } : null,
+					branch: createTaskDto.branchId || branchId ? { uid: createTaskDto.branchId || branchId } : null,
 					assignees,
 					clients,
 					attachments: createTaskDto.attachments || [],
@@ -536,11 +539,7 @@ export class TasksService {
 		return task;
 	}
 
-	async findOne(
-		ref: number,
-		orgId?: number,
-		branchId?: number
-	): Promise<{ message: string; task: Task | null }> {
+	async findOne(ref: number, orgId?: number, branchId?: number): Promise<{ message: string; task: Task | null }> {
 		try {
 			if (!orgId) {
 				throw new BadRequestException('Organization ID is required');
@@ -556,7 +555,7 @@ export class TasksService {
 			const whereClause: any = {
 				uid: ref,
 				isDeleted: false,
-				organisation: { uid: orgId }
+				organisation: { uid: orgId },
 			};
 
 			if (branchId) {
@@ -565,7 +564,7 @@ export class TasksService {
 
 			const task = await this.taskRepository.findOne({
 				where: whereClause,
-				relations: ['creator', 'subtasks', 'organisation', 'branch', 'routes', 'flags']
+				relations: ['creator', 'subtasks', 'organisation', 'branch', 'routes', 'flags'],
 			});
 
 			if (!task) {
@@ -587,7 +586,7 @@ export class TasksService {
 		} catch (error) {
 			return {
 				message: error?.message,
-				task: null
+				task: null,
 			};
 		}
 	}
@@ -595,7 +594,7 @@ export class TasksService {
 	public async tasksByUser(
 		ref: number,
 		orgId?: number,
-		branchId?: number
+		branchId?: number,
 	): Promise<{ message: string; tasks: Task[] }> {
 		try {
 			if (!orgId) {
@@ -611,7 +610,7 @@ export class TasksService {
 
 			const whereClause: any = {
 				isDeleted: false,
-				organisation: { uid: orgId }
+				organisation: { uid: orgId },
 			};
 
 			if (branchId) {
@@ -623,19 +622,19 @@ export class TasksService {
 
 			const tasks = await this.taskRepository.find({
 				where: whereClause,
-				relations: ['creator', 'subtasks', 'organisation', 'branch']
+				relations: ['creator', 'subtasks', 'organisation', 'branch'],
 			});
 
 			if (!tasks || tasks.length === 0) {
 				return {
 					tasks: [],
-					message: process.env.NOT_FOUND_MESSAGE
+					message: process.env.NOT_FOUND_MESSAGE,
 				};
 			}
 
 			const result = {
 				tasks: tasks,
-				message: process.env.SUCCESS_MESSAGE
+				message: process.env.SUCCESS_MESSAGE,
 			};
 
 			await this.cacheManager.set(cacheKey, result, this.CACHE_TTL);
@@ -644,7 +643,7 @@ export class TasksService {
 		} catch (error) {
 			return {
 				tasks: [],
-				message: error?.message
+				message: error?.message,
 			};
 		}
 	}
@@ -663,8 +662,8 @@ export class TasksService {
 		},
 		page: number = 1,
 		limit: number = Number(process.env.DEFAULT_PAGE_LIMIT),
-		orgId?: number, 
-		branchId?: number
+		orgId?: number,
+		branchId?: number,
 	): Promise<PaginatedResponse<Task>> {
 		try {
 			if (!orgId) {
@@ -677,7 +676,7 @@ export class TasksService {
 			// Default where clause with organization filter
 			let whereClause: any = {
 				isDeleted: false,
-				organisation: { uid: orgId }
+				organisation: { uid: orgId },
 			};
 
 			// Add branch filter if provided
@@ -706,12 +705,12 @@ export class TasksService {
 				if (filters.isOverdue) {
 					whereClause.deadline = LessThan(new Date());
 					whereClause.status = Not(TaskStatus.COMPLETED);
-			}
+				}
 
-			// Add organization and branch filtering
+				// Add organization and branch filtering
 				if (filters.organisationRef) {
 					whereClause.organisation = { ref: filters.organisationRef };
-			}
+				}
 
 				if (filters.branchId) {
 					whereClause.branch = { uid: filters.branchId };
@@ -754,7 +753,11 @@ export class TasksService {
 				message: process.env.SUCCESS_MESSAGE,
 			};
 
-			await this.cacheManager.set(this.getCacheKey(`${orgId}_${branchId}_${JSON.stringify(filters)}`), response, this.CACHE_TTL);
+			await this.cacheManager.set(
+				this.getCacheKey(`${orgId}_${branchId}_${JSON.stringify(filters)}`),
+				response,
+				this.CACHE_TTL,
+			);
 
 			return response;
 		} catch (error) {
@@ -771,7 +774,12 @@ export class TasksService {
 		}
 	}
 
-	async update(ref: number, updateTaskDto: UpdateTaskDto, orgId?: number, branchId?: number): Promise<{ message: string }> {
+	async update(
+		ref: number,
+		updateTaskDto: UpdateTaskDto,
+		orgId?: number,
+		branchId?: number,
+	): Promise<{ message: string }> {
 		try {
 			if (!orgId) {
 				throw new BadRequestException('Organization ID is required');
@@ -780,7 +788,7 @@ export class TasksService {
 			const whereClause: any = {
 				uid: ref,
 				isDeleted: false,
-				organisation: { uid: orgId }
+				organisation: { uid: orgId },
 			};
 
 			if (branchId) {
@@ -789,15 +797,39 @@ export class TasksService {
 
 			const task = await this.taskRepository.findOne({
 				where: whereClause,
-				relations: ['subtasks', 'organisation', 'branch']
+				relations: ['subtasks', 'organisation', 'branch', 'creator', 'assignees'],
 			});
 
 			if (!task) {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
+			// Check if task is being marked as completed
+			const isCompletingTask =
+				updateTaskDto.status === TaskStatus.COMPLETED && task.status !== TaskStatus.COMPLETED;
+
+			// Set completion date if task is being completed
+			if (isCompletingTask && !updateTaskDto.completionDate) {
+				updateTaskDto.completionDate = new Date();
+				updateTaskDto.progress = 100;
+			}
+
 			// Update the task with the new data
 			await this.taskRepository.update(ref, updateTaskDto);
+
+			// Reload the task to get the updated data
+			let updatedTask = task;
+			if (isCompletingTask) {
+				updatedTask = await this.taskRepository.findOne({
+					where: whereClause,
+					relations: ['subtasks', 'organisation', 'branch', 'creator', 'assignees', 'clients'],
+				});
+
+				if (updatedTask) {
+					// Send notifications to clients if task is completed
+					await this.sendClientCompletionNotifications(updatedTask);
+				}
+			}
 
 			// Clear cache after update
 			await this.clearTaskCache(ref);
@@ -817,7 +849,7 @@ export class TasksService {
 			const whereClause: any = {
 				uid: ref,
 				isDeleted: false,
-				organisation: { uid: orgId }
+				organisation: { uid: orgId },
 			};
 
 			if (branchId) {
@@ -825,7 +857,7 @@ export class TasksService {
 			}
 
 			const task = await this.taskRepository.findOne({
-				where: whereClause
+				where: whereClause,
 			});
 
 			if (!task) {
@@ -1038,7 +1070,7 @@ export class TasksService {
 		try {
 			const task = await this.taskRepository.findOne({
 				where: { uid: ref },
-				relations: ['assignees', 'createdBy'],
+				relations: ['assignees', 'creator', 'subtasks', 'organisation'],
 			});
 
 			if (!task) {
@@ -1052,10 +1084,19 @@ export class TasksService {
 
 			// Update progress and let the entity hooks handle status updates
 			task.progress = progress;
+			const now = new Date();
+
+			// If task is being completed, set the completion date
+			if (progress === 100 && !task.completionDate) {
+				task.status = TaskStatus.COMPLETED;
+				task.completionDate = now;
+			}
+
 			await this.taskRepository.save(task);
 
-			// Send notification if task is completed
+			// Send notifications if task is completed
 			if (progress === 100) {
+				// Internal system notification for assignees and creator
 				const notification = {
 					type: NotificationType.USER,
 					title: 'Task Completed',
@@ -1075,12 +1116,15 @@ export class TasksService {
 							owner: { uid: recipientId },
 							metadata: {
 								taskId: task.uid,
-								completedAt: new Date(),
+								completedAt: now,
 							},
 						},
 						[recipientId],
 					);
 				});
+
+				// Send email notifications to clients
+				await this.sendClientCompletionNotifications(task);
 			}
 
 			return {
@@ -1088,6 +1132,103 @@ export class TasksService {
 			};
 		} catch (error) {
 			throw new BadRequestException(error?.message);
+		}
+	}
+
+	// Helper method to send notifications to clients when a task is completed
+	private async sendClientCompletionNotifications(task: Task): Promise<void> {
+		try {
+			// Return early if no clients assigned to the task
+			if (!task.clients || task.clients.length === 0) {
+				return;
+			}
+
+			// Check organization settings first - if notifications are disabled, return early
+			if (task.organisation?.uid) {
+				const orgSettings = await this.organisationSettingsRepository.findOne({
+					where: { organisationUid: task.organisation.uid },
+					select: ['sendTaskNotifications'],
+				});
+
+				// If settings exist and notifications are disabled, don't send emails
+				if (orgSettings && !orgSettings.sendTaskNotifications) {
+					console.log(`Task completion notifications disabled for organization ${task.organisation.uid}`);
+					return;
+				}
+			}
+
+			// Get client details to find their emails
+			const clientIds = task.clients.map((client) => client.uid);
+			const clients = await this.clientRepository.find({
+				where: { uid: In(clientIds) },
+				select: ['uid', 'name', 'email', 'contactPerson'],
+			});
+
+			if (!clients || clients.length === 0) {
+				return;
+			}
+
+			// Get the creator details for the "completed by" field
+			let completedBy = 'System';
+			if (task.creator && task.creator[0]) {
+				const creator = await this.userRepository.findOne({
+					where: { uid: task.creator[0].uid },
+					select: ['name', 'surname'],
+				});
+				if (creator) {
+					completedBy = `${creator.name} ${creator.surname}`;
+				}
+			}
+
+			// Generate links to job cards/attachments if available
+			const jobCards =
+				task.attachments?.map((attachment, index) => ({
+					name: `Job Card ${index + 1}`,
+					url: attachment,
+				})) || [];
+
+			// Prepare subtasks information
+			const subtasks =
+				task.subtasks
+					?.filter((subtask) => !subtask.isDeleted && subtask.status === SubTaskStatus.COMPLETED)
+					.map((subtask) => ({
+						title: subtask.title,
+						status: subtask.status,
+						description: subtask.description,
+					})) || [];
+
+			// Send email to each client
+			for (const client of clients) {
+				// Generate unique feedback link for this client and task
+				const feedbackToken = Buffer.from(`${client.uid}-${task.uid}-${Date.now()}`).toString('base64');
+				const feedbackLink = `${this.configService.get('APP_URL')}/feedback?token=${feedbackToken}&type=${task.taskType || 'TASK'}`;
+
+				// Send the email
+				await this.communicationService.sendEmail(EmailType.TASK_COMPLETED, [client.email], {
+					name: client.contactPerson || client.name,
+					taskId: task.uid.toString(),
+					title: task.title,
+					description: task.description,
+					deadline: task.deadline?.toISOString(),
+					priority: task.priority,
+					taskType: task.taskType,
+					status: task.status,
+					assignedBy: completedBy,
+					subtasks,
+					completionDate: task.completionDate?.toISOString() || new Date().toISOString(),
+					completedBy,
+					feedbackLink,
+					jobCards,
+					clients: [
+						{
+							name: client.name,
+						},
+					],
+				});
+			}
+		} catch (error) {
+			// Log the error but don't throw to avoid stopping task completion
+			console.error('Error sending client completion notifications:', error);
 		}
 	}
 
@@ -1481,11 +1622,11 @@ export class TasksService {
 
 	async addComment(flagId: number, commentDto: AddCommentDto, userId: number): Promise<any> {
 		try {
-			const taskFlag = await this.taskFlagRepository.findOne({ 
+			const taskFlag = await this.taskFlagRepository.findOne({
 				where: { uid: flagId },
-				relations: ['task']
+				relations: ['task'],
 			});
-			
+
 			if (!taskFlag) {
 				throw new Error(`Task flag with ID ${flagId} not found`);
 			}
@@ -1518,7 +1659,7 @@ export class TasksService {
 			await this.clearTaskFlagCache(taskFlag.task?.uid, flagId);
 
 			return {
-				message: 'Comment added successfully'
+				message: 'Comment added successfully',
 			};
 		} catch (error) {
 			throw new Error(`Failed to add comment: ${error.message}`);
@@ -1530,19 +1671,19 @@ export class TasksService {
 			// Try to get from cache first
 			const cacheKey = this.getTaskFlagCacheKey(taskId);
 			const cacheKeyWithPagination = `${cacheKey}:${page}:${limit}`;
-			
+
 			const cachedFlags = await this.cacheManager.get(cacheKeyWithPagination);
 			if (cachedFlags) {
 				return cachedFlags;
 			}
-			
+
 			// If not in cache, fetch from database
 			const [flags, total] = await this.taskFlagRepository.findAndCount({
 				where: { task: { uid: taskId }, isDeleted: false },
 				relations: ['createdBy', 'items'],
 				skip: (page - 1) * limit,
 				take: limit,
-				order: { createdAt: 'DESC' }
+				order: { createdAt: 'DESC' },
 			});
 
 			const result = {
@@ -1551,14 +1692,14 @@ export class TasksService {
 					total,
 					page,
 					limit,
-					totalPages: Math.ceil(total / limit)
+					totalPages: Math.ceil(total / limit),
 				},
-				message: 'Task flags retrieved successfully'
+				message: 'Task flags retrieved successfully',
 			};
-			
+
 			// Cache the result
 			await this.cacheManager.set(cacheKeyWithPagination, result, this.CACHE_TTL);
-			
+
 			return result;
 		} catch (error) {
 			throw new Error(`Failed to get task flags: ${error.message}`);
@@ -1570,15 +1711,15 @@ export class TasksService {
 			// Try to get from cache first
 			const cacheKey = this.getTaskFlagDetailCacheKey(flagId);
 			const cachedFlag = await this.cacheManager.get(cacheKey);
-			
+
 			if (cachedFlag) {
 				return cachedFlag;
 			}
-			
+
 			// If not in cache, fetch from database
 			const taskFlag = await this.taskFlagRepository.findOne({
 				where: { uid: flagId, isDeleted: false },
-				relations: ['createdBy', 'items', 'task']
+				relations: ['createdBy', 'items', 'task'],
 			});
 
 			if (!taskFlag) {
@@ -1587,12 +1728,12 @@ export class TasksService {
 
 			const result = {
 				data: taskFlag,
-				message: 'Task flag retrieved successfully'
+				message: 'Task flag retrieved successfully',
 			};
-			
+
 			// Cache the result
 			await this.cacheManager.set(cacheKey, result, this.CACHE_TTL);
-			
+
 			return result;
 		} catch (error) {
 			throw new Error(`Failed to get task flag: ${error.message}`);
@@ -1601,9 +1742,9 @@ export class TasksService {
 
 	async updateTaskFlag(flagId: number, updateTaskFlagDto: UpdateTaskFlagDto): Promise<any> {
 		try {
-			const taskFlag = await this.taskFlagRepository.findOne({ 
+			const taskFlag = await this.taskFlagRepository.findOne({
 				where: { uid: flagId, isDeleted: false },
-				relations: ['task']
+				relations: ['task'],
 			});
 
 			if (!taskFlag) {
@@ -1623,7 +1764,7 @@ export class TasksService {
 			await this.clearTaskFlagCache(taskFlag.task?.uid, flagId);
 
 			return {
-				message: 'Task flag updated successfully'
+				message: 'Task flag updated successfully',
 			};
 		} catch (error) {
 			throw new Error(`Failed to update task flag: ${error.message}`);
@@ -1632,9 +1773,9 @@ export class TasksService {
 
 	async updateTaskFlagItem(itemId: number, updateDto: UpdateTaskFlagItemDto): Promise<any> {
 		try {
-			const flagItem = await this.taskFlagItemRepository.findOne({ 
+			const flagItem = await this.taskFlagItemRepository.findOne({
 				where: { uid: itemId, isDeleted: false },
-				relations: ['taskFlag', 'taskFlag.task']
+				relations: ['taskFlag', 'taskFlag.task'],
 			});
 
 			if (!flagItem) {
@@ -1652,14 +1793,14 @@ export class TasksService {
 			// Check if all items are completed to auto-update flag status
 			if (updateDto.status === TaskFlagItemStatus.COMPLETED) {
 				const allItems = await this.taskFlagItemRepository.find({
-					where: { taskFlag: { uid: flagItem.taskFlag.uid }, isDeleted: false }
+					where: { taskFlag: { uid: flagItem.taskFlag.uid }, isDeleted: false },
 				});
-				
-				const allCompleted = allItems.every(item => 
-					item.status === TaskFlagItemStatus.COMPLETED || 
-					item.status === TaskFlagItemStatus.SKIPPED
+
+				const allCompleted = allItems.every(
+					(item) =>
+						item.status === TaskFlagItemStatus.COMPLETED || item.status === TaskFlagItemStatus.SKIPPED,
 				);
-				
+
 				if (allCompleted) {
 					flagItem.taskFlag.status = TaskFlagStatus.RESOLVED;
 					await this.taskFlagRepository.save(flagItem.taskFlag);
@@ -1667,13 +1808,10 @@ export class TasksService {
 			}
 
 			// Clear cache for this flag and its related task
-			await this.clearTaskFlagCache(
-				flagItem.taskFlag?.task?.uid, 
-				flagItem.taskFlag?.uid
-			);
+			await this.clearTaskFlagCache(flagItem.taskFlag?.task?.uid, flagItem.taskFlag?.uid);
 
 			return {
-				message: 'Task flag item updated successfully'
+				message: 'Task flag item updated successfully',
 			};
 		} catch (error) {
 			throw new Error(`Failed to update task flag item: ${error.message}`);
@@ -1682,11 +1820,11 @@ export class TasksService {
 
 	async deleteTaskFlag(flagId: number): Promise<any> {
 		try {
-			const taskFlag = await this.taskFlagRepository.findOne({ 
+			const taskFlag = await this.taskFlagRepository.findOne({
 				where: { uid: flagId },
-				relations: ['task'] 
+				relations: ['task'],
 			});
-			
+
 			if (!taskFlag) {
 				throw new Error(`Task flag with ID ${flagId} not found`);
 			}
@@ -1699,7 +1837,7 @@ export class TasksService {
 			await this.clearTaskFlagCache(taskFlag.task?.uid, flagId);
 
 			return {
-				message: 'Task flag deleted successfully'
+				message: 'Task flag deleted successfully',
 			};
 		} catch (error) {
 			throw new Error(`Failed to delete task flag: ${error.message}`);
@@ -1711,15 +1849,16 @@ export class TasksService {
 			// Create a hash of the filters for cache key
 			const filterHash = JSON.stringify(filters) + `:${page}:${limit}`;
 			const cacheKey = this.getTaskFlagReportsCacheKey(filterHash);
-			
+
 			// Try to get from cache first
 			const cachedReports = await this.cacheManager.get(cacheKey);
 			if (cachedReports) {
 				return cachedReports;
 			}
-			
+
 			// If not in cache, fetch from database
-			const queryBuilder = this.taskFlagRepository.createQueryBuilder('taskFlag')
+			const queryBuilder = this.taskFlagRepository
+				.createQueryBuilder('taskFlag')
 				.leftJoinAndSelect('taskFlag.task', 'task')
 				.leftJoinAndSelect('taskFlag.createdBy', 'user')
 				.leftJoinAndSelect('taskFlag.items', 'items')
@@ -1729,35 +1868,35 @@ export class TasksService {
 			if (filters.status) {
 				queryBuilder.andWhere('taskFlag.status = :status', { status: filters.status });
 			}
-			
+
 			if (filters.startDate) {
 				queryBuilder.andWhere('taskFlag.createdAt >= :startDate', { startDate: filters.startDate });
 			}
-			
+
 			if (filters.endDate) {
 				queryBuilder.andWhere('taskFlag.createdAt <= :endDate', { endDate: filters.endDate });
 			}
-			
+
 			if (filters.deadlineBefore) {
-				queryBuilder.andWhere('taskFlag.deadline <= :deadlineBefore', { 
-					deadlineBefore: filters.deadlineBefore 
+				queryBuilder.andWhere('taskFlag.deadline <= :deadlineBefore', {
+					deadlineBefore: filters.deadlineBefore,
 				});
 			}
-			
+
 			if (filters.deadlineAfter) {
-				queryBuilder.andWhere('taskFlag.deadline >= :deadlineAfter', { 
-					deadlineAfter: filters.deadlineAfter 
+				queryBuilder.andWhere('taskFlag.deadline >= :deadlineAfter', {
+					deadlineAfter: filters.deadlineAfter,
 				});
 			}
-			
+
 			if (filters.userId) {
 				queryBuilder.andWhere('user.uid = :userId', { userId: filters.userId });
 			}
 
 			// Add organization filter if provided
 			if (filters.organisationRef) {
-				queryBuilder.andWhere('task.organisation.uid = :organisationRef', { 
-					organisationRef: filters.organisationRef 
+				queryBuilder.andWhere('task.organisation.uid = :organisationRef', {
+					organisationRef: filters.organisationRef,
 				});
 			}
 
@@ -1784,14 +1923,14 @@ export class TasksService {
 					total,
 					page,
 					limit,
-					totalPages: Math.ceil(total / limit)
+					totalPages: Math.ceil(total / limit),
 				},
-				message: 'Task flag reports retrieved successfully'
+				message: 'Task flag reports retrieved successfully',
 			};
-			
+
 			// Cache the result
 			await this.cacheManager.set(cacheKey, result, this.CACHE_TTL);
-			
+
 			return result;
 		} catch (error) {
 			throw new Error(`Failed to get task flag reports: ${error.message}`);

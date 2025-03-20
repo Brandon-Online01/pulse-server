@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.NewUserAdminNotification = exports.TaskReminderCreator = exports.TaskReminderAssignee = exports.TaskUpdated = exports.NewTask = exports.LicenseActivated = exports.LicenseSuspended = exports.LicenseRenewed = exports.LicenseLimitReached = exports.LicenseUpdated = exports.LicenseCreated = exports.DailyReport = exports.Invoice = exports.QuotationStatusUpdate = exports.NewQuotationReseller = exports.NewQuotationInternal = exports.NewQuotationClient = exports.PasswordChanged = exports.PasswordReset = exports.Verification = exports.Signup = void 0;
+exports.TaskCompleted = exports.NewUserAdminNotification = exports.TaskReminderCreator = exports.TaskReminderAssignee = exports.TaskUpdated = exports.NewTask = exports.LicenseActivated = exports.LicenseSuspended = exports.LicenseRenewed = exports.LicenseLimitReached = exports.LicenseUpdated = exports.LicenseCreated = exports.DailyReport = exports.Invoice = exports.QuotationStatusUpdate = exports.NewQuotationReseller = exports.NewQuotationInternal = exports.NewQuotationClient = exports.PasswordChanged = exports.PasswordReset = exports.Verification = exports.Signup = void 0;
 const date_utils_1 = require("../utils/date.utils");
 const BASE_STYLES = {
     wrapper: '@media (max-width: 600px) { width: 100% !important; padding: 10px !important; } width: 100%; padding: 20px; background-color: #f9fafb;',
@@ -1589,4 +1589,135 @@ const NewUserAdminNotification = (data) => `
     </div>
 `;
 exports.NewUserAdminNotification = NewUserAdminNotification;
+const TaskCompleted = (data) => {
+    const formatDeadline = (date) => {
+        if (!date)
+            return 'No deadline set';
+        try {
+            const dateObj = new Date(date);
+            return dateObj.toLocaleString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+            });
+        }
+        catch (e) {
+            return date;
+        }
+    };
+    const getPriorityEmoji = (priority) => {
+        switch (priority.toUpperCase()) {
+            case 'HIGH': return '🔴';
+            case 'MEDIUM': return '🟠';
+            case 'LOW': return '🟢';
+            default: return '⚪';
+        }
+    };
+    const getTaskTypeEmoji = (type) => {
+        switch (type.toUpperCase()) {
+            case 'INSTALLATION': return '🔧';
+            case 'REPAIR': return '🛠️';
+            case 'MAINTENANCE': return '🔩';
+            case 'INSPECTION': return '🔍';
+            case 'CONSULTATION': return '💬';
+            case 'DELIVERY': return '📦';
+            case 'MEETING': return '👥';
+            case 'TRAINING': return '📚';
+            case 'OTHER': return '📝';
+            default: return '📋';
+        }
+    };
+    const jobCardsList = data.jobCards && data.jobCards.length > 0 ? `
+    <div style="${BASE_STYLES.card}">
+      <h3 style="margin: 0 0 16px; color: #374151; font-size: 16px;">Job Cards</h3>
+      <ul style="list-style: none; padding: 0; margin: 0;">
+        ${data.jobCards.map(card => `
+          <li style="margin-bottom: 12px;">
+            <a href="${card.url}" style="${BASE_STYLES.button}" target="_blank">
+              View ${card.name}
+            </a>
+          </li>
+        `).join('')}
+      </ul>
+    </div>
+  ` : '';
+    const subtasksList = data.subtasks && data.subtasks.length > 0 ? `
+    <div style="${BASE_STYLES.card}">
+      <h3 style="margin: 0 0 16px; color: #374151; font-size: 16px;">Completed Work</h3>
+      <ul style="list-style: none; padding: 0; margin: 0;">
+        ${data.subtasks.map(subtask => `
+          <li style="padding: 12px; background: #f7fafc; border-radius: 8px; margin-bottom: 8px;">
+            <div style="font-weight: 600;">${subtask.title}</div>
+            ${subtask.description ? `<div style="font-size: 14px; color: #64748b; margin-top: 4px;">${subtask.description}</div>` : ''}
+          </li>
+        `).join('')}
+      </ul>
+    </div>
+  ` : '';
+    return `
+    <div style="${BASE_STYLES.wrapper}">
+      <div style="${BASE_STYLES.container}">
+        <div style="${BASE_STYLES.header}">
+          <div style="font-size: 56px; margin-bottom: 24px;">✅</div>
+          <h1 style="margin: 0 0 12px; font-size: 28px; font-family: Unbounded, sans-serif; font-weight: 600;">Task Completed</h1>
+          <p style="margin: 0; opacity: 0.9; font-family: Unbounded, sans-serif; font-size: 16px;">Task ID: ${data.taskId}</p>
+        </div>
+
+        <div style="padding: 32px 24px;">
+          <div style="${BASE_STYLES.card}">
+            <div style="${BASE_STYLES.flexRow}">
+              <div style="${BASE_STYLES.icon}">${getTaskTypeEmoji(data.taskType)}</div>
+              <h2 style="${BASE_STYLES.heading}">${data.title}</h2>
+            </div>
+            
+            <div style="margin: 24px 0;">
+              <span style="${BASE_STYLES.tag}">${getPriorityEmoji(data.priority)} ${data.priority}</span>
+              <span style="${BASE_STYLES.tag}">${getTaskTypeEmoji(data.taskType)} ${data.taskType.replace(/_/g, ' ')}</span>
+              <span style="${BASE_STYLES.tag}">✅ COMPLETED</span>
+            </div>
+
+            <div style="${BASE_STYLES.highlight}">
+              <p style="${BASE_STYLES.text}">${data.description}</p>
+            </div>
+
+            <hr style="${BASE_STYLES.divider}" />
+
+            <div style="${BASE_STYLES.grid}">
+              <div style="${BASE_STYLES.flexColumn}">
+                <span style="color: #6b7280; font-size: 14px; font-family: Unbounded, sans-serif;">⏰ Completed On</span>
+                <strong style="color: #1f2937; font-family: Unbounded, sans-serif; font-size: 16px; margin-top: 8px;">${formatDeadline(data.completionDate)}</strong>
+              </div>
+              <div style="${BASE_STYLES.flexColumn}">
+                <span style="color: #6b7280; font-size: 14px; font-family: Unbounded, sans-serif;">👤 Completed by</span>
+                <strong style="color: #1f2937; font-family: Unbounded, sans-serif; font-size: 16px; margin-top: 8px;">${data.completedBy || data.assignedBy}</strong>
+              </div>
+            </div>
+          </div>
+
+          ${subtasksList}
+          
+          ${jobCardsList}
+
+          <div style="text-align: center; margin: 32px 0;">
+            <a href="${data.feedbackLink}" style="${BASE_STYLES.button}">
+              Provide Feedback
+            </a>
+            <p style="margin-top: 12px; font-size: 14px; color: #6b7280;">Your feedback helps us improve our service</p>
+          </div>
+
+          <div style="${BASE_STYLES.alert}">
+            <p style="margin: 0;">Thank you for your business! If you have any questions about the completed work, please contact us.</p>
+          </div>
+        </div>
+
+        <div style="${BASE_STYLES.footer}">
+          <p style="margin: 0;">This is an automated notification about a completed task.</p>
+        </div>
+      </div>
+    </div>
+  `;
+};
+exports.TaskCompleted = TaskCompleted;
 //# sourceMappingURL=emails.js.map

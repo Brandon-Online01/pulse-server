@@ -25,6 +25,7 @@ export enum EmailType {
     // Task related emails
     NEW_TASK = 'new_task',
     TASK_UPDATED = 'task_updated',
+    TASK_COMPLETED = 'task_completed',
     TASK_REMINDER_ASSIGNEE = 'TASK_REMINDER_ASSIGNEE',
     TASK_REMINDER_CREATOR = 'TASK_REMINDER_CREATOR',
     // User related emails

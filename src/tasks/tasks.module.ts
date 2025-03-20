@@ -22,20 +22,36 @@ import { TaskFlag } from './entities/task-flag.entity';
 import { TaskFlagItem } from './entities/task-flag-item.entity';
 import { UserModule } from '../user/user.module';
 import { UserService } from '../user/user.service';
+import { OrganisationSettings } from '../organisation/entities/organisation-settings.entity';
+import { OrganisationAppearance } from '../organisation/entities/organisation-appearance.entity';
+import { OrganisationHours } from '../organisation/entities/organisation-hours.entity';
 
 @Module({
-  imports: [
-    LicensingModule,
-    TypeOrmModule.forFeature([Task, SubTask, Client, User, Organisation, Branch, Route, TaskFlag, TaskFlagItem]),
-    RewardsModule,
-    ConfigModule,
-    CommunicationModule,
-    NotificationsModule,
-    ScheduleModule.forRoot(),
-    UserModule,
-  ],
-  controllers: [TasksController],
-  providers: [TasksService, TaskReminderService, TaskRouteService, GoogleMapsService, UserService],
-  exports: [TasksService]
+	imports: [
+		LicensingModule,
+		TypeOrmModule.forFeature([
+			Task,
+			SubTask,
+			Client,
+			User,
+			Organisation,
+			Branch,
+			Route,
+			TaskFlag,
+			TaskFlagItem,
+			OrganisationSettings,
+			OrganisationAppearance,
+			OrganisationHours,
+		]),
+		RewardsModule,
+		ConfigModule,
+		CommunicationModule,
+		NotificationsModule,
+		ScheduleModule.forRoot(),
+		UserModule,
+	],
+	controllers: [TasksController],
+	providers: [TasksService, TaskReminderService, TaskRouteService, GoogleMapsService, UserService],
+	exports: [TasksService],
 })
-export class TasksModule { }
+export class TasksModule {}

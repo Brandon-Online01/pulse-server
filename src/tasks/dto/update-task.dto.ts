@@ -77,6 +77,15 @@ export class UpdateTaskDto {
 	repetitionDeadline?: Date;
 
 	@ApiProperty({
+		description: 'Task completion date',
+		example: new Date().toISOString(),
+	})
+	@Type(() => Date)
+	@IsDate()
+	@IsOptional()
+	completionDate?: Date;
+
+	@ApiProperty({
 		description: 'Task progress percentage',
 		example: 50,
 	})

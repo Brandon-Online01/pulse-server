@@ -1,4 +1,4 @@
-import { SignupEmailData, VerificationEmailData, PasswordResetData, PasswordChangedData, InvoiceData, DailyReportData, LicenseEmailData, LicenseLimitData, QuotationData, QuotationInternalData, QuotationResellerData, TaskEmailData, TaskReminderData, NewUserAdminNotificationData } from '../types/email-templates.types';
+import { SignupEmailData, VerificationEmailData, PasswordResetData, PasswordChangedData, InvoiceData, DailyReportData, LicenseEmailData, LicenseLimitData, QuotationData, QuotationInternalData, QuotationResellerData, TaskEmailData, TaskReminderData, NewUserAdminNotificationData, TaskCompletedEmailData } from '../types/email-templates.types';
 export declare const Signup: (data: SignupEmailData) => string;
 export declare const Verification: (data: VerificationEmailData) => string;
 export declare const PasswordReset: (data: PasswordResetData) => string;
@@ -20,3 +20,4 @@ export declare const TaskUpdated: (data: TaskEmailData) => string;
 export declare const TaskReminderAssignee: (data: TaskReminderData) => string;
 export declare const TaskReminderCreator: (data: TaskReminderData) => string;
 export declare const NewUserAdminNotification: (data: NewUserAdminNotificationData) => string;
+export declare const TaskCompleted: (data: TaskCompletedEmailData) => string;

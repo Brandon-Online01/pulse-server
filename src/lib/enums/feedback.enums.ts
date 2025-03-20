@@ -1,0 +1,19 @@
+export enum FeedbackType {
+  GENERAL = 'GENERAL',
+  PRODUCT = 'PRODUCT',
+  SERVICE = 'SERVICE',
+  TASK = 'TASK',
+  QUOTATION = 'QUOTATION',
+  CLAIM = 'CLAIM',
+  SUPPORT = 'SUPPORT',
+  SUGGESTION = 'SUGGESTION',
+  OTHER = 'OTHER'
+}
+
+export enum FeedbackStatus {
+  NEW = 'NEW',
+  IN_REVIEW = 'IN_REVIEW',
+  RESPONDED = 'RESPONDED',
+  CLOSED = 'CLOSED',
+  FLAGGED = 'FLAGGED'
+} 

@@ -199,6 +199,59 @@ GOOGLE_MAPS_API_KEY=your_api_key
 
 Need help? Contact: support@loro.com
 
+## Feedback Module
+
+The feedback module allows clients to submit feedback on various aspects of the service, including tasks, quotations, claims, and general feedback. Each feedback submission is associated with client data, organization, branch, and feedback type.
+
+### Features
+
+- **Multiple Feedback Types**: Support for different types of feedback (General, Product, Service, Task, Quotation, Claim, Support, Suggestion)
+- **Media Attachments**: Clients can attach files (images, documents) to their feedback
+- **Organization & Branch Association**: All feedback is properly linked to organizations and branches
+- **Rating System**: Optional 1-5 star rating
+- **Token-Based Submission**: Secure token system for feedback submission from external links
+- **Admin Response System**: Admins can respond to feedback and manage statuses
+- **Analytics & Reporting**: View statistics and trends for feedback
+
+### API Endpoints
+
+- `POST /feedback` - Submit new feedback
+- `POST /feedback/submit-with-token` - Submit feedback using a token from email link
+- `GET /feedback` - Get all feedback (with filters)
+- `GET /feedback/:id` - Get a specific feedback
+- `PATCH /feedback/:id` - Update a feedback
+- `DELETE /feedback/:id` - Delete a feedback
+- `GET /feedback/validate-token` - Validate a feedback token
+- `GET /feedback/stats` - Get feedback statistics
+
+### Feedback Form Integration
+
+To integrate the feedback system in client-facing applications:
+
+1. **Automatic Token Generation**: When a task is completed, the system automatically generates a secure token for each client containing client ID, task ID, and timestamp
+2. **Token Format**: `clientId-taskId-timestamp` (Base64 encoded)
+3. **Email Links**: Task completion emails include a feedback link in the format: `/feedback?token={encodedToken}&type=TASK`
+4. **Token Validation**: When a client clicks the link, the token is validated to ensure:
+   - It's not expired (valid for 30 days)
+   - The client and task exist in the system
+5. **Automatic Association**: When feedback is submitted with a token, it's automatically associated with the correct client, task, organization, and branch
+6. **Feedback Collection**: The feedback system supports ratings, comments, and file attachments
+
+### Client Notification System
+
+- When tasks are completed, clients receive an email notification
+- The email includes task details and a personalized feedback link
+- Organization admins can configure whether task completion notifications are sent
+- Each notification is customized with client name, task details, and completion information
+
+### Organization Settings
+
+Organizations can configure their feedback system through organization settings:
+
+- **Task Notifications**: Toggle client email notifications for completed tasks (`sendTaskNotifications`)
+- **Feedback Token Expiry**: Set how many days feedback tokens remain valid (`feedbackTokenExpiryDays`, default: 30 days)
+- **File Attachments**: Feedback attachments accept file URLs uploaded through the system's standard file upload mechanisms
+
 ## 👨‍💻 Author
 
 [@Brandon-Online01](https://github.com/Brandon-Online01)

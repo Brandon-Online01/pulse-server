@@ -31,6 +31,7 @@ export class OrganisationHours {
 		date: string;
 		openTime: string;
 		closeTime: string;
+		reason?: string;
 	}[];
 
 	@Column({ default: false })

@@ -72,6 +72,8 @@ import { OrganisationSettings } from './organisation/entities/organisation-setti
 import { OrganisationAppearance } from './organisation/entities/organisation-appearance.entity';
 import { OrganisationHours } from './organisation/entities/organisation-hours.entity';
 import { ProductAnalytics } from './products/entities/product-analytics.entity';
+import { FeedbackModule } from './feedback/feedback.module';
+import { Feedback } from './feedback/entities/feedback.entity';
 
 @Module({
 	imports: [
@@ -134,6 +136,7 @@ import { ProductAnalytics } from './products/entities/product-analytics.entity';
 				OrganisationSettings,
 				OrganisationAppearance,
 				OrganisationHours,
+				Feedback,
 			],
 			synchronize: true,
 			retryAttempts: 100,
@@ -150,6 +153,7 @@ import { ProductAnalytics } from './products/entities/product-analytics.entity';
 		ClientsModule,
 		CommunicationModule,
 		DocsModule,
+		FeedbackModule,
 		JournalModule,
 		LeadsModule,
 		NewsModule,
