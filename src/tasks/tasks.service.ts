@@ -339,8 +339,12 @@ export class TasksService {
 		}
 	}
 
-	async create(createTaskDto: CreateTaskDto): Promise<{ message: string }> {
+	async create(createTaskDto: CreateTaskDto, orgId?: number, branchId?: number): Promise<{ message: string }> {
 		try {
+			if (!orgId) {
+				throw new BadRequestException('Organization ID is required');
+			}
+
 			const now = new Date();
 			const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
@@ -386,8 +390,8 @@ export class TasksService {
 					isOverdue: false,
 					completionDate: null,
 					creator: creator,
-					organisation: creator?.organisation || null,
-					branch: creator?.branch || null,
+					organisation: { uid: createTaskDto.organisationId || orgId },
+					branch: (createTaskDto.branchId || branchId) ? { uid: createTaskDto.branchId || branchId } : null,
 					assignees,
 					clients,
 					attachments: createTaskDto.attachments || [],
@@ -534,100 +538,113 @@ export class TasksService {
 
 	async findOne(
 		ref: number,
-		organisationRef?: string,
-		branchId?: number,
+		orgId?: number,
+		branchId?: number
 	): Promise<{ message: string; task: Task | null }> {
 		try {
-			const cacheKey = this.getCacheKey(`${ref}_${organisationRef}_${branchId}`);
-			const cachedTask = await this.cacheManager.get<Task>(cacheKey);
+			if (!orgId) {
+				throw new BadRequestException('Organization ID is required');
+			}
+
+			const cacheKey = this.getCacheKey(`${orgId}_${branchId}_${ref}`);
+			const cachedTask = await this.cacheManager.get<{ message: string; task: Task }>(cacheKey);
 
 			if (cachedTask) {
-				return {
-					task: cachedTask,
-					message: process.env.SUCCESS_MESSAGE,
-				};
+				return cachedTask;
 			}
 
-			// Apply base filters
-			const where: any = {
+			const whereClause: any = {
 				uid: ref,
 				isDeleted: false,
+				organisation: { uid: orgId }
 			};
 
-			// Apply org and branch filters
-			if (organisationRef) {
-				where.organisation = { ref: organisationRef };
-			}
-
 			if (branchId) {
-				where.branch = { uid: branchId };
+				whereClause.branch = { uid: branchId };
 			}
 
 			const task = await this.taskRepository.findOne({
-				where: where,
-				relations: ['creator', 'subtasks', 'organisation', 'branch', 'routes'],
+				where: whereClause,
+				relations: ['creator', 'subtasks', 'organisation', 'branch', 'routes', 'flags']
 			});
 
 			if (!task) {
-				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
+				return {
+					message: process.env.NOT_FOUND_MESSAGE,
+					task: null,
+				};
 			}
 
 			const populatedTask = await this.populateTaskRelations(task);
-
-			await this.cacheManager.set(cacheKey, populatedTask, this.CACHE_TTL);
-
-			return {
-				task: populatedTask,
+			const result = {
 				message: process.env.SUCCESS_MESSAGE,
+				task: populatedTask,
 			};
+
+			await this.cacheManager.set(cacheKey, result, this.CACHE_TTL);
+
+			return result;
 		} catch (error) {
 			return {
-				task: null,
 				message: error?.message,
+				task: null
 			};
 		}
 	}
 
 	public async tasksByUser(
 		ref: number,
-		organisationRef?: string,
-		branchId?: number,
+		orgId?: number,
+		branchId?: number
 	): Promise<{ message: string; tasks: Task[] }> {
 		try {
-			// Apply base filters
-			const where: any = {
-				creator: { uid: ref },
-				isDeleted: false,
-			};
-
-			// Apply org and branch filters
-			if (organisationRef) {
-				where.organisation = { ref: organisationRef };
+			if (!orgId) {
+				throw new BadRequestException('Organization ID is required');
 			}
+
+			const cacheKey = this.getCacheKey(`user_${ref}_org_${orgId}_branch_${branchId}`);
+			const cachedTasks = await this.cacheManager.get<{ message: string; tasks: Task[] }>(cacheKey);
+
+			if (cachedTasks) {
+				return cachedTasks;
+			}
+
+			const whereClause: any = {
+				isDeleted: false,
+				organisation: { uid: orgId }
+			};
 
 			if (branchId) {
-				where.branch = { uid: branchId };
+				whereClause.branch = { uid: branchId };
 			}
+
+			// Add the assignee filter
+			whereClause.assignees = [{ uid: ref }];
 
 			const tasks = await this.taskRepository.find({
-				where: where,
-				relations: ['creator', 'subtasks', 'organisation', 'branch', 'routes'],
+				where: whereClause,
+				relations: ['creator', 'subtasks', 'organisation', 'branch']
 			});
 
-			if (!tasks) {
-				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
+			if (!tasks || tasks.length === 0) {
+				return {
+					tasks: [],
+					message: process.env.NOT_FOUND_MESSAGE
+				};
 			}
 
-			const populatedTasks = await Promise.all(tasks.map((task) => this.populateTaskRelations(task)));
-
-			return {
-				tasks: populatedTasks,
-				message: process.env.SUCCESS_MESSAGE,
+			const result = {
+				tasks: tasks,
+				message: process.env.SUCCESS_MESSAGE
 			};
+
+			await this.cacheManager.set(cacheKey, result, this.CACHE_TTL);
+
+			return result;
 		} catch (error) {
 			return {
 				tasks: [],
-				message: error?.message,
+				message: error?.message
 			};
 		}
 	}
@@ -646,50 +663,64 @@ export class TasksService {
 		},
 		page: number = 1,
 		limit: number = Number(process.env.DEFAULT_PAGE_LIMIT),
+		orgId?: number, 
+		branchId?: number
 	): Promise<PaginatedResponse<Task>> {
 		try {
-			const cacheKey = `tasks_page${page}_limit${limit}_${JSON.stringify(filters)}`;
-			const cachedTasks = await this.cacheManager.get<PaginatedResponse<Task>>(cacheKey);
-
-			if (cachedTasks) {
-				return cachedTasks;
+			if (!orgId) {
+				throw new BadRequestException('Organization ID is required');
 			}
 
-			const where: any = { isDeleted: false };
+			// Calculate skip for pagination
+			const skip = (page - 1) * limit;
 
-			if (filters?.status) {
-				where.status = filters.status;
+			// Default where clause with organization filter
+			let whereClause: any = {
+				isDeleted: false,
+				organisation: { uid: orgId }
+			};
+
+			// Add branch filter if provided
+			if (branchId) {
+				whereClause.branch = { uid: branchId };
 			}
 
-			if (filters?.priority) {
-				where.priority = filters.priority;
-			}
+			// Apply additional filters from the filters object if provided
+			if (filters) {
+				if (filters.status) {
+					whereClause.status = filters.status;
+				}
 
-			if (filters?.startDate) {
-				where.deadline = MoreThanOrEqual(filters.startDate);
-			}
+				if (filters.priority) {
+					whereClause.priority = filters.priority;
+				}
 
-			if (filters?.endDate) {
-				where.deadline = LessThanOrEqual(filters.endDate);
-			}
+				if (filters.startDate) {
+					whereClause.deadline = MoreThanOrEqual(filters.startDate);
+				}
 
-			if (filters?.isOverdue) {
-				where.deadline = LessThan(new Date());
-				where.status = Not(TaskStatus.COMPLETED);
+				if (filters.endDate) {
+					whereClause.deadline = LessThanOrEqual(filters.endDate);
+				}
+
+				if (filters.isOverdue) {
+					whereClause.deadline = LessThan(new Date());
+					whereClause.status = Not(TaskStatus.COMPLETED);
 			}
 
 			// Add organization and branch filtering
-			if (filters?.organisationRef) {
-				where.organisation = { ref: filters.organisationRef };
+				if (filters.organisationRef) {
+					whereClause.organisation = { ref: filters.organisationRef };
 			}
 
-			if (filters?.branchId) {
-				where.branch = { uid: filters.branchId };
+				if (filters.branchId) {
+					whereClause.branch = { uid: filters.branchId };
+				}
 			}
 
 			const [tasks, total] = await this.taskRepository.findAndCount({
-				where: where,
-				skip: (page - 1) * limit,
+				where: whereClause,
+				skip: skip,
 				relations: ['creator', 'subtasks', 'organisation', 'branch', 'routes'],
 				take: limit,
 				order: {
@@ -723,7 +754,7 @@ export class TasksService {
 				message: process.env.SUCCESS_MESSAGE,
 			};
 
-			await this.cacheManager.set(cacheKey, response, this.CACHE_TTL);
+			await this.cacheManager.set(this.getCacheKey(`${orgId}_${branchId}_${JSON.stringify(filters)}`), response, this.CACHE_TTL);
 
 			return response;
 		} catch (error) {
@@ -740,187 +771,76 @@ export class TasksService {
 		}
 	}
 
-	async update(ref: number, updateTaskDto: UpdateTaskDto): Promise<{ message: string }> {
+	async update(ref: number, updateTaskDto: UpdateTaskDto, orgId?: number, branchId?: number): Promise<{ message: string }> {
 		try {
+			if (!orgId) {
+				throw new BadRequestException('Organization ID is required');
+			}
+
+			const whereClause: any = {
+				uid: ref,
+				isDeleted: false,
+				organisation: { uid: orgId }
+			};
+
+			if (branchId) {
+				whereClause.branch = { uid: branchId };
+			}
+
 			const task = await this.taskRepository.findOne({
-				where: {
-					uid: ref,
-					isDeleted: false,
-				},
-				relations: ['subtasks'], // Include subtasks relation
+				where: whereClause,
+				relations: ['subtasks', 'organisation', 'branch']
 			});
 
 			if (!task) {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
-			const taskData: DeepPartial<Task> = {
-				...updateTaskDto,
-			};
+			// Update the task with the new data
+			await this.taskRepository.update(ref, updateTaskDto);
 
-			// Handle assignees
-			if (updateTaskDto?.assignees) {
-				taskData.assignees = updateTaskDto.assignees.map((assignee) => ({
-					uid: assignee.uid,
-				}));
-			}
-
-			// Handle clients
-			if (updateTaskDto?.client) {
-				taskData.clients = updateTaskDto.client.map((client) => ({
-					uid: client.uid,
-				}));
-			}
-
-			// Handle creator
-			if (updateTaskDto?.creators) {
-				taskData.creator = { uid: updateTaskDto.creators[0].uid };
-			}
-
-			// Save the updated task
-			const entityToSave = this.taskRepository.create({
-				...task,
-				...taskData,
-			});
-
-			const savedTask = await this.taskRepository.save(entityToSave);
-
-			// Handle subtasks if they exist in the DTO
-			if (updateTaskDto.subtasks?.length > 0) {
-				// Delete existing subtasks
-				if (task.subtasks?.length > 0) {
-					await this.subtaskRepository.delete({ task: { uid: ref } });
-				}
-
-				// Create new subtasks
-				const subtasks = updateTaskDto.subtasks.map((subtask) =>
-					this.subtaskRepository.create({
-						title: subtask.title,
-						description: subtask.description,
-						status: subtask.status || SubTaskStatus.PENDING,
-						task: savedTask,
-						isDeleted: false,
-					}),
-				);
-				await this.subtaskRepository.save(subtasks);
-			}
-
-			// Emit task.updated event
-			this.eventEmitter.emit('task.updated', {
-				task: savedTask,
-			});
-
-			// Check if specific fields were updated to emit more specific events
-			if (updateTaskDto.assignees && JSON.stringify(task.assignees) !== JSON.stringify(taskData.assignees)) {
-				this.eventEmitter.emit('task.assigneeChanged', {
-					task: savedTask,
-				});
-			}
-
-			if (updateTaskDto.client && JSON.stringify(task.clients) !== JSON.stringify(taskData.clients)) {
-				this.eventEmitter.emit('task.clientChanged', {
-					task: savedTask,
-				});
-			}
-
-			if (updateTaskDto.deadline && task.deadline?.getTime() !== new Date(updateTaskDto.deadline).getTime()) {
-				this.eventEmitter.emit('task.deadlineChanged', {
-					task: savedTask,
-				});
-			}
-
-			// Send email notifications to assignees about the task update
-			if (savedTask.assignees?.length > 0) {
-				const assigneeUsers = await this.userRepository.find({
-					where: { uid: In(savedTask.assignees.map((a) => a?.uid)) },
-					select: ['uid', 'email', 'name', 'surname'],
-				});
-
-				// Get creator info
-				const creator = await this.userRepository.findOne({
-					where: { uid: savedTask.creator?.uid },
-					select: ['name', 'surname'],
-				});
-
-				// Send email notification to each assignee
-				for (const assignee of assigneeUsers) {
-					await this.communicationService.sendEmail(EmailType.TASK_UPDATED, [assignee.email], {
-						name: `${assignee?.name} ${assignee?.surname}`,
-						taskId: savedTask?.uid?.toString(),
-						title: savedTask?.title,
-						description: savedTask?.description,
-						deadline: savedTask?.deadline?.toISOString(),
-						priority: savedTask?.priority,
-						taskType: savedTask?.taskType,
-						status: savedTask?.status,
-						assignedBy: creator ? `${creator?.name} ${creator?.surname}` : 'System',
-						subtasks:
-							savedTask.subtasks?.map((subtask) => ({
-								title: subtask.title,
-								status: subtask.status,
-								description: subtask.description,
-							})) || [],
-						clients:
-							savedTask.clients?.length > 0
-								? await this.getClientNames(savedTask.clients.map((c) => c?.uid))
-								: [],
-						attachments:
-							savedTask.attachments?.map((url) => {
-								// Extract filename from URL
-								const filename = url.split('/').pop() || 'file';
-								return {
-									name: filename,
-									url: url,
-								};
-							}) || [],
-					});
-				}
-			}
-
-			// Clear all task-related caches
+			// Clear cache after update
 			await this.clearTaskCache(ref);
 
-			return {
-				message: process.env.SUCCESS_MESSAGE,
-			};
+			return { message: process.env.SUCCESS_MESSAGE };
 		} catch (error) {
-			return {
-				message: error?.message,
-			};
+			return { message: error?.message };
 		}
 	}
 
-	async remove(ref: number): Promise<{ message: string }> {
+	async remove(ref: number, orgId?: number, branchId?: number): Promise<{ message: string }> {
 		try {
+			if (!orgId) {
+				throw new BadRequestException('Organization ID is required');
+			}
+
+			const whereClause: any = {
+				uid: ref,
+				isDeleted: false,
+				organisation: { uid: orgId }
+			};
+
+			if (branchId) {
+				whereClause.branch = { uid: branchId };
+			}
+
 			const task = await this.taskRepository.findOne({
-				where: {
-					uid: ref,
-				},
-				relations: ['subtasks'], // Include subtasks relation
+				where: whereClause
 			});
 
 			if (!task) {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
-			// Soft delete all subtasks
-			if (task.subtasks?.length > 0) {
-				await this.subtaskRepository.update({ task: { uid: ref } }, { isDeleted: true });
-			}
-
-			// Soft delete the task
+			// Perform soft delete
 			await this.taskRepository.update(ref, { isDeleted: true });
 
-			// Clear all task-related caches
+			// Clear caches
 			await this.clearTaskCache(ref);
 
-			return {
-				message: process.env.SUCCESS_MESSAGE,
-			};
+			return { message: process.env.SUCCESS_MESSAGE };
 		} catch (error) {
-			return {
-				message: error?.message,
-			};
+			return { message: error?.message };
 		}
 	}
 
