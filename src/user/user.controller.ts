@@ -17,8 +17,9 @@ import {
 	ApiUnauthorizedResponse,
 	ApiQuery,
 } from '@nestjs/swagger';
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, Req } from '@nestjs/common';
 import { AccountStatus } from '../lib/enums/status.enums';
+import { AuthenticatedRequest } from '../lib/interfaces/authenticated-request.interface';
 
 @ApiTags('user')
 @Controller('user')
@@ -69,8 +70,10 @@ export class UserController {
 		},
 	})
 	@ApiBadRequestResponse({ description: 'Invalid input data provided' })
-	create(@Body() createUserDto: CreateUserDto) {
-		return this.userService.create(createUserDto);
+	create(@Body() createUserDto: CreateUserDto, @Req() req: AuthenticatedRequest) {
+		const orgId = req.user?.org?.uid;
+		const branchId = req.user?.branch?.uid;
+		return this.userService.create(createUserDto, orgId, branchId);
 	}
 
 	@Get()
@@ -156,6 +159,7 @@ export class UserController {
 		},
 	})
 	findAll(
+		@Req() req: AuthenticatedRequest,
 		@Query('page') page?: number,
 		@Query('limit') limit?: number,
 		@Query('status') status?: AccountStatus,
@@ -164,12 +168,17 @@ export class UserController {
 		@Query('branchId') branchId?: number,
 		@Query('organisationId') organisationId?: number,
 	) {
+		const orgId = req.user?.org?.uid;
+		const userBranchId = req.user?.branch?.uid;
+		
 		const filters = {
 			...(status && { status }),
 			...(accessLevel && { accessLevel }),
 			...(search && { search }),
 			...(branchId && { branchId: Number(branchId) }),
 			...(organisationId && { organisationId: Number(organisationId) }),
+			orgId,
+			userBranchId
 		};
 
 		return this.userService.findAll(
@@ -190,15 +199,15 @@ export class UserController {
 		AccessLevel.TECHNICIAN,
 	)
 	@ApiOperation({
-		summary: 'Get a user by search parameter',
+		summary: 'Get a user by reference code',
 		description:
-			'Retrieves a user by email, phone number, or reference code. Accessible by all authenticated users.',
+			'Retrieves a user by reference code. Accessible by all authenticated users.',
 	})
 	@ApiParam({
-		name: 'searchParameter',
-		description: 'User identifier (email, phone, or reference code)',
-		type: 'string',
-		example: 'USR123456',
+		name: 'ref',
+		description: 'User reference code',
+		type: 'number',
+		example: 1,
 	})
 	@ApiOkResponse({
 		description: 'User found',
@@ -242,8 +251,10 @@ export class UserController {
 		},
 	})
 	@ApiNotFoundResponse({ description: 'User not found' })
-	findOne(@Param('searchParameter') searchParameter: number) {
-		return this.userService.findOne(searchParameter);
+	findOne(@Param('ref') ref: number, @Req() req: AuthenticatedRequest) {
+		const orgId = req.user?.org?.uid;
+		const branchId = req.user?.branch?.uid;
+		return this.userService.findOne(ref, orgId, branchId);
 	}
 
 	@Patch(':ref')
@@ -278,8 +289,10 @@ export class UserController {
 	})
 	@ApiNotFoundResponse({ description: 'User not found' })
 	@ApiBadRequestResponse({ description: 'Invalid input data provided' })
-	update(@Param('ref') ref: number, @Body() updateUserDto: UpdateUserDto) {
-		return this.userService.update(ref, updateUserDto);
+	update(@Param('ref') ref: number, @Body() updateUserDto: UpdateUserDto, @Req() req: AuthenticatedRequest) {
+		const orgId = req.user?.org?.uid;
+		const branchId = req.user?.branch?.uid;
+		return this.userService.update(ref, updateUserDto, orgId, branchId);
 	}
 
 	@Patch('restore/:ref')
@@ -312,8 +325,10 @@ export class UserController {
 		},
 	})
 	@ApiNotFoundResponse({ description: 'User not found' })
-	restore(@Param('ref') ref: number) {
-		return this.userService.restore(ref);
+	restore(@Param('ref') ref: number, @Req() req: AuthenticatedRequest) {
+		const orgId = req.user?.org?.uid;
+		const branchId = req.user?.branch?.uid;
+		return this.userService.restore(ref, orgId, branchId);
 	}
 
 	@Delete(':ref')
@@ -346,7 +361,9 @@ export class UserController {
 		},
 	})
 	@ApiNotFoundResponse({ description: 'User not found' })
-	remove(@Param('ref') ref: number) {
-		return this.userService.remove(ref);
+	remove(@Param('ref') ref: number, @Req() req: AuthenticatedRequest) {
+		const orgId = req.user?.org?.uid;
+		const branchId = req.user?.branch?.uid;
+		return this.userService.remove(ref, orgId, branchId);
 	}
 }

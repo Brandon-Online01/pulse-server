@@ -68,12 +68,17 @@ let UserService = class UserService {
         const { password, ...userWithoutPassword } = user;
         return userWithoutPassword;
     }
-    async create(createUserDto) {
+    async create(createUserDto, orgId, branchId) {
         try {
             if (createUserDto.password) {
                 createUserDto.password = await bcrypt.hash(createUserDto.password, 10);
             }
-            const user = await this.userRepository.save(createUserDto);
+            const userData = {
+                ...createUserDto,
+                ...(orgId && { organisation: { uid: orgId } }),
+                ...(branchId && { branch: { uid: branchId } }),
+            };
+            const user = await this.userRepository.save(userData);
             if (!user) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
@@ -97,6 +102,12 @@ let UserService = class UserService {
                 .leftJoinAndSelect('user.branch', 'branch')
                 .leftJoinAndSelect('user.organisation', 'organisation')
                 .where('user.isDeleted = :isDeleted', { isDeleted: false });
+            if (filters?.orgId) {
+                queryBuilder.andWhere('organisation.uid = :orgId', { orgId: filters.orgId });
+            }
+            if (filters?.userBranchId && !filters?.branchId) {
+                queryBuilder.andWhere('branch.uid = :userBranchId', { userBranchId: filters.userBranchId });
+            }
             if (filters?.status) {
                 queryBuilder.andWhere('user.status = :status', { status: filters.status });
             }
@@ -144,63 +155,49 @@ let UserService = class UserService {
             };
         }
     }
-    async findOne(searchParameter) {
+    async findOne(searchParameter, orgId, branchId) {
         try {
-            const user = await this.userRepository.findOne({
-                where: [{ uid: searchParameter, isDeleted: false }],
-                select: {
-                    uid: true,
-                    name: true,
-                    surname: true,
-                    email: true,
-                    username: true,
-                    accessLevel: true,
-                    organisationRef: true,
-                    createdAt: true,
-                    updatedAt: true,
-                    isDeleted: true,
-                    status: true,
-                    verificationToken: true,
-                    resetToken: true,
-                    tokenExpires: true,
-                },
-                relations: [
-                    'userProfile',
-                    'userEmployeementProfile',
-                    'userAttendances',
-                    'userClaims',
-                    'userDocs',
-                    'leads',
-                    'journals',
-                    'tasks',
-                    'articles',
-                    'assets',
-                    'trackings',
-                    'orders',
-                    'notifications',
-                    'branch',
-                    'clients',
-                    'checkIns',
-                    'reports',
-                    'rewards',
-                    'organisation',
-                ],
-            });
-            if (!user) {
+            const cacheKey = this.getCacheKey(searchParameter);
+            const cachedUser = await this.cacheManager.get(cacheKey);
+            if (cachedUser) {
+                if (orgId && cachedUser.organisation?.uid !== orgId) {
+                    throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
+                }
+                if (branchId && cachedUser.branch?.uid !== branchId) {
+                    throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
+                }
                 return {
-                    user: null,
-                    message: process.env.NOT_FOUND_MESSAGE,
+                    user: this.excludePassword(cachedUser),
+                    message: process.env.SUCCESS_MESSAGE,
                 };
             }
+            const whereConditions = {
+                uid: searchParameter,
+                isDeleted: false,
+            };
+            if (orgId) {
+                whereConditions.organisation = { uid: orgId };
+            }
+            if (branchId) {
+                whereConditions.branch = { uid: branchId };
+            }
+            const user = await this.userRepository.findOne({
+                where: whereConditions,
+                relations: ['organisation', 'branch', 'profile', 'employmentProfile'],
+            });
+            if (!user) {
+                throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
+            }
+            await this.cacheManager.set(cacheKey, user, this.CACHE_TTL);
             return {
-                user,
+                user: this.excludePassword(user),
                 message: process.env.SUCCESS_MESSAGE,
             };
         }
         catch (error) {
             return {
-                message: error?.message,
                 user: null,
+                message: error?.message,
             };
         }
     }
@@ -328,17 +325,24 @@ let UserService = class UserService {
             };
         }
     }
-    async update(ref, updateUserDto) {
+    async update(ref, updateUserDto, orgId, branchId) {
         try {
+            const whereConditions = {
+                uid: ref,
+                isDeleted: false,
+            };
+            if (orgId) {
+                whereConditions.organisation = { uid: orgId };
+            }
+            if (branchId) {
+                whereConditions.branch = { uid: branchId };
+            }
             const user = await this.userRepository.findOne({
-                where: { uid: ref, isDeleted: false },
+                where: whereConditions,
                 relations: ['organisation', 'branch'],
             });
             if (!user) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
-            }
-            if (updateUserDto.password) {
-                updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
             }
             await this.userRepository.update(ref, updateUserDto);
             await this.invalidateUserCache(user);
@@ -352,16 +356,26 @@ let UserService = class UserService {
             };
         }
     }
-    async remove(ref) {
+    async remove(ref, orgId, branchId) {
         try {
+            const whereConditions = {
+                uid: ref,
+                isDeleted: false,
+            };
+            if (orgId) {
+                whereConditions.organisation = { uid: orgId };
+            }
+            if (branchId) {
+                whereConditions.branch = { uid: branchId };
+            }
             const user = await this.userRepository.findOne({
-                where: { uid: ref, isDeleted: false },
+                where: whereConditions,
                 relations: ['organisation', 'branch'],
             });
             if (!user) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
-            await this.userRepository.update({ uid: ref }, {
+            await this.userRepository.update(ref, {
                 isDeleted: true,
                 status: status_enums_1.AccountStatus.INACTIVE,
             });
@@ -401,18 +415,29 @@ let UserService = class UserService {
             }
         }, timeUntilExpiry);
     }
-    async restore(ref) {
+    async restore(ref, orgId, branchId) {
         try {
+            const whereConditions = {
+                uid: ref,
+                isDeleted: true,
+            };
+            if (orgId) {
+                whereConditions.organisation = { uid: orgId };
+            }
+            if (branchId) {
+                whereConditions.branch = { uid: branchId };
+            }
             const user = await this.userRepository.findOne({
-                where: { uid: ref },
+                where: whereConditions,
                 relations: ['organisation', 'branch'],
+                withDeleted: true,
             });
             if (!user) {
                 throw new common_1.NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
-            await this.userRepository.update({ uid: ref }, {
+            await this.userRepository.update(ref, {
                 isDeleted: false,
-                status: status_enums_1.AccountStatus.ACTIVE,
+                status: status_enums_1.AccountStatus.INACTIVE,
             });
             await this.invalidateUserCache(user);
             return {

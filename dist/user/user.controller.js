@@ -27,30 +27,44 @@ let UserController = class UserController {
     constructor(userService) {
         this.userService = userService;
     }
-    create(createUserDto) {
-        return this.userService.create(createUserDto);
+    create(createUserDto, req) {
+        const orgId = req.user?.org?.uid;
+        const branchId = req.user?.branch?.uid;
+        return this.userService.create(createUserDto, orgId, branchId);
     }
-    findAll(page, limit, status, accessLevel, search, branchId, organisationId) {
+    findAll(req, page, limit, status, accessLevel, search, branchId, organisationId) {
+        const orgId = req.user?.org?.uid;
+        const userBranchId = req.user?.branch?.uid;
         const filters = {
             ...(status && { status }),
             ...(accessLevel && { accessLevel }),
             ...(search && { search }),
             ...(branchId && { branchId: Number(branchId) }),
             ...(organisationId && { organisationId: Number(organisationId) }),
+            orgId,
+            userBranchId
         };
         return this.userService.findAll(filters, page ? Number(page) : 1, limit ? Number(limit) : Number(process.env.DEFAULT_PAGE_LIMIT));
     }
-    findOne(searchParameter) {
-        return this.userService.findOne(searchParameter);
+    findOne(ref, req) {
+        const orgId = req.user?.org?.uid;
+        const branchId = req.user?.branch?.uid;
+        return this.userService.findOne(ref, orgId, branchId);
     }
-    update(ref, updateUserDto) {
-        return this.userService.update(ref, updateUserDto);
+    update(ref, updateUserDto, req) {
+        const orgId = req.user?.org?.uid;
+        const branchId = req.user?.branch?.uid;
+        return this.userService.update(ref, updateUserDto, orgId, branchId);
     }
-    restore(ref) {
-        return this.userService.restore(ref);
+    restore(ref, req) {
+        const orgId = req.user?.org?.uid;
+        const branchId = req.user?.branch?.uid;
+        return this.userService.restore(ref, orgId, branchId);
     }
-    remove(ref) {
-        return this.userService.remove(ref);
+    remove(ref, req) {
+        const orgId = req.user?.org?.uid;
+        const branchId = req.user?.branch?.uid;
+        return this.userService.remove(ref, orgId, branchId);
     }
 };
 exports.UserController = UserController;
@@ -90,8 +104,9 @@ __decorate([
     }),
     (0, swagger_1.ApiBadRequestResponse)({ description: 'Invalid input data provided' }),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [create_user_dto_1.CreateUserDto]),
+    __metadata("design:paramtypes", [create_user_dto_1.CreateUserDto, Object]),
     __metadata("design:returntype", void 0)
 ], UserController.prototype, "create", null);
 __decorate([
@@ -169,29 +184,30 @@ __decorate([
             },
         },
     }),
-    __param(0, (0, common_1.Query)('page')),
-    __param(1, (0, common_1.Query)('limit')),
-    __param(2, (0, common_1.Query)('status')),
-    __param(3, (0, common_1.Query)('accessLevel')),
-    __param(4, (0, common_1.Query)('search')),
-    __param(5, (0, common_1.Query)('branchId')),
-    __param(6, (0, common_1.Query)('organisationId')),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Query)('page')),
+    __param(2, (0, common_1.Query)('limit')),
+    __param(3, (0, common_1.Query)('status')),
+    __param(4, (0, common_1.Query)('accessLevel')),
+    __param(5, (0, common_1.Query)('search')),
+    __param(6, (0, common_1.Query)('branchId')),
+    __param(7, (0, common_1.Query)('organisationId')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Number, String, String, String, Number, Number]),
+    __metadata("design:paramtypes", [Object, Number, Number, String, String, String, Number, Number]),
     __metadata("design:returntype", void 0)
 ], UserController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)(':ref'),
     (0, role_decorator_1.Roles)(user_enums_1.AccessLevel.ADMIN, user_enums_1.AccessLevel.MANAGER, user_enums_1.AccessLevel.SUPPORT, user_enums_1.AccessLevel.DEVELOPER, user_enums_1.AccessLevel.USER, user_enums_1.AccessLevel.OWNER, user_enums_1.AccessLevel.TECHNICIAN),
     (0, swagger_1.ApiOperation)({
-        summary: 'Get a user by search parameter',
-        description: 'Retrieves a user by email, phone number, or reference code. Accessible by all authenticated users.',
+        summary: 'Get a user by reference code',
+        description: 'Retrieves a user by reference code. Accessible by all authenticated users.',
     }),
     (0, swagger_1.ApiParam)({
-        name: 'searchParameter',
-        description: 'User identifier (email, phone, or reference code)',
-        type: 'string',
-        example: 'USR123456',
+        name: 'ref',
+        description: 'User reference code',
+        type: 'number',
+        example: 1,
     }),
     (0, swagger_1.ApiOkResponse)({
         description: 'User found',
@@ -235,9 +251,10 @@ __decorate([
         },
     }),
     (0, swagger_1.ApiNotFoundResponse)({ description: 'User not found' }),
-    __param(0, (0, common_1.Param)('searchParameter')),
+    __param(0, (0, common_1.Param)('ref')),
+    __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
+    __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", void 0)
 ], UserController.prototype, "findOne", null);
 __decorate([
@@ -267,8 +284,9 @@ __decorate([
     (0, swagger_1.ApiBadRequestResponse)({ description: 'Invalid input data provided' }),
     __param(0, (0, common_1.Param)('ref')),
     __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, update_user_dto_1.UpdateUserDto]),
+    __metadata("design:paramtypes", [Number, update_user_dto_1.UpdateUserDto, Object]),
     __metadata("design:returntype", void 0)
 ], UserController.prototype, "update", null);
 __decorate([
@@ -295,8 +313,9 @@ __decorate([
     }),
     (0, swagger_1.ApiNotFoundResponse)({ description: 'User not found' }),
     __param(0, (0, common_1.Param)('ref')),
+    __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
+    __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", void 0)
 ], UserController.prototype, "restore", null);
 __decorate([
@@ -323,8 +342,9 @@ __decorate([
     }),
     (0, swagger_1.ApiNotFoundResponse)({ description: 'User not found' }),
     __param(0, (0, common_1.Param)('ref')),
+    __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
+    __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", void 0)
 ], UserController.prototype, "remove", null);
 exports.UserController = UserController = __decorate([

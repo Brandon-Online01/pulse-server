@@ -94,13 +94,20 @@ export class UserService {
 		return userWithoutPassword;
 	}
 
-	async create(createUserDto: CreateUserDto): Promise<{ message: string }> {
+	async create(createUserDto: CreateUserDto, orgId?: number, branchId?: number): Promise<{ message: string }> {
 		try {
 			if (createUserDto.password) {
 				createUserDto.password = await bcrypt.hash(createUserDto.password, 10);
 			}
 
-			const user = await this.userRepository.save(createUserDto);
+			// Add organization and branch data if provided
+			const userData = {
+				...createUserDto,
+				...(orgId && { organisation: { uid: orgId } }),
+				...(branchId && { branch: { uid: branchId } }),
+			};
+
+			const user = await this.userRepository.save(userData);
 
 			if (!user) {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
@@ -130,6 +137,8 @@ export class UserService {
 			search?: string;
 			branchId?: number;
 			organisationId?: number;
+			orgId?: number;
+			userBranchId?: number;
 		},
 		page: number = 1,
 		limit: number = Number(process.env.DEFAULT_PAGE_LIMIT),
@@ -140,6 +149,16 @@ export class UserService {
 				.leftJoinAndSelect('user.branch', 'branch')
 				.leftJoinAndSelect('user.organisation', 'organisation')
 				.where('user.isDeleted = :isDeleted', { isDeleted: false });
+
+			// Apply organization filter if provided
+			if (filters?.orgId) {
+				queryBuilder.andWhere('organisation.uid = :orgId', { orgId: filters.orgId });
+			}
+
+			// Only apply branch filter if user has a branch and no specific branch filter is provided
+			if (filters?.userBranchId && !filters?.branchId) {
+				queryBuilder.andWhere('branch.uid = :userBranchId', { userBranchId: filters.userBranchId });
+			}
 
 			if (filters?.status) {
 				queryBuilder.andWhere('user.status = :status', { status: filters.status });
@@ -200,64 +219,66 @@ export class UserService {
 		}
 	}
 
-	async findOne(searchParameter: number): Promise<{ user: Omit<User, 'password'> | null; message: string }> {
+	async findOne(
+		searchParameter: number,
+		orgId?: number,
+		branchId?: number,
+	): Promise<{ user: Omit<User, 'password'> | null; message: string }> {
 		try {
-			const user = await this.userRepository.findOne({
-				where: [{ uid: searchParameter, isDeleted: false }],
-				select: {
-					uid: true,
-					name: true,
-					surname: true,
-					email: true,
-					username: true,
-					accessLevel: true,
-					organisationRef: true,
-					createdAt: true,
-					updatedAt: true,
-					isDeleted: true,
-					status: true,
-					verificationToken: true,
-					resetToken: true,
-					tokenExpires: true,
-				},
-				relations: [
-					'userProfile',
-					'userEmployeementProfile',
-					'userAttendances',
-					'userClaims',
-					'userDocs',
-					'leads',
-					'journals',
-					'tasks',
-					'articles',
-					'assets',
-					'trackings',
-					'orders',
-					'notifications',
-					'branch',
-					'clients',
-					'checkIns',
-					'reports',
-					'rewards',
-					'organisation',
-				],
-			});
+			const cacheKey = this.getCacheKey(searchParameter);
+			const cachedUser = await this.cacheManager.get<User>(cacheKey);
 
-			if (!user) {
+			if (cachedUser) {
+				// If org/branch filters are provided, verify cached user belongs to them
+				if (orgId && cachedUser.organisation?.uid !== orgId) {
+					throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
+				}
+				if (branchId && cachedUser.branch?.uid !== branchId) {
+					throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
+				}
+
 				return {
-					user: null,
-					message: process.env.NOT_FOUND_MESSAGE,
+					user: this.excludePassword(cachedUser),
+					message: process.env.SUCCESS_MESSAGE,
 				};
 			}
 
+			// Build where conditions
+			const whereConditions: any = {
+				uid: searchParameter,
+				isDeleted: false,
+			};
+
+			// Add organization filter if provided
+			if (orgId) {
+				whereConditions.organisation = { uid: orgId };
+			}
+
+			// Add branch filter if provided
+			if (branchId) {
+				whereConditions.branch = { uid: branchId };
+			}
+
+			const user = await this.userRepository.findOne({
+				where: whereConditions,
+				relations: ['organisation', 'branch', 'profile', 'employmentProfile'],
+			});
+
+			if (!user) {
+				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
+			}
+
+			// Cache the user data
+			await this.cacheManager.set(cacheKey, user, this.CACHE_TTL);
+
 			return {
-				user,
+				user: this.excludePassword(user),
 				message: process.env.SUCCESS_MESSAGE,
 			};
 		} catch (error) {
 			return {
-				message: error?.message,
 				user: null,
+				message: error?.message,
 			};
 		}
 	}
@@ -401,10 +422,31 @@ export class UserService {
 		}
 	}
 
-	async update(ref: number, updateUserDto: UpdateUserDto): Promise<{ message: string }> {
+	async update(
+		ref: number,
+		updateUserDto: UpdateUserDto,
+		orgId?: number,
+		branchId?: number,
+	): Promise<{ message: string }> {
 		try {
+			// Build where conditions
+			const whereConditions: any = {
+				uid: ref,
+				isDeleted: false,
+			};
+
+			// Add organization filter if provided
+			if (orgId) {
+				whereConditions.organisation = { uid: orgId };
+			}
+
+			// Add branch filter if provided
+			if (branchId) {
+				whereConditions.branch = { uid: branchId };
+			}
+
 			const user = await this.userRepository.findOne({
-				where: { uid: ref, isDeleted: false },
+				where: whereConditions,
 				relations: ['organisation', 'branch'],
 			});
 
@@ -412,14 +454,10 @@ export class UserService {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
-			// Hash the password if it's included in the update data
-			if (updateUserDto.password) {
-				updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
-			}
-
+			// Update the user with the provided data
 			await this.userRepository.update(ref, updateUserDto);
 
-			// Invalidate cache after update
+			// Invalidate cache
 			await this.invalidateUserCache(user);
 
 			return {
@@ -432,10 +470,26 @@ export class UserService {
 		}
 	}
 
-	async remove(ref: number): Promise<{ message: string }> {
+	async remove(ref: number, orgId?: number, branchId?: number): Promise<{ message: string }> {
 		try {
+			// Build where conditions
+			const whereConditions: any = {
+				uid: ref,
+				isDeleted: false,
+			};
+
+			// Add organization filter if provided
+			if (orgId) {
+				whereConditions.organisation = { uid: orgId };
+			}
+
+			// Add branch filter if provided
+			if (branchId) {
+				whereConditions.branch = { uid: branchId };
+			}
+
 			const user = await this.userRepository.findOne({
-				where: { uid: ref, isDeleted: false },
+				where: whereConditions,
 				relations: ['organisation', 'branch'],
 			});
 
@@ -443,15 +497,12 @@ export class UserService {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
-			await this.userRepository.update(
-				{ uid: ref },
-				{
-					isDeleted: true,
-					status: AccountStatus.INACTIVE,
-				},
-			);
+			await this.userRepository.update(ref, {
+				isDeleted: true,
+				status: AccountStatus.INACTIVE,
+			});
 
-			// Invalidate cache after deletion
+			// Invalidate cache
 			await this.invalidateUserCache(user);
 
 			return {
@@ -496,26 +547,40 @@ export class UserService {
 		}, timeUntilExpiry);
 	}
 
-	async restore(ref: number): Promise<{ message: string }> {
+	async restore(ref: number, orgId?: number, branchId?: number): Promise<{ message: string }> {
 		try {
+			// Build where conditions for deleted users
+			const whereConditions: any = {
+				uid: ref,
+				isDeleted: true, // Looking for deleted users to restore
+			};
+
+			// Add organization filter if provided
+			if (orgId) {
+				whereConditions.organisation = { uid: orgId };
+			}
+
+			// Add branch filter if provided
+			if (branchId) {
+				whereConditions.branch = { uid: branchId };
+			}
+
 			const user = await this.userRepository.findOne({
-				where: { uid: ref },
+				where: whereConditions,
 				relations: ['organisation', 'branch'],
+				withDeleted: true, // Include soft-deleted entries
 			});
 
 			if (!user) {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
-			await this.userRepository.update(
-				{ uid: ref },
-				{
-					isDeleted: false,
-					status: AccountStatus.ACTIVE,
-				},
-			);
+			await this.userRepository.update(ref, {
+				isDeleted: false,
+				status: AccountStatus.INACTIVE, // Set to inactive initially
+			});
 
-			// Invalidate cache after restoration
+			// Invalidate cache
 			await this.invalidateUserCache(user);
 
 			return {

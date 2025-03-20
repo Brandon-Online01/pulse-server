@@ -20,7 +20,7 @@ export declare class UserService {
     private getCacheKey;
     private invalidateUserCache;
     private excludePassword;
-    create(createUserDto: CreateUserDto): Promise<{
+    create(createUserDto: CreateUserDto, orgId?: number, branchId?: number): Promise<{
         message: string;
     }>;
     findAll(filters?: {
@@ -29,8 +29,10 @@ export declare class UserService {
         search?: string;
         branchId?: number;
         organisationId?: number;
+        orgId?: number;
+        userBranchId?: number;
     }, page?: number, limit?: number): Promise<PaginatedResponse<Omit<User, 'password'>>>;
-    findOne(searchParameter: number): Promise<{
+    findOne(searchParameter: number, orgId?: number, branchId?: number): Promise<{
         user: Omit<User, 'password'> | null;
         message: string;
     }>;
@@ -54,15 +56,15 @@ export declare class UserService {
         users: Omit<User, 'password'>[] | null;
         message: string;
     }>;
-    update(ref: number, updateUserDto: UpdateUserDto): Promise<{
+    update(ref: number, updateUserDto: UpdateUserDto, orgId?: number, branchId?: number): Promise<{
         message: string;
     }>;
-    remove(ref: number): Promise<{
+    remove(ref: number, orgId?: number, branchId?: number): Promise<{
         message: string;
     }>;
     createPendingUser(userData: NewSignUp): Promise<void>;
     private schedulePendingUserCleanup;
-    restore(ref: number): Promise<{
+    restore(ref: number, orgId?: number, branchId?: number): Promise<{
         message: string;
     }>;
     findByVerificationToken(token: string): Promise<User | null>;
