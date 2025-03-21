@@ -13,7 +13,7 @@ import { Branch } from '../../branch/entities/branch.entity';
 import { Task } from '../../tasks/entities/task.entity';
 import { FeedbackStatus, FeedbackType } from '../../lib/enums/feedback.enums';
 
-@Entity()
+@Entity('feedback')
 export class Feedback {
 	@PrimaryGeneratedColumn()
 	uid: number;

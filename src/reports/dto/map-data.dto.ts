@@ -1,5 +1,4 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { CreateGeofenceDto } from 'src/tracking/dto/create-geofence.dto';
 
 export enum MapMarkerType {
 	CHECK_IN = 'check-in',
@@ -18,6 +17,7 @@ export enum MapMarkerType {
 	JOB_CANCEL = 'job-cancel',
 	JOB_COMPLETE = 'job-complete',
 	COMPETITOR = 'competitor',
+	QUOTATION = 'quotation',
 }
 
 export enum MapEventCategory {
@@ -300,6 +300,68 @@ export class CompetitorLocationDto {
 	geofencing: GeofenceDto;
 }
 
+export class QuotationLocationDto {
+	@ApiProperty({ description: 'Unique identifier for the quotation' })
+	id: number;
+
+	@ApiProperty({ description: 'Quotation reference number' })
+	quotationNumber: string;
+
+	@ApiProperty({ description: 'Client name associated with the quotation' })
+	clientName: string;
+
+	@ApiProperty({
+		description: 'Current position as [latitude, longitude] tuple',
+		type: 'array',
+		items: {
+			type: 'number',
+		},
+		required: false,
+	})
+	position?: [number, number];
+
+	@ApiProperty({
+		description: 'Total amount',
+		example: 1500.00,
+	})
+	totalAmount: number;
+
+	@ApiProperty({
+		description: 'Status of the quotation',
+		example: 'PENDING',
+	})
+	status: string;
+
+	@ApiProperty({
+		description: 'Quotation creation date',
+	})
+	quotationDate: Date;
+
+	@ApiProperty({
+		description: 'Name of user who created the quotation',
+	})
+	placedBy: string;
+
+	@ApiProperty({
+		description: 'Conversion status',
+		example: false,
+	})
+	isConverted: boolean;
+
+	@ApiProperty({
+		description: 'Valid until date',
+		required: false,
+	})
+	validUntil?: Date;
+
+	@ApiProperty({
+		description: 'Marker type for map display',
+		enum: MapMarkerType,
+		example: MapMarkerType.QUOTATION,
+	})
+	markerType: MapMarkerType;
+}
+
 export class MapDataResponseDto {
 	@ApiProperty({ description: 'List of workers with their current locations', type: [WorkerLocationDto] })
 	workers: WorkerLocationDto[];
@@ -316,4 +378,11 @@ export class MapDataResponseDto {
 		required: false,
 	})
 	competitors?: CompetitorLocationDto[];
+
+	@ApiProperty({
+		description: 'List of quotations with their locations',
+		type: [QuotationLocationDto],
+		required: false,
+	})
+	quotations?: QuotationLocationDto[];
 }

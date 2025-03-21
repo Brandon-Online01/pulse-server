@@ -84,6 +84,7 @@ Required environment variables:
 		.addTag('assets', 'Digital and physical asset tracking with location support')
 		.addTag('att', 'Employee attendance and time tracking with location validation')
 		.addTag('docs', 'Document management with Google Cloud Storage integration')
+		.addTag('shop', 'E-commerce with location-based delivery and territory restrictions')
 
 		// Business Operations
 		.addTag('clients', 'Client management with location-based services and geofencing')
@@ -104,6 +105,7 @@ Required environment variables:
 		.addTag('reports', 'Business analytics with location and route insights')
 		.addTag('rewards', 'Performance tracking and employee recognition system')
 		.addTag('resellers', 'Partner management with territory mapping and analytics')
+		.addTag('feedback', 'Feedback management with location and territory management')
 
 		.addBearerAuth()
 		.addServer('https://api.loro.co.za', 'Production')

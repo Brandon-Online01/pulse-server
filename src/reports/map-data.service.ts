@@ -35,6 +35,7 @@ import {
 	ActivityDto,
 	CompetitorLocationDto,
 	GeofenceDto,
+	QuotationLocationDto,
 } from './dto/map-data.dto';
 
 // Enum imports
@@ -94,12 +95,16 @@ export class MapDataService {
 
 			// 4. Fetch competitors data
 			const competitors = await this.getCompetitorLocations(orgId, branchId);
+			
+			// 5. Fetch quotations data
+			const quotations = await this.getQuotationLocations(orgId, branchId);
 
 			return {
 				workers,
 				events,
 				mapConfig,
 				competitors,
+				quotations,
 			};
 		} catch (error) {
 			console.error('Error fetching map data:', error);
@@ -108,6 +113,7 @@ export class MapDataService {
 				events: [],
 				mapConfig: this.getMapConfig(),
 				competitors: [],
+				quotations: [],
 			};
 		}
 	}
@@ -531,10 +537,10 @@ export class MapDataService {
 			if (!MapDataService.quotationsRepoChecked || MapDataService.quotationsRepoAvailable) {
 				try {
 					// Use the more reliable approach with getRepository from dataSource
-					const quotationsRepository = this.taskRepository.manager.getRepository('quotations');
+					const quotationsRepository = this.taskRepository.manager.getRepository('quotation');
 					quotationsCount = await quotationsRepository.count({
 						where: {
-							ownerUid: userId,
+							placedBy: { uid: userId },
 							createdAt: Between(startDate, endDate),
 						},
 					});
@@ -817,6 +823,68 @@ export class MapDataService {
 				}
 			} catch (error) {
 				console.error('Error processing check-in data:', error.message);
+			}
+
+			// 5. Process QUOTATIONS - only today's quotations
+			try {
+				if (MapDataService.quotationsRepoAvailable) {
+					const quotationsRepository = this.entityManager.getRepository('quotation');
+					
+					const quotations = await quotationsRepository.find({
+						where: {
+							createdAt: Between(startOfToday, endOfToday)
+						},
+						relations: ['placedBy', 'client'],
+						order: { createdAt: 'DESC' }
+					});
+					
+					console.log(`Found ${quotations.length} quotation records for events`);
+					
+					for (const quotation of quotations) {
+						if (!quotation.placedBy) continue;
+						
+						// Check if the placedBy user is in our userIds list
+						if (!userNameMap.has(quotation.placedBy.uid)) continue;
+						
+						const userName = userNameMap.get(quotation.placedBy.uid) || 'Unknown user';
+						const clientName = quotation.client ? quotation.client.name : 'No client';
+						
+						try {
+							const eventObj = {
+								id: `quotation-${quotation.uid}`,
+								user: userName,
+								type: MapMarkerType.QUOTATION,
+								category: MapEventCategory.QUOTATION,
+								time: this.formatEventTime(quotation.createdAt),
+								timePeriod: 'Today',
+								location: clientName,
+								title: `New quotation: ${quotation.quotationNumber} (${this.formatCurrency(Number(quotation.totalAmount))})`
+							};
+							
+							events.push(eventObj);
+						} catch (error) {
+							console.error(`Error processing quotation event ${quotation.uid}:`, error.message);
+							continue;
+						}
+					}
+					
+					// Add summary if needed
+					if (quotations.length >= 3) {
+						const users = new Set(quotations.map(q => q.placedBy?.uid).filter(Boolean));
+						events.push({
+							id: `quotation-summary-${this.formatDateShort(now)}`,
+							user: 'Multiple Users',
+							type: MapMarkerType.QUOTATION,
+							category: MapEventCategory.SUMMARY,
+							time: this.formatEventTime(now),
+							timePeriod: 'Today',
+							location: 'Various Clients',
+							title: `${quotations.length} quotations created (${users.size} users)`
+						});
+					}
+				}
+			} catch (error) {
+				console.error('Error processing quotation data:', error.message);
 			}
 
 			// Sort events by time, most recent first
@@ -1225,5 +1293,112 @@ export class MapDataService {
 			minimumFractionDigits: 0,
 			maximumFractionDigits: 0,
 		}).format(value);
+	}
+
+	/**
+	 * Get quotation locations for map display
+	 */
+	private async getQuotationLocations(orgId: string, branchId: string): Promise<QuotationLocationDto[]> {
+		try {
+			// Check if quotations repository is available
+			if (!MapDataService.quotationsRepoChecked) {
+				try {
+					// Test access to quotations repository
+					const quotationsRepository = this.entityManager.getRepository('quotation');
+					MapDataService.quotationsRepoAvailable = true;
+					console.log('Quotations repository is available');
+				} catch (error) {
+					console.warn(
+						`Quotations repository not available: ${error.message}. Quotations will not be displayed on the map.`,
+					);
+					MapDataService.quotationsRepoAvailable = false;
+				}
+				MapDataService.quotationsRepoChecked = true;
+			}
+
+			if (!MapDataService.quotationsRepoAvailable) {
+				return [];
+			}
+
+			// Define query conditions
+			const queryConditions: any = {};
+
+			// Add organization and branch filters
+			const orgIdNum = orgId ? parseInt(orgId, 10) : undefined;
+			const branchIdNum = branchId ? parseInt(branchId, 10) : undefined;
+
+			if (orgIdNum) {
+				queryConditions.organisation = { uid: orgIdNum };
+			}
+
+			if (branchIdNum) {
+				queryConditions.branch = { uid: branchIdNum };
+			}
+
+			// Get recent quotations (created in the last 30 days)
+			const thirtyDaysAgo = new Date();
+			thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+			
+			// Use entityManager to access the quotations repository
+			const quotationsRepository = this.entityManager.getRepository('quotation');
+			
+			// Fetch quotations with relations to get client information
+			const quotations = await quotationsRepository.find({
+				where: {
+					...queryConditions,
+					createdAt: Between(thirtyDaysAgo, new Date()),
+				},
+				relations: ['client', 'placedBy', 'branch', 'organisation'],
+				order: {
+					createdAt: 'DESC',
+				},
+				take: 50, // Limit to 50 most recent quotations
+			});
+
+			console.log(`Found ${quotations.length} quotations for map display`);
+
+			// Transform quotations to location DTOs
+			const quotationLocations = quotations.map(quotation => {
+				// Extract client position from client if available
+				let position: [number, number] | undefined;
+
+				try {
+					// Try to get position from client's address
+					if (quotation.client && quotation.client.latitude && quotation.client.longitude) {
+						position = [Number(quotation.client.latitude), Number(quotation.client.longitude)];
+					} else if (quotation.branch && quotation.branch.latitude && quotation.branch.longitude) {
+						// Fall back to branch location
+						position = [Number(quotation.branch.latitude), Number(quotation.branch.longitude)];
+					} else if (quotation.client && quotation.client.address) {
+						// Try to generate mock position from address as last resort
+						position = this.mockPositionFromAddress(quotation.client.address);
+					}
+
+					// Build the quotation location object
+					return {
+						id: quotation.uid,
+						quotationNumber: quotation.quotationNumber,
+						clientName: quotation.client ? quotation.client.name : 'Unknown Client',
+						position: position,
+						totalAmount: Number(quotation.totalAmount) || 0,
+						status: quotation.status,
+						quotationDate: quotation.quotationDate || quotation.createdAt,
+						placedBy: quotation.placedBy ? `${quotation.placedBy.name || ''} ${quotation.placedBy.surname || ''}`.trim() : 'Unknown',
+						isConverted: quotation.isConverted || false,
+						validUntil: quotation.validUntil,
+						markerType: MapMarkerType.QUOTATION,
+					};
+				} catch (error) {
+					console.error(`Error processing quotation ${quotation.uid}:`, error);
+					return null;
+				}
+			})
+			.filter(q => q !== null && q.position !== undefined) as QuotationLocationDto[]; // Only include quotations with positions
+
+			return quotationLocations;
+		} catch (error) {
+			console.error('Error fetching quotation locations:', error);
+			return [];
+		}
 	}
 }
