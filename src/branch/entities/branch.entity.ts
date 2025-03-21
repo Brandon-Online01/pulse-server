@@ -21,6 +21,7 @@ import { Quotation } from 'src/shop/entities/quotation.entity';
 import { Notification } from 'src/notifications/entities/notification.entity';
 import { CommunicationLog } from 'src/communication/entities/communication-log.entity';
 import { Route } from 'src/tasks/entities/route.entity';
+import { Order } from 'src/shop/entities/order.entity';
 
 @Entity('branch')
 export class Branch {
@@ -124,6 +125,9 @@ export class Branch {
 
 	@OneToMany(() => Quotation, (quotation) => quotation?.branch, { nullable: true })
 	quotations: Quotation[];
+
+	@OneToMany(() => Order, (order) => order.branch)
+	orders: Order[];
 
 	@OneToMany(() => Notification, (notification) => notification?.branch, { nullable: true })
 	notifications: Notification[];

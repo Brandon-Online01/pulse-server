@@ -81,6 +81,23 @@ export class ProductAnalytics {
     @Column({ type: 'int', default: 0 })
     wishlistCount: number;
 
+    // Conversion Tracking
+    @Column({ type: 'int', default: 0 })
+    quotationCount: number;
+
+    @Column({ type: 'int', default: 0 })
+    quotationToOrderCount: number;
+
+    @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
+    conversionRate: number;
+
+    @Column({ type: 'json', nullable: true })
+    conversionHistory: {
+        quotationId: number;
+        orderId: number;
+        convertedAt: Date;
+    }[];
+
     // Timestamps
     @CreateDateColumn()
     createdAt: Date;

@@ -288,16 +288,16 @@ export class ShopService {
 
             // Only send internal notification and order acknowledgment to client
             // Do NOT send the full quotation to the client yet
-            
+
             // Notify internal team about new quotation
             this.eventEmitter.emit('send.email', EmailType.NEW_QUOTATION_INTERNAL, [internalEmail], baseConfig);
 
             // Notify resellers about products in the quotation
             resellerEmails?.forEach(email => {
                 this.eventEmitter.emit('send.email', EmailType.NEW_QUOTATION_RESELLER, [email?.email], {
-                    ...baseConfig,
-                    name: email?.retailerName,
-                    email: email?.email,
+                ...baseConfig,
+                name: email?.retailerName,
+                email: email?.email,
                 });
             });
 
@@ -759,11 +759,11 @@ export class ShopService {
                         // Client notification handled separately below
                         break;
                     case OrderStatus.APPROVED:
-                        emailType = EmailType.QUOTATION_APPROVED;
+                    emailType = EmailType.QUOTATION_APPROVED;
                         statusMessage = 'approved by client';
                         break;
                     case OrderStatus.REJECTED:
-                        emailType = EmailType.QUOTATION_REJECTED;
+                    emailType = EmailType.QUOTATION_REJECTED;
                         statusMessage = 'rejected by client';
                         break;
                     case OrderStatus.SOURCING:
@@ -834,7 +834,7 @@ export class ShopService {
                         });
                     } else {
                         // Standard notification for other statuses
-                        this.eventEmitter.emit('send.email', emailType, [quotation.client.email], emailData);
+                this.eventEmitter.emit('send.email', emailType, [quotation.client.email], emailData);
                     }
                 }
                 
@@ -1354,8 +1354,8 @@ export class ShopService {
                     OrderStatus.DELIVERED,
                     OrderStatus.PAID
                 ].includes(quotation.status)) {
-                    return {
-                        valid: false,
+                return {
+                    valid: false,
                         message: `This quotation has already been ${quotation.status}.`,
                     };
                 }
@@ -1479,10 +1479,10 @@ export class ShopService {
                     
                     switch(status) {
                         case OrderStatus.APPROVED:
-                            emailType = EmailType.QUOTATION_APPROVED;
+                        emailType = EmailType.QUOTATION_APPROVED;
                             break;
                         case OrderStatus.REJECTED:
-                            emailType = EmailType.QUOTATION_REJECTED;
+                        emailType = EmailType.QUOTATION_REJECTED;
                             break;
                     }
 

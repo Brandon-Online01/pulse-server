@@ -1,9 +1,10 @@
 import { Client } from '../../clients/entities/client.entity';
-import { QuotationItem } from './quotation-item.entity';
+import { OrderItem } from '../../shop/entities/order-item.entity';
 import { OrderStatus } from '../../lib/enums/status.enums';
 import { User } from '../../user/entities/user.entity';
 import { Organisation } from '../../organisation/entities/organisation.entity';
 import { Branch } from '../../branch/entities/branch.entity';
+import { Quotation } from './quotation.entity';
 import {
 	Entity,
 	Column,
@@ -12,16 +13,16 @@ import {
 	UpdateDateColumn,
 	ManyToOne,
 	OneToMany,
+	JoinColumn,
 } from 'typeorm';
-import { Order } from './order.entity';
 
-@Entity('quotation')
-export class Quotation {
+@Entity('order')
+export class Order {
 	@PrimaryGeneratedColumn()
 	uid: number;
 
 	@Column({ unique: true })
-	quotationNumber: string;
+	orderNumber: string;
 
 	@Column({ type: 'decimal', precision: 10, scale: 2 })
 	totalAmount: number;
@@ -29,11 +30,11 @@ export class Quotation {
 	@Column()
 	totalItems: number;
 
-	@Column({ type: 'enum', enum: OrderStatus, default: OrderStatus.PENDING })
+	@Column({ type: 'enum', enum: OrderStatus, default: OrderStatus.IN_FULFILLMENT })
 	status: OrderStatus;
 
 	@Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-	quotationDate: Date;
+	orderDate: Date;
 
 	@ManyToOne(() => User, { eager: true })
 	placedBy: User;
@@ -41,8 +42,8 @@ export class Quotation {
 	@ManyToOne(() => Client, { eager: true })
 	client: Client;
 
-	@OneToMany(() => QuotationItem, (quotationItem) => quotationItem.quotation, { eager: true, cascade: true })
-	quotationItems: QuotationItem[];
+	@OneToMany(() => OrderItem, (orderItem) => orderItem.order, { eager: true, cascade: true })
+	orderItems: OrderItem[];
 
 	@Column({ nullable: true })
 	shippingMethod: string;
@@ -68,32 +69,50 @@ export class Quotation {
 	@UpdateDateColumn()
 	updatedAt: Date;
 
-	@Column({ type: 'timestamp', nullable: true })
-	validUntil: Date;
+	// Original quotation reference
+	@ManyToOne(() => Quotation, (quotation) => quotation.orders)
+	@JoinColumn()
+	quotation: Quotation;
+
+	@Column({ nullable: false })
+	quotationId: number;
 
 	@Column({ nullable: true })
-	reviewToken: string;
+	quotationNumber: string;
 
-	@Column({ nullable: true })
-	reviewUrl: string;
-
-	// Conversion tracking
+	// Payment tracking
 	@Column({ default: false })
-	isConverted: boolean;
+	isPaid: boolean;
 
 	@Column({ type: 'timestamp', nullable: true })
-	convertedAt: Date;
+	paidAt: Date;
 
 	@Column({ nullable: true })
-	convertedBy: number;
+	paymentMethod: string;
 
-	@OneToMany(() => Order, (order) => order.quotation)
-	orders: Order[];
+	@Column({ nullable: true })
+	paymentReference: string;
+
+	@Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+	paidAmount: number;
+
+	// Shipping tracking
+	@Column({ nullable: true })
+	trackingNumber: string;
+
+	@Column({ nullable: true })
+	carrier: string;
+
+	@Column({ type: 'timestamp', nullable: true })
+	shippedAt: Date;
+
+	@Column({ type: 'timestamp', nullable: true })
+	deliveredAt: Date;
 
 	// Relations
-	@ManyToOne(() => Branch, (branch) => branch?.quotations, { nullable: true })
+	@ManyToOne(() => Branch, (branch) => branch?.orders, { nullable: true })
 	branch: Branch;
 
-	@ManyToOne(() => Organisation, (organisation) => organisation?.quotations, { nullable: true })
+	@ManyToOne(() => Organisation, (organisation) => organisation?.orders, { nullable: true })
 	organisation: Organisation;
 }

@@ -90,14 +90,14 @@ export class ProductsService {
 	async createProduct(
 		createProductDto: CreateProductDto,
 		orgId?: number,
-		branchId?: number
+		branchId?: number,
 	): Promise<{ product: Product | null; message: string }> {
 		try {
 			// Create product with org and branch
 			const product = this.productRepository.create({
 				...createProductDto,
 				...(orgId && { organisation: { uid: orgId } }),
-				...(branchId && { branch: { uid: branchId } })
+				...(branchId && { branch: { uid: branchId } }),
 			});
 
 			const savedProduct = await this.productRepository.save(product);
@@ -118,10 +118,7 @@ export class ProductsService {
 		}
 	}
 
-	async updateProduct(
-		ref: number,
-		updateProductDto: UpdateProductDto,
-	): Promise<{ message: string }> {
+	async updateProduct(ref: number, updateProductDto: UpdateProductDto): Promise<{ message: string }> {
 		try {
 			// First find the product to ensure it exists
 			const product = await this.getProductByref(ref);
@@ -275,9 +272,7 @@ export class ProductsService {
 		}
 	}
 
-	async getProductByref(
-		ref: number,
-	): Promise<{ product: Product | null; message: string }> {
+	async getProductByref(ref: number): Promise<{ product: Product | null; message: string }> {
 		try {
 			// Build where conditions without org and branch
 			const whereConditions = {
@@ -372,16 +367,17 @@ export class ProductsService {
 	// Analytics methods don't need org/branch filtering since they operate on products
 	// that have already been filtered by the getProductByref method
 
-	async updateProductAnalytics(productId: number, data: Partial<ProductAnalyticsDto>) {
+	async updateProductAnalytics(productId: number, updateData: Partial<ProductAnalyticsDto>) {
 		try {
 			const analytics = await this.analyticsRepository.findOne({ where: { productId } });
 			if (!analytics) {
 				throw new NotFoundException('Product analytics not found');
 			}
 
-			await this.analyticsRepository.update({ productId }, data);
+			await this.analyticsRepository.update({ productId }, updateData);
 			return { message: 'Analytics updated successfully' };
 		} catch (error) {
+			this.logger.error(`Error updating product analytics: ${error.message}`);
 			return { message: error.message || 'Error updating analytics' };
 		}
 	}
@@ -462,16 +458,20 @@ export class ProductsService {
 
 			// Calculate total purchase cost
 			const totalCost = quantity * purchasePrice;
-			
+
 			// Update purchase metrics
-			await this.analyticsRepository.update({ productId }, { 
-				unitsPurchased: (analytics.unitsPurchased || 0) + quantity,
-				totalPurchaseCost: (analytics.totalPurchaseCost || 0) + totalCost,
-				lastPurchaseDate: new Date(),
-				averagePurchasePrice: analytics.unitsPurchased 
-					? ((analytics.totalPurchaseCost || 0) + totalCost) / ((analytics.unitsPurchased || 0) + quantity)
-					: purchasePrice
-			});
+			await this.analyticsRepository.update(
+				{ productId },
+				{
+					unitsPurchased: (analytics.unitsPurchased || 0) + quantity,
+					totalPurchaseCost: (analytics.totalPurchaseCost || 0) + totalCost,
+					lastPurchaseDate: new Date(),
+					averagePurchasePrice: analytics.unitsPurchased
+						? ((analytics.totalPurchaseCost || 0) + totalCost) /
+						  ((analytics.unitsPurchased || 0) + quantity)
+						: purchasePrice,
+				},
+			);
 
 			// Update stock history
 			await this.updateStockHistory(productId, quantity, 'in');
@@ -549,15 +549,21 @@ export class ProductsService {
 			const avgSaleValue = analytics.salesCount ? analytics.totalRevenue / analytics.salesCount : 0;
 
 			// Calculate profit margin if cost data is available
-			const profitMargin = analytics.totalPurchaseCost && analytics.totalRevenue
-				? ((analytics.totalRevenue - analytics.totalPurchaseCost) / analytics.totalRevenue) * 100
-				: null;
+			const profitMargin =
+				analytics.totalPurchaseCost && analytics.totalRevenue
+					? ((analytics.totalRevenue - analytics.totalPurchaseCost) / analytics.totalRevenue) * 100
+					: null;
 
 			// Update the performance metrics
-			await this.analyticsRepository.update({ productId }, { 
-				profitMargin: profitMargin ? parseFloat(profitMargin.toFixed(2)) : null,
-				stockTurnoverRate: parseFloat((analytics.totalUnitsSold / (analytics.unitsPurchased || 1)).toFixed(2))
-			});
+			await this.analyticsRepository.update(
+				{ productId },
+				{
+					profitMargin: profitMargin ? parseFloat(profitMargin.toFixed(2)) : null,
+					stockTurnoverRate: parseFloat(
+						(analytics.totalUnitsSold / (analytics.unitsPurchased || 1)).toFixed(2),
+					),
+				},
+			);
 
 			const performance = {
 				viewToCartRate: parseFloat(viewToCartRate.toFixed(2)),
@@ -570,18 +576,63 @@ export class ProductsService {
 				viewCount: analytics.viewCount,
 				cartAddCount: analytics.cartAddCount,
 				wishlistCount: analytics.wishlistCount,
-				profitMargin: profitMargin ? parseFloat(profitMargin.toFixed(2)) : null
+				profitMargin: profitMargin ? parseFloat(profitMargin.toFixed(2)) : null,
 			};
 
-			return { 
+			return {
 				message: 'Performance calculated successfully',
-				performance
+				performance,
 			};
 		} catch (error) {
-			return { 
+			return {
 				message: error.message || 'Error calculating performance',
-				performance: null
+				performance: null,
 			};
+		}
+	}
+
+	async isStockAvailable(productId: number, quantity: number): Promise<boolean> {
+		try {
+			const product = await this.getProductByref(productId);
+			return product && product.product.stockQuantity >= quantity;
+		} catch (error) {
+			this.logger.error(`Error checking stock availability: ${error.message}`);
+			return false;
+		}
+	}
+
+	async updateStock(productId: number, quantityChange: number): Promise<void> {
+		try {
+			const product = await this.getProductByref(productId);
+			if (!product.product) {
+				throw new NotFoundException(`Product with ID ${productId} not found`);
+			}
+
+			const newStock = Math.max(0, product.product.stockQuantity + quantityChange);
+			await this.productRepository.update(productId, { stockQuantity: newStock });
+
+			// Update stock history
+			await this.updateStockHistory(productId, Math.abs(quantityChange), quantityChange > 0 ? 'in' : 'out');
+		} catch (error) {
+			this.logger.error(`Error updating stock: ${error.message}`);
+			throw error;
+		}
+	}
+
+	async recordQuotationCreation(productId: number): Promise<void> {
+		try {
+			const analytics = await this.analyticsRepository.findOne({ where: { productId } });
+			if (!analytics) {
+				throw new NotFoundException('Product analytics not found');
+			}
+
+			await this.analyticsRepository.update(
+				{ productId },
+				{ quotationCount: (analytics.quotationCount || 0) + 1 },
+			);
+		} catch (error) {
+			this.logger.error(`Error recording quotation creation: ${error.message}`);
+			// Don't throw, just log the error
 		}
 	}
 }

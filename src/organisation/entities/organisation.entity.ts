@@ -21,6 +21,7 @@ import { CommunicationLog } from 'src/communication/entities/communication-log.e
 import { OrganisationSettings } from './organisation-settings.entity';
 import { OrganisationAppearance } from './organisation-appearance.entity';
 import { OrganisationHours } from './organisation-hours.entity';
+import { Order } from 'src/shop/entities/order.entity';
 
 @Entity('organisation')
 export class Organisation {
@@ -119,6 +120,9 @@ export class Organisation {
 
 	@OneToMany(() => Quotation, (quotation) => quotation?.organisation, { nullable: true })
 	quotations: Quotation[];
+
+	@OneToMany(() => Order, (order) => order?.organisation, { nullable: true })
+	orders: Order[]; 
 
 	@OneToMany(() => Task, (task) => task?.organisation, { nullable: true })
 	tasks: Task[];

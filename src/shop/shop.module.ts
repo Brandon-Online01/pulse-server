@@ -3,26 +3,30 @@ import { ShopService } from './shop.service';
 import { ShopController } from './shop.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Quotation } from './entities/quotation.entity';
-import { Product } from '../products/entities/product.entity';
+import { QuotationItem } from './entities/quotation-item.entity';
+import { Order } from './entities/order.entity';
+import { OrderItem } from './entities/order-item.entity';
 import { Banners } from './entities/banners.entity';
-import { ClientsModule } from '../clients/clients.module';
-import { NotificationsModule } from '../notifications/notifications.module';
-import { CommunicationModule } from '../communication/communication.module';
-import { LicensingModule } from '../licensing/licensing.module';
-import { ShopGateway } from './shop.gateway';
+import { BannersService } from './banners.service';
 import { ProductsModule } from '../products/products.module';
+import { ClientsModule } from '../clients/clients.module';
+import { ShopGateway } from './shop.gateway';
+import { QuotationConversionService } from './services/quotation-conversion.service';
+import { QuotationConversionController } from './controllers/quotation-conversion.controller';
+import { Product } from '../products/entities/product.entity';
+import { LicensingModule } from '../licensing/licensing.module';
+import { UserModule } from '../user/user.module';
 
 @Module({
-  imports: [
-    LicensingModule,
-    ClientsModule,
-    NotificationsModule,
-    CommunicationModule,
-    ProductsModule,
-    TypeOrmModule.forFeature([Quotation, Product, Banners])
-  ],
-  controllers: [ShopController],
-  providers: [ShopService, ShopGateway],
-  exports: [ShopService]
+	imports: [
+		TypeOrmModule.forFeature([Quotation, QuotationItem, Order, OrderItem, Banners, Product]),
+		ProductsModule,
+		ClientsModule,
+		LicensingModule,
+		UserModule,
+	],
+	controllers: [ShopController, QuotationConversionController],
+	providers: [ShopService, ShopGateway, BannersService, QuotationConversionService],
+	exports: [ShopService],
 })
-export class ShopModule { }
+export class ShopModule {}

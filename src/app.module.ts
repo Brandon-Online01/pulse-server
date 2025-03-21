@@ -79,6 +79,8 @@ import { Competitor } from './competitors/entities/competitor.entity';
 import { Geofence } from './tracking/entities/geofence.entity';
 import { GeofenceEvent } from './tracking/entities/geofence-event.entity';
 import { Reward } from './rewards/entities/reward.entity';
+import { Order } from './shop/entities/order.entity';
+import { OrderItem } from './shop/entities/order-item.entity';
 
 @Module({
 	imports: [
@@ -146,6 +148,8 @@ import { Reward } from './rewards/entities/reward.entity';
 				Geofence,
 				GeofenceEvent,
 				Reward,
+				Order,
+				OrderItem,
 			],
 			synchronize: true,
 			retryAttempts: 100,

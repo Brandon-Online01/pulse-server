@@ -1,4 +1,4 @@
-import { IsBoolean, IsEnum, IsNotEmpty, IsString } from "class-validator";
+import { IsBoolean, IsEnum, IsNotEmpty, IsString, IsOptional } from "class-validator";
 import { ApiProperty } from "@nestjs/swagger";
 import { BannerCategory } from "src/lib/enums/category.enum";
 
@@ -56,4 +56,40 @@ export class CreateBannerDto {
         example: false
     })
     isDeleted: boolean;
+
+    @IsString()
+    @IsOptional()
+    @ApiProperty({
+        description: 'Content or message of the banner',
+        example: 'Get up to 50% off on all summer items'
+    })
+    content: string;
+
+    @IsString()
+    @IsOptional()
+    @ApiProperty({
+        description: 'Image URL for the banner',
+        required: false,
+        example: 'https://example.com/images/summer-sale.jpg'
+    })
+    imageUrl?: string;
+
+    @IsString()
+    @IsOptional()
+    @ApiProperty({
+        description: 'Link URL when banner is clicked',
+        required: false,
+        example: 'https://example.com/sale/summer'
+    })
+    linkUrl?: string;
+
+    @IsBoolean()
+    @IsOptional()
+    @ApiProperty({
+        description: 'Whether the banner is active',
+        required: false,
+        default: true,
+        example: true
+    })
+    isActive?: boolean;
 } 
