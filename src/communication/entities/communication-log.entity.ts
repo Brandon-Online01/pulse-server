@@ -1,6 +1,6 @@
 import { Branch } from 'src/branch/entities/branch.entity';
 import { Organisation } from 'src/organisation/entities/organisation.entity';
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne } from 'typeorm';
 
 @Entity('communication_logs')
 export class CommunicationLog {
@@ -42,10 +42,10 @@ export class CommunicationLog {
 
 	@Column({ type: 'timestamp', nullable: false, default: () => 'CURRENT_TIMESTAMP' })
 	createdAt: Date;
-	
+
 	@ManyToOne(() => Branch, (branch) => branch?.communicationLogs)
 	branch: Branch;
 
 	@ManyToOne(() => Organisation, (organisation) => organisation?.communicationLogs)
 	organisation: Organisation;
-} 
+}

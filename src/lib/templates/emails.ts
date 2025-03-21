@@ -216,11 +216,15 @@ export const NewQuotationClient = (data: QuotationData): string => {
     </tr>
   `).join('');
 
+  // Generate approve/decline URLs if reviewUrl is available
+  const approveUrl = data.reviewUrl ? `${data.reviewUrl}&action=approve` : '';
+  const declineUrl = data.reviewUrl ? `${data.reviewUrl}&action=decline` : '';
+
   return `
     <div style="${BASE_STYLES.wrapper}">
       <div style="${BASE_STYLES.container}">
         <div style="${BASE_STYLES.header}">
-          <h1 style="margin: 16px 0 8px; font-size: 24px;">Quotation Generated</h1>
+          <h1 style="margin: 16px 0 8px; font-size: 24px; font-family: Unbounded, sans-serif; font-weight: 600;">Quotation Generated</h1>
           <p style="margin: 0; opacity: 0.9;">Reference: ${data.quotationId}</p>
         </div>
 
@@ -259,13 +263,51 @@ export const NewQuotationClient = (data: QuotationData): string => {
           </div>
 
           <div style="${BASE_STYLES.card}">
-            <h3 style="${BASE_STYLES.heading}">Next Steps</h3>
-            <p style="${BASE_STYLES.text}">To proceed with this quotation:</p>
-            <ol style="margin: 16px 0; padding-left: 20px;">
-              <li>Review the quotation details carefully</li>
-              <li>Contact us for any clarifications needed</li>
-              <li>Accept the quotation through our platform or by replying to this email</li>
-            </ol>
+            <h3 style="${BASE_STYLES.heading}">Your Decision</h3>
+            <p style="${BASE_STYLES.text}">Please review this quotation and choose one of the following options:</p>
+            
+            <div style="text-align: center; margin: 32px 0;">
+              <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td>
+                    <table border="0" cellspacing="0" cellpadding="0">
+                      <tr>
+                        <td align="center" style="border-radius: 8px;" bgcolor="#10b981">
+                          <a href="${approveUrl}" target="_blank" style="${BASE_STYLES.button}; background-color: #10b981; color: white; font-weight: 600; padding: 12px 24px; font-size: 16px; text-decoration: none; display: inline-block; border-radius: 8px;">
+                            APPROVE
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                  <td width="20">&nbsp;</td>
+                  <td>
+                    <table border="0" cellspacing="0" cellpadding="0">
+                      <tr>
+                        <td align="center" style="border-radius: 8px;" bgcolor="#ef4444">
+                          <a href="${declineUrl}" target="_blank" style="${BASE_STYLES.button}; background-color: #ef4444; color: white; font-weight: 600; padding: 12px 24px; font-size: 16px; text-decoration: none; display: inline-block; border-radius: 8px;">
+                            DECLINE
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                  <td width="20">&nbsp;</td>
+                  <td>
+                    <table border="0" cellspacing="0" cellpadding="0">
+                      <tr>
+                        <td align="center" style="border-radius: 8px;" bgcolor="#6b7280">
+                          <a href="${data.reviewUrl}" target="_blank" style="${BASE_STYLES.button}; background-color: #6b7280; color: white; font-weight: 600; padding: 12px 24px; font-size: 16px; text-decoration: none; display: inline-block; border-radius: 8px;">
+                            REVIEW DETAILS
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin-top: 20px; font-size: 14px; color: #6b7280;">Click the appropriate button above to respond to this quotation</p>
+            </div>
           </div>
         </div>
 
@@ -494,6 +536,36 @@ export const QuotationStatusUpdate = (data: QuotationData): string => {
       description: 'Your order has been delivered successfully.',
       color: '#A855F7', // Purple color (matching the header)
       next: 'We hope you enjoy your purchase!'
+    },
+    sourcing: {
+      title: 'Sourcing',
+      description: 'We are currently sourcing the items from your quotation.',
+      color: '#A855F7', // Purple color (matching the header)
+      next: 'Once all items are sourced, we\'ll move to the packing phase.'
+    },
+    packing: {
+      title: 'Packing',
+      description: 'Your order is currently being packed.',
+      color: '#A855F7', // Purple color (matching the header)
+      next: 'Once packing is complete, your order will move to fulfillment.'
+    },
+    in_fulfillment: {
+      title: 'In Fulfillment',
+      description: 'Your order is now in the fulfillment process.',
+      color: '#A855F7', // Purple color (matching the header)
+      next: 'We\'re preparing your order for shipping or pickup.'
+    },
+    paid: {
+      title: 'Paid',
+      description: 'We\'ve received payment for your order.',
+      color: '#A855F7', // Purple color (matching the header)
+      next: 'Your order will be prepared for delivery soon.'
+    },
+    returned: {
+      title: 'Returned',
+      description: 'Your order has been marked as returned.',
+      color: '#A855F7', // Purple color (matching the header)
+      next: 'Our team will process the return and contact you regarding next steps.'
     }
   };
 

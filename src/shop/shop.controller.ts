@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards, Req } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards, Req, Query } from '@nestjs/common';
 import { ShopService } from './shop.service';
 import { AuthGuard } from '../guards/auth.guard';
 import { RoleGuard } from '../guards/role.guard';
@@ -12,6 +12,7 @@ import {
 	ApiBadRequestResponse,
 	ApiNotFoundResponse,
 	ApiUnauthorizedResponse,
+	ApiQuery,
 } from '@nestjs/swagger';
 import { Roles } from '../decorators/role.decorator';
 import { Product } from '../products/entities/product.entity';
@@ -22,6 +23,7 @@ import { UpdateBannerDto } from './dto/update-banner.dto';
 import { EnterpriseOnly } from '../decorators/enterprise-only.decorator';
 import { OrderStatus } from '../lib/enums/status.enums';
 import { AuthenticatedRequest } from '../lib/interfaces/authenticated-request.interface';
+import { isPublic } from '../decorators/public.decorator';
 
 @ApiTags('shop')
 @Controller('shop')
@@ -456,7 +458,7 @@ export class ShopController {
 		summary: 'Update quotation status',
 		description: 'Updates the status of a quotation or order',
 	})
-	@ApiParam({ name: 'ref', description: 'Quotation reference code or ID', type: 'number' })
+	@ApiParam({ name: 'ref', description: 'Quotation reference ID', type: 'number' })
 	@ApiBody({
 		schema: {
 			type: 'object',
@@ -464,9 +466,10 @@ export class ShopController {
 				status: {
 					type: 'string',
 					enum: Object.values(OrderStatus),
-					example: OrderStatus.INPROGRESS,
+					example: OrderStatus.APPROVED,
 				},
 			},
+			required: ['status'],
 		},
 	})
 	@ApiOkResponse({
@@ -474,25 +477,18 @@ export class ShopController {
 		schema: {
 			type: 'object',
 			properties: {
-				message: { type: 'string', example: 'Success' },
-			},
-		},
-	})
-	@ApiNotFoundResponse({
-		description: 'Quotation not found',
-		schema: {
-			type: 'object',
-			properties: {
-				message: { type: 'string', example: 'Quotation not found' },
+				success: { type: 'boolean', example: true },
+				message: { type: 'string', example: 'Quotation status updated successfully' },
 			},
 		},
 	})
 	@ApiBadRequestResponse({
-		description: 'Invalid status value',
+		description: 'Invalid status transition',
 		schema: {
 			type: 'object',
 			properties: {
-				message: { type: 'string', example: 'Invalid status value' },
+				success: { type: 'boolean', example: false },
+				message: { type: 'string', example: 'Invalid status transition' },
 			},
 		},
 	})
@@ -503,8 +499,7 @@ export class ShopController {
 	) {
 		const orgId = req.user?.org?.uid;
 		const branchId = req.user?.branch?.uid;
-		await this.shopService.updateQuotationStatus(ref, status, orgId, branchId);
-		return { message: 'Success' };
+		return this.shopService.updateQuotationStatus(ref, status, orgId, branchId);
 	}
 
 	//banners
@@ -731,5 +726,183 @@ export class ShopController {
 		const orgId = req.user?.org?.uid;
 		const branchId = req.user?.branch?.uid;
 		return this.shopService.regenerateAllSKUs(orgId, branchId);
+	}
+
+	@Get('quotation/validate-review-token')
+	@isPublic() // This makes the endpoint public (no authentication required)
+	@ApiOperation({
+		summary: 'Validate a quotation review token',
+		description: 'Checks if a quotation review token is valid and returns the quotation details',
+	})
+	@ApiQuery({ name: 'token', required: true, type: 'string' })
+	@ApiQuery({ name: 'action', required: false, enum: ['approve', 'decline'], description: 'Optional action to perform' })
+	@ApiOkResponse({
+		description: 'Token is valid',
+		schema: {
+			type: 'object',
+			properties: {
+				valid: { type: 'boolean', example: true },
+				quotation: {
+					type: 'object',
+					properties: {
+						uid: { type: 'number' },
+						quotationNumber: { type: 'string' },
+						status: { type: 'string' },
+						// Additional quotation properties as needed
+					}
+				},
+				message: { type: 'string', example: 'Token is valid' },
+				actionPerformed: { type: 'boolean', example: false },
+				actionResult: { 
+					type: 'object',
+					properties: {
+						success: { type: 'boolean', example: true },
+						message: { type: 'string', example: 'Quotation approved successfully' }
+					}
+				}
+			},
+		},
+	})
+	@ApiBadRequestResponse({
+		description: 'Token is invalid',
+		schema: {
+			type: 'object',
+			properties: {
+				valid: { type: 'boolean', example: false },
+				message: { type: 'string', example: 'Token is invalid or expired' },
+			},
+		},
+	})
+	async validateReviewToken(
+		@Query('token') token: string,
+		@Query('action') action?: 'approve' | 'decline'
+	) {
+		// First validate the token
+		const validationResult = await this.shopService.validateReviewToken(token);
+		
+		// If token is valid and an action is specified, perform the action
+		if (validationResult.valid && action && ['approve', 'decline'].includes(action)) {
+			const status = action === 'approve' 
+				? OrderStatus.APPROVED 
+				: OrderStatus.REJECTED;
+				
+			const actionResult = await this.shopService.updateQuotationStatusByToken(
+				token, 
+				status,
+				action === 'approve' ? 'Approved via email link' : 'Declined via email link'
+			);
+			
+			return {
+				...validationResult,
+				actionPerformed: true,
+				actionResult
+			};
+		}
+		
+		return validationResult;
+	}
+
+	@Patch('quotation/update-status-by-token')
+	@isPublic()
+	@ApiOperation({
+		summary: 'Update quotation status using a token',
+		description: 'Updates the status of a quotation using a review token',
+	})
+	@ApiBody({
+		schema: {
+			type: 'object',
+			properties: {
+				token: {
+					type: 'string',
+					example: 'abc123...',
+				},
+				status: {
+					type: 'string',
+					enum: [OrderStatus.APPROVED, OrderStatus.REJECTED],
+					example: OrderStatus.APPROVED,
+				},
+				comments: {
+					type: 'string',
+					example: 'Looks good, please proceed.',
+				},
+			},
+			required: ['token', 'status'],
+		},
+	})
+	@ApiOkResponse({
+		description: 'Quotation status updated successfully',
+		schema: {
+			type: 'object',
+			properties: {
+				success: { type: 'boolean', example: true },
+				message: { type: 'string', example: 'Quotation status updated successfully' },
+			},
+		},
+	})
+	@ApiBadRequestResponse({
+		description: 'Invalid token or status',
+		schema: {
+			type: 'object',
+			properties: {
+				success: { type: 'boolean', example: false },
+				message: { type: 'string', example: 'Invalid token or status' },
+			},
+		},
+	})
+	async updateQuotationStatusByToken(
+		@Body('token') token: string,
+		@Body('status') status: OrderStatus,
+		@Body('comments') comments?: string,
+	) {
+		return this.shopService.updateQuotationStatusByToken(token, status, comments);
+	}
+
+	@Post('quotation/:ref/send-to-client')
+	@Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.OWNER,
+	)
+	@ApiOperation({
+		summary: 'Send a quotation to the client for review',
+		description: 'Updates quotation status to pending client review and sends email with review link',
+	})
+	@ApiParam({ name: 'ref', description: 'Quotation reference ID', type: 'number' })
+	@ApiOkResponse({
+		description: 'Quotation sent successfully',
+		schema: {
+			type: 'object',
+			properties: {
+				success: { type: 'boolean', example: true },
+				message: { type: 'string', example: 'Quotation has been sent to the client for review.' },
+			},
+		},
+	})
+	@ApiBadRequestResponse({
+		description: 'Bad Request - Invalid status transition',
+		schema: {
+			type: 'object',
+			properties: {
+				success: { type: 'boolean', example: false },
+				message: { type: 'string', example: 'Cannot send quotation to client. Current status is invalid.' },
+			},
+		},
+	})
+	@ApiNotFoundResponse({
+		description: 'Quotation not found',
+		schema: {
+			type: 'object',
+			properties: {
+				success: { type: 'boolean', example: false },
+				message: { type: 'string', example: 'Quotation not found' },
+			},
+		},
+	})
+	async sendQuotationToClient(@Param('ref') ref: number, @Req() req: AuthenticatedRequest) {
+		const orgId = req.user?.org?.uid;
+		const branchId = req.user?.branch?.uid;
+		return this.shopService.sendQuotationToClient(ref, orgId, branchId);
 	}
 }

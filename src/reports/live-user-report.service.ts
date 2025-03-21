@@ -8,7 +8,7 @@ import { Journal } from '../journal/entities/journal.entity';
 import { Tracking } from '../tracking/entities/tracking.entity';
 import { DailyUserActivityReport } from './report.types';
 import { TaskStatus, TaskPriority } from '../lib/enums/task.enums';
-import { differenceInMinutes, differenceInHours } from 'date-fns';
+import { differenceInMinutes } from 'date-fns';
 import { Attendance } from '../attendance/entities/attendance.entity';
 import { AttendanceStatus } from '../lib/enums/attendance.enums';
 

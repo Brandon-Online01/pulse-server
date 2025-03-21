@@ -194,16 +194,24 @@ export class ShopService {
                 throw new Error(`Products not found for items: ${missingProducts.map(item => item.uid).join(', ')}`);
             }
 
+            // Generate a unique review token for the quotation
+            const timestamp = Date.now();
+            const reviewToken = Buffer.from(`${quotationData?.client?.uid}-${timestamp}-${Math.random().toString(36).substring(2, 15)}`).toString('base64');
+            const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+            const reviewUrl = `${frontendUrl}/review-quotation?token=${reviewToken}`;
+
             const newQuotation = {
                 quotationNumber: `QUO-${Date.now()}`,
                 totalItems: Number(quotationData?.totalItems),
                 totalAmount: Number(quotationData?.totalAmount),
                 placedBy: { uid: quotationData?.owner?.uid },
                 client: { uid: quotationData?.client?.uid },
-                status: OrderStatus.PENDING,
+                status: OrderStatus.DRAFT,
                 quotationDate: new Date(),
                 createdAt: new Date(),
                 updatedAt: new Date(),
+                reviewToken: reviewToken,
+                reviewUrl: reviewUrl,
                 quotationItems: quotationData?.items?.map(item => {
                     const product = products.flat().find(p => p.uid === item.uid);
                     return {
@@ -242,15 +250,6 @@ export class ShopService {
                     await this.productsService.recordView(product.uid);
                     await this.productsService.recordCartAdd(product.uid);
 
-                    // If quotation is approved, record the sale
-                    if (savedQuotation.status === OrderStatus.APPROVED) {
-                        await this.productsService.recordSale(
-                            product.uid,
-                            item.quantity,
-                            Number(product.price)
-                        );
-                    }
-
                     // Update stock history
                     await this.productsService.updateStockHistory(
                         product.uid,
@@ -272,6 +271,7 @@ export class ShopService {
                 validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days validity
                 total: Number(savedQuotation?.totalAmount),
                 currency: this.currencyCode,
+                reviewUrl: savedQuotation.reviewUrl,
                 quotationItems: quotationData?.items?.map(item => {
                     const product = products.flat().find(p => p.uid === item.uid);
                     return {
@@ -286,27 +286,28 @@ export class ShopService {
                 })
             }
 
-            const clientConfig = {
-                ...baseConfig,
-            }
+            // Only send internal notification and order acknowledgment to client
+            // Do NOT send the full quotation to the client yet
+            
+            // Notify internal team about new quotation
+            this.eventEmitter.emit('send.email', EmailType.NEW_QUOTATION_INTERNAL, [internalEmail], baseConfig);
 
-            const internalConfig = {
-                ...baseConfig,
-            }
-
-            const resellerConfigs = resellerEmails?.map(email => ({
-                ...baseConfig,
-                name: email?.retailerName,
-                email: email?.email,
-            }));
-
-            this.eventEmitter.emit('send.email', EmailType.NEW_QUOTATION_INTERNAL, [internalEmail], internalConfig);
-
-            resellerConfigs?.forEach(config => {
-                this.eventEmitter.emit('send.email', EmailType.NEW_QUOTATION_RESELLER, [config?.email], config);
+            // Notify resellers about products in the quotation
+            resellerEmails?.forEach(email => {
+                this.eventEmitter.emit('send.email', EmailType.NEW_QUOTATION_RESELLER, [email?.email], {
+                    ...baseConfig,
+                    name: email?.retailerName,
+                    email: email?.email,
+                });
             });
 
-            this.eventEmitter.emit('send.email', EmailType.NEW_QUOTATION_CLIENT, [clientData?.client?.email], clientConfig);
+            // Send order acknowledgment to client (NOT the full quotation)
+            this.eventEmitter.emit('send.email', EmailType.ORDER_RECEIVED_CLIENT, [clientData?.client?.email], {
+                name: clientName,
+                quotationId: savedQuotation?.quotationNumber,
+                // Don't include detailed information yet
+                message: 'We have received your order request and will prepare a quotation for you shortly.',
+            });
 
             return {
                 message: process.env.SUCCESS_MESSAGE,
@@ -652,7 +653,7 @@ export class ShopService {
         return this.productRepository.save(product);
     }
 
-    async updateQuotationStatus(quotationId: number, status: OrderStatus, orgId?: number, branchId?: number): Promise<void> {
+    async updateQuotationStatus(quotationId: number, status: OrderStatus, orgId?: number, branchId?: number): Promise<{ success: boolean; message: string }> {
         // Build query with org and branch filters
         const queryBuilder = this.quotationRepository.createQueryBuilder('quotation')
             .where('quotation.uid = :quotationId', { quotationId });
@@ -674,12 +675,26 @@ export class ShopService {
         
         const quotation = await queryBuilder.getOne();
 
-        if (!quotation) return;
+        if (!quotation) {
+            return {
+                success: false,
+                message: 'Quotation not found'
+            };
+        }
 
         const previousStatus = quotation.status;
         
-        // If quotation is approved, update product analytics
+        // Validate status transition
+        if (!this.isValidStatusTransition(previousStatus, status)) {
+            return {
+                success: false,
+                message: `Invalid status transition from ${previousStatus} to ${status}`
+            };
+        }
+        
+        // Special handling for specific status transitions
         if (status === OrderStatus.APPROVED) {
+            // Update product analytics when quotation is approved
             for (const item of quotation?.quotationItems) {
                 await this.productsService?.recordSale(
                     item?.product?.uid,
@@ -691,19 +706,22 @@ export class ShopService {
         }
 
         // Update the quotation status
-        await this.quotationRepository.update(quotationId, { status });
+        await this.quotationRepository.update(quotationId, { 
+            status,
+            updatedAt: new Date()
+        });
 
         // Only send notification if the status has changed
-        if (previousStatus !== status && quotation.client?.email) {
+        if (previousStatus !== status) {
             try {
                 // Prepare email data
                 const emailData = {
-                    name: quotation.client.name || quotation.client.email.split('@')[0],
+                    name: quotation.client?.name || quotation.client?.email?.split('@')[0] || 'Valued Customer',
                     quotationId: quotation.quotationNumber,
                     validUntil: quotation.validUntil || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now if not set
                     total: Number(quotation.totalAmount),
                     currency: this.currencyCode,
-                    status: status.toLowerCase(),
+                    status: status,
                     quotationItems: quotation.quotationItems.map(item => ({
                         quantity: item.quantity,
                         product: {
@@ -715,24 +733,221 @@ export class ShopService {
                     }))
                 };
 
-                // Determine which email template to use based on status
+                // Always notify internal team first
+                const internalEmail = this.configService.get<string>('INTERNAL_BROADCAST_EMAIL');
+                
+                // Determine email type and message based on status
                 let emailType = EmailType.QUOTATION_STATUS_UPDATE;
-                if (status === OrderStatus.APPROVED) {
-                    emailType = EmailType.QUOTATION_APPROVED;
-                } else if (status === OrderStatus.REJECTED) {
-                    emailType = EmailType.QUOTATION_REJECTED;
+                let statusMessage = `updated to ${status}`;
+                let clientNotification = true;
+                
+                // Status-specific email templates and messages
+                switch(status) {
+                    case OrderStatus.DRAFT:
+                        emailType = EmailType.NEW_QUOTATION_INTERNAL;
+                        statusMessage = 'created as draft';
+                        clientNotification = false; // Don't notify client for draft status
+                        break;
+                    case OrderStatus.PENDING_INTERNAL:
+                        emailType = EmailType.QUOTATION_READY_FOR_REVIEW;
+                        statusMessage = 'ready for internal review';
+                        clientNotification = false;
+                        break;
+                    case OrderStatus.PENDING_CLIENT:
+                        emailType = EmailType.NEW_QUOTATION_CLIENT;
+                        statusMessage = 'sent to client for review';
+                        // Client notification handled separately below
+                        break;
+                    case OrderStatus.APPROVED:
+                        emailType = EmailType.QUOTATION_APPROVED;
+                        statusMessage = 'approved by client';
+                        break;
+                    case OrderStatus.REJECTED:
+                        emailType = EmailType.QUOTATION_REJECTED;
+                        statusMessage = 'rejected by client';
+                        break;
+                    case OrderStatus.SOURCING:
+                        emailType = EmailType.QUOTATION_SOURCING;
+                        statusMessage = 'being sourced';
+                        break;
+                    case OrderStatus.PACKING:
+                        emailType = EmailType.QUOTATION_PACKING;
+                        statusMessage = 'being packed';
+                        break;
+                    case OrderStatus.IN_FULFILLMENT:
+                        emailType = EmailType.QUOTATION_IN_FULFILLMENT;
+                        statusMessage = 'in fulfillment';
+                        break;
+                    case OrderStatus.PAID:
+                        emailType = EmailType.QUOTATION_PAID;
+                        statusMessage = 'marked as paid';
+                        break;
+                    case OrderStatus.OUTFORDELIVERY:
+                        emailType = EmailType.QUOTATION_SHIPPED;
+                        statusMessage = 'out for delivery';
+                        break;
+                    case OrderStatus.DELIVERED:
+                        emailType = EmailType.QUOTATION_DELIVERED;
+                        statusMessage = 'delivered';
+                        break;
+                    case OrderStatus.RETURNED:
+                        emailType = EmailType.QUOTATION_RETURNED;
+                        statusMessage = 'returned';
+                        break;
+                    case OrderStatus.COMPLETED:
+                        emailType = EmailType.QUOTATION_COMPLETED;
+                        statusMessage = 'completed';
+                        break;
+                    default:
+                        emailType = EmailType.QUOTATION_STATUS_UPDATE;
                 }
 
-                // Emit event for email sending
-                this.eventEmitter.emit('send.email', emailType, [quotation.client.email], emailData);
+                // Internal team notification
+                this.eventEmitter.emit('send.email', emailType, [internalEmail], {
+                    ...emailData,
+                    message: `Quotation ${quotation.quotationNumber} has been ${statusMessage}.`
+                });
                 
-                // Also notify internal team about the status change
+                // Client notification for relevant statuses
+                // Only send client notifications for statuses they need to know about
+                const clientVisibleStatuses = [
+                    OrderStatus.PENDING_CLIENT,
+                    OrderStatus.APPROVED,
+                    OrderStatus.REJECTED,
+                    OrderStatus.SOURCING,
+                    OrderStatus.PACKING,
+                    OrderStatus.IN_FULFILLMENT,
+                    OrderStatus.PAID,
+                    OrderStatus.OUTFORDELIVERY,
+                    OrderStatus.DELIVERED,
+                    OrderStatus.RETURNED,
+                    OrderStatus.COMPLETED
+                ];
+                
+                if (clientNotification && clientVisibleStatuses.includes(status) && quotation.client?.email) {
+                    // Special handling for PENDING_CLIENT status
+                    if (status === OrderStatus.PENDING_CLIENT) {
+                        // Include review URL for client review
+                        this.eventEmitter.emit('send.email', EmailType.NEW_QUOTATION_CLIENT, [quotation.client.email], {
+                            ...emailData,
+                            reviewUrl: quotation.reviewUrl
+                        });
+                    } else {
+                        // Standard notification for other statuses
+                        this.eventEmitter.emit('send.email', emailType, [quotation.client.email], emailData);
+                    }
+                }
+                
+                // Also notify internal team about the status change via WebSocket
                 this.shopGateway.notifyQuotationStatusChanged(quotationId, status);
             } catch (error) {
-                console.error('Failed to send quotation status update email:', error);
+                this.logger.error('Failed to send quotation status update email:', error);
                 // Continue with the process even if email sending fails
             }
         }
+        
+        return {
+            success: true,
+            message: `Quotation status updated to ${status}.`
+        };
+    }
+    
+    // Helper method to validate status transitions
+    private isValidStatusTransition(fromStatus: OrderStatus, toStatus: OrderStatus): boolean {
+        // Define allowed transitions for each status
+        const allowedTransitions = {
+            [OrderStatus.DRAFT]: [
+                OrderStatus.PENDING_INTERNAL,
+                OrderStatus.PENDING_CLIENT,
+                OrderStatus.CANCELLED
+            ],
+            [OrderStatus.PENDING_INTERNAL]: [
+                OrderStatus.PENDING_CLIENT,
+                OrderStatus.DRAFT,
+                OrderStatus.CANCELLED
+            ],
+            [OrderStatus.PENDING_CLIENT]: [
+                OrderStatus.APPROVED,
+                OrderStatus.REJECTED,
+                OrderStatus.NEGOTIATION,
+                OrderStatus.PENDING_INTERNAL,
+                OrderStatus.CANCELLED
+            ],
+            [OrderStatus.NEGOTIATION]: [
+                OrderStatus.PENDING_INTERNAL,
+                OrderStatus.PENDING_CLIENT,
+                OrderStatus.APPROVED,
+                OrderStatus.REJECTED,
+                OrderStatus.CANCELLED
+            ],
+            [OrderStatus.APPROVED]: [
+                OrderStatus.SOURCING,
+                OrderStatus.PACKING,
+                OrderStatus.IN_FULFILLMENT,
+                OrderStatus.CANCELLED,
+                OrderStatus.NEGOTIATION
+            ],
+            [OrderStatus.SOURCING]: [
+                OrderStatus.PACKING,
+                OrderStatus.IN_FULFILLMENT,
+                OrderStatus.CANCELLED
+            ],
+            [OrderStatus.PACKING]: [
+                OrderStatus.IN_FULFILLMENT,
+                OrderStatus.OUTFORDELIVERY,
+                OrderStatus.CANCELLED
+            ],
+            [OrderStatus.IN_FULFILLMENT]: [
+                OrderStatus.PAID,
+                OrderStatus.PACKING,
+                OrderStatus.OUTFORDELIVERY,
+                OrderStatus.CANCELLED
+            ],
+            [OrderStatus.PAID]: [
+                OrderStatus.PACKING,
+                OrderStatus.OUTFORDELIVERY,
+                OrderStatus.DELIVERED,
+                OrderStatus.CANCELLED
+            ],
+            [OrderStatus.OUTFORDELIVERY]: [
+                OrderStatus.DELIVERED,
+                OrderStatus.RETURNED,
+                OrderStatus.CANCELLED
+            ],
+            [OrderStatus.DELIVERED]: [
+                OrderStatus.COMPLETED,
+                OrderStatus.RETURNED,
+                OrderStatus.CANCELLED
+            ],
+            [OrderStatus.RETURNED]: [
+                OrderStatus.COMPLETED,
+                OrderStatus.CANCELLED,
+                OrderStatus.SOURCING,
+                OrderStatus.PACKING
+            ],
+            // Legacy statuses support - maintain backward compatibility
+            [OrderStatus.PENDING]: [
+                OrderStatus.INPROGRESS,
+                OrderStatus.APPROVED,
+                OrderStatus.REJECTED,
+                OrderStatus.CANCELLED,
+                OrderStatus.PENDING_INTERNAL,
+                OrderStatus.PENDING_CLIENT
+            ],
+            [OrderStatus.INPROGRESS]: [
+                OrderStatus.COMPLETED,
+                OrderStatus.CANCELLED,
+                OrderStatus.IN_FULFILLMENT,
+                OrderStatus.SOURCING,
+                OrderStatus.PACKING,
+                OrderStatus.OUTFORDELIVERY,
+                OrderStatus.DELIVERED
+            ]
+        };
+        
+        // Allow any transition for admin override (can be restricted based on roles later)
+        // Check if the transition is allowed
+        return allowedTransitions[fromStatus]?.includes(toStatus) || false;
     }
 
     async generateSKUsForExistingProducts(orgId?: number, branchId?: number): Promise<{ message: string, updatedCount: number }> {
@@ -1104,6 +1319,306 @@ export class ShopService {
             },
             message: process.env.SUCCESS_MESSAGE
         };
+    }
+
+    async validateReviewToken(token: string): Promise<{ valid: boolean; quotation?: Quotation; message: string }> {
+        try {
+            // Find quotation by token
+            const quotation = await this.quotationRepository.findOne({
+                where: { reviewToken: token },
+                relations: ['client', 'quotationItems', 'quotationItems.product', 'organisation', 'branch'],
+            });
+
+            if (!quotation) {
+                return {
+                    valid: false,
+                    message: 'Invalid token. No quotation found with this token.',
+                };
+            }
+
+            // Check if the quotation is in a state that allows client review
+            const allowedReviewStatuses = [
+                OrderStatus.PENDING_CLIENT,
+                OrderStatus.NEGOTIATION,
+                OrderStatus.PENDING // Legacy status
+            ];
+            
+            if (!allowedReviewStatuses.includes(quotation.status)) {
+                // If already processed
+                if ([
+                    OrderStatus.COMPLETED,
+                    OrderStatus.REJECTED,
+                    OrderStatus.CANCELLED,
+                    OrderStatus.APPROVED,
+                    OrderStatus.IN_FULFILLMENT,
+                    OrderStatus.DELIVERED,
+                    OrderStatus.PAID
+                ].includes(quotation.status)) {
+                    return {
+                        valid: false,
+                        message: `This quotation has already been ${quotation.status}.`,
+                    };
+                }
+                
+                // For other statuses
+                return {
+                    valid: false,
+                    message: `This quotation is not available for review. Current status: ${quotation.status}.`,
+                };
+            }
+
+            // Check token expiry based on the validUntil date of the quotation
+            const now = new Date();
+            if (quotation.validUntil && now > quotation.validUntil) {
+                return {
+                    valid: false,
+                    message: 'This quotation has expired. Please contact us for a new quotation.',
+                };
+            }
+
+            // If all checks pass, return the quotation
+            return {
+                valid: true,
+                quotation,
+                message: 'Token is valid',
+            };
+        } catch (error) {
+            this.logger.error(`Error validating review token: ${error.message}`, error.stack);
+            return {
+                valid: false,
+                message: 'An error occurred while validating the token.',
+            };
+        }
+    }
+
+    async updateQuotationStatusByToken(
+        token: string,
+        status: OrderStatus,
+        comments?: string
+    ): Promise<{ success: boolean; message: string }> {
+        try {
+            // Only allow APPROVED, REJECTED, or NEGOTIATION statuses from client review
+            if (![OrderStatus.APPROVED, OrderStatus.REJECTED, OrderStatus.NEGOTIATION].includes(status)) {
+                return {
+                    success: false,
+                    message: 'Invalid status. Only APPROVED, REJECTED, or NEGOTIATION are allowed.',
+                };
+            }
+
+            // Validate the token first
+            const tokenValidation = await this.validateReviewToken(token);
+            if (!tokenValidation.valid || !tokenValidation.quotation) {
+                return {
+                    success: false,
+                    message: tokenValidation.message,
+                };
+            }
+
+            const quotation = tokenValidation.quotation;
+
+            // Add comments if provided
+            if (comments) {
+                await this.quotationRepository.update(quotation.uid, { 
+                    status, 
+                    notes: quotation.notes 
+                        ? `${quotation.notes}\n\nClient feedback: ${comments}` 
+                        : `Client feedback: ${comments}`,
+                    updatedAt: new Date()
+                });
+            } else {
+                await this.quotationRepository.update(quotation.uid, { 
+                    status,
+                    updatedAt: new Date()
+                });
+            }
+
+            // Send notification emails
+            try {
+                // Get the updated quotation with all relations
+                const updatedQuotation = await this.quotationRepository.findOne({
+                    where: { uid: quotation.uid },
+                    relations: ['client', 'quotationItems', 'quotationItems.product'],
+                });
+
+                if (updatedQuotation && updatedQuotation.client?.email) {
+                    // Special handling for approved status - update product metrics
+                    if (status === OrderStatus.APPROVED) {
+                        for (const item of updatedQuotation.quotationItems) {
+                            if (item.product && item.product.uid) {
+                                await this.productsService.recordSale(
+                                    item.product.uid,
+                                    item.quantity,
+                                    Number(item.totalPrice)
+                                );
+                                await this.productsService.calculateProductPerformance(item.product.uid);
+                            }
+                        }
+                    }
+
+                    // Prepare email data
+                    const emailData = {
+                        name: updatedQuotation.client.name || updatedQuotation.client.email.split('@')[0],
+                        quotationId: updatedQuotation.quotationNumber,
+                        validUntil: updatedQuotation.validUntil || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+                        total: Number(updatedQuotation.totalAmount),
+                        currency: this.currencyCode,
+                        status: status,
+                        quotationItems: updatedQuotation.quotationItems.map(item => ({
+                            quantity: item.quantity,
+                            product: {
+                                uid: item.product.uid,
+                                name: item.product.name,
+                                code: item.product.sku || `SKU-${item.product.uid}`
+                            },
+                            totalPrice: Number(item.totalPrice)
+                        }))
+                    };
+
+                    // Determine which email template to use based on status
+                    let emailType = EmailType.QUOTATION_STATUS_UPDATE;
+                    
+                    switch(status) {
+                        case OrderStatus.APPROVED:
+                            emailType = EmailType.QUOTATION_APPROVED;
+                            break;
+                        case OrderStatus.REJECTED:
+                            emailType = EmailType.QUOTATION_REJECTED;
+                            break;
+                    }
+
+                    // Emit event for email sending
+                    this.eventEmitter.emit('send.email', emailType, [updatedQuotation.client.email], emailData);
+                
+                    // Also notify internal team about the status change
+                    this.shopGateway.notifyQuotationStatusChanged(quotation.uid, status);
+                }
+            } catch (error) {
+                // Log but don't fail if emails fail
+                this.logger.error(`Failed to send quotation status update email: ${error.message}`, error.stack);
+            }
+
+            // Determine appropriate success message
+            let successMsg: string;
+            if (status === OrderStatus.APPROVED) {
+                successMsg = 'Quotation has been approved successfully.';
+            } else if (status === OrderStatus.REJECTED) {
+                successMsg = 'Quotation has been rejected.';
+            } else if (status === OrderStatus.NEGOTIATION) {
+                successMsg = 'Feedback submitted. Our team will review your comments and get back to you shortly.';
+            } else {
+                successMsg = `Quotation status has been updated to ${status}.`;
+            }
+
+            return {
+                success: true,
+                message: successMsg
+            };
+        } catch (error) {
+            this.logger.error(`Error updating quotation status by token: ${error.message}`, error.stack);
+            return {
+                success: false,
+                message: 'An error occurred while updating the quotation status.',
+            };
+        }
+    }
+
+    async sendQuotationToClient(quotationId: number, orgId?: number, branchId?: number): Promise<{ success: boolean; message: string }> {
+        try {
+            // Find the quotation with all relations
+            const queryBuilder = this.quotationRepository.createQueryBuilder('quotation')
+                .where('quotation.uid = :quotationId', { quotationId });
+            
+            if (orgId) {
+                queryBuilder.leftJoinAndSelect('quotation.organisation', 'organisation')
+                    .andWhere('organisation.uid = :orgId', { orgId });
+            }
+            
+            if (branchId) {
+                queryBuilder.leftJoinAndSelect('quotation.branch', 'branch')
+                    .andWhere('branch.uid = :branchId', { branchId });
+            }
+            
+            // Add relations
+            queryBuilder.leftJoinAndSelect('quotation.quotationItems', 'quotationItems')
+                .leftJoinAndSelect('quotationItems.product', 'product')
+                .leftJoinAndSelect('quotation.client', 'client');
+            
+            const quotation = await queryBuilder.getOne();
+
+            if (!quotation) {
+                return {
+                    success: false,
+                    message: 'Quotation not found',
+                };
+            }
+
+            // Validate the current status
+            if (quotation.status !== OrderStatus.PENDING_INTERNAL && quotation.status !== OrderStatus.DRAFT) {
+                return {
+                    success: false,
+                    message: `Cannot send quotation to client. Current status is ${quotation.status}.`,
+                };
+            }
+
+            // Update quotation status to PENDING_CLIENT
+            await this.quotationRepository.update(quotationId, { 
+                status: OrderStatus.PENDING_CLIENT,
+                updatedAt: new Date()
+            });
+
+            // Get updated quotation
+            const updatedQuotation = await queryBuilder.getOne();
+
+            if (!updatedQuotation || !updatedQuotation.client?.email) {
+                return {
+                    success: false,
+                    message: 'Failed to update quotation or client email not found',
+                };
+            }
+
+            // Prepare email data
+            const emailData = {
+                name: updatedQuotation.client.name || updatedQuotation.client.email.split('@')[0],
+                quotationId: updatedQuotation.quotationNumber,
+                validUntil: updatedQuotation.validUntil || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+                total: Number(updatedQuotation.totalAmount),
+                currency: this.currencyCode,
+                reviewUrl: updatedQuotation.reviewUrl,
+                quotationItems: updatedQuotation.quotationItems.map(item => ({
+                    quantity: item.quantity,
+                    product: {
+                        uid: item.product.uid,
+                        name: item.product.name,
+                        code: item.product.sku || `SKU-${item.product.uid}`
+                    },
+                    totalPrice: Number(item.totalPrice)
+                }))
+            };
+
+            // Now send the full quotation to the client
+            this.eventEmitter.emit('send.email', EmailType.NEW_QUOTATION_CLIENT, [updatedQuotation.client.email], emailData);
+            
+            // Notify internal team that quotation was sent to client
+            const internalEmail = this.configService.get<string>('INTERNAL_BROADCAST_EMAIL');
+            this.eventEmitter.emit('send.email', EmailType.QUOTATION_STATUS_UPDATE, [internalEmail], {
+                ...emailData,
+                message: `Quotation ${updatedQuotation.quotationNumber} has been sent to the client for review.`
+            });
+
+            // Emit WebSocket event
+            this.shopGateway.notifyQuotationStatusChanged(quotationId, OrderStatus.PENDING_CLIENT);
+
+            return {
+                success: true,
+                message: 'Quotation has been sent to the client for review.',
+            };
+        } catch (error) {
+            this.logger.error(`Error sending quotation to client: ${error.message}`, error.stack);
+            return {
+                success: false,
+                message: 'An error occurred while sending the quotation to client.',
+            };
+        }
     }
 }
 

@@ -98,6 +98,7 @@ export interface QuotationData extends BaseEmailData {
     total: number;
     currency: string;
     status?: string;
+    reviewUrl?: string;
     quotationItems: Array<{
         quantity: number;
         product: { 
@@ -240,6 +241,16 @@ export interface EmailDataMap {
     [EmailType.QUOTATION_APPROVED]: QuotationData;
     [EmailType.QUOTATION_REJECTED]: QuotationData;
     [EmailType.QUOTATION_STATUS_UPDATE]: QuotationData;
+    [EmailType.QUOTATION_READY_FOR_REVIEW]: QuotationData;
+    [EmailType.QUOTATION_UPDATED]: QuotationData;
+    [EmailType.QUOTATION_SOURCING]: QuotationData;
+    [EmailType.QUOTATION_PACKING]: QuotationData;
+    [EmailType.QUOTATION_IN_FULFILLMENT]: QuotationData;
+    [EmailType.QUOTATION_PAID]: QuotationData;
+    [EmailType.QUOTATION_SHIPPED]: QuotationData;
+    [EmailType.QUOTATION_DELIVERED]: QuotationData;
+    [EmailType.QUOTATION_RETURNED]: QuotationData;
+    [EmailType.QUOTATION_COMPLETED]: QuotationData;
     [EmailType.LICENSE_CREATED]: LicenseEmailData;
     [EmailType.LICENSE_UPDATED]: LicenseEmailData;
     [EmailType.LICENSE_LIMIT_REACHED]: LicenseLimitData;
