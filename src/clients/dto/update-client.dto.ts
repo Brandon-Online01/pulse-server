@@ -321,4 +321,13 @@ export class UpdateClientDto extends PartialType(CreateClientDto) {
 		description: 'Social media profiles of the client',
 	})
 	socialProfiles?: SocialProfilesDto;
+
+	@IsOptional()
+	@IsString()
+	@ApiProperty({
+		description: 'GPS coordinates of the client location',
+		example: '-36.3434314, 149.8488864',
+		required: false
+	})
+	gpsCoordinates?: string;
 }

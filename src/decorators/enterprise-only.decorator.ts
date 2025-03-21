@@ -8,6 +8,7 @@ type ModuleName =
     | 'claims'
     | 'clients'
     | 'communication'
+    | 'competitors'
     | 'docs'
     | 'journal'
     | 'leads'

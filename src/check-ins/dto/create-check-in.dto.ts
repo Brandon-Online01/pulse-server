@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, IsObject, IsString } from "class-validator";
+import { IsNotEmpty, IsNumber, IsObject, IsString, IsOptional } from "class-validator";
 import { ApiProperty } from "@nestjs/swagger";
 
 export class CreateCheckInDto {
@@ -47,4 +47,15 @@ export class CreateCheckInDto {
         description: 'The branch reference code of the attendance check in'
     })
     branch: { uid: number };
+
+    @IsOptional()
+    @IsObject()
+    @ApiProperty({
+        example: {
+            uid: 1
+        },
+        description: 'The client associated with this check-in (optional)',
+        required: false
+    })
+    client?: { uid: number };
 }

@@ -1,6 +1,12 @@
+export interface PaginationMeta {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export interface PaginatedResponse<T> {
-    data: T[];
-    total: number;
-    currentPage: number;
-    totalPages: number;
+  data: T[];
+  meta: PaginationMeta;
+  message: string;
 }

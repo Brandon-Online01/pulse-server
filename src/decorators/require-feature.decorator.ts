@@ -7,6 +7,7 @@ type ModuleFeature =
     | `claims.${string}`
     | `clients.${string}`
     | `communication.${string}`
+    | `competitors.${string}`
     | `docs.${string}`
     | `journal.${string}`
     | `leads.${string}`

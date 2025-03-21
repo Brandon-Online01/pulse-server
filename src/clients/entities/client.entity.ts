@@ -51,6 +51,9 @@ export class Client {
         postalCode: string;
     };
 
+    @Column({ type: 'varchar', nullable: true })
+    gpsCoordinates: string;
+
     @Column({ type: 'timestamp', nullable: false, default: () => 'CURRENT_TIMESTAMP' })
     createdAt: Date;
 

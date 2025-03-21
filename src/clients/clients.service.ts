@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, Inject } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject, BadRequestException } from '@nestjs/common';
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -10,6 +10,7 @@ import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { CheckIn } from '../check-ins/entities/check-in.entity';
 
 @Injectable()
 export class ClientsService {
@@ -448,6 +449,141 @@ export class ClientsService {
 				},
 				message: error?.message,
 			};
+		}
+	}
+
+	// Helper function to calculate distance between two GPS coordinates
+	private calculateDistance(
+		lat1: number, 
+		lon1: number, 
+		lat2: number, 
+		lon2: number
+	): number {
+		if (!lat1 || !lon1 || !lat2 || !lon2) {
+			return Number.MAX_VALUE; // Return large value if any coordinate is missing
+		}
+
+		// Convert to radians
+		const R = 6371; // Earth's radius in km
+		const dLat = (lat2 - lat1) * (Math.PI / 180);
+		const dLon = (lon2 - lon1) * (Math.PI / 180);
+		const a = 
+			Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+			Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * 
+			Math.sin(dLon / 2) * Math.sin(dLon / 2);
+		const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+		const distance = R * c; // Distance in km
+		
+		return distance;
+	}
+
+	// Parse GPS coordinates string to latitude and longitude numbers
+	private parseCoordinates(coordsString: string): { latitude: number; longitude: number } | null {
+		if (!coordsString) return null;
+		
+		try {
+			const [latitude, longitude] = coordsString.split(',').map(coord => parseFloat(coord.trim()));
+			if (isNaN(latitude) || isNaN(longitude)) return null;
+			return { latitude, longitude };
+		} catch (error) {
+			return null;
+		}
+	}
+
+	async findNearbyClients(
+		latitude: number,
+		longitude: number,
+		radius: number = 5,
+		orgId?: number,
+		branchId?: number,
+	): Promise<{ message: string; clients: Array<Client & { distance: number }> }> {
+		try {
+			if (isNaN(latitude) || isNaN(longitude) || isNaN(radius)) {
+				throw new BadRequestException('Invalid coordinates or radius');
+			}
+
+			// Build query filters
+			const whereConditions: FindOptionsWhere<Client> = {
+				isDeleted: false,
+			};
+
+			if (orgId) {
+				whereConditions.organisation = { uid: orgId };
+			}
+
+			if (branchId) {
+				whereConditions.branch = { uid: branchId };
+			}
+
+			// Get all clients with GPS coordinates
+			const clients = await this.clientsRepository.find({
+				where: whereConditions,
+				relations: ['organisation', 'branch'],
+			});
+
+			// Filter clients with valid GPS coordinates and calculate distances
+			const nearbyClients = clients
+				.map(client => {
+					const coords = this.parseCoordinates(client.gpsCoordinates);
+					if (!coords) return null;
+
+					const distance = this.calculateDistance(
+						latitude, 
+						longitude, 
+						coords.latitude, 
+						coords.longitude
+					);
+
+					return { ...client, distance };
+				})
+				.filter(client => client !== null && client.distance <= radius)
+				.sort((a, b) => a.distance - b.distance);
+
+			return {
+				message: process.env.SUCCESS_MESSAGE || 'Success',
+				clients: nearbyClients,
+			};
+		} catch (error) {
+			throw new BadRequestException(error?.message || 'Error finding nearby clients');
+		}
+	}
+
+	async getClientCheckIns(
+		clientId: number,
+		orgId?: number,
+		branchId?: number,
+	): Promise<{ message: string; checkIns: CheckIn[] }> {
+		try {
+			// Find the client first to confirm it exists and belongs to the right org/branch
+			const clientResult = await this.findOne(clientId, orgId, branchId);
+			if (!clientResult.client) {
+				throw new NotFoundException('Client not found');
+			}
+
+			// Get check-ins for this client
+			const client = await this.clientsRepository.findOne({
+				where: { uid: clientId },
+				relations: ['checkIns', 'checkIns.owner'],
+			});
+
+			if (!client || !client.checkIns) {
+				return {
+					message: process.env.SUCCESS_MESSAGE || 'Success',
+					checkIns: [],
+				};
+			}
+
+			// Sort check-ins by date, most recent first
+			const sortedCheckIns = client.checkIns.sort(
+				(a, b) => new Date(b.checkInTime).getTime() - new Date(a.checkInTime).getTime()
+			);
+
+			return {
+				message: process.env.SUCCESS_MESSAGE || 'Success',
+				checkIns: sortedCheckIns,
+			};
+		} catch (error) {
+			throw new BadRequestException(error?.message || 'Error fetching client check-ins');
 		}
 	}
 }

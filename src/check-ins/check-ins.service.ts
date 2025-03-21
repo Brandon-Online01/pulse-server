@@ -9,6 +9,7 @@ import { RewardsService } from '../rewards/rewards.service';
 import { XP_VALUES_TYPES } from '../lib/constants/constants';
 import { XP_VALUES } from '../lib/constants/constants';
 import { User } from 'src/user/entities/user.entity';
+import { Client } from 'src/clients/entities/client.entity';
 
 @Injectable()
 export class CheckInsService {
@@ -18,6 +19,8 @@ export class CheckInsService {
 		private rewardsService: RewardsService,
 		@InjectRepository(User)
 		private userRepository: Repository<User>,
+		@InjectRepository(Client)
+		private clientRepository: Repository<Client>,
 	) {}
 
 	async checkIn(createCheckInDto: CreateCheckInDto): Promise<{ message: string }> {
@@ -41,12 +44,19 @@ export class CheckInsService {
 				throw new BadRequestException('User organization not found');
 			}
 
-			await this.checkInRepository.save({
+			const checkIn = await this.checkInRepository.save({
 				...createCheckInDto,
 				organization: {
 					uid: ownerInformation.organisation.uid,
 				},
 			});
+
+			if (createCheckInDto.client && createCheckInDto.client.uid) {
+				await this.clientRepository.update(
+					{ uid: createCheckInDto.client.uid },
+					{ gpsCoordinates: createCheckInDto.checkInLocation }
+				);
+			}
 
 			const response = {
 				message: process.env.SUCCESS_MESSAGE,

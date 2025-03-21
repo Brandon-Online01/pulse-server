@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Patch, Param, UseGuards, Get } from '@nestjs/common';
+import { Controller, Post, Body, Patch, Param, UseGuards, Get, Query } from '@nestjs/common';
 import { CheckInsService } from './check-ins.service';
 import { CreateCheckInDto } from './dto/create-check-in.dto';
 import { CreateCheckOutDto } from './dto/create-check-out.dto';
@@ -26,7 +26,7 @@ export class CheckInsController {
 	@Post()
 	@ApiOperation({
 		summary: 'Record check-in',
-		description: 'Creates a new attendance check-in record for a user',
+		description: 'Creates a new attendance check-in record for a user. Can be associated with a client to update their GPS coordinates.',
 	})
 	@ApiBody({ type: CreateCheckInDto })
 	@ApiCreatedResponse({
@@ -41,6 +41,11 @@ export class CheckInsController {
 						uid: { type: 'number' },
 						checkInTime: { type: 'string', format: 'date-time' },
 						user: { type: 'object' },
+						client: { 
+							type: 'object',
+							nullable: true, 
+							description: 'Associated client, if any'
+						},
 						// Other check-in properties
 					},
 				},
@@ -143,5 +148,39 @@ export class CheckInsController {
 	})
 	checkOut(@Body() createCheckOutDto: CreateCheckOutDto) {
 		return this.checkInsService.checkOut(createCheckOutDto);
+	}
+
+	@Post('client/:clientId')
+	@ApiOperation({
+		summary: 'Check-in at client location',
+		description: 'Creates a check-in record associated with a specific client and updates client GPS coordinates',
+	})
+	@ApiParam({ name: 'clientId', description: 'Client ID', type: 'number' })
+	@ApiBody({ type: CreateCheckInDto })
+	@ApiCreatedResponse({
+		description: 'Client check-in recorded successfully',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', example: 'Success' },
+			},
+		},
+	})
+	@ApiBadRequestResponse({
+		description: 'Bad Request - Invalid data provided',
+	})
+	@ApiNotFoundResponse({
+		description: 'Client not found',
+	})
+	checkInAtClient(
+		@Param('clientId') clientId: number,
+		@Body() createCheckInDto: CreateCheckInDto,
+	) {
+		// Add client to the DTO
+		const checkInWithClient = {
+			...createCheckInDto,
+			client: { uid: clientId }
+		};
+		return this.checkInsService.checkIn(checkInWithClient);
 	}
 }

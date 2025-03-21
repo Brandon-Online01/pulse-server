@@ -74,6 +74,8 @@ import { OrganisationHours } from './organisation/entities/organisation-hours.en
 import { ProductAnalytics } from './products/entities/product-analytics.entity';
 import { FeedbackModule } from './feedback/feedback.module';
 import { Feedback } from './feedback/entities/feedback.entity';
+import { CompetitorsModule } from './competitors/competitors.module';
+import { Competitor } from './competitors/entities/competitor.entity';
 
 @Module({
 	imports: [
@@ -137,6 +139,7 @@ import { Feedback } from './feedback/entities/feedback.entity';
 				OrganisationAppearance,
 				OrganisationHours,
 				Feedback,
+				Competitor,
 			],
 			synchronize: true,
 			retryAttempts: 100,
@@ -169,6 +172,7 @@ import { Feedback } from './feedback/entities/feedback.entity';
 		CheckInsModule,
 		RewardsModule,
 		LicensingModule,
+		CompetitorsModule,
 	],
 	controllers: [],
 	providers: [

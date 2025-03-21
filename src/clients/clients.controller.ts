@@ -325,4 +325,84 @@ export class ClientsController {
 		const branchId = req.user?.branch?.uid;
 		return this.clientsService.remove(ref, orgId, branchId);
 	}
+
+	@Get('nearby')
+	@ApiOperation({
+		summary: 'Find nearby clients',
+		description: 'Finds clients near the provided GPS coordinates within the specified radius',
+	})
+	@ApiOkResponse({
+		description: 'List of nearby clients',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', example: 'Success' },
+				clients: {
+					type: 'array',
+					items: {
+						type: 'object',
+						properties: {
+							uid: { type: 'number' },
+							name: { type: 'string' },
+							distance: { type: 'number', description: 'Distance in kilometers' },
+							gpsCoordinates: { type: 'string' },
+						},
+					},
+				},
+			},
+		},
+	})
+	@ApiBadRequestResponse({
+		description: 'Bad Request - Invalid coordinates',
+	})
+	findNearbyClients(
+		@Query('latitude') latitude: number,
+		@Query('longitude') longitude: number,
+		@Query('radius') radius: number = 5,
+		@Query('orgId') orgId?: number,
+		@Query('branchId') branchId?: number,
+	) {
+		return this.clientsService.findNearbyClients(latitude, longitude, radius, orgId, branchId);
+	}
+
+	@Get(':clientId/check-ins')
+	@ApiOperation({
+		summary: 'Get client check-in history',
+		description: 'Retrieves check-in history with location data for a specific client',
+	})
+	@ApiParam({ name: 'clientId', description: 'Client ID', type: 'number' })
+	@ApiOkResponse({
+		description: 'Client check-in history retrieved successfully',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', example: 'Success' },
+				checkIns: {
+					type: 'array',
+					items: {
+						type: 'object',
+						properties: {
+							uid: { type: 'number' },
+							checkInTime: { type: 'string', format: 'date-time' },
+							checkInLocation: { type: 'string' },
+							checkOutTime: { type: 'string', format: 'date-time', nullable: true },
+							checkOutLocation: { type: 'string', nullable: true },
+							duration: { type: 'string', nullable: true },
+						},
+					},
+				},
+			},
+		},
+	})
+	@ApiNotFoundResponse({
+		description: 'Client not found',
+	})
+	getClientCheckIns(
+		@Param('clientId') clientId: number,
+		@Req() req: AuthenticatedRequest,
+	) {
+		const orgId = req.user?.org?.uid;
+		const branchId = req.user?.branch?.uid;
+		return this.clientsService.getClientCheckIns(clientId, orgId, branchId);
+	}
 }
