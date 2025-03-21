@@ -5,7 +5,7 @@ export class PasswordReset {
     @PrimaryGeneratedColumn()
     uid: number;
 
-    @Column({ unique: true })
+    @Column({ unique: true, nullable: false })
     email: string;
 
     @Column()

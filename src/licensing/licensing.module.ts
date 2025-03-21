@@ -9,12 +9,14 @@ import { LicenseUsageService } from './license-usage.service';
 import { License } from './entities/license.entity';
 import { LicenseUsage } from './entities/license-usage.entity';
 import { LicenseEvent } from './entities/license-event.entity';
+import { LicenseAudit } from './entities/license-audit.entity';
 import { LicenseRateLimitGuard } from './lib/guards/license-rate-limit.guard';
 import { LicenseExceptionFilter } from './lib/filters/license-exception.filter';
+import { LicenseAuditService } from './lib/audit.service';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([License, LicenseUsage, LicenseEvent]),
+        TypeOrmModule.forFeature([License, LicenseUsage, LicenseEvent, LicenseAudit]),
         ScheduleModule.forRoot(),
         ThrottlerModule.forRoot([{
             name: 'default',
@@ -27,12 +29,13 @@ import { LicenseExceptionFilter } from './lib/filters/license-exception.filter';
         LicensingService,
         LicensingNotificationsService,
         LicenseUsageService,
+        LicenseAuditService,
         LicenseRateLimitGuard,
         {
             provide: 'APP_FILTER',
             useClass: LicenseExceptionFilter,
         },
     ],
-    exports: [LicensingService, LicenseUsageService],
+    exports: [LicensingService, LicenseUsageService, LicenseAuditService],
 })
 export class LicensingModule { } 

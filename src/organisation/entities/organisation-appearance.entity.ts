@@ -6,7 +6,7 @@ export class OrganisationAppearance {
     @PrimaryGeneratedColumn()
     uid: number;
 
-    @Column({ unique: true })
+    @Column({ unique: true, nullable: false })
     ref: string;    
 
     @Column({ nullable: true })

@@ -1,34 +1,37 @@
-import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, PrimaryGeneratedColumn } from 'typeorm';
 import { BaseEntity } from '../../lib/entities/base.entity';
 import { License } from './license.entity';
 import { User } from '../../user/entities/user.entity';
-import { AuditAction } from '../lib/audit.service';
+import { AuditAction } from '../lib/audit.types';
 
 @Entity('license_audit')
 export class LicenseAudit extends BaseEntity {
-    @Column({
-        type: 'enum',
-        enum: AuditAction,
-    })
-    action: AuditAction;
+	@PrimaryGeneratedColumn()
+	uid: number;
 
-    @Column()
-    licenseId: number;
+	@Column({
+		type: 'enum',
+		enum: AuditAction,
+	})
+	action: AuditAction;
 
-    @Column()
-    userId: number;
+	@Column({ unique: true, nullable: false })
+	licenseId: number;
 
-    @Column()
-    organizationId: number;
+	@Column({ unique: true, nullable: false })
+	userId: number;
 
-    @Column('json')
-    metadata: Record<string, any>;
+	@Column({ unique: true, nullable: false })
+	organizationId: number;
 
-    @ManyToOne(() => License)
-    @JoinColumn({ name: 'licenseId' })
-    license: License;
+	@Column('json')
+	metadata: Record<string, any>;
 
-    @ManyToOne(() => User)
-    @JoinColumn({ name: 'userId' })
-    user: User;
-} 
+	@ManyToOne(() => License)
+	@JoinColumn({ name: 'licenseId', referencedColumnName: 'uid' })
+	license: License;
+
+	@ManyToOne(() => User)
+	@JoinColumn({ name: 'userId', referencedColumnName: 'uid' })
+	user: User;
+}

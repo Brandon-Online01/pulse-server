@@ -14,6 +14,12 @@ import { Lead } from '../leads/entities/lead.entity';
 import { Client } from '../clients/entities/client.entity';
 import { Branch } from '../branch/entities/branch.entity';
 import { Organisation } from '../organisation/entities/organisation.entity';
+import { Competitor } from '../competitors/entities/competitor.entity';
+import { Geofence } from '../tracking/entities/geofence.entity';
+
+// Service imports
+import { CompetitorsService } from '../competitors/competitors.service';
+import { GeofenceType } from '../lib/enums/competitor.enums';
 
 // DTO imports
 import {
@@ -27,6 +33,8 @@ import {
 	BreakDataDto,
 	MapConfigDto,
 	ActivityDto,
+	CompetitorLocationDto,
+	GeofenceDto,
 } from './dto/map-data.dto';
 
 // Enum imports
@@ -40,6 +48,7 @@ export class MapDataService {
 
 	constructor(
 		private readonly configService: ConfigService,
+		private readonly competitorsService: CompetitorsService,
 		@InjectRepository(User)
 		private readonly userRepository: Repository<User>,
 		@InjectRepository(Tracking)
@@ -60,6 +69,10 @@ export class MapDataService {
 		private readonly branchRepository: Repository<Branch>,
 		@InjectRepository(Organisation)
 		private readonly organisationRepository: Repository<Organisation>,
+		@InjectRepository(Competitor)
+		private readonly competitorRepository: Repository<Competitor>,
+		@InjectRepository(Geofence)
+		private readonly geofenceRepository: Repository<Geofence>,
 		private readonly entityManager: EntityManager,
 	) {}
 
@@ -79,15 +92,220 @@ export class MapDataService {
 			// 3. Get map configuration
 			const mapConfig = this.getMapConfig();
 
+			// 4. Fetch competitors data
+			const competitors = await this.getCompetitorLocations(orgId, branchId);
+
 			return {
 				workers,
 				events,
 				mapConfig,
+				competitors,
 			};
 		} catch (error) {
-			console.error('Error fetching real map data:', error);
-			throw error;
+			console.error('Error fetching map data:', error);
+			return {
+				workers: [],
+				events: [],
+				mapConfig: this.getMapConfig(),
+				competitors: [],
+			};
 		}
+	}
+
+	/**
+	 * Get competitor locations for map display
+	 */
+	private async getCompetitorLocations(orgId: string, branchId: string): Promise<CompetitorLocationDto[]> {
+		try {
+			// Get all competitors for the organization/branch
+			const orgIdNum = orgId ? parseInt(orgId, 10) : undefined;
+			const branchIdNum = branchId ? parseInt(branchId, 10) : undefined;
+
+			// Fetch competitors with full details
+			const { data: competitors } = await this.competitorsService.findAll(
+				{ isDeleted: false }, 
+				1,
+				1000, // Get a large number of competitors
+				orgIdNum,
+				branchIdNum
+			);
+
+			// Get existing geofences for organisation
+			const geofences = await this.geofenceRepository.find({
+				where: {
+					organisation: orgIdNum ? { uid: orgIdNum } : undefined,
+					isActive: true
+				}
+			});
+
+			// Map competitors to location DTOs
+			return competitors.map(competitor => {
+				// Use actual coordinates from competitor record if available
+				let position: [number, number] | undefined;
+				
+				if (competitor.latitude !== null && competitor.longitude !== null) {
+					position = [Number(competitor.latitude), Number(competitor.longitude)];
+				}
+				
+				// If no coordinates available, use fallback
+				if (!position) {
+					position = this.mockPositionFromAddress(competitor.address);
+				}
+
+				// Get geofence information
+				const geofenceData: GeofenceDto = {
+					enabled: competitor.enableGeofence || false,
+					type: competitor.geofenceType || GeofenceType.NONE,
+					radius: competitor.geofenceRadius || 500
+				};
+
+				// Check if there's a corresponding geofence entity already created
+				if (competitor.enableGeofence && position) {
+					// Look for existing geofence in the database
+					const existingGeofence = geofences.find(g => 
+						g.name === `Competitor-${competitor.uid}` || 
+						(g.latitude === position![0] && g.longitude === position![1])
+					);
+
+					if (!existingGeofence) {
+						// If enabled but no geofence exists, create one (async, don't await)
+						this.createGeofenceForCompetitor(competitor, position, orgIdNum);
+					} else {
+						// Update geofence data from existing record
+						geofenceData.radius = existingGeofence.radius;
+					}
+				}
+
+				return {
+					id: competitor.uid,
+					name: competitor.name,
+					position,
+					markerType: MapMarkerType.COMPETITOR,
+					threatLevel: competitor.threatLevel || 0,
+					isDirect: competitor.isDirect || false,
+					industry: competitor.industry || 'Unknown',
+					status: competitor.status,
+					website: competitor.website,
+					logoUrl: competitor.logoUrl,
+					competitorRef: competitor.competitorRef,
+					address: competitor.address,
+					geofencing: geofenceData
+				};
+			});
+		} catch (error) {
+			console.error('Error fetching competitor locations:', error);
+			return [];
+		}
+	}
+
+	/**
+	 * Create a geofence entity for a competitor
+	 * This is run asynchronously and doesn't block the main data retrieval
+	 */
+	private async createGeofenceForCompetitor(
+		competitor: Competitor, 
+		position: [number, number], 
+		orgId?: number
+	): Promise<void> {
+		try {
+			// Check if a geofence already exists
+			const existingGeofence = await this.geofenceRepository.findOne({
+				where: {
+					name: `Competitor-${competitor.uid}`,
+					organisation: orgId ? { uid: orgId } : undefined
+				}
+			});
+
+			if (existingGeofence) {
+				// Update existing geofence
+				existingGeofence.latitude = position[0];
+				existingGeofence.longitude = position[1];
+				existingGeofence.radius = competitor.geofenceRadius || 500;
+				existingGeofence.isActive = competitor.enableGeofence;
+				await this.geofenceRepository.save(existingGeofence);
+				return;
+			}
+
+			// Create new geofence entity
+			const geofence = new Geofence();
+			geofence.name = `Competitor-${competitor.uid}`;
+			geofence.description = `Geofence for competitor: ${competitor.name}`;
+			geofence.latitude = position[0];
+			geofence.longitude = position[1];
+			geofence.radius = competitor.geofenceRadius || 500;
+			geofence.isActive = true;
+
+			// Set organisation if available
+			if (orgId) {
+				const organisation = await this.organisationRepository.findOne({
+					where: { uid: orgId }
+				});
+				if (organisation) {
+					geofence.organisation = organisation;
+				}
+			}
+
+			// Save the new geofence
+			await this.geofenceRepository.save(geofence);
+			console.log(`Created geofence for competitor ${competitor.name}`);
+		} catch (error) {
+			console.error(`Failed to create geofence for competitor ${competitor.uid}:`, error);
+		}
+	}
+
+	/**
+	 * Calculate if a position is within a geofence
+	 * @param position Position to check [lat, lng]
+	 * @param center Center of geofence [lat, lng]
+	 * @param radiusMeters Radius of geofence in meters
+	 */
+	private isPositionInGeofence(
+		position: [number, number], 
+		center: [number, number], 
+		radiusMeters: number
+	): boolean {
+		// Calculate distance using Haversine formula
+		const R = 6371e3; // Earth radius in meters
+		const φ1 = this.toRadians(position[0]);
+		const φ2 = this.toRadians(center[0]);
+		const Δφ = this.toRadians(center[0] - position[0]);
+		const Δλ = this.toRadians(center[1] - position[1]);
+
+		const a = 
+			Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+			Math.cos(φ1) * Math.cos(φ2) *
+			Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+			
+		const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+		const distance = R * c;
+
+		return distance <= radiusMeters;
+	}
+
+	/**
+	 * Convert degrees to radians
+	 */
+	private toRadians(degrees: number): number {
+		return degrees * Math.PI / 180;
+	}
+
+	/**
+	 * Generate a mock position from address data
+	 * In production, you would use a geocoding service
+	 */
+	private mockPositionFromAddress(address: any): [number, number] | undefined {
+		if (!address) return undefined;
+		
+		// This is a simplified mock - in production use a real geocoding service
+		// Generate a position within ~5km of the organization's default location
+		const defaultLat = 51.5074; // London latitude
+		const defaultLng = -0.1278; // London longitude
+		
+		// Generate a slight random offset (±0.05 degrees, roughly ±5km)
+		const latOffset = (Math.random() - 0.5) * 0.1;
+		const lngOffset = (Math.random() - 0.5) * 0.1;
+		
+		return [defaultLat + latOffset, defaultLng + lngOffset];
 	}
 
 	// Helper method to get worker locations from real data

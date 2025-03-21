@@ -15,7 +15,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { AddressDto } from 'src/clients/dto/create-client.dto';
-import { CompetitorStatus, CompetitorType } from '../../lib/enums/competitor.enums';
+import { CompetitorStatus, CompetitorType, GeofenceType } from '../../lib/enums/competitor.enums';
 
 class SocialMediaDto {
 	@IsString()
@@ -348,4 +348,53 @@ export class CreateCompetitorDto {
 		required: false,
 	})
 	branchId?: number;
+
+	@IsNumber()
+	@IsOptional()
+	@ApiProperty({
+		description: 'Latitude coordinate',
+		example: 51.5074,
+		required: false,
+	})
+	latitude?: number;
+
+	@IsNumber()
+	@IsOptional()
+	@ApiProperty({
+		description: 'Longitude coordinate',
+		example: -0.1278,
+		required: false,
+	})
+	longitude?: number;
+
+	@IsEnum(GeofenceType)
+	@IsOptional()
+	@ApiProperty({
+		description: 'Geofence type to apply for this competitor',
+		enum: GeofenceType,
+		example: GeofenceType.NOTIFY,
+		required: false,
+	})
+	geofenceType?: GeofenceType;
+
+	@IsNumber()
+	@IsOptional()
+	@ApiProperty({
+		description: 'Radius in meters for geofence (default: 500)',
+		example: 500,
+		required: false,
+		minimum: 100,
+		maximum: 5000,
+	})
+	geofenceRadius?: number;
+
+	@IsBoolean()
+	@IsOptional()
+	@ApiProperty({
+		description: 'Enable geofencing for this competitor',
+		example: true,
+		required: false,
+		default: false,
+	})
+	enableGeofence?: boolean;
 }

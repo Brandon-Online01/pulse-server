@@ -7,7 +7,7 @@ import { Column, Entity, OneToMany, ManyToOne, PrimaryGeneratedColumn } from 'ty
 import { CheckIn } from '../../check-ins/entities/check-in.entity';
 import { Organisation } from 'src/organisation/entities/organisation.entity';
 import { Branch } from 'src/branch/entities/branch.entity';
-import { ClientType, ClientContactPreference, PriceTier, AcquisitionChannel, ClientRiskLevel, PaymentMethod } from 'src/lib/enums/client.enums';
+import { ClientType, ClientContactPreference, PriceTier, AcquisitionChannel, ClientRiskLevel, PaymentMethod, GeofenceType } from 'src/lib/enums/client.enums';
 
 @Entity('client')
 export class Client {
@@ -196,4 +196,19 @@ export class Client {
 
     @ManyToOne(() => Branch, (branch) => branch?.clients, { nullable: true })
     branch: Branch;
+
+    @Column({ type: 'enum', enum: GeofenceType, default: GeofenceType.NONE })
+    geofenceType: GeofenceType;
+
+    @Column({ type: 'int', default: 500, nullable: true })
+    geofenceRadius: number;
+
+    @Column({ type: 'boolean', default: false })
+    enableGeofence: boolean;
+
+    @Column({ type: 'decimal', precision: 10, scale: 6, nullable: true })
+    latitude: number;
+
+    @Column({ type: 'decimal', precision: 10, scale: 6, nullable: true })
+    longitude: number;
 }

@@ -11,6 +11,9 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { CheckIn } from '../check-ins/entities/check-in.entity';
+import { GeofenceType } from '../lib/enums/client.enums';
+import { Organisation } from '../organisation/entities/organisation.entity';
+import { OrganisationSettings } from '../organisation/entities/organisation-settings.entity';
 
 @Injectable()
 export class ClientsService {
@@ -20,6 +23,10 @@ export class ClientsService {
 	constructor(
 		@InjectRepository(Client)
 		private clientsRepository: Repository<Client>,
+		@InjectRepository(Organisation)
+		private organisationRepository: Repository<Organisation>,
+		@InjectRepository(OrganisationSettings)
+		private organisationSettingsRepository: Repository<OrganisationSettings>,
 		@Inject(CACHE_MANAGER)
 		private cacheManager: Cache,
 		private readonly configService: ConfigService,
@@ -90,6 +97,20 @@ export class ClientsService {
 		}
 	}
 
+	// Helper method to get organization settings
+	private async getOrganisationSettings(orgId: number): Promise<OrganisationSettings | null> {
+		if (!orgId) return null;
+		
+		try {
+			return await this.organisationSettingsRepository.findOne({
+				where: { organisationUid: orgId }
+			});
+		} catch (error) {
+			console.error('Error fetching organisation settings:', error);
+			return null;
+		}
+	}
+
 	async create(createClientDto: CreateClientDto, orgId?: number, branchId?: number): Promise<{ message: string }> {
 		try {
 			// Add organization and branch
@@ -98,6 +119,32 @@ export class ClientsService {
 				organisation: orgId ? { uid: orgId } : undefined,
 				branch: branchId ? { uid: branchId } : undefined,
 			} as DeepPartial<Client>;
+
+			// If geofencing is enabled, ensure we have valid coordinates and radius
+			if (createClientDto.enableGeofence) {
+				if (!clientData.latitude || !clientData.longitude) {
+					throw new BadRequestException('Coordinates are required for geofencing');
+				}
+
+				// Get default radius from organization settings if available
+				let defaultRadius = 500; // Default fallback value
+				
+				if (orgId) {
+					const orgSettings = await this.getOrganisationSettings(orgId);
+					if (orgSettings?.geofenceDefaultRadius) {
+						defaultRadius = orgSettings.geofenceDefaultRadius;
+					}
+				}
+
+				// Set default geofence values if not provided
+				if (!clientData.geofenceRadius) {
+					clientData.geofenceRadius = defaultRadius;
+				}
+
+				if (!clientData.geofenceType) {
+					clientData.geofenceType = GeofenceType.NOTIFY; // Default type
+				}
+			}
 
 			const client = await this.clientsRepository.save(clientData);
 
@@ -262,8 +309,45 @@ export class ClientsService {
 	): Promise<{ message: string }> {
 		try {
 			const existingClient = await this.findOne(ref, orgId, branchId);
+			
 			if (!existingClient.client) {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
+			}
+
+			const clientDataToUpdate = { ...updateClientDto } as DeepPartial<Client>;
+			const client = existingClient.client;
+
+			// Handle geofencing data if provided
+			if (updateClientDto.enableGeofence !== undefined) {
+				// If enabling geofencing, ensure we have coordinates
+				if (updateClientDto.enableGeofence && 
+					!((client.latitude || updateClientDto.latitude) && 
+					  (client.longitude || updateClientDto.longitude))) {
+					throw new BadRequestException('Coordinates are required for geofencing');
+				}
+
+				// If disabling geofencing, set type to NONE
+				if (updateClientDto.enableGeofence === false) {
+					clientDataToUpdate.geofenceType = GeofenceType.NONE;
+				} else if (!clientDataToUpdate.geofenceType && !client.geofenceType) {
+					// Set default type if enabling and no type specified
+					clientDataToUpdate.geofenceType = GeofenceType.NOTIFY;
+				}
+
+				// Set default radius if not specified
+				if (updateClientDto.enableGeofence && !clientDataToUpdate.geofenceRadius && !client.geofenceRadius) {
+					// Get default radius from organization settings if available
+					let defaultRadius = 500; // Default fallback value
+					
+					if (orgId) {
+						const orgSettings = await this.getOrganisationSettings(orgId);
+						if (orgSettings?.geofenceDefaultRadius) {
+							defaultRadius = orgSettings.geofenceDefaultRadius;
+						}
+					}
+					
+					clientDataToUpdate.geofenceRadius = defaultRadius;
+				}
 			}
 
 			// Create where conditions including organization and branch
@@ -280,10 +364,10 @@ export class ClientsService {
 			}
 
 			// Update with proper filtering
-			await this.clientsRepository.update(whereConditions, updateClientDto as DeepPartial<Client>);
+			await this.clientsRepository.update(whereConditions, clientDataToUpdate);
 
-			// Invalidate cache after update
-			await this.invalidateClientCache(existingClient.client);
+			// Invalidate cache
+			await this.invalidateClientCache(client);
 
 			return {
 				message: process.env.SUCCESS_MESSAGE,
@@ -357,13 +441,10 @@ export class ClientsService {
 			}
 
 			// Use the same where conditions for the update
-			await this.clientsRepository.update(
-				where,
-				{
-					isDeleted: false,
-					status: GeneralStatus.ACTIVE,
-				},
-			);
+			await this.clientsRepository.update(where, {
+				isDeleted: false,
+				status: GeneralStatus.ACTIVE,
+			});
 
 			// Invalidate cache after restoration
 			await this.invalidateClientCache(existingClient);
@@ -453,12 +534,7 @@ export class ClientsService {
 	}
 
 	// Helper function to calculate distance between two GPS coordinates
-	private calculateDistance(
-		lat1: number, 
-		lon1: number, 
-		lat2: number, 
-		lon2: number
-	): number {
+	private calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
 		if (!lat1 || !lon1 || !lat2 || !lon2) {
 			return Number.MAX_VALUE; // Return large value if any coordinate is missing
 		}
@@ -467,27 +543,16 @@ export class ClientsService {
 		const R = 6371; // Earth's radius in km
 		const dLat = (lat2 - lat1) * (Math.PI / 180);
 		const dLon = (lon2 - lon1) * (Math.PI / 180);
-		const a = 
+		const a =
 			Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-			Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * 
-			Math.sin(dLon / 2) * Math.sin(dLon / 2);
+			Math.cos(lat1 * (Math.PI / 180)) *
+				Math.cos(lat2 * (Math.PI / 180)) *
+				Math.sin(dLon / 2) *
+				Math.sin(dLon / 2);
 		const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 		const distance = R * c; // Distance in km
-		
-		return distance;
-	}
 
-	// Parse GPS coordinates string to latitude and longitude numbers
-	private parseCoordinates(coordsString: string): { latitude: number; longitude: number } | null {
-		if (!coordsString) return null;
-		
-		try {
-			const [latitude, longitude] = coordsString.split(',').map(coord => parseFloat(coord.trim()));
-			if (isNaN(latitude) || isNaN(longitude)) return null;
-			return { latitude, longitude };
-		} catch (error) {
-			return null;
-		}
+		return distance;
 	}
 
 	async findNearbyClients(
@@ -515,28 +580,22 @@ export class ClientsService {
 				whereConditions.branch = { uid: branchId };
 			}
 
-			// Get all clients with GPS coordinates
+			// Get all clients
 			const clients = await this.clientsRepository.find({
 				where: whereConditions,
 				relations: ['organisation', 'branch'],
 			});
 
-			// Filter clients with valid GPS coordinates and calculate distances
+			// Filter clients with valid coordinates and calculate distances
 			const nearbyClients = clients
-				.map(client => {
-					const coords = this.parseCoordinates(client.gpsCoordinates);
-					if (!coords) return null;
+				.map((client) => {
+					if (!client.latitude || !client.longitude) return null;
 
-					const distance = this.calculateDistance(
-						latitude, 
-						longitude, 
-						coords.latitude, 
-						coords.longitude
-					);
+					const distance = this.calculateDistance(latitude, longitude, client.latitude, client.longitude);
 
 					return { ...client, distance };
 				})
-				.filter(client => client !== null && client.distance <= radius)
+				.filter((client) => client !== null && client.distance <= radius)
 				.sort((a, b) => a.distance - b.distance);
 
 			return {
@@ -575,7 +634,7 @@ export class ClientsService {
 
 			// Sort check-ins by date, most recent first
 			const sortedCheckIns = client.checkIns.sort(
-				(a, b) => new Date(b.checkInTime).getTime() - new Date(a.checkInTime).getTime()
+				(a, b) => new Date(b.checkInTime).getTime() - new Date(a.checkInTime).getTime(),
 			);
 
 			return {

@@ -255,3 +255,162 @@ Organizations can configure their feedback system through organization settings:
 ## 👨‍💻 Author
 
 [@Brandon-Online01](https://github.com/Brandon-Online01)
+
+## Testing Strategy
+
+### Overview
+
+Our testing approach follows a multi-layered strategy to ensure code quality, reliability, and functionality:
+
+1. **Unit Tests**: For individual functions and classes
+2. **Integration Tests**: For module interactions
+3. **E2E Tests**: For complete API workflows
+4. **Test-Driven Development (TDD)**: Writing tests before implementing features
+
+### Test Structure
+
+For each module, we implement the following test files:
+
+- `*.service.spec.ts` - Unit tests for service methods
+- `*.controller.spec.ts` - Unit tests for controller methods
+- `*.repository.spec.ts` (if applicable) - Unit tests for custom repository methods
+- `*.integration.spec.ts` (in test directory) - Integration tests for the module
+
+### Testing Guidelines
+
+#### 1. Unit Tests
+
+- Each public method in services, controllers, and repositories should have at least one test case
+- Follow the AAA pattern: Arrange-Act-Assert
+- Use descriptive test names that explain what is being tested
+- Mock external dependencies
+- Reach for 80%+ code coverage
+
+Example for service test:
+
+```typescript
+describe('ExampleService', () => {
+  let service: ExampleService;
+  let repositoryMock: MockType<Repository<Example>>;
+
+  beforeEach(async () => {
+    // Setup mocks
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        ExampleService,
+        {
+          provide: getRepositoryToken(Example),
+          useFactory: repositoryMockFactory,
+        },
+      ],
+    }).compile();
+
+    service = module.get<ExampleService>(ExampleService);
+    repositoryMock = module.get(getRepositoryToken(Example));
+  });
+
+  it('should create a new example', async () => {
+    // Arrange
+    const createExampleDto = { name: 'Test Example' };
+    const expectedResult = { id: 1, ...createExampleDto };
+    repositoryMock.save.mockReturnValue(expectedResult);
+
+    // Act
+    const result = await service.create(createExampleDto);
+
+    // Assert
+    expect(repositoryMock.save).toHaveBeenCalledWith(createExampleDto);
+    expect(result).toEqual(expectedResult);
+  });
+});
+```
+
+#### 2. Integration Tests
+
+- Test the interaction between modules
+- Use the NestJS testing package to create a test module
+- Test the actual database operations using a test database
+- Test the actual HTTP requests using the NestJS testing package
+
+#### 3. E2E Tests
+
+- Test complete user workflows
+- Cover critical paths in the application
+- Use the NestJS testing package and Supertest
+
+Example for an E2E test:
+
+```typescript
+describe('ExampleController (e2e)', () => {
+  let app: INestApplication;
+
+  beforeEach(async () => {
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleFixture.createNestApplication();
+    await app.init();
+  });
+
+  it('/examples (GET)', () => {
+    return request(app.getHttpServer())
+      .get('/examples')
+      .expect(200)
+      .expect((res) => {
+        expect(Array.isArray(res.body)).toBe(true);
+      });
+  });
+});
+```
+
+### Test Implementation Plan
+
+1. **New Features**:
+   - Write tests before implementing features (TDD)
+   - Create unit tests for services and controllers
+   - Implement integration tests as needed
+
+2. **Existing Code**:
+   - Gradually add tests for existing modules, prioritizing critical business logic
+   - Focus on high-risk areas first
+
+3. **CI/CD Integration**:
+   - Run all tests on pull requests
+   - Block merges if tests fail
+   - Generate and review coverage reports
+
+### Mocking Strategies
+
+- Use Jest mock functions for simple dependencies
+- Use TypeORM repository mocks for database operations
+- Use mock services for external service dependencies
+
+### Test Utilities
+
+Create helper files for common testing operations:
+
+- `test/utils/test-utils.ts` - Utility functions for testing
+- `test/utils/mock-factory.ts` - Factory functions for creating mocks
+
+### Running Tests
+
+```bash
+# Run all tests
+npm test
+
+# Run tests with coverage
+npm run test:cov
+
+# Run e2e tests
+npm run test:e2e
+
+# Watch mode for development
+npm run test:watch
+```
+
+### Test Coverage Goals
+
+- Services: 90%+ coverage
+- Controllers: 80%+ coverage
+- Overall: 80%+ coverage

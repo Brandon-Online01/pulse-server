@@ -5,7 +5,7 @@ import { Organisation } from '../../organisation/entities/organisation.entity';
 
 @Entity('licenses')
 export class License extends BaseEntity {
-    @Column({ unique: true })
+    @Column({ unique: true, nullable: false })
     licenseKey: string;
 
     @Column({

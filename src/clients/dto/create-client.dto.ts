@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsPhoneNumber, IsOptional, IsString, IsNotEmpty, IsObject, ValidateNested, IsEnum, IsNumber, IsDate, IsArray, IsDecimal, Min, Max, IsInt } from 'class-validator';
+import { IsEmail, IsPhoneNumber, IsOptional, IsString, IsNotEmpty, IsObject, ValidateNested, IsEnum, IsNumber, IsDate, IsArray, IsDecimal, Min, Max, IsInt, IsBoolean } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ClientContactPreference, PriceTier, AcquisitionChannel, ClientRiskLevel, PaymentMethod } from '../../lib/enums/client.enums';
+import { ClientContactPreference, PriceTier, AcquisitionChannel, ClientRiskLevel, PaymentMethod, GeofenceType } from '../../lib/enums/client.enums';
 
 export class AddressDto {
     @IsString()
@@ -427,4 +427,55 @@ export class CreateClientDto {
         required: false
     })
     socialProfiles?: SocialProfilesDto;
+
+    @IsNumber()
+    @IsOptional()
+    @ApiProperty({
+        example: 51.5074,
+        description: 'Latitude coordinate',
+        required: false
+    })
+    latitude?: number;
+
+    @IsNumber()
+    @IsOptional()
+    @ApiProperty({
+        example: -0.1278,
+        description: 'Longitude coordinate',
+        required: false
+    })
+    longitude?: number;
+
+    @IsEnum(GeofenceType)
+    @IsOptional()
+    @ApiProperty({
+        enum: GeofenceType,
+        example: GeofenceType.NOTIFY,
+        description: 'Geofence type to apply for this client',
+        required: false
+    })
+    geofenceType?: GeofenceType;
+
+    @IsNumber()
+    @IsOptional()
+    @Min(100)
+    @Max(5000)
+    @ApiProperty({
+        example: 500,
+        description: 'Radius in meters for geofence (default: 500)',
+        required: false,
+        minimum: 100,
+        maximum: 5000
+    })
+    geofenceRadius?: number;
+
+    @IsBoolean()
+    @IsOptional()
+    @ApiProperty({
+        example: true,
+        description: 'Enable geofencing for this client',
+        required: false,
+        default: false
+    })
+    enableGeofence?: boolean;
 }

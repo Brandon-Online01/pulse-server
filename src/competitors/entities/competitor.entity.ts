@@ -1,7 +1,7 @@
 import { Organisation } from 'src/organisation/entities/organisation.entity';
 import { User } from 'src/user/entities/user.entity';
 import { Branch } from 'src/branch/entities/branch.entity';
-import { CompetitorStatus } from 'src/lib/enums/competitor.enums';
+import { CompetitorStatus, GeofenceType } from 'src/lib/enums/competitor.enums';
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
 
 @Entity('competitor')
@@ -34,6 +34,12 @@ export class Competitor {
 		country: string;
 		postalCode: string;
 	};
+
+	@Column({ type: 'decimal', precision: 10, scale: 6, nullable: true })
+	latitude: number;
+
+	@Column({ type: 'decimal', precision: 10, scale: 6, nullable: true })
+	longitude: number;
 
 	@Column({ type: 'varchar', length: 255, nullable: true })
 	logoUrl: string;
@@ -107,6 +113,15 @@ export class Competitor {
 	@Column({ nullable: true, unique: true })
 	@Index()
 	competitorRef: string;
+
+	@Column({ type: 'enum', enum: GeofenceType, default: GeofenceType.NONE })
+	geofenceType: GeofenceType;
+
+	@Column({ type: 'int', default: 500, nullable: true })
+	geofenceRadius: number;
+
+	@Column({ type: 'boolean', default: false })
+	enableGeofence: boolean;
 
 	@CreateDateColumn()
 	createdAt: Date;

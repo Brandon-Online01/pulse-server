@@ -75,3 +75,10 @@ export enum PaymentMethod {
     PAYPAL = 'paypal',
     INVOICE = 'invoice'
 }
+
+export enum GeofenceType {
+    NONE = 'none',
+    NOTIFY = 'notify',
+    ALERT = 'alert',
+    RESTRICTED = 'restricted',
+}

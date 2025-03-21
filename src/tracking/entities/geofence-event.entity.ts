@@ -59,7 +59,7 @@ export class GeofenceEvent {
   accuracy?: number;
 
   @ApiProperty({ description: 'Device information as JSON' })
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ type: 'json', nullable: true })
   deviceInfo?: Record<string, any>;
 
   @ApiProperty({ description: 'Creation timestamp (when the event occurred)' })

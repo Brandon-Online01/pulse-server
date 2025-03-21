@@ -296,4 +296,54 @@ export class CompetitorsController {
 
 		return this.competitorsService.hardRemove(+id, orgId, branchId);
 	}
+
+	@Get('map-data')
+	@Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.USER)
+	@ApiOperation({ summary: 'Get competitor data formatted for map display' })
+	@ApiOkResponse({
+		description: 'Return competitors with position data for map display',
+		type: [Object],
+	})
+	getCompetitorsForMap(@Request() req) {
+		const orgId = req.user?.org?.uid || req.user?.organisation?.uid || req.organization?.ref;
+		const branchId = req.user?.branch?.uid || req.branch?.uid;
+
+		const filters = { isDeleted: false };
+		return this.competitorsService.findAll(filters, 1, 1000, orgId, branchId)
+			.then(({ data }) => {
+				// Transform data into map-friendly format with mock positions
+				return data.map(competitor => {
+					// Create position (mock for now - would use geocoding in production)
+					const position = this.createMockPosition();
+					
+					return {
+						id: competitor.uid,
+						name: competitor.name,
+						position,
+						markerType: 'competitor',
+						threatLevel: competitor.threatLevel || 0,
+						isDirect: competitor.isDirect || false,
+						industry: competitor.industry || 'Unknown',
+						status: competitor.status,
+						website: competitor.website,
+						logoUrl: competitor.logoUrl,
+						competitorRef: competitor.competitorRef,
+						address: competitor.address
+					};
+				});
+			});
+	}
+
+	// Helper method to create mock positions
+	private createMockPosition(): [number, number] {
+		// Generate a position around Johannesburg
+		const defaultLat = -26.1278;
+		const defaultLng = 28.0582;
+		
+		// Generate a slight random offset (±0.05 degrees, roughly ±5km)
+		const latOffset = (Math.random() - 0.5) * 0.1;
+		const lngOffset = (Math.random() - 0.5) * 0.1;
+		
+		return [defaultLat + latOffset, defaultLng + lngOffset];
+	}
 }

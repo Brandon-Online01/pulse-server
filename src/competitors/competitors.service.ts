@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException, BadRequestException, Inject, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Not, IsNull, FindOptionsWhere, Like, In, EntityManager } from 'typeorm';
+import { Repository, Not, IsNull, FindOptionsWhere, Like, In } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
@@ -9,8 +9,11 @@ import { UpdateCompetitorDto } from './dto/update-competitor.dto';
 import { Competitor } from './entities/competitor.entity';
 import { User } from '../user/entities/user.entity';
 import { PaginatedResponse } from '../lib/interfaces/paginated-response.interface';
-import { randomBytes } from 'crypto';
-import { CompetitorStatus } from '../lib/enums/competitor.enums';
+import { CompetitorStatus, GeofenceType } from '../lib/enums/competitor.enums';
+import * as crypto from 'crypto';
+import { Organisation } from '../organisation/entities/organisation.entity';
+import { Branch } from '../branch/entities/branch.entity';
+import { OrganisationSettings } from '../organisation/entities/organisation-settings.entity';
 
 @Injectable()
 export class CompetitorsService {
@@ -21,11 +24,33 @@ export class CompetitorsService {
   constructor(
     @InjectRepository(Competitor)
     private readonly competitorRepository: Repository<Competitor>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+    @InjectRepository(Organisation)
+    private readonly organisationRepository: Repository<Organisation>,
+    @InjectRepository(Branch)
+    private readonly branchRepository: Repository<Branch>,
+    @InjectRepository(OrganisationSettings)
+    private readonly organisationSettingsRepository: Repository<OrganisationSettings>,
     @Inject(CACHE_MANAGER)
     private cacheManager: Cache,
     private readonly configService: ConfigService,
   ) {
     this.CACHE_TTL = +this.configService.get<number>('CACHE_EXPIRATION_TIME', 300);
+  }
+
+  // Helper method to get organization settings
+  private async getOrganisationSettings(orgId: number): Promise<OrganisationSettings | null> {
+    if (!orgId) return null;
+    
+    try {
+      return await this.organisationSettingsRepository.findOne({
+        where: { organisationUid: orgId }
+      });
+    } catch (error) {
+      this.logger.error(`Error fetching organisation settings: ${error.message}`, error.stack);
+      return null;
+    }
   }
 
   private getCacheKey(key: string | number): string {
@@ -50,26 +75,87 @@ export class CompetitorsService {
     }
   }
 
-  async create(createCompetitorDto: CreateCompetitorDto, user?: User, orgId?: number, branchId?: number): Promise<Competitor> {
+  async create(createCompetitorDto: CreateCompetitorDto, creator: User, orgId?: number, branchId?: number) {
     try {
-      // Generate a unique reference code
-      const competitorRef = `COMP-${randomBytes(4).toString('hex').toUpperCase()}`;
+      // Create a new competitor instance
+      const newCompetitor = new Competitor();
       
-      const newCompetitor = this.competitorRepository.create({
-        ...createCompetitorDto,
-        competitorRef,
-        createdBy: user,
-        organisation: orgId ? { uid: orgId } : null,
-        branch: branchId ? { uid: branchId } : null,
-      });
+      // Copy properties from DTO
+      Object.assign(newCompetitor, createCompetitorDto);
       
+      // Handle organization and branch assignment
+      if (orgId) {
+        const organisation = await this.organisationRepository.findOne({ where: { uid: orgId } });
+        if (organisation) {
+          newCompetitor.organisation = organisation;
+        }
+      }
+      
+      if (branchId) {
+        const branch = await this.branchRepository.findOne({ where: { uid: branchId } });
+        if (branch) {
+          newCompetitor.branch = branch;
+        }
+      }
+      
+      // Set creator reference
+      if (creator) {
+        newCompetitor.createdBy = creator;
+      }
+      
+      // Generate a unique reference code if not provided
+      if (!newCompetitor.competitorRef) {
+        newCompetitor.competitorRef = `COMP-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+      }
+
+      // Handle geofencing settings
+      if (createCompetitorDto.enableGeofence) {
+        // If enabling geofencing, ensure we have coordinates
+        if (!newCompetitor.latitude || !newCompetitor.longitude) {
+          throw new BadRequestException('Coordinates are required for geofencing');
+        }
+        
+        // Set default geofence type if not provided
+        if (!newCompetitor.geofenceType) {
+          newCompetitor.geofenceType = GeofenceType.NOTIFY;
+        }
+        
+        // Get default radius from organization settings if available
+        let defaultRadius = 500; // Default fallback value
+        
+        if (orgId) {
+          const orgSettings = await this.getOrganisationSettings(orgId);
+          if (orgSettings?.geofenceDefaultRadius) {
+            defaultRadius = orgSettings.geofenceDefaultRadius;
+          }
+        }
+        
+        // Set default radius if not provided
+        if (!newCompetitor.geofenceRadius) {
+          newCompetitor.geofenceRadius = defaultRadius;
+        }
+      } else if (createCompetitorDto.enableGeofence === false) {
+        // If explicitly disabling geofencing
+        newCompetitor.geofenceType = GeofenceType.NONE;
+      }
+
+      // Save the new competitor
       const savedCompetitor = await this.competitorRepository.save(newCompetitor);
+      
       await this.clearCompetitorCache();
       
-      return savedCompetitor;
+      return {
+        message: 'Competitor created successfully',
+        competitor: savedCompetitor,
+      };
     } catch (error) {
-      this.logger.error(`Failed to create competitor: ${error.message}`, error.stack);
-      throw new BadRequestException(`Failed to create competitor: ${error.message}`);
+      throw new HttpException(
+        {
+          message: 'Error creating competitor',
+          error: error.message,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
     }
   }
 
@@ -234,33 +320,96 @@ export class CompetitorsService {
     return result;
   }
 
-  async update(id: number, updateCompetitorDto: UpdateCompetitorDto, orgId?: number, branchId?: number): Promise<{ message: string; competitor: Competitor }> {
-    const { competitor } = await this.findOne(id, orgId, branchId);
-    
-    if (!competitor) {
-      throw new NotFoundException(`Competitor with ID ${id} not found`);
-    }
-
+  async update(id: number, updateCompetitorDto: UpdateCompetitorDto, orgId?: number, branchId?: number) {
     try {
-      // Handle relations if included in DTO
+      // Find the existing competitor
+      const competitor = await this.competitorRepository.findOne({
+        where: { 
+          uid: id,
+          ...(orgId && { organisation: { uid: orgId } }),
+          ...(branchId && { branch: { uid: branchId } }),
+        },
+        relations: ['organisation', 'branch', 'createdBy'],
+      });
+      
+      if (!competitor) {
+        throw new HttpException('Competitor not found', HttpStatus.NOT_FOUND);
+      }
+      
+      // Copy properties from DTO
+      Object.assign(competitor, updateCompetitorDto);
+      
+      // Update organisation if different
       if (updateCompetitorDto.organisationId) {
-        competitor.organisation = { uid: updateCompetitorDto.organisationId } as any;
-        delete updateCompetitorDto.organisationId;
+        const organisation = await this.organisationRepository.findOne({ 
+          where: { uid: updateCompetitorDto.organisationId } 
+        });
+        if (organisation) {
+          competitor.organisation = organisation;
+        }
       }
       
+      // Update branch if different
       if (updateCompetitorDto.branchId) {
-        competitor.branch = { uid: updateCompetitorDto.branchId } as any;
-        delete updateCompetitorDto.branchId;
+        const branch = await this.branchRepository.findOne({ 
+          where: { uid: updateCompetitorDto.branchId } 
+        });
+        if (branch) {
+          competitor.branch = branch;
+        }
+      }
+
+      // Handle geofencing settings update
+      if (updateCompetitorDto.enableGeofence !== undefined) {
+        if (updateCompetitorDto.enableGeofence) {
+          // Ensure we have coordinates for geofencing
+          if (!competitor.latitude || !competitor.longitude) {
+            throw new BadRequestException('Coordinates are required for geofencing');
+          }
+          
+          // Set default geofence type if not already set
+          if (!competitor.geofenceType || competitor.geofenceType === GeofenceType.NONE) {
+            competitor.geofenceType = GeofenceType.NOTIFY;
+          }
+          
+          // Get default radius from organization settings if available
+          let defaultRadius = 500; // Default fallback value
+          const competitorOrgId = competitor.organisation?.uid || orgId;
+          
+          if (competitorOrgId) {
+            const orgSettings = await this.getOrganisationSettings(competitorOrgId);
+            if (orgSettings?.geofenceDefaultRadius) {
+              defaultRadius = orgSettings.geofenceDefaultRadius;
+            }
+          }
+          
+          // Set default radius if not already set
+          if (!competitor.geofenceRadius) {
+            competitor.geofenceRadius = defaultRadius;
+          }
+        } else {
+          // If explicitly disabling geofencing
+          competitor.geofenceType = GeofenceType.NONE;
+        }
       }
       
-      const updatedCompetitor = this.competitorRepository.merge(competitor, updateCompetitorDto);
-      const savedCompetitor = await this.competitorRepository.save(updatedCompetitor);
+      // Save the updated competitor
+      const updatedCompetitor = await this.competitorRepository.save(competitor);
       
       await this.clearCompetitorCache(id);
       
-      return { message: 'Competitor updated successfully', competitor: savedCompetitor };
+      return {
+        message: 'Competitor updated successfully',
+        competitor: updatedCompetitor,
+      };
     } catch (error) {
-      throw new BadRequestException(`Failed to update competitor: ${error.message}`);
+      throw new HttpException(
+        {
+          message: 'Error updating competitor',
+          error: error.message,
+        },
+        error.status || HttpStatus.BAD_REQUEST,
+      );
     }
   }
 

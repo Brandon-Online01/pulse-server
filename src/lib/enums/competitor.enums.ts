@@ -46,4 +46,11 @@ export enum CompetitorSize {
     MEDIUM = 'medium',
     LARGE = 'large',
     ENTERPRISE = 'enterprise',
+}
+
+export enum GeofenceType {
+    NONE = 'none',
+    NOTIFY = 'notify',
+    ALERT = 'alert',
+    RESTRICTED = 'restricted',
 } 

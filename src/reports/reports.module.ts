@@ -31,6 +31,9 @@ import { CommunicationModule } from '../communication/communication.module';
 import { Tracking } from '../tracking/entities/tracking.entity';
 import { LiveUserReportService } from './live-user-report.service';
 import { MapDataService } from './map-data.service';
+import { CompetitorsModule } from '../competitors/competitors.module';
+import { Competitor } from '../competitors/entities/competitor.entity';
+import { Geofence } from 'src/tracking/entities/geofence.entity';
 
 @Module({
   imports: [
@@ -48,7 +51,9 @@ import { MapDataService } from './map-data.service';
       Attendance,
       Organisation,
       Branch,
-      Tracking
+      Tracking,
+      Competitor,
+      Geofence, 
     ]),
     LeadsModule,
     JournalModule,
@@ -62,7 +67,8 @@ import { MapDataService } from './map-data.service';
     CheckInsModule,
     TrackingModule,
     ConfigModule,
-    CommunicationModule
+    CommunicationModule,
+    CompetitorsModule
   ],
   controllers: [ReportsController],
   providers: [ReportsService, LiveUserReportService, MapDataService],

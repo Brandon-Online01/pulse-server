@@ -76,6 +76,9 @@ import { FeedbackModule } from './feedback/feedback.module';
 import { Feedback } from './feedback/entities/feedback.entity';
 import { CompetitorsModule } from './competitors/competitors.module';
 import { Competitor } from './competitors/entities/competitor.entity';
+import { Geofence } from './tracking/entities/geofence.entity';
+import { GeofenceEvent } from './tracking/entities/geofence-event.entity';
+import { Reward } from './rewards/entities/reward.entity';
 
 @Module({
 	imports: [
@@ -140,6 +143,9 @@ import { Competitor } from './competitors/entities/competitor.entity';
 				OrganisationHours,
 				Feedback,
 				Competitor,
+				Geofence,
+				GeofenceEvent,
+				Reward,
 			],
 			synchronize: true,
 			retryAttempts: 100,

@@ -61,6 +61,21 @@ export class OrganisationSettings {
 		menuCollapsed: boolean;
 	};
 
+	@Column({ type: 'int', default: 500 })
+	geofenceDefaultRadius: number;
+
+	@Column({ type: 'boolean', default: false })
+	geofenceEnabledByDefault: boolean;
+
+	@Column({ type: 'varchar', length: 50, default: 'NOTIFY' })
+	geofenceDefaultNotificationType: string;
+
+	@Column({ type: 'int', default: 5000 })
+	geofenceMaxRadius: number;
+
+	@Column({ type: 'int', default: 100 })
+	geofenceMinRadius: number;
+
 	@Column({ default: false })
 	isDeleted: boolean;
 

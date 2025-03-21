@@ -95,6 +95,7 @@ Required environment variables:
 
 		// Communication and Notifications
 		.addTag('communication', 'Real-time messaging system with WebSocket support')
+		.addTag('competitors', 'Competitor management with location and territory management')
 		.addTag('notifications', 'Real-time notification system via WebSocket')
 		.addTag('news', 'Company announcements with rich media support')
 		.addTag('websockets', 'Real-time bi-directional communication')

@@ -4,27 +4,10 @@ import { Repository } from 'typeorm';
 import { LicenseAudit } from '../entities/license-audit.entity';
 import { User } from '../../user/entities/user.entity';
 import { License } from '../entities/license.entity';
+import { AuditAction, AuditMetadata } from './audit.types';
 
-export enum AuditAction {
-    CREATE = 'CREATE',
-    UPDATE = 'UPDATE',
-    DELETE = 'DELETE',
-    VALIDATE = 'VALIDATE',
-    TRANSFER = 'TRANSFER',
-    UPGRADE = 'UPGRADE',
-    DOWNGRADE = 'DOWNGRADE',
-    RENEW = 'RENEW',
-    SUSPEND = 'SUSPEND',
-    REACTIVATE = 'REACTIVATE',
-}
-
-export interface AuditMetadata {
-    ip?: string;
-    userAgent?: string;
-    reason?: string;
-    changes?: Record<string, any>;
-    [key: string]: any;
-}
+// Re-export the AuditAction enum so it can be imported from this file
+export { AuditAction } from './audit.types';
 
 @Injectable()
 export class LicenseAuditService {

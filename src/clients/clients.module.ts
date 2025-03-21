@@ -6,11 +6,13 @@ import { Client } from './entities/client.entity';
 import { LicensingModule } from '../licensing/licensing.module';
 import { ConfigModule } from '@nestjs/config';
 import { LibModule } from '../lib/lib.module';
+import { Organisation } from '../organisation/entities/organisation.entity';
+import { OrganisationSettings } from '../organisation/entities/organisation-settings.entity';
 
 @Module({
   imports: [
     LicensingModule,
-    TypeOrmModule.forFeature([Client]),
+    TypeOrmModule.forFeature([Client, Organisation, OrganisationSettings]),
     ConfigModule,
     LibModule,
   ],

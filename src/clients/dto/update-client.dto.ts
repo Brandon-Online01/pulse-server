@@ -2,7 +2,7 @@ import { ApiProperty, PartialType } from '@nestjs/swagger';
 import { IsEmail, IsPhoneNumber, IsOptional, IsString, IsBoolean, IsObject, IsNotEmpty, ValidateNested, IsEnum, IsNumber, IsDate, IsArray, Min, Max, IsInt } from 'class-validator';
 import { AddressDto, CreateClientDto, SocialProfilesDto } from './create-client.dto';
 import { Type } from 'class-transformer';
-import { ClientContactPreference, PriceTier, AcquisitionChannel, ClientRiskLevel, PaymentMethod } from '../../lib/enums/client.enums';
+import { ClientContactPreference, PriceTier, AcquisitionChannel, ClientRiskLevel, PaymentMethod, GeofenceType } from '../../lib/enums/client.enums';
 
 export class UpdateClientDto extends PartialType(CreateClientDto) {
 	@IsString()
