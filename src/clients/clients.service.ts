@@ -100,10 +100,10 @@ export class ClientsService {
 	// Helper method to get organization settings
 	private async getOrganisationSettings(orgId: number): Promise<OrganisationSettings | null> {
 		if (!orgId) return null;
-		
+
 		try {
 			return await this.organisationSettingsRepository.findOne({
-				where: { organisationUid: orgId }
+				where: { organisationUid: orgId },
 			});
 		} catch (error) {
 			console.error('Error fetching organisation settings:', error);
@@ -128,7 +128,7 @@ export class ClientsService {
 
 				// Get default radius from organization settings if available
 				let defaultRadius = 500; // Default fallback value
-				
+
 				if (orgId) {
 					const orgSettings = await this.getOrganisationSettings(orgId);
 					if (orgSettings?.geofenceDefaultRadius) {
@@ -309,7 +309,7 @@ export class ClientsService {
 	): Promise<{ message: string }> {
 		try {
 			const existingClient = await this.findOne(ref, orgId, branchId);
-			
+
 			if (!existingClient.client) {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
@@ -320,9 +320,10 @@ export class ClientsService {
 			// Handle geofencing data if provided
 			if (updateClientDto.enableGeofence !== undefined) {
 				// If enabling geofencing, ensure we have coordinates
-				if (updateClientDto.enableGeofence && 
-					!((client.latitude || updateClientDto.latitude) && 
-					  (client.longitude || updateClientDto.longitude))) {
+				if (
+					updateClientDto.enableGeofence &&
+					!((client.latitude || updateClientDto.latitude) && (client.longitude || updateClientDto.longitude))
+				) {
 					throw new BadRequestException('Coordinates are required for geofencing');
 				}
 
@@ -338,14 +339,14 @@ export class ClientsService {
 				if (updateClientDto.enableGeofence && !clientDataToUpdate.geofenceRadius && !client.geofenceRadius) {
 					// Get default radius from organization settings if available
 					let defaultRadius = 500; // Default fallback value
-					
+
 					if (orgId) {
 						const orgSettings = await this.getOrganisationSettings(orgId);
 						if (orgSettings?.geofenceDefaultRadius) {
 							defaultRadius = orgSettings.geofenceDefaultRadius;
 						}
 					}
-					
+
 					clientDataToUpdate.geofenceRadius = defaultRadius;
 				}
 			}
