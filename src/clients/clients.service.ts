@@ -11,7 +11,7 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { CheckIn } from '../check-ins/entities/check-in.entity';
-import { GeofenceType } from '../lib/enums/client.enums';
+import { GeofenceType, ClientRiskLevel } from '../lib/enums/client.enums';
 import { Organisation } from '../organisation/entities/organisation.entity';
 import { OrganisationSettings } from '../organisation/entities/organisation-settings.entity';
 
@@ -173,6 +173,8 @@ export class ClientsService {
 		filters?: {
 			status?: GeneralStatus;
 			category?: string;
+			industry?: string;
+			riskLevel?: ClientRiskLevel;
 			search?: string;
 		},
 	): Promise<PaginatedResponse<Client>> {
@@ -204,6 +206,14 @@ export class ClientsService {
 
 			if (filters?.category) {
 				where.category = filters.category;
+			}
+			
+			if (filters?.industry) {
+				where.industry = filters.industry;
+			}
+			
+			if (filters?.riskLevel) {
+				where.riskLevel = filters.riskLevel;
 			}
 
 			if (filters?.search) {
@@ -278,9 +288,17 @@ export class ClientsService {
 				where.branch = { uid: branchId };
 			}
 
+			//also fetch tasks and leads
+
 			const client = await this.clientsRepository.findOne({
 				where,
-				relations: ['branch', 'organisation', 'assignedSalesRep', 'quotations', 'checkIns'],
+				relations: [
+					'branch',
+					'organisation',
+					'assignedSalesRep',
+					'quotations',
+					'checkIns',
+				],
 			});
 
 			if (!client) {
@@ -496,7 +514,7 @@ export class ClientsService {
 					{ ...where, email: ILike(`%${searchTerm?.toLowerCase()}%`) },
 					{ ...where, phone: ILike(`%${searchTerm?.toLowerCase()}%`) },
 				],
-				relations: ['branch', 'organisation'],
+				relations: ['branch', 'organisation', 'assignedSalesRep', 'quotations', 'checkIns'],
 				skip: (page - 1) * limit,
 				take: limit,
 				order: { createdAt: 'DESC' },

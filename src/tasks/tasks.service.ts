@@ -361,16 +361,17 @@ export class TasksService {
 			}
 
 			// Check if there are any open flags
-			const hasOpenFlags = task.flags?.some(flag => 
-				flag.isDeleted === false && 
-				(flag.status === TaskFlagStatus.OPEN || flag.status === TaskFlagStatus.IN_PROGRESS)
+			const hasOpenFlags = task.flags?.some(
+				(flag) =>
+					flag.isDeleted === false &&
+					(flag.status === TaskFlagStatus.OPEN || flag.status === TaskFlagStatus.IN_PROGRESS),
 			);
 
 			// If there are open flags and task is not in PENDING status, update it
 			if (hasOpenFlags && task.status !== TaskStatus.PENDING) {
 				task.status = TaskStatus.PENDING;
 				await this.taskRepository.save(task);
-				
+
 				// Clear task cache
 				await this.clearTaskCache(taskId);
 			}
@@ -398,7 +399,9 @@ export class TasksService {
 			task.targetCategory = createTaskDto.targetCategory;
 			task.attachments = createTaskDto.attachments || [];
 			task.repetitionType = createTaskDto.repetitionType || RepetitionType.NONE;
-			task.repetitionDeadline = createTaskDto.repetitionDeadline ? new Date(createTaskDto.repetitionDeadline) : null;
+			task.repetitionDeadline = createTaskDto.repetitionDeadline
+				? new Date(createTaskDto.repetitionDeadline)
+				: null;
 
 			// Handle assignees
 			if (createTaskDto.assignees?.length) {
@@ -453,11 +456,7 @@ export class TasksService {
 			}
 
 			// Check if this is a repeating task
-			if (
-				task.repetitionType !== RepetitionType.NONE &&
-				task.repetitionDeadline &&
-				task.deadline
-			) {
+			if (task.repetitionType !== RepetitionType.NONE && task.repetitionDeadline && task.deadline) {
 				await this.createRepeatingTasks(savedTask, createTaskDto);
 			}
 
@@ -1773,7 +1772,7 @@ export class TasksService {
 				if (allCompleted) {
 					flagItem.taskFlag.status = TaskFlagStatus.RESOLVED;
 					await this.taskFlagRepository.save(flagItem.taskFlag);
-					
+
 					// After resolving a flag, check and update task status
 					if (flagItem.taskFlag?.task?.uid) {
 						await this.checkFlagsAndUpdateTaskStatus(flagItem.taskFlag.task.uid);
