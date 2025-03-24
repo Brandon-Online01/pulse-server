@@ -113,12 +113,56 @@ export class ClientsService {
 
 	async create(createClientDto: CreateClientDto, orgId?: number, branchId?: number): Promise<{ message: string }> {
 		try {
-			// Add organization and branch
+			// First, check for existing client with the same email
+			const existingClient = await this.clientsRepository.findOne({
+				where: {
+					email: createClientDto.email,
+					isDeleted: false,
+					...(orgId && { organisation: { uid: orgId } }),
+				},
+			});
+
+			if (existingClient) {
+				throw new BadRequestException('A client with this email already exists');
+			}
+
+			// First, validate the orgId and branchId if provided
+			if (orgId) {
+				const organisation = await this.organisationRepository.findOne({ where: { uid: orgId } });
+				if (!organisation) {
+					throw new BadRequestException(`Organisation with ID ${orgId} not found`);
+				}
+			}
+
+			// Transform the DTO data to match the entity structure
+			// This helps ensure TypeORM gets the correct data structure
 			const clientData = {
 				...createClientDto,
-				organisation: orgId ? { uid: orgId } : undefined,
-				branch: branchId ? { uid: branchId } : undefined,
+				// Only transform status if it exists in the DTO
+				...(createClientDto['status'] && { status: createClientDto['status'] as GeneralStatus }),
+				// Handle address separately to ensure it matches the entity structure
+				address: createClientDto.address
+					? {
+							...createClientDto.address,
+					  }
+					: undefined,
+				// Handle social profiles separately if needed
+				socialProfiles: createClientDto.socialProfiles
+					? {
+							...createClientDto.socialProfiles,
+					  }
+					: undefined,
 			} as DeepPartial<Client>;
+
+			// Only set organization if orgId is provided and valid
+			if (orgId) {
+				clientData.organisation = { uid: orgId };
+			}
+
+			// Only set branch if branchId is provided and valid
+			if (branchId) {
+				clientData.branch = { uid: branchId };
+			}
 
 			// If geofencing is enabled, ensure we have valid coordinates and radius
 			if (createClientDto.enableGeofence) {
@@ -207,11 +251,11 @@ export class ClientsService {
 			if (filters?.category) {
 				where.category = filters.category;
 			}
-			
+
 			if (filters?.industry) {
 				where.industry = filters.industry;
 			}
-			
+
 			if (filters?.riskLevel) {
 				where.riskLevel = filters.riskLevel;
 			}
@@ -292,13 +336,7 @@ export class ClientsService {
 
 			const client = await this.clientsRepository.findOne({
 				where,
-				relations: [
-					'branch',
-					'organisation',
-					'assignedSalesRep',
-					'quotations',
-					'checkIns',
-				],
+				relations: ['branch', 'organisation', 'assignedSalesRep', 'quotations', 'checkIns'],
 			});
 
 			if (!client) {
@@ -326,14 +364,41 @@ export class ClientsService {
 		branchId?: number,
 	): Promise<{ message: string }> {
 		try {
+			// Find the existing client with current org/branch context
 			const existingClient = await this.findOne(ref, orgId, branchId);
 
 			if (!existingClient.client) {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
-			const clientDataToUpdate = { ...updateClientDto } as DeepPartial<Client>;
+			// Transform the DTO data to match the entity structure
+			const clientDataToUpdate = {
+				...updateClientDto,
+				// Transform status if provided
+				status: updateClientDto.status as GeneralStatus,
+				// Handle address specially if provided
+				address: updateClientDto.address
+					? {
+							...updateClientDto.address,
+					  }
+					: undefined,
+				// Handle social profiles specially if provided
+				socialProfiles: updateClientDto.socialProfiles
+					? {
+							...updateClientDto.socialProfiles,
+					  }
+					: undefined,
+			} as DeepPartial<Client>;
+
 			const client = existingClient.client;
+
+			// Important: Don't modify organization/branch relationships unless explicitly intended
+			// Remove these fields from the updateDto to preserve existing relationships
+			delete clientDataToUpdate.organisation;
+			delete clientDataToUpdate.branch;
+
+			// If we need to change org/branch, it should be done explicitly through a specific API endpoint
+			// or with specific parameters, not as part of the general update
 
 			// Handle geofencing data if provided
 			if (updateClientDto.enableGeofence !== undefined) {
@@ -358,8 +423,8 @@ export class ClientsService {
 					// Get default radius from organization settings if available
 					let defaultRadius = 500; // Default fallback value
 
-					if (orgId) {
-						const orgSettings = await this.getOrganisationSettings(orgId);
+					if (client.organisation?.uid) {
+						const orgSettings = await this.getOrganisationSettings(client.organisation.uid);
 						if (orgSettings?.geofenceDefaultRadius) {
 							defaultRadius = orgSettings.geofenceDefaultRadius;
 						}
@@ -383,7 +448,11 @@ export class ClientsService {
 			}
 
 			// Update with proper filtering
-			await this.clientsRepository.update(whereConditions, clientDataToUpdate);
+			const updateResult = await this.clientsRepository.update(whereConditions, clientDataToUpdate);
+
+			if (updateResult.affected === 0) {
+				throw new NotFoundException('Client not found or you do not have permission to update this client');
+			}
 
 			// Invalidate cache
 			await this.invalidateClientCache(client);

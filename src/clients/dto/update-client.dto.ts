@@ -1,10 +1,44 @@
 import { ApiProperty, PartialType } from '@nestjs/swagger';
-import { IsEmail, IsPhoneNumber, IsOptional, IsString, IsBoolean, IsObject, IsNotEmpty, ValidateNested, IsEnum, IsNumber, IsDate, IsArray, Min, Max, IsInt } from 'class-validator';
+import {
+	IsEmail,
+	IsPhoneNumber,
+	IsOptional,
+	IsString,
+	IsBoolean,
+	IsObject,
+	ValidateNested,
+	IsEnum,
+	IsNumber,
+	IsDate,
+	IsArray,
+	Min,
+	Max,
+	IsInt,
+} from 'class-validator';
 import { AddressDto, CreateClientDto, SocialProfilesDto } from './create-client.dto';
 import { Type } from 'class-transformer';
-import { ClientContactPreference, PriceTier, AcquisitionChannel, ClientRiskLevel, PaymentMethod, GeofenceType } from '../../lib/enums/client.enums';
+import {
+	ClientContactPreference,
+	PriceTier,
+	AcquisitionChannel,
+	ClientRiskLevel,
+	PaymentMethod,
+	GeofenceType,
+} from '../../lib/enums/client.enums';
 
+/**
+ * UpdateClientDto - Extends CreateClientDto to allow partial updates
+ *
+ * All fields are optional in this DTO since clients can be updated
+ * with only the fields that need to be changed.
+ */
 export class UpdateClientDto extends PartialType(CreateClientDto) {
+	// The PartialType(CreateClientDto) includes all fields from CreateClientDto
+	// with each field marked as optional (adds ? to each property).
+
+	// The following fields are already included through PartialType
+	// and are only kept here for documentation purposes:
+
 	@IsString()
 	@IsOptional()
 	@ApiProperty({
@@ -76,7 +110,31 @@ export class UpdateClientDto extends PartialType(CreateClientDto) {
 		description: 'The full address of the client including coordinates',
 		type: AddressDto,
 	})
-	address?: AddressDto;	
+	address?: AddressDto;
+
+	@IsString()
+	@IsOptional()
+	@ApiProperty({
+		example: 'contract',
+		description: 'The category of the client',
+	})
+	category?: string;
+
+	@IsString()
+	@IsOptional()
+	@ApiProperty({
+		example: 'standard',
+		description: 'The type of client',
+	})
+	type?: string;
+
+	@IsString()
+	@IsOptional()
+	@ApiProperty({
+		example: 'active',
+		description: 'The status of the client',
+	})
+	status?: string;
 
 	@IsBoolean()
 	@IsOptional()
@@ -249,7 +307,7 @@ export class UpdateClientDto extends PartialType(CreateClientDto) {
 	@ApiProperty({
 		enum: PaymentMethod,
 		example: PaymentMethod.BANK_TRANSFER,
-		description: 'Client\'s preferred payment method',
+		description: "Client's preferred payment method",
 	})
 	preferredPaymentMethod?: PaymentMethod;
 
@@ -257,7 +315,7 @@ export class UpdateClientDto extends PartialType(CreateClientDto) {
 	@IsOptional()
 	@ApiProperty({
 		example: 'English',
-		description: 'Client\'s preferred language for communication',
+		description: "Client's preferred language for communication",
 	})
 	preferredLanguage?: string;
 
@@ -273,7 +331,7 @@ export class UpdateClientDto extends PartialType(CreateClientDto) {
 	@IsOptional()
 	@ApiProperty({
 		example: 250,
-		description: 'Number of employees in the client\'s company',
+		description: "Number of employees in the client's company",
 	})
 	companySize?: number;
 
@@ -322,12 +380,58 @@ export class UpdateClientDto extends PartialType(CreateClientDto) {
 	})
 	socialProfiles?: SocialProfilesDto;
 
+	@IsNumber()
+	@IsOptional()
+	@ApiProperty({
+		example: 51.5074,
+		description: 'Latitude coordinate',
+	})
+	latitude?: number;
+
+	@IsNumber()
+	@IsOptional()
+	@ApiProperty({
+		example: -0.1278,
+		description: 'Longitude coordinate',
+	})
+	longitude?: number;
+
+	@IsEnum(GeofenceType)
+	@IsOptional()
+	@ApiProperty({
+		enum: GeofenceType,
+		example: GeofenceType.NOTIFY,
+		description: 'Geofence type to apply for this client',
+	})
+	geofenceType?: GeofenceType;
+
+	@IsNumber()
+	@IsOptional()
+	@Min(100)
+	@Max(5000)
+	@ApiProperty({
+		example: 500,
+		description: 'Radius in meters for geofence (default: 500)',
+		minimum: 100,
+		maximum: 5000,
+	})
+	geofenceRadius?: number;
+
+	@IsBoolean()
+	@IsOptional()
+	@ApiProperty({
+		example: true,
+		description: 'Enable geofencing for this client',
+		default: false,
+	})
+	enableGeofence?: boolean;
+
 	@IsOptional()
 	@IsString()
 	@ApiProperty({
 		description: 'GPS coordinates of the client location',
 		example: '-36.3434314, 149.8488864',
-		required: false
+		required: false,
 	})
 	gpsCoordinates?: string;
 }
