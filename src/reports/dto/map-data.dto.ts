@@ -189,6 +189,22 @@ export class MapEventDto {
 
 	@ApiProperty({ description: 'Additional event context data', required: false })
 	context?: Record<string, any>;
+
+	@ApiProperty({ 
+		description: 'Physical address of the event location',
+		required: false
+	})
+	address?: string;
+
+	@ApiProperty({
+		description: 'Geographic coordinates as [latitude, longitude] tuple',
+		type: 'array',
+		items: {
+			type: 'number',
+		},
+		required: false
+	})
+	position?: [number, number];
 }
 
 export class MapConfigDto {

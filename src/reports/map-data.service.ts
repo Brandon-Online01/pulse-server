@@ -85,10 +85,10 @@ export class MapDataService {
 		console.log(`Fetching real map data for org ${orgId}, branch ${branchId}, user ${userId}`);
 
 		try {
-			// 1. Fetch workers data
+			// 1. Fetch workers data - only include workers with valid locations
 			const workers = await this.getWorkerLocations(orgId, branchId);
 
-			// 2. Fetch events data
+			// 2. Fetch events data with expanded timeframe
 			const events = await this.getMapEvents(orgId, branchId);
 
 			// 3. Get map configuration
@@ -352,238 +352,148 @@ export class MapDataService {
 		startOfWeek.setDate(now.getDate() - 7); // Look back 7 days for a more complete picture
 
 		// Process all users in parallel to improve performance
-		const workerPromises = users.map(async (user) => {
-			try {
-				// Get latest tracking data for location
-				const latestTracking = await this.trackingRepository.findOne({
-					where: {
-						owner: { uid: user.uid },
-					},
-					order: {
-						createdAt: 'DESC',
-					},
-				});
-
-				// If no tracking data available, leave position blank
-				let position: [number, number] | null = null;
-				let address = 'Unknown location';
-
-				if (latestTracking) {
-					position = [latestTracking.latitude, latestTracking.longitude];
-					address = latestTracking.address || 'Unknown location';
-				} else {
-					// No tracking data, leave position null
-
-					// Try to get org/branch name for the address at least
-					if (user.branch) {
-						address = `${user.branch.name || 'Branch'} location`;
-					} else if (user.organisation) {
-						address = `${user.organisation.name || 'Organization'} location`;
-					}
-				}
-
-				// Get current attendance status
-				const attendance = await this.attendanceRepository.findOne({
-					where: {
-						owner: { uid: user.uid },
-						checkIn: Between(startOfDay, endOfDay),
-					},
-					order: {
-						checkIn: 'DESC',
-					},
-				});
-
-				// Determine marker type based on the user's latest activity
-				const markerType = await this.determineMarkerType(user.uid);
-
-				// Determine user status text based on their current activity
-				const statusText = await this.determineUserStatus(user.uid, attendance);
-
-				// Build worker location object with basic information
-				const workerLocation: WorkerLocationDto = {
-					id: user.uid.toString(),
-					name: `${user.name || ''} ${user.surname || ''}`.trim(),
-					position: position || undefined,
-					markerType,
-					status: statusText,
-					image: user.photoURL || '/placeholder.svg?height=100&width=100',
-					location: {
-						address,
-						imageUrl: latestTracking
-							? 'https://images.pexels.com/photos/2464890/pexels-photo-2464890.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2'
-							: undefined,
-					},
-					schedule: await this.getUserSchedule(user.uid),
-					jobStatus: await this.getUserJobStatus(user.uid),
-				};
-
-				// Add current task information if available
-				const currentTask = await this.getCurrentTask(user.uid);
-				if (currentTask) {
-					// Find client for this task
-					let clientName = 'No client';
-					if (currentTask.clients && Array.isArray(currentTask.clients) && currentTask.clients.length > 0) {
-						try {
-							const clientUid = currentTask.clients[0].uid;
-							const client = await this.clientRepository.findOne({
-								where: { uid: clientUid },
-							});
-							if (client) {
-								clientName = client.name;
-							}
-						} catch (error) {
-							console.error(`Error fetching client for task ${currentTask.uid}:`, error);
-						}
-					}
-
-					workerLocation.task = {
-						id: currentTask.uid.toString(),
-						title: currentTask.title,
-						client: clientName,
-					};
-				}
-
-				// Get comprehensive activity stats for this worker (last 7 days)
-				const activity = await this.getWorkerActivity(user.uid, startOfWeek, now);
-				if (activity) {
-					workerLocation.activity = activity;
-				}
-
-				// Check if user can add task based on role/permissions
-				workerLocation.canAddTask = this.canUserAddTask(user);
-
-				// Add break data if user is on break
-				if (attendance?.breakStartTime && !attendance?.breakEndTime) {
-					workerLocation.breakData = this.getBreakData(attendance);
-				}
-
-				return workerLocation;
-			} catch (error) {
-				console.error(`Error processing worker location for user ${user.uid}:`, error);
-				return null; // Return null for failed worker data
-			}
-		});
-
-		// Wait for all worker data to be processed
-		const results = await Promise.all(workerPromises);
-
-		// Filter out any null results from failed worker data processing
-		return results.filter((worker) => worker !== null) as WorkerLocationDto[];
-	}
-
-	// New helper method to get comprehensive worker activity data
-	private async getWorkerActivity(userId: number, startDate: Date, endDate: Date): Promise<ActivityDto> {
-		try {
-			// Count claims (using entityManager for access to claims repository)
-			let claimsCount = 0;
-			try {
-				// Use the proper entity name 'claim' (singular) instead of 'claims'
-				const claimsRepository = this.entityManager.getRepository('claim');
-				claimsCount = await claimsRepository.count({
-					where: {
-						owner: { uid: userId },
-						createdAt: Between(startDate, endDate),
-						isDeleted: false,
-					},
-				});
-			} catch (error) {
-				// Silent fail - use default 0
-			}
-
-			// Count journals
-			const journalsCount = await this.journalRepository.count({
-				where: {
-					owner: { uid: userId },
-					createdAt: Between(startDate, endDate),
-				},
-			});
-
-			// Count leads
-			const leadsCount = await this.leadRepository.count({
-				where: {
-					owner: { uid: userId },
-					createdAt: Between(startDate, endDate),
-				},
-			});
-
-			// Count check-ins
-			const checkInsCount = await this.checkInRepository.count({
-				where: {
-					owner: { uid: userId },
-					checkInTime: Between(startDate, endDate),
-				},
-			});
-
-			// Count tasks (both created and assigned)
-			const createdTasksCount = await this.taskRepository.count({
-				where: {
-					creator: { uid: userId },
-					updatedAt: Between(startDate, endDate),
-				},
-			});
-
-			// Count assigned tasks (more complex due to JSON array storage)
-			const allTasks = await this.taskRepository.find({
-				where: {
-					updatedAt: Between(startDate, endDate),
-				},
-			});
-
-			// Filter tasks where user is in assignees
-			const assignedTasksCount = allTasks.filter((task) => {
-				if (task.assignees && Array.isArray(task.assignees)) {
-					return task.assignees.some((assignee) => assignee.uid === userId);
-				}
-				return false;
-			}).length;
-
-			// Get quotations count if that repository exists
-			let quotationsCount = 0;
-			// Only try once per server startup to access quotations
-			if (!MapDataService.quotationsRepoChecked || MapDataService.quotationsRepoAvailable) {
+		const workerPromisesResults = await Promise.all(
+			users.map(async (user) => {
 				try {
-					// Use the more reliable approach with getRepository from dataSource
-					const quotationsRepository = this.taskRepository.manager.getRepository('quotation');
-					quotationsCount = await quotationsRepository.count({
+					// Get latest tracking data for location
+					const latestTracking = await this.trackingRepository.findOne({
 						where: {
-							placedBy: { uid: userId },
-							createdAt: Between(startDate, endDate),
+							owner: { uid: user.uid },
+						},
+						order: {
+							createdAt: 'DESC',
 						},
 					});
-					MapDataService.quotationsRepoAvailable = true;
-				} catch (error) {
-					if (!MapDataService.quotationsRepoChecked) {
-						console.warn(
-							`Quotations repository not available: ${error.message}. This warning will only show once.`,
-						);
+
+					// Skip users with no tracking data as requested
+					if (!latestTracking || !latestTracking.latitude || !latestTracking.longitude) {
+						return null;
 					}
-					MapDataService.quotationsRepoAvailable = false;
+
+					// Set position and address from tracking data
+					const position: [number, number] = [latestTracking.latitude, latestTracking.longitude];
+					const address = latestTracking.address || 'Unknown location';
+
+					// Get current attendance status
+					const attendance = await this.attendanceRepository.findOne({
+						where: {
+							owner: { uid: user.uid },
+							checkIn: Between(startOfDay, endOfDay),
+						},
+						order: {
+							checkIn: 'DESC',
+						},
+					});
+
+					// Determine marker type based on the user's latest activity
+					const markerType = await this.determineMarkerType(user.uid);
+
+					// Determine user status text based on their current activity
+					const statusText = await this.determineUserStatus(user.uid, attendance);
+
+					// Build worker location object with basic information
+					const workerLocation: WorkerLocationDto = {
+						id: user.uid.toString(),
+						name: `${user.name || ''} ${user.surname || ''}`.trim(),
+						position,
+						markerType,
+						status: statusText,
+						image: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || '')}%20${encodeURIComponent(user.surname || '')}&background=random`,
+						location: {
+							address,
+							imageUrl: latestTracking
+								? await this.getLocationImageForAddress(address)
+								: undefined,
+						},
+						schedule: await this.getUserSchedule(user.uid),
+						jobStatus: await this.getUserJobStatus(user.uid),
+					};
+
+					// Add current task information if available
+					const currentTask = await this.getCurrentTask(user.uid);
+					if (currentTask) {
+						// Find client for this task
+						let clientName = 'No client';
+						if (currentTask.clients && Array.isArray(currentTask.clients) && currentTask.clients.length > 0) {
+							try {
+								const clientUid = currentTask.clients[0].uid;
+								const client = await this.clientRepository.findOne({
+									where: { uid: clientUid },
+								});
+								if (client) {
+									clientName = client.name;
+								}
+							} catch (error) {
+								console.error(`Error fetching client for task ${currentTask.uid}:`, error);
+							}
+						}
+
+						workerLocation.task = {
+							id: currentTask.uid.toString(),
+							title: currentTask.title,
+							client: clientName,
+						};
+					}
+
+					// Get comprehensive activity stats for this worker (last 7 days)
+					const activity = await this.getWorkerActivity(user.uid, startOfWeek, now);
+					if (activity) {
+						workerLocation.activity = activity;
+					}
+
+					// Check if user can add task based on role/permissions
+					workerLocation.canAddTask = this.canUserAddTask(user);
+
+					// Add break data if user is on break
+					if (attendance?.breakStartTime && !attendance?.breakEndTime) {
+						workerLocation.breakData = this.getBreakData(attendance);
+					}
+
+					return workerLocation;
+				} catch (error) {
+					console.error(`Error processing worker location for user ${user.uid}:`, error);
+					return null; // Return null for failed worker data
 				}
-				MapDataService.quotationsRepoChecked = true;
-			}
+			})
+		);
 
-			// Total unique tasks (avoiding double-counting)
-			const tasksCount = Math.max(createdTasksCount, assignedTasksCount);
+		// Filter out null results (users with no tracking data or errors)
+		return workerPromisesResults.filter(worker => worker !== null) as WorkerLocationDto[];
+	}
 
-			return {
-				claims: claimsCount,
-				journals: journalsCount,
-				leads: leadsCount,
-				checkIns: checkInsCount,
-				tasks: tasksCount,
-				quotations: quotationsCount || 0,
-			};
-		} catch (error) {
-			console.error(`Error fetching activity stats for user ${userId}:`, error);
-			return {
-				claims: 0,
-				journals: 0,
-				leads: 0,
-				checkIns: 0,
-				tasks: 0,
-				quotations: 0,
-			};
+	/**
+	 * Get a location image URL for an address - improved to be more specific
+	 */
+	private async getLocationImageForAddress(address: string): Promise<string> {
+		// In a production environment, you would integrate with a service like:
+		// - Google Street View API
+		// - Mapbox Static Images API
+		// - Custom location imagery database
+		
+		// For now, return a more diverse set of placeholder images based on address hash
+		const addressHash = this.simpleHash(address);
+		const imageOptions = [
+			'https://images.pexels.com/photos/2464890/pexels-photo-2464890.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2',
+			'https://images.pexels.com/photos/1563256/pexels-photo-1563256.jpeg?auto=compress&cs=tinysrgb&w=800',
+			'https://images.pexels.com/photos/3052361/pexels-photo-3052361.jpeg?auto=compress&cs=tinysrgb&w=800',
+			'https://images.pexels.com/photos/1722183/pexels-photo-1722183.jpeg?auto=compress&cs=tinysrgb&w=800',
+			'https://images.pexels.com/photos/2559941/pexels-photo-2559941.jpeg?auto=compress&cs=tinysrgb&w=800'
+		];
+		
+		return imageOptions[addressHash % imageOptions.length];
+	}
+
+	/**
+	 * Simple string hashing function
+	 */
+	private simpleHash(str: string): number {
+		let hash = 0;
+		for (let i = 0; i < str.length; i++) {
+			const char = str.charCodeAt(i);
+			hash = (hash << 5) - hash + char;
+			hash = hash & hash; // Convert to 32bit integer
 		}
+		return Math.abs(hash);
 	}
 
 	// Helper method to get map events from real data
@@ -591,10 +501,14 @@ export class MapDataService {
 		console.log("Starting to fetch map events...");
 		const events: MapEventDto[] = [];
 
-		// Define date ranges - focus only on today's data
+		// Define date ranges - fetch events from the last 3 days for more comprehensive data
 		const now = new Date();
 		const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
 		const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+		
+		// Include events from the past 3 days to show more activity
+		const threeDaysAgo = new Date(startOfToday);
+		threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
 
 		// Define query conditions
 		const orgCondition = orgId ? { organisation: { ref: orgId } } : {};
@@ -623,28 +537,31 @@ export class MapDataService {
 			
 			// Create a map of user IDs to names for easy lookups
 			const userNameMap = new Map<number, string>();
+			const userImageMap = new Map<number, string>();
+			
 			for (const user of users) {
 				userNameMap.set(user.uid, `${user.name || ''} ${user.surname || ''}`.trim());
+				userImageMap.set(user.uid, user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || '')}%20${encodeURIComponent(user.surname || '')}&background=random`);
 			}
 
-			// 1. Process TASKS - only today's tasks
+			// 1. Process TASKS - tasks from the last 3 days
 			try {
 				const tasks = await this.taskRepository.find({
 					where: [
-						// Tasks created today
+						// Tasks created in the past 3 days
 						{
 							assignees: Not(IsNull()),
-							createdAt: Between(startOfToday, endOfToday),
+							createdAt: Between(threeDaysAgo, endOfToday),
 						},
-						// Tasks updated today
+						// Tasks updated in the past 3 days
 						{
 							assignees: Not(IsNull()),
-							updatedAt: Between(startOfToday, endOfToday),
+							updatedAt: Between(threeDaysAgo, endOfToday),
 						},
-						// Tasks completed today
+						// Tasks completed in the past 3 days
 						{
 							assignees: Not(IsNull()),
-							completionDate: Between(startOfToday, endOfToday),
+							completionDate: Between(threeDaysAgo, endOfToday),
 						}
 					],
 					relations: ['creator'],
@@ -663,9 +580,13 @@ export class MapDataService {
 					if (!userNameMap.has(userId)) continue;
 					
 					const userName = userNameMap.get(userId) || 'Unknown user';
+					const userImageUrl = userImageMap.get(userId);
 					
 					// Find client for this task
 					let clientName = 'No client';
+					let clientAddress = '';
+					let clientPosition: [number, number] | undefined;
+					
 					if (task.clients && Array.isArray(task.clients) && task.clients.length > 0) {
 						try {
 							const clientUid = task.clients[0].uid;
@@ -675,6 +596,10 @@ export class MapDataService {
 								});
 								if (client) {
 									clientName = client.name;
+									clientAddress = client.address?.street || '';
+									if (client.latitude && client.longitude) {
+										clientPosition = [Number(client.latitude), Number(client.longitude)];
+									}
 								}
 							}
 						} catch (error) {
@@ -682,33 +607,60 @@ export class MapDataService {
 						}
 					}
 					
-					// Create event object
-					const eventObj = {
+					// Determine the event date for display
+					const eventDate = task.updatedAt || task.createdAt;
+					let timePeriod = 'Today';
+					if (eventDate.getDate() === now.getDate() - 1) {
+						timePeriod = 'Yesterday';
+					} else if (eventDate < threeDaysAgo) {
+						timePeriod = this.formatDateShort(eventDate);
+					}
+					
+					// Create event object with enhanced context
+					const eventObj: MapEventDto = {
 						id: `task-${task.uid}`,
 						user: userName,
 						type: MapMarkerType.TASK,
 						category: MapEventCategory.TASK,
-						time: this.formatEventTime(task.updatedAt || task.createdAt),
-						timePeriod: 'Today',
+						time: this.formatEventTime(eventDate),
+						timePeriod,
 						location: clientName,
+						address: clientAddress,
+						position: clientPosition, // Include position data if available
 						title: task.status === TaskStatus.COMPLETED 
 							? `Completed task: ${task.title}`
-							: `New task created: ${task.title}`,
+							: task.status === TaskStatus.IN_PROGRESS
+								? `Working on task: ${task.title}`
+								: `New task: ${task.title}`,
 						context: {
 							taskId: task.uid,
 							taskStatus: task.status,
 							progress: task.progress || 0,
 							createdAt: task.createdAt,
-							dateKey: this.formatDateShort(task.createdAt)
+							dateKey: this.formatDateShort(task.createdAt),
+							deadline: task.deadline || null,
+							priority: task.priority || 'normal',
+							clientId: task.clients?.[0]?.uid,
 						}
 					};
+					
+					// If we have a user image URL, add it to the event object
+					if (userImageUrl) {
+						(eventObj as any).userImage = userImageUrl;
+					}
 					
 					events.push(eventObj);
 				}
 				
-				// Add summary if needed
-				if (tasks.length >= 3) {
-					const users = new Set(tasks.map(t => t.assignees[0]?.uid).filter(Boolean));
+				// Add summary if needed (for today's tasks only)
+				const todaysTasks = tasks.filter(t => 
+					new Date(t.createdAt).getDate() === now.getDate() && 
+					new Date(t.createdAt).getMonth() === now.getMonth() &&
+					new Date(t.createdAt).getFullYear() === now.getFullYear()
+				);
+				
+				if (todaysTasks.length >= 3) {
+					const users = new Set(todaysTasks.map(t => t.assignees[0]?.uid).filter(Boolean));
 					events.push({
 						id: `task-summary-${this.formatDateShort(now)}`,
 						user: 'Multiple Users',
@@ -717,19 +669,19 @@ export class MapDataService {
 						time: this.formatEventTime(now),
 						timePeriod: 'Today',
 						location: 'Various Locations',
-						title: `${tasks.length} tasks created/updated (${users.size} users)`
+						title: `${todaysTasks.length} tasks created/updated today (${users.size} users)`
 					});
 				}
 			} catch (error) {
 				console.error('Error processing task data:', error.message);
 			}
 
-			// 2. Process LEADS - only today's leads
+			// 2. Process LEADS - leads from the last 3 days
 			try {
 				const leads = await this.leadRepository.find({
 					where: {
 						owner: { uid: In(userIds) },
-						createdAt: Between(startOfToday, endOfToday)
+						createdAt: Between(threeDaysAgo, endOfToday)
 					},
 					relations: ['owner', 'client'],
 					order: { createdAt: 'DESC' }
@@ -741,29 +693,66 @@ export class MapDataService {
 					if (!lead.owner) continue;
 					
 					const userName = userNameMap.get(lead.owner.uid) || 'Unknown user';
+					const userImageUrl = userImageMap.get(lead.owner.uid);
 					const clientName = lead.client ? lead.client.name : 'No client';
 					
-					events.push({
+					// Determine client position if available
+					let clientPosition: [number, number] | undefined;
+					let clientAddress = '';
+					
+					if (lead.client) {
+						if (lead.client.latitude && lead.client.longitude) {
+							clientPosition = [Number(lead.client.latitude), Number(lead.client.longitude)];
+						}
+						clientAddress = lead.client.address?.street || '';
+					}
+					
+					// Determine the event date for display
+					const eventDate = lead.createdAt;
+					let timePeriod = 'Today';
+					if (eventDate.getDate() === now.getDate() - 1) {
+						timePeriod = 'Yesterday';
+					} else if (eventDate < threeDaysAgo) {
+						timePeriod = this.formatDateShort(eventDate);
+					}
+					
+					const leadEvent: MapEventDto = {
 						id: `lead-${lead.uid}`,
 						user: userName,
 						type: MapMarkerType.LEAD,
 						category: MapEventCategory.LEAD,
-						time: this.formatEventTime(lead.createdAt),
-						timePeriod: 'Today',
+						time: this.formatEventTime(eventDate),
+						timePeriod,
 						location: clientName,
-						title: `New lead created: ${(lead as any).title || 'Untitled lead'}`
-					});
+						address: clientAddress,
+						position: clientPosition,
+						title: `New lead: ${(lead as any).title || 'Untitled lead'}`,
+						context: {
+							leadId: lead.uid,
+							leadStatus: (lead as any).status || 'new',
+							leadValue: (lead as any).estimatedValue || 0,
+							clientId: lead.client?.uid,
+							dateKey: this.formatDateShort(lead.createdAt)
+						}
+					};
+					
+					// If we have a user image URL, add it to the event object
+					if (userImageUrl) {
+						(leadEvent as any).userImage = userImageUrl;
+					}
+					
+					events.push(leadEvent);
 				}
 			} catch (error) {
 				console.error('Error processing lead data:', error.message);
 			}
 
-			// 3. Process JOURNALS - only today's journals
+			// 3. Process JOURNALS - journals from the last 3 days
 			try {
 				const journals = await this.journalRepository.find({
 					where: {
 						owner: { uid: In(userIds) },
-						createdAt: Between(startOfToday, endOfToday)
+						createdAt: Between(threeDaysAgo, endOfToday)
 					},
 					relations: ['owner'],
 					order: { createdAt: 'DESC' }
@@ -775,30 +764,59 @@ export class MapDataService {
 					if (!journal.owner) continue;
 					
 					const userName = userNameMap.get(journal.owner.uid) || 'Unknown user';
+					const userImageUrl = userImageMap.get(journal.owner.uid);
 					
-					events.push({
+					// Try to extract position from journal if available
+					let position: [number, number] | undefined;
+					if ((journal as any).latitude && (journal as any).longitude) {
+						position = [Number((journal as any).latitude), Number((journal as any).longitude)];
+					}
+					
+					// Determine the event date for display
+					const eventDate = journal.createdAt;
+					let timePeriod = 'Today';
+					if (eventDate.getDate() === now.getDate() - 1) {
+						timePeriod = 'Yesterday';
+					} else if (eventDate < threeDaysAgo) {
+						timePeriod = this.formatDateShort(eventDate);
+					}
+					
+					const journalEvent: MapEventDto = {
 						id: `journal-${journal.uid}`,
 						user: userName,
 						type: MapMarkerType.JOURNAL,
 						category: MapEventCategory.JOURNAL,
-						time: this.formatEventTime(journal.createdAt),
-						timePeriod: 'Today',
+						time: this.formatEventTime(eventDate),
+						timePeriod,
 						location: (journal as any).location || 'Unknown location',
-						title: `New journal entry: ${(journal as any).title || 'Untitled entry'}`
-					});
+						position,
+						title: `Journal entry: ${(journal as any).title || 'Untitled entry'}`,
+						context: {
+							journalId: journal.uid,
+							mood: (journal as any).mood,
+							dateKey: this.formatDateShort(journal.createdAt)
+						}
+					};
+					
+					// If we have a user image URL, add it to the event object
+					if (userImageUrl) {
+						(journalEvent as any).userImage = userImageUrl;
+					}
+					
+					events.push(journalEvent);
 				}
 			} catch (error) {
 				console.error('Error processing journal data:', error.message);
 			}
 
-			// 4. Process CHECK-INS - only today's check-ins
+			// 4. Process CHECK-INS - check-ins from the last 3 days
 			try {
 				const checkIns = await this.checkInRepository.find({
 					where: {
 						owner: { uid: In(userIds) },
-						checkInTime: Between(startOfToday, endOfToday)
+						checkInTime: Between(threeDaysAgo, endOfToday)
 					},
-					relations: ['owner'],
+					relations: ['owner', 'client'],
 					order: { checkInTime: 'DESC' }
 				});
 				
@@ -808,18 +826,58 @@ export class MapDataService {
 					if (!checkIn.owner) continue;
 					
 					const userName = userNameMap.get(checkIn.owner.uid) || 'Unknown user';
+					const userImageUrl = userImageMap.get(checkIn.owner.uid);
+					const clientName = checkIn.client ? checkIn.client.name : 'Unknown client';
+					
+					// Try to extract position data, safely handling potential missing properties
+					let position: [number, number] | undefined;
+					if ((checkIn as any).latitude !== undefined && (checkIn as any).longitude !== undefined) {
+						position = [Number((checkIn as any).latitude), Number((checkIn as any).longitude)];
+					}
+					
+					// Extract client address if available
+					let address = checkIn.checkInLocation || 'Unknown location';
+					if (checkIn.client && checkIn.client.address) {
+						address = checkIn.client.address.street || address;
+					}
+					
+					// Determine the event date for display
+					const eventDate = checkIn.checkInTime;
+					let timePeriod = 'Today';
+					if (eventDate.getDate() === now.getDate() - 1) {
+						timePeriod = 'Yesterday';
+					} else if (eventDate < threeDaysAgo) {
+						timePeriod = this.formatDateShort(eventDate);
+					}
 					
 					try {
-						const eventObj = {
+						const eventObj: MapEventDto = {
 							id: `checkin-${checkIn.uid}`,
 							user: userName,
 							type: MapMarkerType.CHECK_IN,
 							category: MapEventCategory.CHECK_IN,
-							time: this.formatEventTime(checkIn.checkInTime),
-							timePeriod: 'Today',
-							location: checkIn.checkInLocation || 'Unknown location',
-							title: `Check-in at ${this.formatEventTime(checkIn.checkInTime)}`
+							time: this.formatEventTime(eventDate),
+							timePeriod,
+							location: clientName,
+							address,
+							position,
+							title: checkIn.client 
+								? `Visited ${clientName}`
+								: `Check-in at ${address}`,
+							context: {
+								checkInId: checkIn.uid,
+								clientId: checkIn.client?.uid,
+								checkInTime: checkIn.checkInTime,
+								checkOutTime: checkIn.checkOutTime,
+								notes: (checkIn as any).notes || null,
+								dateKey: this.formatDateShort(checkIn.checkInTime)
+							}
 						};
+						
+						// If we have a user image URL, add it to the event object
+						if (userImageUrl) {
+							(eventObj as any).userImage = userImageUrl;
+						}
 						
 						events.push(eventObj);
 					} catch (error) {
@@ -831,14 +889,14 @@ export class MapDataService {
 				console.error('Error processing check-in data:', error.message);
 			}
 
-			// 5. Process QUOTATIONS - only today's quotations
+			// 5. Process QUOTATIONS - quotations from the last 3 days
 			try {
 				if (MapDataService.quotationsRepoAvailable) {
 					const quotationsRepository = this.entityManager.getRepository('quotation');
 					
 					const quotations = await quotationsRepository.find({
 						where: {
-							createdAt: Between(startOfToday, endOfToday)
+							createdAt: Between(threeDaysAgo, endOfToday)
 						},
 						relations: ['placedBy', 'client'],
 						order: { createdAt: 'DESC' }
@@ -853,19 +911,56 @@ export class MapDataService {
 						if (!userNameMap.has(quotation.placedBy.uid)) continue;
 						
 						const userName = userNameMap.get(quotation.placedBy.uid) || 'Unknown user';
+						const userImageUrl = userImageMap.get(quotation.placedBy.uid);
 						const clientName = quotation.client ? quotation.client.name : 'No client';
 						
+						// Try to extract position from client if available
+						let position: [number, number] | undefined;
+						let clientAddress = '';
+						
+						if (quotation.client) {
+							if (quotation.client.latitude && quotation.client.longitude) {
+								position = [Number(quotation.client.latitude), Number(quotation.client.longitude)];
+							}
+							clientAddress = quotation.client.address?.street || '';
+						}
+						
+						// Determine the event date for display
+						const eventDate = quotation.createdAt;
+						let timePeriod = 'Today';
+						if (eventDate.getDate() === now.getDate() - 1) {
+							timePeriod = 'Yesterday';
+						} else if (eventDate < threeDaysAgo) {
+							timePeriod = this.formatDateShort(eventDate);
+						}
+						
 						try {
-							const eventObj = {
+							const eventObj: MapEventDto = {
 								id: `quotation-${quotation.uid}`,
 								user: userName,
 								type: MapMarkerType.QUOTATION,
 								category: MapEventCategory.QUOTATION,
-								time: this.formatEventTime(quotation.createdAt),
-								timePeriod: 'Today',
+								time: this.formatEventTime(eventDate),
+								timePeriod,
 								location: clientName,
-								title: `New quotation: ${quotation.quotationNumber} (${this.formatCurrency(Number(quotation.totalAmount))})`
+								address: clientAddress,
+								position,
+								title: `Quotation: ${quotation.quotationNumber} (${this.formatCurrency(Number(quotation.totalAmount))})`,
+								context: {
+									quotationId: quotation.uid,
+									quotationNumber: quotation.quotationNumber,
+									amount: Number(quotation.totalAmount) || 0,
+									status: quotation.status,
+									clientId: quotation.client?.uid,
+									isConverted: quotation.isConverted || false,
+									dateKey: this.formatDateShort(quotation.createdAt)
+								}
 							};
+							
+							// If we have a user image URL, add it to the event object
+							if (userImageUrl) {
+								(eventObj as any).userImage = userImageUrl;
+							}
 							
 							events.push(eventObj);
 						} catch (error) {
@@ -874,9 +969,15 @@ export class MapDataService {
 						}
 					}
 					
-					// Add summary if needed
-					if (quotations.length >= 3) {
-						const users = new Set(quotations.map(q => q.placedBy?.uid).filter(Boolean));
+					// Add summary if needed (for today's quotations only)
+					const todaysQuotations = quotations.filter(q => 
+						new Date(q.createdAt).getDate() === now.getDate() && 
+						new Date(q.createdAt).getMonth() === now.getMonth() &&
+						new Date(q.createdAt).getFullYear() === now.getFullYear()
+					);
+					
+					if (todaysQuotations.length >= 3) {
+						const users = new Set(todaysQuotations.map(q => q.placedBy?.uid).filter(Boolean));
 						events.push({
 							id: `quotation-summary-${this.formatDateShort(now)}`,
 							user: 'Multiple Users',
@@ -885,7 +986,7 @@ export class MapDataService {
 							time: this.formatEventTime(now),
 							timePeriod: 'Today',
 							location: 'Various Clients',
-							title: `${quotations.length} quotations created (${users.size} users)`
+							title: `${todaysQuotations.length} quotations created today (${users.size} users)`
 						});
 					}
 				}
@@ -893,10 +994,19 @@ export class MapDataService {
 				console.error('Error processing quotation data:', error.message);
 			}
 
-			// Sort events by time, most recent first
+			// Sort events by time, most recent first, with today's events prioritized
 			events.sort((a, b) => {
-				const timeA = this.parseEventTime(a.time);
-				const timeB = this.parseEventTime(b.time);
+				// First prioritize by time period (Today > Yesterday > Older)
+				if (a.timePeriod !== b.timePeriod) {
+					if (a.timePeriod === 'Today') return -1;
+					if (b.timePeriod === 'Today') return 1;
+					if (a.timePeriod === 'Yesterday') return -1;
+					if (b.timePeriod === 'Yesterday') return 1;
+				}
+				
+				// Then sort by actual time within each period
+				const timeA = this.parseEventTime(a.time, a.timePeriod);
+				const timeB = this.parseEventTime(b.time, b.timePeriod);
 				return timeB.getTime() - timeA.getTime();
 			});
 
@@ -908,7 +1018,44 @@ export class MapDataService {
 		}
 	}
 
-	// Utility method to get map configuration
+	/**
+	 * Enhanced event time parser that takes time period into account
+	 */
+	private parseEventTime(timeStr: string, timePeriod?: string): Date {
+		try {
+			const [time, period] = timeStr.split(' ');
+			const [hours, minutes] = time.split(':').map(Number);
+			const now = new Date();
+			
+			// Create date based on time period
+			let date = new Date();
+			
+			if (timePeriod === 'Yesterday') {
+				// Set to yesterday
+				date = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+			} else if (timePeriod && timePeriod !== 'Today') {
+				// Parse from date string (format: 'MMM D')
+				const [month, day] = timePeriod.split(' ');
+				const monthIndex = new Date(`${month} 1, 2000`).getMonth();
+				date = new Date(now.getFullYear(), monthIndex, parseInt(day));
+			}
+			
+			// Set time component
+			let hour = hours;
+			if (period === 'PM' && hours !== 12) {
+				hour += 12;
+			} else if (period === 'AM' && hours === 12) {
+				hour = 0;
+			}
+			
+			date.setHours(hour, minutes, 0, 0);
+			return date;
+		} catch (error) {
+			return new Date();
+		}
+	}
+
+	// Helper method to get map configuration
 	private getMapConfig(): MapConfigDto {
 		const defaultLat = this.configService.get<number>('MAP_DEFAULT_LAT', -26.2041);
 		const defaultLng = this.configService.get<number>('MAP_DEFAULT_LNG', 28.0473);
@@ -1227,14 +1374,6 @@ export class MapDataService {
 		return true;
 	}
 
-	// Helper method to get location image URL
-	private getLocationImageUrl(address: string, markerType: MapMarkerType, position?: [number, number]): string {
-		// For now, use a placeholder image for all locations
-		return 'https://images.pexels.com/photos/2464890/pexels-photo-2464890.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2';
-
-		// In the future, this could integrate with Google Places API or similar to get actual location images
-	}
-
 	// Helper method to format time in 12-hour format
 	private formatTime(date: Date): string {
 		return date.toLocaleTimeString('en-US', {
@@ -1269,36 +1408,119 @@ export class MapDataService {
 		}
 	}
 
-	// Helper method to parse event time string back to Date
-	private parseEventTime(timeStr: string): Date {
+	// Helper method to get worker activity data
+	private async getWorkerActivity(userId: number, startDate: Date, endDate: Date): Promise<ActivityDto> {
 		try {
-			const [time, period] = timeStr.split(' ');
-			const [hours, minutes] = time.split(':').map(Number);
-			const now = new Date();
-			const result = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-			
-			let hour = hours;
-			if (period === 'PM' && hours !== 12) {
-				hour += 12;
-			} else if (period === 'AM' && hours === 12) {
-				hour = 0;
+			// Count claims (using entityManager for access to claims repository)
+			let claimsCount = 0;
+			try {
+				// Use the proper entity name 'claim' (singular) instead of 'claims'
+				const claimsRepository = this.entityManager.getRepository('claim');
+				claimsCount = await claimsRepository.count({
+					where: {
+						owner: { uid: userId },
+						createdAt: Between(startDate, endDate),
+						isDeleted: false,
+					},
+				});
+			} catch (error) {
+				// Silent fail - use default 0
 			}
-			
-			result.setHours(hour, minutes);
-			return result;
-		} catch (error) {
-			return new Date();
-		}
-	}
 
-	// Utility method to format currency values
-	private formatCurrency(value: number): string {
-		return new Intl.NumberFormat('en-ZA', {
-			style: 'currency',
-			currency: 'ZAR',
-			minimumFractionDigits: 0,
-			maximumFractionDigits: 0,
-		}).format(value);
+			// Count journals
+			const journalsCount = await this.journalRepository.count({
+				where: {
+					owner: { uid: userId },
+					createdAt: Between(startDate, endDate),
+				},
+			});
+
+			// Count leads
+			const leadsCount = await this.leadRepository.count({
+				where: {
+					owner: { uid: userId },
+					createdAt: Between(startDate, endDate),
+				},
+			});
+
+			// Count check-ins
+			const checkInsCount = await this.checkInRepository.count({
+				where: {
+					owner: { uid: userId },
+					checkInTime: Between(startDate, endDate),
+				},
+			});
+
+			// Count tasks (both created and assigned)
+			const createdTasksCount = await this.taskRepository.count({
+				where: {
+					creator: { uid: userId },
+					updatedAt: Between(startDate, endDate),
+				},
+			});
+
+			// Count assigned tasks (more complex due to JSON array storage)
+			const allTasks = await this.taskRepository.find({
+				where: {
+					updatedAt: Between(startDate, endDate),
+				},
+			});
+
+			// Filter tasks where user is in assignees
+			const assignedTasksCount = allTasks.filter((task) => {
+				if (task.assignees && Array.isArray(task.assignees)) {
+					return task.assignees.some((assignee) => assignee.uid === userId);
+				}
+				return false;
+			}).length;
+
+			// Get quotations count if that repository exists
+			let quotationsCount = 0;
+			// Only try once per server startup to access quotations
+			if (!MapDataService.quotationsRepoChecked || MapDataService.quotationsRepoAvailable) {
+				try {
+					// Use the more reliable approach with getRepository from dataSource
+					const quotationsRepository = this.taskRepository.manager.getRepository('quotation');
+					quotationsCount = await quotationsRepository.count({
+						where: {
+							placedBy: { uid: userId },
+							createdAt: Between(startDate, endDate),
+						},
+					});
+					MapDataService.quotationsRepoAvailable = true;
+				} catch (error) {
+					if (!MapDataService.quotationsRepoChecked) {
+						console.warn(
+							`Quotations repository not available: ${error.message}. This warning will only show once.`,
+						);
+					}
+					MapDataService.quotationsRepoAvailable = false;
+				}
+				MapDataService.quotationsRepoChecked = true;
+			}
+
+			// Total unique tasks (avoiding double-counting)
+			const tasksCount = Math.max(createdTasksCount, assignedTasksCount);
+
+			return {
+				claims: claimsCount,
+				journals: journalsCount,
+				leads: leadsCount,
+				checkIns: checkInsCount,
+				tasks: tasksCount,
+				quotations: quotationsCount || 0,
+			};
+		} catch (error) {
+			console.error(`Error fetching activity stats for user ${userId}:`, error);
+			return {
+				claims: 0,
+				journals: 0,
+				leads: 0,
+				checkIns: 0,
+				tasks: 0,
+				quotations: 0,
+			};
+		}
 	}
 
 	/**
@@ -1465,5 +1687,17 @@ export class MapDataService {
 			console.error('Error fetching client locations:', error);
 			return [];
 		}
+	}
+
+	/**
+	 * Utility method to format currency values
+	 */
+	private formatCurrency(value: number): string {
+		return new Intl.NumberFormat('en-ZA', {
+			style: 'currency',
+			currency: 'ZAR',
+			minimumFractionDigits: 0,
+			maximumFractionDigits: 0,
+		}).format(value);
 	}
 }
