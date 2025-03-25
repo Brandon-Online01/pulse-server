@@ -11,9 +11,11 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { CheckIn } from '../check-ins/entities/check-in.entity';
-import { GeofenceType, ClientRiskLevel } from '../lib/enums/client.enums';
+import { GeofenceType, ClientRiskLevel, ClientStatus } from '../lib/enums/client.enums';
 import { Organisation } from '../organisation/entities/organisation.entity';
 import { OrganisationSettings } from '../organisation/entities/organisation-settings.entity';
+import { EmailType } from '../lib/enums/email.enums';
+import { LeadConvertedClientData, LeadConvertedCreatorData } from '../lib/types/email-templates.types';
 
 @Injectable()
 export class ClientsService {
@@ -39,6 +41,12 @@ export class ClientsService {
 		return `${this.CACHE_PREFIX}${key}`;
 	}
 
+	/**
+	 * Invalidates all cache entries related to a specific client.
+	 * This ensures that any changes to a client are immediately reflected in API responses.
+	 * 
+	 * @param client - The client object whose cache needs to be invalidated
+	 */
 	private async invalidateClientCache(client: Client) {
 		try {
 			// Get all cache keys
@@ -97,7 +105,13 @@ export class ClientsService {
 		}
 	}
 
-	// Helper method to get organization settings
+	/**
+	 * Retrieves the organization settings for a given organization ID.
+	 * Used to get default values for client-related settings like geofence radius.
+	 * 
+	 * @param orgId - The organization ID to get settings for
+	 * @returns The organization settings object or null if not found
+	 */
 	private async getOrganisationSettings(orgId: number): Promise<OrganisationSettings | null> {
 		if (!orgId) return null;
 
@@ -357,6 +371,17 @@ export class ClientsService {
 		}
 	}
 
+	/**
+	 * Updates a client with the provided data.
+	 * If the client status is changed to CONVERTED, sends notification emails to both the client and 
+	 * the assigned sales representative.
+	 * 
+	 * @param ref - The unique identifier of the client to update
+	 * @param updateClientDto - The data to update the client with
+	 * @param orgId - Optional organization ID to filter clients by organization
+	 * @param branchId - Optional branch ID to filter clients by branch
+	 * @returns A response object with a success/error message
+	 */
 	async update(
 		ref: number,
 		updateClientDto: UpdateClientDto,
@@ -370,6 +395,9 @@ export class ClientsService {
 			if (!existingClient.client) {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
+
+			// Check if status is being updated to "converted"
+			const isBeingConverted = updateClientDto.status === GeneralStatus.CONVERTED && existingClient.client.status !== GeneralStatus.CONVERTED;
 
 			// Transform the DTO data to match the entity structure
 			const clientDataToUpdate = {
@@ -452,6 +480,73 @@ export class ClientsService {
 
 			if (updateResult.affected === 0) {
 				throw new NotFoundException('Client not found or you do not have permission to update this client');
+			}
+
+			// Send conversion emails if the status was changed to converted
+			if (isBeingConverted) {
+				// Fetch the latest client data with all relationships
+				const updatedClient = await this.clientsRepository.findOne({
+					where: whereConditions,
+					relations: ['assignedSalesRep'],
+				});
+
+				if (!updatedClient) {
+					throw new NotFoundException('Updated client not found');
+				}
+
+				// Format the current date for email
+				const formattedDate = new Date().toLocaleDateString('en-US', {
+					year: 'numeric',
+					month: 'long',
+					day: 'numeric',
+				});
+
+				// Get dashboard link - use environment variable or construct from base URL
+				const dashboardBaseUrl = this.configService.get<string>('DASHBOARD_URL') || 'https://dashboard.yourapp.com';
+				const dashboardLink = `${dashboardBaseUrl}/clients/${updatedClient.uid}`;
+
+				// 1. Send email to the client
+				if (updatedClient.email) {
+					// Prepare client email data
+					const clientEmailData: LeadConvertedClientData = {
+						name: updatedClient.name,
+						clientId: updatedClient.uid,
+						conversionDate: formattedDate,
+						dashboardLink,
+						// Include sales rep info if available
+						...(updatedClient.assignedSalesRep ? {
+							accountManagerName: updatedClient.assignedSalesRep.name,
+							accountManagerEmail: updatedClient.assignedSalesRep.email,
+							accountManagerPhone: updatedClient.assignedSalesRep.phone,
+						} : {}),
+						// Some example next steps - customize as needed
+						nextSteps: [
+							'Complete your profile information',
+							'Schedule an onboarding call with your account manager',
+							'Explore available products and services'
+						]
+					};
+
+					// Emit event to send client email with type-safe enum
+					this.eventEmitter.emit('send.email', EmailType.LEAD_CONVERTED_CLIENT, [updatedClient.email], clientEmailData);
+				}
+
+				// 2. Send email to the lead creator/sales rep
+				if (updatedClient.assignedSalesRep?.email) {
+					// Prepare creator email data
+					const creatorEmailData: LeadConvertedCreatorData = {
+						name: updatedClient.assignedSalesRep.name,
+						clientId: updatedClient.uid,
+						clientName: updatedClient.name,
+						clientEmail: updatedClient.email,
+						clientPhone: updatedClient.phone,
+						conversionDate: formattedDate,
+						dashboardLink
+					};
+
+					// Emit event to send creator email with type-safe enum
+					this.eventEmitter.emit('send.email', EmailType.LEAD_CONVERTED_CREATOR, [updatedClient.assignedSalesRep.email], creatorEmailData);
+				}
 			}
 
 			// Invalidate cache

@@ -212,7 +212,7 @@ export class ClientsController {
 	)
 	@ApiOperation({
 		summary: 'Update a client',
-		description: 'Updates an existing client with the provided information',
+		description: 'Updates an existing client with the provided information. Can be used to convert leads to clients by setting status to "converted".',
 	})
 	@ApiParam({ name: 'ref', description: 'Client reference code or ID', type: 'number' })
 	@ApiBody({ type: UpdateClientDto })

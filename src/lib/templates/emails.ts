@@ -14,6 +14,8 @@ import {
   TaskReminderData,
   NewUserAdminNotificationData,
   TaskCompletedEmailData,
+  LeadConvertedClientData,
+  LeadConvertedCreatorData,
 } from '../types/email-templates.types';
 import { formatDate } from '../utils/date.utils';
 
@@ -1851,3 +1853,133 @@ export const TaskCompleted = (data: TaskCompletedEmailData): string => {
     </div>
   `;
 };
+
+export const LeadConvertedClient = (data: LeadConvertedClientData): string => `
+    <div style="${BASE_STYLES.wrapper}">
+      <div style="${BASE_STYLES.container}">
+        <div style="${BASE_STYLES.header}">
+          <h1 style="margin: 16px 0 8px; font-size: 24px;">Welcome Aboard! 🎉</h1>
+          <p style="margin: 0; opacity: 0.9;">You're now an official client</p>
+        </div>
+
+        <div style="padding: 24px 20px;">
+          <div style="${BASE_STYLES.card}">
+            <h2 style="${BASE_STYLES.heading}">Dear ${data.name},</h2>
+            <p style="${BASE_STYLES.text}">
+              We're thrilled to announce that your account has been upgraded from lead to client status!
+              This transition gives you access to our full suite of services and dedicated support.
+            </p>
+            
+            ${data.dashboardLink ? `
+            <div style="text-align: center; margin: 24px 0;">
+              <a href="${data.dashboardLink}" style="${BASE_STYLES.button}">
+                Access Your Client Dashboard
+              </a>
+            </div>
+            ` : ''}
+
+            <div style="${BASE_STYLES.alert}">
+              <p style="margin: 0;">
+                <strong>Client ID:</strong> ${data.clientId}<br>
+                <strong>Conversion Date:</strong> ${data.conversionDate}
+              </p>
+            </div>
+          </div>
+
+          ${data.accountManagerName ? createSection("👋 Your Dedicated Manager", `
+            <p style="${BASE_STYLES.text}">
+              You've been assigned a dedicated account manager to ensure your experience with us is exceptional:
+            </p>
+            <div style="padding: 12px; background-color: #f8fafc; border-radius: 8px; margin-top: 12px;">
+              <p style="margin: 0 0 8px; font-weight: 600;">${data.accountManagerName}</p>
+              ${data.accountManagerEmail ? `<p style="margin: 0 0 6px;">📧 ${data.accountManagerEmail}</p>` : ''}
+              ${data.accountManagerPhone ? `<p style="margin: 0;">📱 ${data.accountManagerPhone}</p>` : ''}
+            </div>
+          `) : ''}
+
+          ${data.nextSteps && data.nextSteps.length > 0 ? createSection("🚀 Next Steps", `
+            <ul style="list-style: none; padding: 0; margin: 0;">
+              ${data.nextSteps.map(step => `
+                <li style="margin-bottom: 12px; display: flex; align-items: flex-start;">
+                  <span style="color: #A855F7; margin-right: 8px;">✓</span>
+                  <span>${step}</span>
+                </li>
+              `).join('')}
+            </ul>
+          `) : ''}
+        </div>
+
+        <div style="${BASE_STYLES.footer}">
+          <p style="margin: 0;">We look forward to a successful partnership!</p>
+        </div>
+      </div>
+    </div>
+`;
+
+export const LeadConvertedCreator = (data: LeadConvertedCreatorData): string => `
+    <div style="${BASE_STYLES.wrapper}">
+      <div style="${BASE_STYLES.container}">
+        <div style="${BASE_STYLES.header}">
+          <h1 style="margin: 16px 0 8px; font-size: 24px;">Lead Converted Successfully! 🏆</h1>
+          <p style="margin: 0; opacity: 0.9;">New client acquisition</p>
+        </div>
+
+        <div style="padding: 24px 20px;">
+          <div style="${BASE_STYLES.card}">
+            <h2 style="${BASE_STYLES.heading}">Congratulations ${data.name}!</h2>
+            <p style="${BASE_STYLES.text}">
+              Your lead <strong>${data.clientName}</strong> has successfully been converted to a client.
+              Great work on securing this new business relationship!
+            </p>
+            
+            <div style="${BASE_STYLES.alert}">
+              <p style="margin: 0;">
+                <strong>Client ID:</strong> ${data.clientId}<br>
+                <strong>Conversion Date:</strong> ${data.conversionDate}
+              </p>
+            </div>
+
+            ${data.dashboardLink ? `
+            <div style="text-align: center; margin: 24px 0;">
+              <a href="${data.dashboardLink}" style="${BASE_STYLES.button}">
+                View Client Details
+              </a>
+            </div>
+            ` : ''}
+          </div>
+
+          ${createSection("📋 Client Details", `
+            <p style="${BASE_STYLES.text}">
+              Here's a summary of the new client's information:
+            </p>
+            <div style="padding: 12px; background-color: #f8fafc; border-radius: 8px; margin-top: 12px;">
+              <p style="margin: 0 0 8px; font-weight: 600;">${data.clientName}</p>
+              <p style="margin: 0 0 6px;">📧 ${data.clientEmail}</p>
+              ${data.clientPhone ? `<p style="margin: 0;">📱 ${data.clientPhone}</p>` : ''}
+            </div>
+          `)}
+
+          ${createSection("⚡ Next Steps", `
+            <ul style="list-style: none; padding: 0; margin: 0;">
+              <li style="margin-bottom: 12px; display: flex; align-items: flex-start;">
+                <span style="color: #A855F7; margin-right: 8px;">✓</span>
+                <span>Schedule a welcome call with the client</span>
+              </li>
+              <li style="margin-bottom: 12px; display: flex; align-items: flex-start;">
+                <span style="color: #A855F7; margin-right: 8px;">✓</span>
+                <span>Review any pending quotations or proposals</span>
+              </li>
+              <li style="margin-bottom: 12px; display: flex; align-items: flex-start;">
+                <span style="color: #A855F7; margin-right: 8px;">✓</span>
+                <span>Develop an account growth strategy</span>
+              </li>
+            </ul>
+          `)}
+        </div>
+
+        <div style="${BASE_STYLES.footer}">
+          <p style="margin: 0;">The client has been notified of their new status.</p>
+        </div>
+      </div>
+    </div>
+`;

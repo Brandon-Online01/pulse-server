@@ -11,10 +11,69 @@ import { User } from '../user/entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CommunicationLog } from './entities/communication-log.entity';
-import { LicenseCreated, LicenseUpdated, LicenseLimitReached, LicenseRenewed, LicenseSuspended, LicenseActivated, NewQuotationClient, NewQuotationInternal, NewQuotationReseller, Signup, Verification, PasswordReset, Invoice, PasswordChanged, DailyReport, QuotationStatusUpdate, NewUserAdminNotification, TaskReminderAssignee, TaskReminderCreator, TaskCompleted } from '../lib/templates/emails';
-import { DailyReportData, InvoiceData, PasswordChangedData, PasswordResetData, VerificationEmailData, SignupEmailData, EmailTemplateData, LicenseEmailData, LicenseLimitData, QuotationInternalData, QuotationResellerData, QuotationData, NewUserAdminNotificationData, TaskReminderData, TaskCompletedEmailData } from '../lib/types/email-templates.types';
-import { NewTask, TaskUpdated } from '../lib/templates/emails';
-import { TaskEmailData } from '../lib/types/email-templates.types';
+// Core email templates
+import { 
+	Signup, 
+	Verification, 
+	PasswordReset, 
+	PasswordChanged, 
+	DailyReport,
+	NewTask,
+	TaskUpdated,
+	TaskCompleted,
+} from '../lib/templates/emails';
+// Quotation related templates
+import {
+	NewQuotationClient,
+	NewQuotationInternal,
+	NewQuotationReseller,
+	QuotationStatusUpdate,
+	Invoice,
+} from '../lib/templates/emails';
+// License related templates
+import {
+	LicenseCreated,
+	LicenseUpdated,
+	LicenseLimitReached,
+	LicenseRenewed,
+	LicenseSuspended,
+	LicenseActivated,
+} from '../lib/templates/emails';
+// Task related templates
+import {
+	TaskReminderAssignee,
+	TaskReminderCreator,
+} from '../lib/templates/emails';
+// User related templates
+import {
+	NewUserAdminNotification,
+} from '../lib/templates/emails';
+// Lead related templates
+import {
+	LeadConvertedClient,
+	LeadConvertedCreator,
+} from '../lib/templates/emails';
+// Email data types
+import { 
+	DailyReportData, 
+	InvoiceData, 
+	PasswordChangedData, 
+	PasswordResetData, 
+	VerificationEmailData, 
+	SignupEmailData, 
+	EmailTemplateData, 
+	LicenseEmailData,
+	LicenseLimitData, 
+	QuotationInternalData, 
+	QuotationResellerData, 
+	QuotationData,
+	NewUserAdminNotificationData, 
+	TaskReminderData, 
+	TaskCompletedEmailData,
+	LeadConvertedClientData,
+	LeadConvertedCreatorData,
+	TaskEmailData,
+} from '../lib/types/email-templates.types';
 
 @Injectable()
 export class CommunicationService {
@@ -204,6 +263,16 @@ export class CommunicationService {
 				return {
 					subject: 'Task Deadline Alert',
 					body: TaskReminderCreator(data as TaskReminderData),
+				};
+			case EmailType.LEAD_CONVERTED_CLIENT:
+				return {
+					subject: 'Welcome Aboard! Your Account Has Been Upgraded',
+					body: LeadConvertedClient(data as LeadConvertedClientData),
+				};
+			case EmailType.LEAD_CONVERTED_CREATOR:
+				return {
+					subject: 'Lead Successfully Converted to Client',
+					body: LeadConvertedCreator(data as LeadConvertedCreatorData),
 				};
 			default:
 				throw new NotFoundException(`Unknown email template type: ${type}`);

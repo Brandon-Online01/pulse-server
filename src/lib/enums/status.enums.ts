@@ -58,6 +58,7 @@ export enum GeneralStatus {
     PENDING = 'pending',
     REJECTED = 'rejected',
     APPROVED = 'approved',
+    CONVERTED = 'converted'
 }
 
 export enum SubTaskStatus {

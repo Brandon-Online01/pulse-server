@@ -227,6 +227,25 @@ export interface NewUserAdminNotificationData extends BaseEmailData {
     userDetailsLink: string;
 }
 
+export interface LeadConvertedClientData extends BaseEmailData {
+    clientId: number;
+    conversionDate: string;
+    nextSteps?: string[];
+    dashboardLink?: string;
+    accountManagerName?: string;
+    accountManagerEmail?: string;
+    accountManagerPhone?: string;
+}
+
+export interface LeadConvertedCreatorData extends BaseEmailData {
+    clientId: number;
+    clientName: string;
+    clientEmail: string;
+    clientPhone?: string;
+    conversionDate: string;
+    dashboardLink?: string;
+}
+
 export interface EmailDataMap {
     [EmailType.SIGNUP]: SignupEmailData;
     [EmailType.VERIFICATION]: VerificationEmailData;
@@ -265,6 +284,8 @@ export interface EmailDataMap {
     [EmailType.TASK_REMINDER_ASSIGNEE]: TaskReminderData;
     [EmailType.TASK_REMINDER_CREATOR]: TaskReminderData;
     [EmailType.NEW_USER_ADMIN_NOTIFICATION]: NewUserAdminNotificationData;
+    [EmailType.LEAD_CONVERTED_CLIENT]: LeadConvertedClientData;
+    [EmailType.LEAD_CONVERTED_CREATOR]: LeadConvertedCreatorData;
 }
 
 export type EmailTemplateData<T extends EmailType> = T extends keyof EmailDataMap

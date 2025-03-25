@@ -18,6 +18,7 @@ export enum MapMarkerType {
 	JOB_COMPLETE = 'job-complete',
 	COMPETITOR = 'competitor',
 	QUOTATION = 'quotation',
+	CLIENT = 'client',
 }
 
 export enum MapEventCategory {
@@ -287,10 +288,9 @@ export class CompetitorLocationDto {
 	})
 	competitorRef: string;
 
-	// @ApiProperty({
-	//   description: 'Physical address',
-	//   type: 'object',
-	// })
+	@ApiProperty({
+		description: 'Physical address',
+	})
 	address: any;
 
 	@ApiProperty({
@@ -362,6 +362,75 @@ export class QuotationLocationDto {
 	markerType: MapMarkerType;
 }
 
+export class ClientLocationDto {
+	@ApiProperty({ description: 'Unique identifier for the client' })
+	id: number;
+
+	@ApiProperty({ description: 'Name of the client' })
+	name: string;
+
+	@ApiProperty({
+		description: 'Latitude and longitude coordinates',
+		example: [51.5074, -0.1278],
+		required: false,
+	})
+	position?: [number, number];
+
+	@ApiProperty({
+		description: 'Client reference code',
+		example: 'CLIENT-1234',
+	})
+	clientRef: string;
+
+	@ApiProperty({
+		description: 'Primary contact name',
+		required: false,
+	})
+	contactName?: string;
+
+	@ApiProperty({
+		description: 'Primary contact email',
+		required: false,
+	})
+	email?: string;
+
+	@ApiProperty({
+		description: 'Primary contact phone',
+		required: false,
+	})
+	phone?: string;
+
+	@ApiProperty({
+		description: 'Client status',
+		example: 'ACTIVE',
+	})
+	status: string;
+
+	@ApiProperty({
+		description: 'Website URL',
+		required: false,
+	})
+	website?: string;
+
+	@ApiProperty({
+		description: 'Logo URL',
+		required: false,
+	})
+	logoUrl?: string;
+
+	@ApiProperty({
+		description: 'Physical address',
+	})
+	address: any;
+
+	@ApiProperty({
+		description: 'Marker type for map display',
+		enum: MapMarkerType,
+		example: MapMarkerType.CLIENT,
+	})
+	markerType: MapMarkerType;
+}
+
 export class MapDataResponseDto {
 	@ApiProperty({ description: 'List of workers with their current locations', type: [WorkerLocationDto] })
 	workers: WorkerLocationDto[];
@@ -385,4 +454,11 @@ export class MapDataResponseDto {
 		required: false,
 	})
 	quotations?: QuotationLocationDto[];
+
+	@ApiProperty({
+		description: 'List of clients with their locations',
+		type: [ClientLocationDto],
+		required: false,
+	})
+	clients?: ClientLocationDto[];
 }

@@ -22,7 +22,8 @@ export enum ClientStatus {
     ACTIVE = 'active',
     INACTIVE = 'inactive',
     PENDING = 'pending',
-    CANCELLED = 'cancelled'
+    CANCELLED = 'cancelled',
+    CONVERTED = 'converted'
 }
 
 export enum ClientContactPreference {

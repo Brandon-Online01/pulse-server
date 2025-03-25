@@ -36,6 +36,7 @@ import {
 	CompetitorLocationDto,
 	GeofenceDto,
 	QuotationLocationDto,
+	ClientLocationDto,
 } from './dto/map-data.dto';
 
 // Enum imports
@@ -96,7 +97,10 @@ export class MapDataService {
 			// 4. Fetch competitors data
 			const competitors = await this.getCompetitorLocations(orgId, branchId);
 			
-			// 5. Fetch quotations data
+			// 5. Fetch clients data
+			const clients = await this.getClientLocations(orgId, branchId);
+			
+			// 6. Fetch quotations data
 			const quotations = await this.getQuotationLocations(orgId, branchId);
 
 			return {
@@ -104,6 +108,7 @@ export class MapDataService {
 				events,
 				mapConfig,
 				competitors,
+				clients,
 				quotations,
 			};
 		} catch (error) {
@@ -113,6 +118,7 @@ export class MapDataService {
 				events: [],
 				mapConfig: this.getMapConfig(),
 				competitors: [],
+				clients: [],
 				quotations: [],
 			};
 		}
@@ -1398,6 +1404,65 @@ export class MapDataService {
 			return quotationLocations;
 		} catch (error) {
 			console.error('Error fetching quotation locations:', error);
+			return [];
+		}
+	}
+
+	/**
+	 * Get client locations for map display
+	 */
+	private async getClientLocations(orgId: string, branchId: string): Promise<ClientLocationDto[]> {
+		try {
+			// Get all clients for the organization/branch
+			const orgIdNum = orgId ? parseInt(orgId, 10) : undefined;
+			const branchIdNum = branchId ? parseInt(branchId, 10) : undefined;
+
+			const query = this.clientRepository.createQueryBuilder('client')
+				.leftJoinAndSelect('client.organisation', 'organisation')
+				.leftJoinAndSelect('client.branch', 'branch')
+				.where('client.isDeleted = :isDeleted', { isDeleted: false });
+			
+			if (orgIdNum) {
+				query.andWhere('organisation.uid = :orgId', { orgId: orgIdNum });
+			}
+
+			if (branchIdNum) {
+				query.andWhere('branch.uid = :branchId', { branchId: branchIdNum });
+			}
+
+			const clients = await query.getMany();
+
+			// Map clients to location DTOs
+			return clients.map(client => {
+				// Use actual coordinates from client record if available
+				let position: [number, number] | undefined;
+				
+				if (client.latitude !== null && client.longitude !== null) {
+					position = [Number(client.latitude), Number(client.longitude)];
+				}
+				
+				// If no coordinates available, use fallback
+				if (!position) {
+					position = this.mockPositionFromAddress(client.address);
+				}
+
+				return {
+					id: client.uid,
+					name: client.name,
+					position,
+					clientRef: `CLIENT-${client.uid}`,
+					contactName: client.contactPerson,
+					email: client.email,
+					phone: client.phone,
+					status: client.status,
+					website: client.website,
+					logoUrl: client.logo,
+					address: client.address,
+					markerType: MapMarkerType.CLIENT,
+				};
+			});
+		} catch (error) {
+			console.error('Error fetching client locations:', error);
 			return [];
 		}
 	}
