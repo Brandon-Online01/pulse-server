@@ -454,6 +454,11 @@ export class UserService {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
+			// Hash password if provided
+			if (updateUserDto.password) {
+				updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
+			}
+
 			// Update the user with the provided data
 			await this.userRepository.update(ref, updateUserDto);
 
@@ -634,13 +639,14 @@ export class UserService {
 		}
 	}
 
-	async setPassword(uid: number, hashedPassword: string): Promise<void> {
+	async setPassword(uid: number, password: string): Promise<void> {
 		const user = await this.userRepository.findOne({
 			where: { uid },
 			relations: ['organisation', 'branch'],
 		});
 
 		if (user) {
+			const hashedPassword = await bcrypt.hash(password, 10);
 			await this.userRepository.update(
 				{ uid },
 				{
@@ -676,13 +682,14 @@ export class UserService {
 		}
 	}
 
-	async resetPassword(uid: number, hashedPassword: string): Promise<void> {
+	async resetPassword(uid: number, password: string): Promise<void> {
 		const user = await this.userRepository.findOne({
 			where: { uid },
 			relations: ['organisation', 'branch'],
 		});
 
 		if (user) {
+			const hashedPassword = await bcrypt.hash(password, 10);
 			await this.userRepository.update(
 				{ uid },
 				{
@@ -697,7 +704,8 @@ export class UserService {
 		}
 	}
 
-	async updatePassword(uid: number, hashedPassword: string): Promise<void> {
+	async updatePassword(uid: number, password: string): Promise<void> {
+		const hashedPassword = await bcrypt.hash(password, 10);
 		await this.userRepository.update(uid, {
 			password: hashedPassword,
 			updatedAt: new Date(),

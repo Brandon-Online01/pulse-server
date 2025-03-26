@@ -16,6 +16,8 @@ import {
   TaskCompletedEmailData,
   LeadConvertedClientData,
   LeadConvertedCreatorData,
+  TaskFlagEmailData,
+  TaskFeedbackEmailData,
 } from '../types/email-templates.types';
 import { formatDate } from '../utils/date.utils';
 
@@ -38,6 +40,7 @@ const BASE_STYLES = {
   flexRow: 'display: flex; align-items: center;',
   flexColumn: 'display: flex; flex-direction: column; gap: 8px;',
   tag: 'display: inline-block; padding: 6px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; background: #faf5ff; color: #A855F7; margin: 0 12px 12px 0; font-family: "Unbounded", sans-serif;',
+  subheading: 'margin: 0 0 16px; color: #A855F7; font-size: 18px; font-weight: 600; font-family: "Unbounded", sans-serif;',
 };
 
 const createSection = (title: string, content: string) => `
@@ -1981,5 +1984,177 @@ export const LeadConvertedCreator = (data: LeadConvertedCreatorData): string => 
           <p style="margin: 0;">The client has been notified of their new status.</p>
         </div>
       </div>
+    </div>
+`;
+
+export const TaskFlagCreated = (data: TaskFlagEmailData): string => `
+    <div style="${BASE_STYLES.wrapper}">
+        <div style="${BASE_STYLES.container}">
+            <div style="${BASE_STYLES.header}">
+                <h1 style="margin: 16px 0 8px; font-size: 24px;">New Task Flag Created 🚩</h1>
+                <p style="margin: 0; opacity: 0.9;">A new flag has been added to your task</p>
+            </div>
+
+            <div style="padding: 24px 20px;">
+                <div style="${BASE_STYLES.card}">
+                    <h2 style="${BASE_STYLES.heading}">Task Details</h2>
+                    <p style="${BASE_STYLES.text}">
+                        <strong>Task:</strong> ${data.taskTitle}<br>
+                        <strong>Flag Title:</strong> ${data.flagTitle}<br>
+                        <strong>Description:</strong> ${data.flagDescription}<br>
+                        <strong>Created By:</strong> ${data.createdBy.name}<br>
+                        ${data.flagDeadline ? `<strong>Deadline:</strong> ${new Date(data.flagDeadline).toLocaleDateString()}<br>` : ''}
+                        <strong>Status:</strong> ${data.flagStatus}
+                    </p>
+
+                    ${data.items && data.items.length > 0 ? `
+                        <h3 style="${BASE_STYLES.subheading}">Checklist Items</h3>
+                        <ul style="list-style: none; padding: 0;">
+                            ${data.items.map(item => `
+                                <li style="margin-bottom: 8px;">
+                                    • ${item.title}${item.description ? ` - ${item.description}` : ''}
+                                </li>
+                            `).join('')}
+                        </ul>
+                    ` : ''}
+
+                    ${data.comments && data.comments.length > 0 ? `
+                        <h3 style="${BASE_STYLES.subheading}">Initial Comments</h3>
+                        ${data.comments.map(comment => `
+                            <div style="margin-bottom: 16px;">
+                                <p style="${BASE_STYLES.text}">
+                                    <strong>${comment.createdBy.name}:</strong> ${comment.content}<br>
+                                    <small style="color: #666;">${new Date(comment.createdAt).toLocaleString()}</small>
+                                </p>
+                            </div>
+                        `).join('')}
+                    ` : ''}
+                </div>
+            </div>
+
+            <div style="${BASE_STYLES.footer}">
+                <p style="margin: 0;">Please review and take necessary action.</p>
+            </div>
+        </div>
+    </div>
+`;
+
+export const TaskFlagUpdated = (data: TaskFlagEmailData): string => `
+    <div style="${BASE_STYLES.wrapper}">
+        <div style="${BASE_STYLES.container}">
+            <div style="${BASE_STYLES.header}">
+                <h1 style="margin: 16px 0 8px; font-size: 24px;">Task Flag Updated 🔄</h1>
+                <p style="margin: 0; opacity: 0.9;">A flag status has been updated</p>
+            </div>
+
+            <div style="padding: 24px 20px;">
+                <div style="${BASE_STYLES.card}">
+                    <h2 style="${BASE_STYLES.heading}">Updated Flag Details</h2>
+                    <p style="${BASE_STYLES.text}">
+                        <strong>Task:</strong> ${data.taskTitle}<br>
+                        <strong>Flag Title:</strong> ${data.flagTitle}<br>
+                        <strong>New Status:</strong> ${data.flagStatus}<br>
+                        <strong>Updated By:</strong> ${data.createdBy.name}
+                    </p>
+
+                    ${data.items && data.items.length > 0 ? `
+                        <h3 style="${BASE_STYLES.subheading}">Checklist Progress</h3>
+                        <ul style="list-style: none; padding: 0;">
+                            ${data.items.map(item => `
+                                <li style="margin-bottom: 8px;">
+                                    • ${item.title} - ${item.status}
+                                </li>
+                            `).join('')}
+                        </ul>
+                    ` : ''}
+                </div>
+            </div>
+
+            <div style="${BASE_STYLES.footer}">
+                <p style="margin: 0;">The task flag has been updated. Please review if any action is needed.</p>
+            </div>
+        </div>
+    </div>
+`;
+
+export const TaskFlagResolved = (data: TaskFlagEmailData): string => `
+    <div style="${BASE_STYLES.wrapper}">
+        <div style="${BASE_STYLES.container}">
+            <div style="${BASE_STYLES.header}">
+                <h1 style="margin: 16px 0 8px; font-size: 24px;">Task Flag Resolved ✅</h1>
+                <p style="margin: 0; opacity: 0.9;">A flag has been marked as resolved</p>
+            </div>
+
+            <div style="padding: 24px 20px;">
+                <div style="${BASE_STYLES.card}">
+                    <h2 style="${BASE_STYLES.heading}">Resolution Details</h2>
+                    <p style="${BASE_STYLES.text}">
+                        <strong>Task:</strong> ${data.taskTitle}<br>
+                        <strong>Flag Title:</strong> ${data.flagTitle}<br>
+                        <strong>Resolved By:</strong> ${data.createdBy.name}<br>
+                        <strong>Resolution Time:</strong> ${new Date().toLocaleString()}
+                    </p>
+
+                    ${data.items && data.items.length > 0 ? `
+                        <h3 style="${BASE_STYLES.subheading}">Completed Checklist</h3>
+                        <ul style="list-style: none; padding: 0;">
+                            ${data.items.map(item => `
+                                <li style="margin-bottom: 8px;">
+                                    • ${item.title} - ${item.status}
+                                </li>
+                            `).join('')}
+                        </ul>
+                    ` : ''}
+
+                    ${data.comments && data.comments.length > 0 ? `
+                        <h3 style="${BASE_STYLES.subheading}">Latest Comments</h3>
+                        ${data.comments.slice(-2).map(comment => `
+                            <div style="margin-bottom: 16px;">
+                                <p style="${BASE_STYLES.text}">
+                                    <strong>${comment.createdBy.name}:</strong> ${comment.content}<br>
+                                    <small style="color: #666;">${new Date(comment.createdAt).toLocaleString()}</small>
+                                </p>
+                            </div>
+                        `).join('')}
+                    ` : ''}
+                </div>
+            </div>
+
+            <div style="${BASE_STYLES.footer}">
+                <p style="margin: 0;">The flag has been successfully resolved. No further action is required.</p>
+            </div>
+        </div>
+    </div>
+`;
+
+export const TaskFeedbackAdded = (data: TaskFeedbackEmailData): string => `
+    <div style="${BASE_STYLES.wrapper}">
+        <div style="${BASE_STYLES.container}">
+            <div style="${BASE_STYLES.header}">
+                <h1 style="margin: 16px 0 8px; font-size: 24px;">New Task Feedback Received 📝</h1>
+                <p style="margin: 0; opacity: 0.9;">Feedback has been submitted for your task</p>
+            </div>
+
+            <div style="padding: 24px 20px;">
+                <div style="${BASE_STYLES.card}">
+                    <h2 style="${BASE_STYLES.heading}">Feedback Details</h2>
+                    <p style="${BASE_STYLES.text}">
+                        <strong>Task:</strong> ${data.taskTitle}<br>
+                        <strong>Submitted By:</strong> ${data.submittedBy.name}<br>
+                        <strong>Submitted On:</strong> ${new Date(data.submittedAt).toLocaleString()}<br>
+                        ${data.rating ? `<strong>Rating:</strong> ${'⭐'.repeat(data.rating)}<br>` : ''}
+                    </p>
+
+                    <h3 style="${BASE_STYLES.subheading}">Feedback Content</h3>
+                    <div style="${BASE_STYLES.alert}">
+                        <p style="margin: 0;">${data.feedbackContent}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div style="${BASE_STYLES.footer}">
+                <p style="margin: 0;">Please review the feedback and take any necessary actions.</p>
+            </div>
+        </div>
     </div>
 `;

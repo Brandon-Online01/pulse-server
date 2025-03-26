@@ -1507,16 +1507,88 @@ export class TasksService {
 		}
 	}
 
+	async addComment(flagId: number, commentDto: AddCommentDto, userId: number): Promise<any> {
+		try {
+			const taskFlag = await this.taskFlagRepository.findOne({
+				where: { uid: flagId },
+				relations: ['task'],
+			});
+
+			if (!taskFlag) {
+				throw new Error(`Task flag with ID ${flagId} not found`);
+			}
+
+			const user = await this.userRepository.findOne({
+				where: { uid: userId },
+				select: ['uid', 'name', 'surname']
+			});
+			if (!user) {
+				throw new Error('User not found');
+			}
+
+			// Initialize comments array if it doesn't exist
+			if (!taskFlag.comments) {
+				taskFlag.comments = [];
+			}
+
+			// Add the new comment with required database schema
+			const newComment = {
+				uid: Date.now(),
+				content: commentDto.content,
+				createdAt: new Date(),
+				createdBy: {
+					uid: user.uid,
+					name: `${user.name} ${user.surname}`
+				}
+			};
+			taskFlag.comments.push(newComment);
+
+			// Save the updated flag
+			await this.taskFlagRepository.save(taskFlag);
+
+			// Clear cache for this flag and its related task
+			await this.clearTaskFlagCache(taskFlag.task?.uid, flagId);
+
+			return {
+				message: 'Comment added successfully',
+			};
+		} catch (error) {
+			throw new Error(`Failed to add comment: ${error.message}`);
+		}
+	}
+
+	// Helper function to transform comments for email templates
+	private transformCommentsForEmail(comments: Array<{
+		uid: number;
+		content: string;
+		createdAt: Date;
+		createdBy: { uid: number; name: string; }
+	}>) {
+		return comments.map(comment => ({
+			content: comment.content,
+			createdAt: comment.createdAt.toISOString(),
+			createdBy: {
+				name: comment.createdBy.name
+			}
+		}));
+	}
+
 	async createTaskFlag(createTaskFlagDto: CreateTaskFlagDto, userId: number): Promise<any> {
 		try {
-			// Find the task to flag
-			const task = await this.taskRepository.findOne({ where: { uid: createTaskFlagDto.taskId } });
+			// Find the task to flag with all necessary relations
+			const task = await this.taskRepository.findOne({ 
+				where: { uid: createTaskFlagDto.taskId },
+				relations: ['creator', 'assignees']
+			});
 			if (!task) {
 				throw new Error(`Task with ID ${createTaskFlagDto.taskId} not found`);
 			}
 
-			// Get user information
-			const user = await this.userRepository.findOne({ where: { uid: userId } });
+			// Get user information with all necessary fields
+			const user = await this.userRepository.findOne({ 
+				where: { uid: userId },
+				select: ['uid', 'name', 'surname', 'email']
+			});
 			if (!user) {
 				throw new Error('User not found');
 			}
@@ -1543,21 +1615,23 @@ export class TasksService {
 
 			// Add initial comment if provided
 			if (createTaskFlagDto.comment) {
-				taskFlag.comments.push({
-					uid: Date.now(), // Use timestamp as temporary ID
+				const newComment = {
+					uid: Date.now(),
 					content: createTaskFlagDto.comment,
 					createdAt: new Date(),
 					createdBy: {
 						uid: user.uid,
-						name: `${user.name} ${user.surname}`,
-					},
-				});
+						name: `${user.name} ${user.surname}`
+					}
+				};
+				taskFlag.comments.push(newComment);
 			}
 
 			// Save the flag
 			const savedFlag = await this.taskFlagRepository.save(taskFlag);
 
 			// Add checklist items if provided
+			let savedItems = [];
 			if (createTaskFlagDto.items?.length) {
 				const items = createTaskFlagDto.items.map((item) => {
 					const flagItem = new TaskFlagItem();
@@ -1568,7 +1642,61 @@ export class TasksService {
 					return flagItem;
 				});
 
-				await this.taskFlagItemRepository.save(items);
+				savedItems = await this.taskFlagItemRepository.save(items);
+			}
+
+			// Send email notifications
+			const recipients = new Set<string>();
+			
+			// Get full creator details
+			const taskCreator = task.creator?.[0] && await this.userRepository.findOne({
+				where: { uid: task.creator[0].uid },
+				select: ['email']
+			});
+			if (taskCreator?.email) {
+				recipients.add(taskCreator.email);
+			}
+
+			// Get full assignee details
+			const assigneeIds = task.assignees?.map(a => a.uid) || [];
+			const assignees = assigneeIds.length > 0 ? await this.userRepository.find({
+				where: { uid: In(assigneeIds) },
+				select: ['email']
+			}) : [];
+			assignees.forEach(assignee => {
+				if (assignee.email) {
+					recipients.add(assignee.email);
+				}
+			});
+
+			// Convert Set to Array and filter out empty emails
+			const emailRecipients = Array.from(recipients).filter(email => email);
+
+			if (emailRecipients.length > 0) {
+				await this.communicationService.sendEmail(
+					EmailType.TASK_FLAG_CREATED,
+					emailRecipients,
+					{
+						name: 'Team Member',
+						taskId: task.uid,
+						taskTitle: task.title,
+						flagId: savedFlag.uid,
+						flagTitle: savedFlag.title,
+						flagDescription: savedFlag.description,
+						flagStatus: savedFlag.status,
+						flagDeadline: savedFlag.deadline?.toISOString(),
+						createdBy: {
+							name: `${user.name} ${user.surname}`,
+							email: user.email
+						},
+						items: savedItems.map(item => ({
+							title: item.title,
+							description: item.description,
+							status: item.status
+						})),
+						comments: this.transformCommentsForEmail(taskFlag.comments)
+					}
+				);
 			}
 
 			// Clear cache for this task's flags
@@ -1580,52 +1708,6 @@ export class TasksService {
 			};
 		} catch (error) {
 			throw new Error(`Failed to create task flag: ${error.message}`);
-		}
-	}
-
-	async addComment(flagId: number, commentDto: AddCommentDto, userId: number): Promise<any> {
-		try {
-			const taskFlag = await this.taskFlagRepository.findOne({
-				where: { uid: flagId },
-				relations: ['task'],
-			});
-
-			if (!taskFlag) {
-				throw new Error(`Task flag with ID ${flagId} not found`);
-			}
-
-			const user = await this.userRepository.findOne({ where: { uid: userId } });
-			if (!user) {
-				throw new Error('User not found');
-			}
-
-			// Initialize comments array if it doesn't exist
-			if (!taskFlag.comments) {
-				taskFlag.comments = [];
-			}
-
-			// Add the new comment
-			taskFlag.comments.push({
-				uid: Date.now(), // Use timestamp as temporary ID
-				content: commentDto.content,
-				createdAt: new Date(),
-				createdBy: {
-					uid: user.uid,
-					name: `${user.name} ${user.surname}`,
-				},
-			});
-
-			// Save the updated flag
-			await this.taskFlagRepository.save(taskFlag);
-
-			// Clear cache for this flag and its related task
-			await this.clearTaskFlagCache(taskFlag.task?.uid, flagId);
-
-			return {
-				message: 'Comment added successfully',
-			};
-		} catch (error) {
-			throw new Error(`Failed to add comment: ${error.message}`);
 		}
 	}
 
@@ -1707,12 +1789,14 @@ export class TasksService {
 		try {
 			const taskFlag = await this.taskFlagRepository.findOne({
 				where: { uid: flagId, isDeleted: false },
-				relations: ['task'],
+				relations: ['task', 'task.creator', 'task.assignees', 'createdBy', 'items']
 			});
 
 			if (!taskFlag) {
 				throw new Error(`Task flag with ID ${flagId} not found`);
 			}
+
+			const previousStatus = taskFlag.status;
 
 			// Update the flag properties
 			if (updateTaskFlagDto.title) taskFlag.title = updateTaskFlagDto.title;
@@ -1721,7 +1805,75 @@ export class TasksService {
 			if (updateTaskFlagDto.deadline) taskFlag.deadline = new Date(updateTaskFlagDto.deadline);
 
 			// Save the updated flag
-			await this.taskFlagRepository.save(taskFlag);
+			const updatedFlag = await this.taskFlagRepository.save(taskFlag);
+
+			// Send email notifications if status has changed
+			if (updateTaskFlagDto.status && updateTaskFlagDto.status !== previousStatus) {
+				const recipients = new Set<string>();
+				
+				// Get full creator details
+				const taskCreator = taskFlag.task.creator?.[0] && await this.userRepository.findOne({
+					where: { uid: taskFlag.task.creator[0].uid },
+					select: ['email']
+				});
+				if (taskCreator?.email) {
+					recipients.add(taskCreator.email);
+				}
+
+				// Get full assignee details
+				const assigneeIds = taskFlag.task.assignees?.map(a => a.uid) || [];
+				const assignees = assigneeIds.length > 0 ? await this.userRepository.find({
+					where: { uid: In(assigneeIds) },
+					select: ['email']
+				}) : [];
+				assignees.forEach(assignee => {
+					if (assignee.email) {
+						recipients.add(assignee.email);
+					}
+				});
+
+				// Get flag creator details
+				const flagCreator = taskFlag.createdBy?.uid && await this.userRepository.findOne({
+					where: { uid: taskFlag.createdBy.uid },
+					select: ['email']
+				});
+				if (flagCreator?.email) {
+					recipients.add(flagCreator.email);
+				}
+
+				const emailRecipients = Array.from(recipients).filter(email => email);
+
+				if (emailRecipients.length > 0) {
+					const emailType = updateTaskFlagDto.status === TaskFlagStatus.RESOLVED
+						? EmailType.TASK_FLAG_RESOLVED
+						: EmailType.TASK_FLAG_UPDATED;
+
+					await this.communicationService.sendEmail(
+						emailType,
+						emailRecipients,
+						{
+							name: 'Team Member',
+							taskId: taskFlag.task.uid,
+							taskTitle: taskFlag.task.title,
+							flagId: updatedFlag.uid,
+							flagTitle: updatedFlag.title,
+							flagDescription: updatedFlag.description,
+							flagStatus: updatedFlag.status,
+							flagDeadline: updatedFlag.deadline?.toISOString(),
+							createdBy: {
+								name: `${taskFlag.createdBy.name} ${taskFlag.createdBy.surname}`,
+								email: flagCreator?.email || ''
+							},
+							items: taskFlag.items?.map(item => ({
+								title: item.title,
+								description: item.description,
+								status: item.status
+							})),
+							comments: this.transformCommentsForEmail(taskFlag.comments)
+						}
+					);
+				}
+			}
 
 			// Check for flags and update the task status if needed
 			if (taskFlag.task?.uid) {
@@ -1743,7 +1895,7 @@ export class TasksService {
 		try {
 			const flagItem = await this.taskFlagItemRepository.findOne({
 				where: { uid: itemId, isDeleted: false },
-				relations: ['taskFlag', 'taskFlag.task'],
+				relations: ['taskFlag', 'taskFlag.task', 'taskFlag.task.creator', 'taskFlag.task.assignees', 'taskFlag.createdBy', 'taskFlag.items']
 			});
 
 			if (!flagItem) {
@@ -1770,12 +1922,70 @@ export class TasksService {
 				);
 
 				if (allCompleted) {
+					const previousStatus = flagItem.taskFlag.status;
 					flagItem.taskFlag.status = TaskFlagStatus.RESOLVED;
 					await this.taskFlagRepository.save(flagItem.taskFlag);
 
-					// After resolving a flag, check and update task status
-					if (flagItem.taskFlag?.task?.uid) {
-						await this.checkFlagsAndUpdateTaskStatus(flagItem.taskFlag.task.uid);
+					// Send email notification when flag is resolved
+					const recipients = new Set<string>();
+					
+					// Get full creator details
+					const taskCreator = flagItem.taskFlag.task.creator?.[0] && await this.userRepository.findOne({
+						where: { uid: flagItem.taskFlag.task.creator[0].uid },
+						select: ['email']
+					});
+					if (taskCreator?.email) {
+						recipients.add(taskCreator.email);
+					}
+
+					// Get full assignee details
+					const assigneeIds = flagItem.taskFlag.task.assignees?.map(a => a.uid) || [];
+					const assignees = assigneeIds.length > 0 ? await this.userRepository.find({
+						where: { uid: In(assigneeIds) },
+						select: ['email']
+					}) : [];
+					assignees.forEach(assignee => {
+						if (assignee.email) {
+							recipients.add(assignee.email);
+						}
+					});
+
+					// Get flag creator details
+					const flagCreator = flagItem.taskFlag.createdBy?.uid && await this.userRepository.findOne({
+						where: { uid: flagItem.taskFlag.createdBy.uid },
+						select: ['email']
+					});
+					if (flagCreator?.email) {
+						recipients.add(flagCreator.email);
+					}
+
+					const emailRecipients = Array.from(recipients).filter(email => email);
+
+					if (emailRecipients.length > 0) {
+						await this.communicationService.sendEmail(
+							EmailType.TASK_FLAG_RESOLVED,
+							emailRecipients,
+							{
+								name: 'Team Member',
+								taskId: flagItem.taskFlag.task.uid,
+								taskTitle: flagItem.taskFlag.task.title,
+								flagId: flagItem.taskFlag.uid,
+								flagTitle: flagItem.taskFlag.title,
+								flagDescription: flagItem.taskFlag.description,
+								flagStatus: flagItem.taskFlag.status,
+								flagDeadline: flagItem.taskFlag.deadline?.toISOString(),
+								createdBy: {
+									name: `${flagItem.taskFlag.createdBy.name} ${flagItem.taskFlag.createdBy.surname}`,
+									email: flagCreator?.email || ''
+								},
+								items: flagItem.taskFlag.items?.map(item => ({
+									title: item.title,
+									description: item.description,
+									status: item.status
+								})),
+								comments: this.transformCommentsForEmail(flagItem.taskFlag.comments)
+							}
+						);
 					}
 				}
 			}

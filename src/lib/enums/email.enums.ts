@@ -43,5 +43,11 @@ export enum EmailType {
     NEW_USER_ADMIN_NOTIFICATION = 'new_user_admin_notification',
     // Lead related emails
     LEAD_CONVERTED_CLIENT = 'lead_converted_client',
-    LEAD_CONVERTED_CREATOR = 'lead_converted_creator'
+    LEAD_CONVERTED_CREATOR = 'lead_converted_creator',
+    // Task Flag related emails
+    TASK_FLAG_CREATED = 'task_flag_created',
+    TASK_FLAG_UPDATED = 'task_flag_updated',
+    TASK_FLAG_RESOLVED = 'task_flag_resolved',
+    // Task Feedback related emails
+    TASK_FEEDBACK_ADDED = 'task_feedback_added',
 } 

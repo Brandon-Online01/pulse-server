@@ -73,7 +73,15 @@ import {
 	LeadConvertedClientData,
 	LeadConvertedCreatorData,
 	TaskEmailData,
+	TaskFlagEmailData,
+	TaskFeedbackEmailData,
 } from '../lib/types/email-templates.types';
+import { 
+	TaskFlagCreated,
+	TaskFlagUpdated,
+	TaskFlagResolved,
+	TaskFeedbackAdded,
+} from '../lib/templates/emails';
 
 @Injectable()
 export class CommunicationService {
@@ -273,6 +281,26 @@ export class CommunicationService {
 				return {
 					subject: 'Lead Successfully Converted to Client',
 					body: LeadConvertedCreator(data as LeadConvertedCreatorData),
+				};
+			case EmailType.TASK_FLAG_CREATED:
+				return {
+					subject: 'New Task Flag Created',
+					body: TaskFlagCreated(data as TaskFlagEmailData),
+				};
+			case EmailType.TASK_FLAG_UPDATED:
+				return {
+					subject: 'Task Flag Status Updated',
+					body: TaskFlagUpdated(data as TaskFlagEmailData),
+				};
+			case EmailType.TASK_FLAG_RESOLVED:
+				return {
+					subject: 'Task Flag Resolved',
+					body: TaskFlagResolved(data as TaskFlagEmailData),
+				};
+			case EmailType.TASK_FEEDBACK_ADDED:
+				return {
+					subject: 'New Task Feedback Received',
+					body: TaskFeedbackAdded(data as TaskFeedbackEmailData),
 				};
 			default:
 				throw new NotFoundException(`Unknown email template type: ${type}`);
