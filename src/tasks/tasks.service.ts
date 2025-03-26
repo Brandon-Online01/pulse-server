@@ -18,7 +18,6 @@ import { User } from '../user/entities/user.entity';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { ConfigService } from '@nestjs/config';
-import { DeepPartial } from 'typeorm';
 import { CommunicationService } from '../communication/communication.service';
 import { EmailType } from '../lib/enums/email.enums';
 import { TaskFlag } from './entities/task-flag.entity';
@@ -147,23 +146,6 @@ export class TasksService {
 
 		// Format the repetition type for display
 		const repetitionTypeDisplay = createTaskDto.repetitionType.toLowerCase();
-
-		// Create first task (for the start date)
-		try {
-			const firstTask = await this.createSingleRepeatingTask(
-				baseTask,
-				createTaskDto,
-				startDate,
-				1,
-				totalTasks,
-				repetitionTypeDisplay,
-				startDate,
-				endDate,
-			);
-			tasksCreated++;
-		} catch (error) {
-			return error;
-		}
 
 		// Now create the remaining tasks
 		while (currentDate < endDate) {
@@ -1520,7 +1502,7 @@ export class TasksService {
 
 			const user = await this.userRepository.findOne({
 				where: { uid: userId },
-				select: ['uid', 'name', 'surname']
+				select: ['uid', 'name', 'surname'],
 			});
 			if (!user) {
 				throw new Error('User not found');
@@ -1538,8 +1520,8 @@ export class TasksService {
 				createdAt: new Date(),
 				createdBy: {
 					uid: user.uid,
-					name: `${user.name} ${user.surname}`
-				}
+					name: `${user.name} ${user.surname}`,
+				},
 			};
 			taskFlag.comments.push(newComment);
 
@@ -1558,36 +1540,47 @@ export class TasksService {
 	}
 
 	// Helper function to transform comments for email templates
-	private transformCommentsForEmail(comments: Array<{
-		uid: number;
+	private transformCommentsForEmail(
+		comments: Array<{
+			uid: number;
+			content: string;
+			createdAt: Date | string;
+			createdBy: { uid: number; name: string };
+		}> = [],
+	): Array<{
 		content: string;
-		createdAt: Date;
-		createdBy: { uid: number; name: string; }
-	}>) {
-		return comments.map(comment => ({
+		createdAt: string;
+		createdBy: { name: string };
+	}> {
+		return (comments || []).map((comment) => ({
 			content: comment.content,
-			createdAt: comment.createdAt.toISOString(),
+			createdAt:
+				comment.createdAt instanceof Date
+					? comment.createdAt.toISOString()
+					: typeof comment.createdAt === 'string'
+					? comment.createdAt
+					: new Date().toISOString(),
 			createdBy: {
-				name: comment.createdBy.name
-			}
+				name: comment.createdBy.name,
+			},
 		}));
 	}
 
 	async createTaskFlag(createTaskFlagDto: CreateTaskFlagDto, userId: number): Promise<any> {
 		try {
 			// Find the task to flag with all necessary relations
-			const task = await this.taskRepository.findOne({ 
+			const task = await this.taskRepository.findOne({
 				where: { uid: createTaskFlagDto.taskId },
-				relations: ['creator', 'assignees']
+				relations: ['creator', 'assignees'],
 			});
 			if (!task) {
 				throw new Error(`Task with ID ${createTaskFlagDto.taskId} not found`);
 			}
 
 			// Get user information with all necessary fields
-			const user = await this.userRepository.findOne({ 
+			const user = await this.userRepository.findOne({
 				where: { uid: userId },
-				select: ['uid', 'name', 'surname', 'email']
+				select: ['uid', 'name', 'surname', 'email'],
 			});
 			if (!user) {
 				throw new Error('User not found');
@@ -1621,8 +1614,8 @@ export class TasksService {
 					createdAt: new Date(),
 					createdBy: {
 						uid: user.uid,
-						name: `${user.name} ${user.surname}`
-					}
+						name: `${user.name} ${user.surname}`,
+					},
 				};
 				taskFlag.comments.push(newComment);
 			}
@@ -1647,56 +1640,67 @@ export class TasksService {
 
 			// Send email notifications
 			const recipients = new Set<string>();
-			
+
 			// Get full creator details
-			const taskCreator = task.creator?.[0] && await this.userRepository.findOne({
-				where: { uid: task.creator[0].uid },
-				select: ['email']
-			});
+			const taskCreator =
+				task.creator?.[0] &&
+				(await this.userRepository.findOne({
+					where: { uid: task.creator[0].uid },
+					select: ['email'],
+				}));
 			if (taskCreator?.email) {
 				recipients.add(taskCreator.email);
 			}
 
 			// Get full assignee details
-			const assigneeIds = task.assignees?.map(a => a.uid) || [];
-			const assignees = assigneeIds.length > 0 ? await this.userRepository.find({
-				where: { uid: In(assigneeIds) },
-				select: ['email']
-			}) : [];
-			assignees.forEach(assignee => {
-				if (assignee.email) {
-					recipients.add(assignee.email);
-				}
-			});
+			const assigneeIds = task.assignees?.map((a) => a.uid) || [];
+			if (assigneeIds.length > 0) {
+				const assignees = await this.userRepository.find({
+					where: { uid: In(assigneeIds) },
+					select: ['email'],
+				});
+				assignees.forEach((assignee) => {
+					if (assignee.email) {
+						recipients.add(assignee.email);
+					}
+				});
+			}
+
+			// Get flag creator details
+			const flagCreator =
+				taskFlag.createdBy?.uid &&
+				(await this.userRepository.findOne({
+					where: { uid: taskFlag.createdBy.uid },
+					select: ['email'],
+				}));
+			if (flagCreator?.email) {
+				recipients.add(flagCreator.email);
+			}
 
 			// Convert Set to Array and filter out empty emails
-			const emailRecipients = Array.from(recipients).filter(email => email);
+			const emailRecipients = Array.from(recipients).filter((email) => email);
 
 			if (emailRecipients.length > 0) {
-				await this.communicationService.sendEmail(
-					EmailType.TASK_FLAG_CREATED,
-					emailRecipients,
-					{
-						name: 'Team Member',
-						taskId: task.uid,
-						taskTitle: task.title,
-						flagId: savedFlag.uid,
-						flagTitle: savedFlag.title,
-						flagDescription: savedFlag.description,
-						flagStatus: savedFlag.status,
-						flagDeadline: savedFlag.deadline?.toISOString(),
-						createdBy: {
-							name: `${user.name} ${user.surname}`,
-							email: user.email
-						},
-						items: savedItems.map(item => ({
-							title: item.title,
-							description: item.description,
-							status: item.status
-						})),
-						comments: this.transformCommentsForEmail(taskFlag.comments)
-					}
-				);
+				await this.communicationService.sendEmail(EmailType.TASK_FLAG_CREATED, emailRecipients, {
+					name: 'Team Member',
+					taskId: task.uid,
+					taskTitle: task.title,
+					flagId: savedFlag.uid,
+					flagTitle: savedFlag.title,
+					flagDescription: savedFlag.description,
+					flagStatus: savedFlag.status,
+					flagDeadline: savedFlag.deadline?.toISOString(),
+					createdBy: {
+						name: `${user.name} ${user.surname}`,
+						email: user.email,
+					},
+					items: savedItems.map((item) => ({
+						title: item.title,
+						description: item.description,
+						status: item.status,
+					})),
+					comments: this.transformCommentsForEmail(taskFlag.comments),
+				});
 			}
 
 			// Clear cache for this task's flags
@@ -1764,7 +1768,7 @@ export class TasksService {
 			// If not in cache, fetch from database
 			const taskFlag = await this.taskFlagRepository.findOne({
 				where: { uid: flagId, isDeleted: false },
-				relations: ['createdBy', 'items', 'task'],
+				relations: ['task', 'task.creator', 'createdBy', 'items'],
 			});
 
 			if (!taskFlag) {
@@ -1789,7 +1793,7 @@ export class TasksService {
 		try {
 			const taskFlag = await this.taskFlagRepository.findOne({
 				where: { uid: flagId, isDeleted: false },
-				relations: ['task', 'task.creator', 'task.assignees', 'createdBy', 'items']
+				relations: ['task', 'task.creator', 'createdBy', 'items'],
 			});
 
 			if (!taskFlag) {
@@ -1805,73 +1809,76 @@ export class TasksService {
 			if (updateTaskFlagDto.deadline) taskFlag.deadline = new Date(updateTaskFlagDto.deadline);
 
 			// Save the updated flag
-			const updatedFlag = await this.taskFlagRepository.save(taskFlag);
+			await this.taskFlagRepository.save(taskFlag);
 
 			// Send email notifications if status has changed
 			if (updateTaskFlagDto.status && updateTaskFlagDto.status !== previousStatus) {
 				const recipients = new Set<string>();
-				
+
 				// Get full creator details
-				const taskCreator = taskFlag.task.creator?.[0] && await this.userRepository.findOne({
-					where: { uid: taskFlag.task.creator[0].uid },
-					select: ['email']
-				});
+				const taskCreator =
+					taskFlag.task.creator?.[0] &&
+					(await this.userRepository.findOne({
+						where: { uid: taskFlag.task.creator[0].uid },
+						select: ['email'],
+					}));
 				if (taskCreator?.email) {
 					recipients.add(taskCreator.email);
 				}
 
 				// Get full assignee details
-				const assigneeIds = taskFlag.task.assignees?.map(a => a.uid) || [];
-				const assignees = assigneeIds.length > 0 ? await this.userRepository.find({
-					where: { uid: In(assigneeIds) },
-					select: ['email']
-				}) : [];
-				assignees.forEach(assignee => {
-					if (assignee.email) {
-						recipients.add(assignee.email);
-					}
-				});
+				const assigneeIds = taskFlag.task.assignees?.map((a) => a.uid) || [];
+				if (assigneeIds.length > 0) {
+					const assignees = await this.userRepository.find({
+						where: { uid: In(assigneeIds) },
+						select: ['email'],
+					});
+					assignees.forEach((assignee) => {
+						if (assignee.email) {
+							recipients.add(assignee.email);
+						}
+					});
+				}
 
 				// Get flag creator details
-				const flagCreator = taskFlag.createdBy?.uid && await this.userRepository.findOne({
-					where: { uid: taskFlag.createdBy.uid },
-					select: ['email']
-				});
+				const flagCreator =
+					taskFlag.createdBy?.uid &&
+					(await this.userRepository.findOne({
+						where: { uid: taskFlag.createdBy.uid },
+						select: ['email'],
+					}));
 				if (flagCreator?.email) {
 					recipients.add(flagCreator.email);
 				}
 
-				const emailRecipients = Array.from(recipients).filter(email => email);
+				const emailRecipients = Array.from(recipients).filter((email) => email);
 
 				if (emailRecipients.length > 0) {
-					const emailType = updateTaskFlagDto.status === TaskFlagStatus.RESOLVED
-						? EmailType.TASK_FLAG_RESOLVED
-						: EmailType.TASK_FLAG_UPDATED;
+					const emailType =
+						updateTaskFlagDto.status === TaskFlagStatus.RESOLVED
+							? EmailType.TASK_FLAG_RESOLVED
+							: EmailType.TASK_FLAG_UPDATED;
 
-					await this.communicationService.sendEmail(
-						emailType,
-						emailRecipients,
-						{
-							name: 'Team Member',
-							taskId: taskFlag.task.uid,
-							taskTitle: taskFlag.task.title,
-							flagId: updatedFlag.uid,
-							flagTitle: updatedFlag.title,
-							flagDescription: updatedFlag.description,
-							flagStatus: updatedFlag.status,
-							flagDeadline: updatedFlag.deadline?.toISOString(),
-							createdBy: {
-								name: `${taskFlag.createdBy.name} ${taskFlag.createdBy.surname}`,
-								email: flagCreator?.email || ''
-							},
-							items: taskFlag.items?.map(item => ({
-								title: item.title,
-								description: item.description,
-								status: item.status
-							})),
-							comments: this.transformCommentsForEmail(taskFlag.comments)
-						}
-					);
+					await this.communicationService.sendEmail(emailType, emailRecipients, {
+						name: 'Team Member',
+						taskId: taskFlag.task.uid,
+						taskTitle: taskFlag.task.title,
+						flagId: taskFlag.uid,
+						flagTitle: taskFlag.title,
+						flagDescription: taskFlag.description,
+						flagStatus: taskFlag.status,
+						flagDeadline: taskFlag.deadline?.toISOString(),
+						createdBy: {
+							name: `${taskFlag.createdBy.name} ${taskFlag.createdBy.surname}`,
+							email: flagCreator?.email || '',
+						},
+						items: taskFlag.items?.map((item) => ({
+							title: item.title,
+							description: item.description,
+							status: item.status,
+						})),
+						comments: this.transformCommentsForEmail(taskFlag.comments),
+					});
 				}
 			}
 
@@ -1895,7 +1902,13 @@ export class TasksService {
 		try {
 			const flagItem = await this.taskFlagItemRepository.findOne({
 				where: { uid: itemId, isDeleted: false },
-				relations: ['taskFlag', 'taskFlag.task', 'taskFlag.task.creator', 'taskFlag.task.assignees', 'taskFlag.createdBy', 'taskFlag.items']
+				relations: [
+					'taskFlag',
+					'taskFlag.task',
+					'taskFlag.task.creator',
+					'taskFlag.createdBy',
+					'taskFlag.items',
+				],
 			});
 
 			if (!flagItem) {
@@ -1928,64 +1941,66 @@ export class TasksService {
 
 					// Send email notification when flag is resolved
 					const recipients = new Set<string>();
-					
+
 					// Get full creator details
-					const taskCreator = flagItem.taskFlag.task.creator?.[0] && await this.userRepository.findOne({
-						where: { uid: flagItem.taskFlag.task.creator[0].uid },
-						select: ['email']
-					});
+					const taskCreator =
+						flagItem.taskFlag.task.creator?.[0] &&
+						(await this.userRepository.findOne({
+							where: { uid: flagItem.taskFlag.task.creator[0].uid },
+							select: ['email'],
+						}));
 					if (taskCreator?.email) {
 						recipients.add(taskCreator.email);
 					}
 
 					// Get full assignee details
-					const assigneeIds = flagItem.taskFlag.task.assignees?.map(a => a.uid) || [];
-					const assignees = assigneeIds.length > 0 ? await this.userRepository.find({
-						where: { uid: In(assigneeIds) },
-						select: ['email']
-					}) : [];
-					assignees.forEach(assignee => {
-						if (assignee.email) {
-							recipients.add(assignee.email);
-						}
-					});
+					const assigneeIds = flagItem.taskFlag.task.assignees?.map((a) => a.uid) || [];
+					if (assigneeIds.length > 0) {
+						const assignees = await this.userRepository.find({
+							where: { uid: In(assigneeIds) },
+							select: ['email'],
+						});
+						assignees.forEach((assignee) => {
+							if (assignee.email) {
+								recipients.add(assignee.email);
+							}
+						});
+					}
 
 					// Get flag creator details
-					const flagCreator = flagItem.taskFlag.createdBy?.uid && await this.userRepository.findOne({
-						where: { uid: flagItem.taskFlag.createdBy.uid },
-						select: ['email']
-					});
+					const flagCreator =
+						flagItem.taskFlag.createdBy?.uid &&
+						(await this.userRepository.findOne({
+							where: { uid: flagItem.taskFlag.createdBy.uid },
+							select: ['email'],
+						}));
 					if (flagCreator?.email) {
 						recipients.add(flagCreator.email);
 					}
 
-					const emailRecipients = Array.from(recipients).filter(email => email);
+					const emailRecipients = Array.from(recipients).filter((email) => email);
 
 					if (emailRecipients.length > 0) {
-						await this.communicationService.sendEmail(
-							EmailType.TASK_FLAG_RESOLVED,
-							emailRecipients,
-							{
-								name: 'Team Member',
-								taskId: flagItem.taskFlag.task.uid,
-								taskTitle: flagItem.taskFlag.task.title,
-								flagId: flagItem.taskFlag.uid,
-								flagTitle: flagItem.taskFlag.title,
-								flagDescription: flagItem.taskFlag.description,
-								flagStatus: flagItem.taskFlag.status,
-								flagDeadline: flagItem.taskFlag.deadline?.toISOString(),
-								createdBy: {
-									name: `${flagItem.taskFlag.createdBy.name} ${flagItem.taskFlag.createdBy.surname}`,
-									email: flagCreator?.email || ''
-								},
-								items: flagItem.taskFlag.items?.map(item => ({
-									title: item.title,
-									description: item.description,
-									status: item.status
-								})),
-								comments: this.transformCommentsForEmail(flagItem.taskFlag.comments)
-							}
-						);
+						await this.communicationService.sendEmail(EmailType.TASK_FLAG_RESOLVED, emailRecipients, {
+							name: 'Team Member',
+							taskId: flagItem.taskFlag.task.uid,
+							taskTitle: flagItem.taskFlag.task.title,
+							flagId: flagItem.taskFlag.uid,
+							flagTitle: flagItem.taskFlag.title,
+							flagDescription: flagItem.taskFlag.description,
+							flagStatus: flagItem.taskFlag.status,
+							flagDeadline: flagItem.taskFlag.deadline?.toISOString(),
+							createdBy: {
+								name: `${flagItem.taskFlag.createdBy.name} ${flagItem.taskFlag.createdBy.surname}`,
+								email: flagCreator?.email || '',
+							},
+							items: flagItem.taskFlag.items?.map((item) => ({
+								title: item.title,
+								description: item.description,
+								status: item.status,
+							})),
+							comments: this.transformCommentsForEmail(flagItem.taskFlag.comments),
+						});
 					}
 				}
 			}
