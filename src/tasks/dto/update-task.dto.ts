@@ -120,7 +120,7 @@ export class UpdateTaskDto {
 	@ValidateNested({ each: true })
 	@Type(() => ClientDto)
 	@IsOptional()
-	client?: ClientDto[];
+	clients?: ClientDto[];
 
 	@ApiProperty({
 		description: 'Target category for bulk client assignment',

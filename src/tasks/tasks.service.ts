@@ -733,7 +733,7 @@ export class TasksService {
 
 			const task = await this.taskRepository.findOne({
 				where: whereClause,
-				relations: ['subtasks', 'organisation', 'branch', 'creator', 'assignees'],
+				relations: ['organisation', 'branch', 'creator'],
 			});
 
 			if (!task) {
@@ -750,8 +750,34 @@ export class TasksService {
 				updateTaskDto.progress = 100;
 			}
 
+			// Handle subtasks separately if they exist in the DTO
+			const subtasks = updateTaskDto.subtasks;
+			delete updateTaskDto.subtasks; // Remove subtasks from the main update
+
 			// Update the task with the new data
 			await this.taskRepository.update(ref, updateTaskDto);
+
+			// If subtasks were provided, handle them
+			if (subtasks && subtasks.length > 0) {
+				// Get existing subtasks
+				const existingSubtasks = await this.subtaskRepository.find({
+					where: { task: { uid: ref } },
+				});
+
+				// Delete existing subtasks
+				if (existingSubtasks.length > 0) {
+					await this.subtaskRepository.delete(existingSubtasks.map(st => st.uid));
+				}
+
+				// Create new subtasks
+				const newSubtasks = subtasks.map(subtask => ({
+					...subtask,
+					task: { uid: ref },
+					status: SubTaskStatus.PENDING,
+				}));
+
+				await this.subtaskRepository.save(newSubtasks);
+			}
 
 			// Check for flags and update status if needed
 			await this.checkFlagsAndUpdateTaskStatus(ref);
@@ -761,7 +787,7 @@ export class TasksService {
 			if (isCompletingTask) {
 				updatedTask = await this.taskRepository.findOne({
 					where: whereClause,
-					relations: ['subtasks', 'organisation', 'branch', 'creator', 'assignees', 'clients'],
+					relations: ['organisation', 'branch', 'creator', 'clients'],
 				});
 
 				if (updatedTask) {
