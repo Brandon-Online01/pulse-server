@@ -94,6 +94,7 @@ Required environment variables:
 		.addTag('claims', 'Insurance claims processing with document attachments')
 		.addTag('journal', 'Daily activity logging for management and audit trails')
 		.addTag('products', 'Product catalog with image storage and inventory tracking')
+		.addTag('quotation-conversion', 'Quotation conversion with image storage and inventory tracking')
 		.addTag('shop', 'E-commerce with location-based delivery and territory restrictions')
 
 		// Communication and Notifications
