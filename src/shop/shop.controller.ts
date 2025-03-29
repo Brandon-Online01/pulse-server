@@ -43,6 +43,7 @@ export class ShopController {
 		AccessLevel.USER,
 		AccessLevel.OWNER,
 		AccessLevel.TECHNICIAN,
+		AccessLevel.CLIENT,
 	)
 	@ApiOperation({
 		summary: 'Get a list of best selling products',
@@ -84,6 +85,7 @@ export class ShopController {
 		AccessLevel.USER,
 		AccessLevel.OWNER,
 		AccessLevel.TECHNICIAN,
+		AccessLevel.CLIENT,
 	)
 	@ApiOperation({
 		summary: 'Get a list of newly arrived products',
@@ -125,6 +127,7 @@ export class ShopController {
 		AccessLevel.USER,
 		AccessLevel.OWNER,
 		AccessLevel.TECHNICIAN,
+		AccessLevel.CLIENT,
 	)
 	@ApiOperation({
 		summary: 'Get a list of hot deals',
@@ -167,6 +170,7 @@ export class ShopController {
 		AccessLevel.USER,
 		AccessLevel.OWNER,
 		AccessLevel.TECHNICIAN,
+		AccessLevel.CLIENT,
 	)
 	@ApiOperation({
 		summary: 'Get a list of product categories',
@@ -200,6 +204,7 @@ export class ShopController {
 		AccessLevel.USER,
 		AccessLevel.OWNER,
 		AccessLevel.TECHNICIAN,
+		AccessLevel.CLIENT,
 	)
 	@ApiOperation({
 		summary: 'Get a list of special offers',
@@ -241,6 +246,7 @@ export class ShopController {
 		AccessLevel.USER,
 		AccessLevel.OWNER,
 		AccessLevel.TECHNICIAN,
+		AccessLevel.CLIENT,
 	)
 	@ApiOperation({
 		summary: 'Create a new quotation',
@@ -274,6 +280,7 @@ export class ShopController {
 		AccessLevel.USER,
 		AccessLevel.OWNER,
 		AccessLevel.TECHNICIAN,
+		AccessLevel.CLIENT,
 	)
 	@ApiOperation({
 		summary: 'Get all quotations',
@@ -327,6 +334,7 @@ export class ShopController {
 		AccessLevel.USER,
 		AccessLevel.OWNER,
 		AccessLevel.TECHNICIAN,
+		AccessLevel.CLIENT,
 	)
 	@ApiOperation({
 		summary: 'Get a quotation by reference code',
@@ -390,6 +398,7 @@ export class ShopController {
 		AccessLevel.USER,
 		AccessLevel.OWNER,
 		AccessLevel.TECHNICIAN,
+		AccessLevel.CLIENT,
 	)
 	@ApiOperation({
 		summary: 'Get quotations by user',
@@ -453,6 +462,7 @@ export class ShopController {
 		AccessLevel.USER,
 		AccessLevel.OWNER,
 		AccessLevel.TECHNICIAN,
+		AccessLevel.CLIENT,
 	)
 	@ApiOperation({
 		summary: 'Update quotation status',
@@ -512,6 +522,7 @@ export class ShopController {
 		AccessLevel.USER,
 		AccessLevel.OWNER,
 		AccessLevel.TECHNICIAN,
+		AccessLevel.CLIENT,
 	)
 	@ApiOperation({
 		summary: 'Get all banners',
@@ -735,7 +746,12 @@ export class ShopController {
 		description: 'Checks if a quotation review token is valid and returns the quotation details',
 	})
 	@ApiQuery({ name: 'token', required: true, type: 'string' })
-	@ApiQuery({ name: 'action', required: false, enum: ['approve', 'decline'], description: 'Optional action to perform' })
+	@ApiQuery({
+		name: 'action',
+		required: false,
+		enum: ['approve', 'decline'],
+		description: 'Optional action to perform',
+	})
 	@ApiOkResponse({
 		description: 'Token is valid',
 		schema: {
@@ -749,17 +765,17 @@ export class ShopController {
 						quotationNumber: { type: 'string' },
 						status: { type: 'string' },
 						// Additional quotation properties as needed
-					}
+					},
 				},
 				message: { type: 'string', example: 'Token is valid' },
 				actionPerformed: { type: 'boolean', example: false },
-				actionResult: { 
+				actionResult: {
 					type: 'object',
 					properties: {
 						success: { type: 'boolean', example: true },
-						message: { type: 'string', example: 'Quotation approved successfully' }
-					}
-				}
+						message: { type: 'string', example: 'Quotation approved successfully' },
+					},
+				},
 			},
 		},
 	})
@@ -773,32 +789,27 @@ export class ShopController {
 			},
 		},
 	})
-	async validateReviewToken(
-		@Query('token') token: string,
-		@Query('action') action?: 'approve' | 'decline'
-	) {
+	async validateReviewToken(@Query('token') token: string, @Query('action') action?: 'approve' | 'decline') {
 		// First validate the token
 		const validationResult = await this.shopService.validateReviewToken(token);
-		
+
 		// If token is valid and an action is specified, perform the action
 		if (validationResult.valid && action && ['approve', 'decline'].includes(action)) {
-			const status = action === 'approve' 
-				? OrderStatus.APPROVED 
-				: OrderStatus.REJECTED;
-				
+			const status = action === 'approve' ? OrderStatus.APPROVED : OrderStatus.REJECTED;
+
 			const actionResult = await this.shopService.updateQuotationStatusByToken(
-				token, 
+				token,
 				status,
-				action === 'approve' ? 'Approved via email link' : 'Declined via email link'
+				action === 'approve' ? 'Approved via email link' : 'Declined via email link',
 			);
-			
+
 			return {
 				...validationResult,
 				actionPerformed: true,
-				actionResult
+				actionResult,
 			};
 		}
-		
+
 		return validationResult;
 	}
 
@@ -858,13 +869,7 @@ export class ShopController {
 	}
 
 	@Post('quotation/:ref/send-to-client')
-	@Roles(
-		AccessLevel.ADMIN,
-		AccessLevel.MANAGER,
-		AccessLevel.SUPPORT,
-		AccessLevel.DEVELOPER,
-		AccessLevel.OWNER,
-	)
+	@Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.DEVELOPER, AccessLevel.OWNER)
 	@ApiOperation({
 		summary: 'Send a quotation to the client for review',
 		description: 'Updates quotation status to pending client review and sends email with review link',
