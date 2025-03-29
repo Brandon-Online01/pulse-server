@@ -29,6 +29,14 @@ export class ClientAuthService {
 		return crypto.randomBytes(32).toString('hex');
 	}
 
+	private getOrganisationRef(organisation: any): string {
+		return String(
+			typeof organisation === 'object'
+				? organisation.uid
+				: organisation
+		);
+	}
+
 	async clientSignIn(signInInput: ClientSignInInput) {
 		try {
 			const { email, password } = signInInput;
@@ -39,13 +47,23 @@ export class ClientAuthService {
 			});
 
 			if (!clientAuth) {
-				throw new UnauthorizedException('Invalid credentials');
+				return {
+					message: 'Invalid credentials provided',
+					accessToken: null,
+					refreshToken: null,
+					profileData: null,
+				};
 			}
 
 			const isPasswordValid = await bcrypt.compare(password, clientAuth.password);
 
 			if (!isPasswordValid) {
-				throw new UnauthorizedException('Invalid credentials provided');
+				return {
+					message: 'Invalid credentials provided',
+					accessToken: null,
+					refreshToken: null,
+					profileData: null,
+				};
 			}
 
 			// Update last login timestamp
@@ -54,11 +72,7 @@ export class ClientAuthService {
 
 			// Check organization license if client belongs to an organization
 			if (clientAuth.client?.organisation) {
-				const organisationRef = String(
-					typeof clientAuth.client.organisation === 'object'
-						? clientAuth.client.organisation.uid
-						: clientAuth.client.organisation,
-				);
+				const organisationRef = this.getOrganisationRef(clientAuth.client.organisation);
 
 				const licenses = await this.licensingService.findByOrganisation(organisationRef);
 				const activeLicense = licenses.find((license) =>
@@ -93,7 +107,7 @@ export class ClientAuthService {
 				return {
 					accessToken,
 					refreshToken,
-					client: {
+					profileData: {
 						uid: clientAuth.client.uid,
 						email: clientAuth.email,
 						// Add other client properties as needed
@@ -111,7 +125,7 @@ export class ClientAuthService {
 			// For clients without an organization (should be rare)
 			const payload = {
 				uid: clientAuth.uid,
-				role: 'client',
+				role: AccessLevel.CLIENT,
 				branch: clientAuth.client?.branch?.uid ? { uid: clientAuth.client.branch.uid } : null,
 			};
 
@@ -126,7 +140,7 @@ export class ClientAuthService {
 			return {
 				accessToken,
 				refreshToken,
-				client: {
+				profileData: {
 					uid: clientAuth.client.uid,
 					email: clientAuth.email,
 					// Add other client properties as needed
@@ -134,7 +148,12 @@ export class ClientAuthService {
 				message: 'Authentication successful',
 			};
 		} catch (error) {
-			throw new HttpException(error.message || 'Authentication failed', error.status || HttpStatus.UNAUTHORIZED);
+			return {
+				message: error?.message || 'Authentication failed',
+				accessToken: null,
+				refreshToken: null,
+				profileData: null,
+			};
 		}
 	}
 
@@ -263,7 +282,12 @@ export class ClientAuthService {
 			const payload = await this.jwtService.verifyAsync(token);
 
 			if (!payload) {
-				throw new BadRequestException('Invalid refresh token');
+				return {
+					message: 'Invalid refresh token',
+					accessToken: null,
+					refreshToken: null,
+					profileData: null,
+				};
 			}
 
 			// Find client auth by uid
@@ -273,16 +297,17 @@ export class ClientAuthService {
 			});
 
 			if (!clientAuth) {
-				throw new BadRequestException('Client not found');
+				return {
+					message: 'Client not found',
+					accessToken: null,
+					refreshToken: null,
+					profileData: null,
+				};
 			}
 
 			// Check organization license if client belongs to an organization
 			if (clientAuth.client?.organisation) {
-				const organisationRef = String(
-					typeof clientAuth.client.organisation === 'object'
-						? clientAuth.client.organisation.uid
-						: clientAuth.client.organisation,
-				);
+				const organisationRef = this.getOrganisationRef(clientAuth.client.organisation);
 
 				const licenses = await this.licensingService.findByOrganisation(organisationRef);
 				const activeLicense = licenses.find((license) =>
@@ -290,15 +315,18 @@ export class ClientAuthService {
 				);
 
 				if (!activeLicense) {
-					throw new UnauthorizedException(
-						"Your organization's license has expired. Please contact your administrator.",
-					);
+					return {
+						message: "Your organization's license has expired. Please contact your administrator.",
+						accessToken: null,
+						refreshToken: null,
+						profileData: null,
+					};
 				}
 
-				// Generate new JWT token with client-specific fields and license information
+				// Generate new JWT tokens with client-specific fields and license information
 				const newPayload = {
 					uid: clientAuth.uid,
-					role: 'client',
+					role: AccessLevel.CLIENT,
 					organisationRef,
 					licenseId: String(activeLicense?.uid),
 					licensePlan: activeLicense?.plan,
@@ -310,9 +338,15 @@ export class ClientAuthService {
 					expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '8h',
 				});
 
+				// Generate a new refresh token as well for token rotation
+				const refreshToken = await this.jwtService.signAsync(newPayload, {
+					expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
+				});
+
 				return {
 					accessToken,
-					client: {
+					refreshToken,
+					profileData: {
 						uid: clientAuth.client.uid,
 						email: clientAuth.email,
 						// Add other client properties as needed
@@ -323,14 +357,14 @@ export class ClientAuthService {
 							features: activeLicense?.features,
 						},
 					},
-					message: 'Access token refreshed successfully',
+					message: 'Tokens refreshed successfully',
 				};
 			}
 
 			// For clients without an organization (should be rare)
 			const newPayload = {
 				uid: clientAuth.uid,
-				role: 'client',
+				role: AccessLevel.CLIENT,
 				branch: clientAuth.client?.branch?.uid ? { uid: clientAuth.client.branch.uid } : null,
 			};
 
@@ -338,20 +372,37 @@ export class ClientAuthService {
 				expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '8h',
 			});
 
+			// Generate a new refresh token as well for token rotation
+			const refreshToken = await this.jwtService.signAsync(newPayload, {
+				expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
+			});
+
 			return {
 				accessToken,
-				client: {
+				refreshToken,
+				profileData: {
 					uid: clientAuth.client.uid,
 					email: clientAuth.email,
 					// Add other client properties as needed
 				},
-				message: 'Access token refreshed successfully',
+				message: 'Tokens refreshed successfully',
 			};
 		} catch (error) {
 			if (error?.name === 'TokenExpiredError') {
-				throw new HttpException('Refresh token has expired', HttpStatus.UNAUTHORIZED);
+				return {
+					message: 'Refresh token has expired',
+					accessToken: null,
+					refreshToken: null,
+					profileData: null,
+				};
 			}
-			throw new HttpException(error.message || 'Failed to refresh token', error.status || HttpStatus.BAD_REQUEST);
+			
+			return {
+				message: error?.message || 'Failed to refresh token',
+				accessToken: null,
+				refreshToken: null,
+				profileData: null,
+			};
 		}
 	}
 }

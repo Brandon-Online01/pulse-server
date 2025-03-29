@@ -40,13 +40,23 @@ export class ClientAuthController {
             properties: {
                 accessToken: { type: 'string' },
                 refreshToken: { type: 'string' },
-                client: {
+                profileData: {
                     type: 'object',
                     properties: {
                         uid: { type: 'number' },
-                        email: { type: 'string' }
+                        email: { type: 'string' },
+                        licenseInfo: {
+                            type: 'object',
+                            properties: {
+                                licenseId: { type: 'string' },
+                                plan: { type: 'string' },
+                                status: { type: 'string' },
+                                features: { type: 'object' }
+                            }
+                        }
                     }
-                }
+                },
+                message: { type: 'string' }
             }
         }
     })
@@ -137,7 +147,24 @@ export class ClientAuthController {
             type: 'object',
             properties: {
                 accessToken: { type: 'string' },
-                client: { type: 'object' }
+                refreshToken: { type: 'string' },
+                profileData: { 
+                    type: 'object',
+                    properties: {
+                        uid: { type: 'number' },
+                        email: { type: 'string' },
+                        licenseInfo: {
+                            type: 'object',
+                            properties: {
+                                licenseId: { type: 'string' },
+                                plan: { type: 'string' },
+                                status: { type: 'string' },
+                                features: { type: 'object' }
+                            }
+                        }
+                    }
+                },
+                message: { type: 'string' }
             }
         }
     })
