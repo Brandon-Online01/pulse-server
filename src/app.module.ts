@@ -81,6 +81,7 @@ import { GeofenceEvent } from './tracking/entities/geofence-event.entity';
 import { Reward } from './rewards/entities/reward.entity';
 import { Order } from './shop/entities/order.entity';
 import { OrderItem } from './shop/entities/order-item.entity';
+import { ClientAuth } from './clients/entities/client.auth.entity';
 
 @Module({
 	imports: [
@@ -118,6 +119,7 @@ import { OrderItem } from './shop/entities/order-item.entity';
 				Notification,
 				Task,
 				Client,
+				ClientAuth,
 				Product,
 				ProductAnalytics,
 				Reseller,
