@@ -72,8 +72,9 @@ export class ShopController {
 			},
 		},
 	})
-	getBestSellers() {
-		return this.shopService.getBestSellers();
+	getBestSellers(@Req() req: AuthenticatedRequest) {
+		const orgId = req.user?.org?.uid;
+		return this.shopService.getBestSellers(orgId);
 	}
 
 	@Get('new-arrivals')
@@ -114,8 +115,9 @@ export class ShopController {
 			},
 		},
 	})
-	getNewArrivals() {
-		return this.shopService.getNewArrivals();
+	getNewArrivals(@Req() req: AuthenticatedRequest) {
+		const orgId = req.user?.org?.uid;
+		return this.shopService.getNewArrivals(orgId);
 	}
 
 	@Get('hot-deals')
@@ -157,8 +159,9 @@ export class ShopController {
 			},
 		},
 	})
-	getHotDeals() {
-		return this.shopService.getHotDeals();
+	getHotDeals(@Req() req: AuthenticatedRequest) {
+		const orgId = req.user?.org?.uid;
+		return this.shopService.getHotDeals(orgId);
 	}
 
 	@Get('categories')
@@ -191,8 +194,9 @@ export class ShopController {
 			},
 		},
 	})
-	categories() {
-		return this.shopService.categories();
+	categories(@Req() req: AuthenticatedRequest) {
+		const orgId = req.user?.org?.uid;
+		return this.shopService.categories(orgId);
 	}
 
 	@Get('specials')
@@ -233,8 +237,9 @@ export class ShopController {
 			},
 		},
 	})
-	specials() {
-		return this.shopService.specials();
+	specials(@Req() req: AuthenticatedRequest) {
+		const orgId = req.user?.org?.uid;
+		return this.shopService.specials(orgId);
 	}
 
 	@Post('quotation')

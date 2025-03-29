@@ -1,78 +1,184 @@
+import { Controller, Post, Body, Param, UseGuards, Req, BadRequestException } from '@nestjs/common';
 import { ReportsService } from './reports.service';
-import { ApiTags, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
-import { AuthGuard } from '../guards/auth.guard';
+import { ReportParamsDto } from './dto/report-params.dto';
+import { ReportType } from './constants/report-types.enum';
+import { AuthenticatedRequest } from '../lib/interfaces/authenticated-request.interface';
+import {
+	ApiBearerAuth,
+	ApiOperation,
+	ApiTags,
+	ApiParam,
+	ApiBody,
+	ApiOkResponse,
+	ApiBadRequestResponse,
+	ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { RoleGuard } from '../guards/role.guard';
-import { Controller, UseGuards, Get, Param, ParseIntPipe, Request, NotFoundException } from '@nestjs/common';
-import { EnterpriseOnly } from '../decorators/enterprise-only.decorator';
-import { LiveUserReport } from './report.types';
-import { LiveUserReportDto } from './dto/live-user-report.dto';
-import { MapDataResponseDto } from './dto/map-data.dto';
+import { AuthGuard } from '../guards/auth.guard';
+import { AccessLevel } from '../lib/enums/user.enums';
+import { Roles } from '../decorators/role.decorator';
 
+@ApiBearerAuth('JWT-auth')
 @ApiTags('reports')
 @Controller('reports')
 @UseGuards(AuthGuard, RoleGuard)
-@EnterpriseOnly('reports')
+@ApiUnauthorizedResponse({ description: 'Unauthorized - Invalid credentials or missing token' })
 export class ReportsController {
 	constructor(private readonly reportsService: ReportsService) {}
 
-	@Get('live/:ref')
-	@ApiOperation({ summary: 'Get live user report' })
+	// Unified endpoint for all report types
+	@Post(':type/generate')
+	@Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.USER, AccessLevel.OWNER)
+	@ApiOperation({
+		summary: 'Generate a comprehensive report',
+		description:
+			'Generates a detailed report based on the specified type and parameters. Available types: main, user, shift',
+	})
 	@ApiParam({
-		name: 'ref',
-		type: 'number',
-		description: 'The reference ID of the user',
+		name: 'type',
+		description: 'Report type (main, user, shift)',
+		enum: ['main', 'user', 'shift'],
+		example: 'main',
 	})
-	@ApiResponse({
-		status: 200,
-		description: 'Live user report retrieved successfully',
-		type: LiveUserReportDto,
+	@ApiBody({
+		description: 'Report generation parameters',
+		schema: {
+			type: 'object',
+			properties: {
+				organisationId: {
+					type: 'number',
+					description: 'Organization ID (optional if available from auth context)',
+				},
+				branchId: {
+					type: 'number',
+					description: 'Branch ID (optional)',
+				},
+				name: {
+					type: 'string',
+					description: 'Report name (optional)',
+				},
+				startDate: {
+					type: 'string',
+					description: 'Start date for report data (YYYY-MM-DD)',
+					example: '2023-01-01',
+				},
+				endDate: {
+					type: 'string',
+					description: 'End date for report data (YYYY-MM-DD)',
+					example: '2023-12-31',
+				},
+				filters: {
+					type: 'object',
+					description: 'Additional filters for the report',
+					example: {
+						status: 'active',
+						category: 'sales',
+					},
+				},
+			},
+		},
 	})
-	async userLiveOverview(@Param('ref', ParseIntPipe) ref: number): Promise<LiveUserReport> {
-		return this.reportsService.userLiveOverview(ref);
-	}
-
-	@Get('map-data')
-	@ApiOperation({ summary: 'Get map data for dashboard visualization' })
-	@ApiResponse({
-		status: 200,
-		description: 'Map data retrieved successfully',
-		type: MapDataResponseDto,
+	@ApiOkResponse({
+		description: 'Report generated successfully',
+		schema: {
+			type: 'object',
+			properties: {
+				metadata: {
+					type: 'object',
+					properties: {
+						organisationId: { type: 'number' },
+						branchId: { type: 'number' },
+						generatedAt: { type: 'string', format: 'date-time' },
+						type: { type: 'string', enum: ['main', 'user', 'shift'] },
+						name: { type: 'string' },
+					},
+				},
+				summary: {
+					type: 'object',
+					properties: {
+						userCount: { type: 'number' },
+						clientCount: { type: 'number' },
+						leadCount: { type: 'number' },
+						taskCount: { type: 'number' },
+						productCount: { type: 'number' },
+						claimCount: { type: 'number' },
+						checkInCount: { type: 'number' },
+						attendanceCount: { type: 'number' },
+					},
+				},
+				metrics: {
+					type: 'object',
+					description: 'Various metrics calculated from the report data',
+				},
+				data: {
+					type: 'object',
+					description: 'Raw entity data from the database',
+				},
+				fromCache: {
+					type: 'boolean',
+					description: 'Indicates if the report was served from cache',
+				},
+			},
+		},
 	})
-	@ApiResponse({
-		status: 404,
-		description: 'Organisation or branch not found',
+	@ApiBadRequestResponse({
+		description: 'Bad Request - Invalid parameters',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', example: 'Invalid report type or missing required parameters' },
+			},
+		},
 	})
-	@ApiResponse({
-		status: 500,
-		description: 'Error retrieving map data',
-	})
-	async getMapData(@Request() req: any): Promise<MapDataResponseDto> {
-		try {
-			// Extract organization and branch info from the token
-			const {
-				organisationRef,
-				branch: { uid: branchUid },
-				uid: userUid,
-			} = req.user || {};
-
-			console.log('Map data requested for:', { organisationRef, branchUid, userUid });
-
-			if (!organisationRef) {
-				throw new NotFoundException('Organisation ID not found in request');
-			}
-
-			return this.reportsService.getMapData(organisationRef, branchUid, userUid);
-		} catch (error) {
-			// Log the detailed error for debugging
-			console.error('Error in getMapData controller:', error);
-			
-			// Re-throw NotFoundException as-is so it returns a 404 status
-			if (error instanceof NotFoundException) {
-				throw error;
-			}
-			
-			// For other errors, throw a more generic error message
-			throw new Error(`Failed to retrieve map data: ${error.message}`);
+	async generateReport(
+		@Param('type') type: string,
+		@Body()
+		reportParams: {
+			organisationId?: number;
+			branchId?: number;
+			name?: string;
+			startDate?: string;
+			endDate?: string;
+			filters?: Record<string, any>;
+		},
+		@Req() request: AuthenticatedRequest,
+	) {
+		// Validate report type
+		if (!Object.values(ReportType).includes(type as ReportType)) {
+			throw new BadRequestException(
+				`Invalid report type: ${type}. Valid types are: ${Object.values(ReportType).join(', ')}`,
+			);
 		}
+
+		// Use organization ID from authenticated request if not provided
+		const orgId = reportParams.organisationId || request.user.org?.uid || request.user.organisationRef;
+
+		if (!orgId) {
+			throw new BadRequestException(
+				'Organisation ID is required. Either specify it in the request body or it must be available in the authentication context.',
+			);
+		}
+
+		// Use branch ID from authenticated request if not provided
+		const brId = reportParams.branchId || request.user.branch?.uid;
+
+		// Build params object
+		const params: ReportParamsDto = {
+			type: type as ReportType,
+			organisationId: orgId,
+			branchId: brId,
+			name: reportParams.name,
+			dateRange:
+				reportParams.startDate && reportParams.endDate
+					? {
+							start: new Date(reportParams.startDate),
+							end: new Date(reportParams.endDate),
+					  }
+					: undefined,
+			filters: reportParams.filters,
+		};
+
+		// Generate the report
+		return this.reportsService.generateReport(params, request.user);
 	}
 }

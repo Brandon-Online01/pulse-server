@@ -18,13 +18,15 @@ import { CreateProductDto } from '../products/dto/create-product.dto';
 import { ShopGateway } from './shop.gateway';
 import { PaginatedResponse } from '../lib/interfaces/product.interfaces';
 import { ProductsService } from '../products/products.service';
+import { OrganisationService } from '../organisation/organisation.service';
 
 @Injectable()
 export class ShopService {
     private readonly currencyLocale: string;
-    private readonly currencyCode: string;
-    private readonly currencySymbol: string;
+    private currencyCode: string;
+    private currencySymbol: string;
     private readonly logger = new Logger(ShopService.name);
+    private currencyByOrg: Map<number, { code: string, symbol: string, locale: string }> = new Map();
 
     constructor(
         @InjectRepository(Product)
@@ -38,12 +40,103 @@ export class ShopService {
         private readonly eventEmitter: EventEmitter2,
         private readonly shopGateway: ShopGateway,
         private readonly productsService: ProductsService,
+        private readonly organisationService: OrganisationService,
     ) {
         this.currencyLocale = this.configService.get<string>('CURRENCY_LOCALE') || 'en-ZA';
         this.currencyCode = this.configService.get<string>('CURRENCY_CODE') || 'ZAR';
         this.currencySymbol = this.configService.get<string>('CURRENCY_SYMBOL') || 'R';
     }
 
+    /**
+     * Fetches and caches the currency settings for a specific organization
+     * @param orgId The organization ID to fetch settings for
+     * @returns Object containing the currency code, symbol, and locale
+     */
+    private async getOrgCurrency(orgId: number): Promise<{ code: string, symbol: string, locale: string }> {
+        // Return defaults if no orgId provided
+        if (!orgId) {
+            return {
+                code: this.currencyCode,
+                symbol: this.currencySymbol,
+                locale: this.currencyLocale
+            };
+        }
+
+        // Return from cache if available
+        if (this.currencyByOrg.has(orgId)) {
+            return this.currencyByOrg.get(orgId);
+        }
+
+        try {
+            // Fetch organization with settings relation
+            const orgIdStr = String(orgId);
+            const { organisation } = await this.organisationService.findOne(orgIdStr);
+            
+            if (!organisation || !organisation.settings || !organisation.settings.regional) {
+                throw new Error(`Organization ${orgId} settings not found`);
+            }
+
+            // Extract currency from org settings
+            const orgCurrency = organisation.settings.regional.currency;
+            if (!orgCurrency) {
+                throw new Error(`Currency not set for organization ${orgId}`);
+            }
+
+            // Map currency to appropriate symbol and locale (add more as needed)
+            const currencyMap = {
+                'USD': { symbol: '$', locale: 'en-US' },
+                'EUR': { symbol: '€', locale: 'en-EU' },
+                'GBP': { symbol: '£', locale: 'en-GB' },
+                'ZAR': { symbol: 'R', locale: 'en-ZA' },
+                // Add more currencies as needed
+            };
+
+            // Get currency details or use defaults
+            const currencyDetails = currencyMap[orgCurrency] || { 
+                symbol: this.currencySymbol, 
+                locale: this.currencyLocale 
+            };
+
+            const result = {
+                code: orgCurrency,
+                symbol: currencyDetails.symbol,
+                locale: currencyDetails.locale
+            };
+
+            // Cache the result
+            this.currencyByOrg.set(orgId, result);
+            
+            return result;
+        } catch (error) {
+            this.logger.error(`Error fetching organization currency: ${error.message}`, error.stack);
+            
+            // Return defaults on error
+            return {
+                code: this.currencyCode,
+                symbol: this.currencySymbol,
+                locale: this.currencyLocale
+            };
+        }
+    }
+
+    /**
+     * Formats a currency amount based on organization's currency settings
+     * @param amount The amount to format
+     * @param orgId Optional organization ID for specific currency settings
+     * @returns Formatted currency string
+     */
+    private async formatCurrencyForOrg(amount: number, orgId?: number): Promise<string> {
+        const currency = await this.getOrgCurrency(orgId);
+        
+        return new Intl.NumberFormat(currency.locale, {
+            style: 'currency',
+            currency: currency.code
+        })
+            .format(amount)
+            .replace(currency.code, currency.symbol);
+    }
+
+    // Original method - keep for backward compatibility
     private formatCurrency(amount: number): string {
         return new Intl.NumberFormat(this.currencyLocale, {
             style: 'currency',
@@ -53,7 +146,7 @@ export class ShopService {
             .replace(this.currencyCode, this.currencySymbol);
     }
 
-    async categories(): Promise<{ categories: string[] | null, message: string }> {
+    async categories(orgId?: number): Promise<{ categories: string[] | null, message: string }> {
         try {
             // Remove org and branch filters
             const query = this.productRepository.createQueryBuilder('product');
@@ -63,11 +156,11 @@ export class ShopService {
                 throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
             }
 
-            // Format prices before returning products
-            const formattedProducts = allProducts.map(product => ({
+            // Format prices before returning products using org currency settings
+            const formattedProducts = await Promise.all(allProducts.map(async product => ({
                 ...product,
-                price: this.formatCurrency(Number(product.price) || 0)
-            }));
+                price: await this.formatCurrencyForOrg(Number(product.price) || 0, orgId)
+            })));
 
             const categories = formattedProducts.map(product => product?.category);
             const uniqueCategories = [...new Set(categories)];
@@ -88,20 +181,30 @@ export class ShopService {
         }
     }
 
-    private async getProductsByStatus(status: ProductStatus): Promise<{ products: Product[] | null }> {
+    private async getProductsByStatus(status: ProductStatus, orgId?: number): Promise<{ products: Product[] | null }> {
         try {
             const query = this.productRepository.createQueryBuilder('product')
                 .where('product.status = :status', { status });
             
             const products = await query.getMany();
+            
+            // If products found, apply currency formatting
+            if (products && products.length > 0) {
+                for (const product of products) {
+                    if (product.price) {
+                        product['formattedPrice'] = await this.formatCurrencyForOrg(Number(product.price) || 0, orgId);
+                    }
+                }
+            }
+            
             return { products: products ?? null };
         } catch (error) {
             return { products: null };
         }
     }
 
-    async specials(): Promise<{ products: Product[] | null, message: string }> {
-        const result = await this.getProductsByStatus(ProductStatus.SPECIAL);
+    async specials(orgId?: number): Promise<{ products: Product[] | null, message: string }> {
+        const result = await this.getProductsByStatus(ProductStatus.SPECIAL, orgId);
 
         const response = {
             products: result?.products,
@@ -111,8 +214,8 @@ export class ShopService {
         return response;
     }
 
-    async getBestSellers(): Promise<{ products: Product[] | null, message: string }> {
-        const result = await this.getProductsByStatus(ProductStatus.BEST_SELLER);
+    async getBestSellers(orgId?: number): Promise<{ products: Product[] | null, message: string }> {
+        const result = await this.getProductsByStatus(ProductStatus.BEST_SELLER, orgId);
 
         const response = {
             products: result.products,
@@ -122,8 +225,8 @@ export class ShopService {
         return response;
     }
 
-    async getNewArrivals(): Promise<{ products: Product[] | null, message: string }> {
-        const result = await this.getProductsByStatus(ProductStatus.NEW);
+    async getNewArrivals(orgId?: number): Promise<{ products: Product[] | null, message: string }> {
+        const result = await this.getProductsByStatus(ProductStatus.NEW, orgId);
 
         const response = {
             products: result.products,
@@ -133,8 +236,8 @@ export class ShopService {
         return response;
     }
 
-    async getHotDeals(): Promise<{ products: Product[] | null, message: string }> {
-        const result = await this.getProductsByStatus(ProductStatus.HOTDEALS);
+    async getHotDeals(orgId?: number): Promise<{ products: Product[] | null, message: string }> {
+        const result = await this.getProductsByStatus(ProductStatus.HOTDEALS, orgId);
 
         const response = {
             products: result.products,
@@ -153,6 +256,9 @@ export class ShopService {
             if (!quotationData?.owner?.uid) {
                 throw new Error('Owner is required');
             }
+
+            // Get organization-specific currency settings
+            const orgCurrency = await this.getOrgCurrency(orgId);
 
             const clientData = await this.clientsService?.findOne(Number(quotationData?.client?.uid));
 
@@ -197,8 +303,8 @@ export class ShopService {
             // Generate a unique review token for the quotation
             const timestamp = Date.now();
             const reviewToken = Buffer.from(`${quotationData?.client?.uid}-${timestamp}-${Math.random().toString(36).substring(2, 15)}`).toString('base64');
-            const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
-            const reviewUrl = `${frontendUrl}/review-quotation?token=${reviewToken}`;
+            const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://loro.co.za/review-quotation';
+            const reviewUrl = `${frontendUrl}?token=${reviewToken}`;
 
             const newQuotation = {
                 quotationNumber: `QUO-${Date.now()}`,
@@ -212,6 +318,8 @@ export class ShopService {
                 updatedAt: new Date(),
                 reviewToken: reviewToken,
                 reviewUrl: reviewUrl,
+                // Store currency code with the quotation
+                currency: orgCurrency.code,
                 quotationItems: quotationData?.items?.map(item => {
                     const product = products.flat().find(p => p.uid === item.uid);
                     return {
@@ -270,7 +378,8 @@ export class ShopService {
                 quotationId: savedQuotation?.quotationNumber,
                 validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days validity
                 total: Number(savedQuotation?.totalAmount),
-                currency: this.currencyCode,
+                currency: orgCurrency.code, // Use organization's currency
+                currencySymbol: orgCurrency.symbol, // Add currency symbol
                 reviewUrl: savedQuotation.reviewUrl,
                 quotationItems: quotationData?.items?.map(item => {
                     const product = products.flat().find(p => p.uid === item.uid);

@@ -152,6 +152,7 @@ import { ClientAuth } from './clients/entities/client.auth.entity';
 				Reward,
 				Order,
 				OrderItem,
+				Report, 
 			],
 			synchronize: true,
 			retryAttempts: 100,
@@ -185,6 +186,7 @@ import { ClientAuth } from './clients/entities/client.auth.entity';
 		RewardsModule,
 		LicensingModule,
 		CompetitorsModule,
+		ReportsModule
 	],
 	controllers: [],
 	providers: [

@@ -16,6 +16,7 @@ import { QuotationConversionController } from './controllers/quotation-conversio
 import { Product } from '../products/entities/product.entity';
 import { LicensingModule } from '../licensing/licensing.module';
 import { UserModule } from '../user/user.module';
+import { OrganisationModule } from '../organisation/organisation.module';
 
 @Module({
 	imports: [
@@ -24,6 +25,7 @@ import { UserModule } from '../user/user.module';
 		ClientsModule,
 		LicensingModule,
 		UserModule,
+		OrganisationModule,
 	],
 	controllers: [ShopController, QuotationConversionController],
 	providers: [ShopService, ShopGateway, BannersService, QuotationConversionService],

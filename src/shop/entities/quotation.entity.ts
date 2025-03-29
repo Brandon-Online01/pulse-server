@@ -20,7 +20,7 @@ export class Quotation {
 	@PrimaryGeneratedColumn()
 	uid: number;
 
-	@Column({ unique: true })
+	@Column({ unique: true, nullable: false })
 	quotationNumber: string;
 
 	@Column({ type: 'decimal', precision: 10, scale: 2 })
@@ -76,6 +76,10 @@ export class Quotation {
 
 	@Column({ nullable: true })
 	reviewUrl: string;
+
+	// Currency information
+	@Column({ nullable: true, length: 6, default: 'ZAR' })
+	currency: string;
 
 	// Conversion tracking
 	@Column({ default: false })

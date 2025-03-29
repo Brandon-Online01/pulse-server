@@ -37,7 +37,7 @@ export class User {
 	@PrimaryGeneratedColumn()
 	uid: number;
 
-	@Column({ unique: true })
+	@Column({ unique: true, nullable: false })
 	username: string;
 
 	@Column()
@@ -49,7 +49,7 @@ export class User {
 	@Column()
 	surname: string;
 
-	@Column({ unique: true })
+	@Column({ unique: true, nullable: false })
 	email: string;
 
 	@Column({ nullable: true })

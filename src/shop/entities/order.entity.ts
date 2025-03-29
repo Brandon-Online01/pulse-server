@@ -21,7 +21,7 @@ export class Order {
 	@PrimaryGeneratedColumn()
 	uid: number;
 
-	@Column({ unique: true })
+	@Column({ unique: true, nullable: false })
 	orderNumber: string;
 
 	@Column({ type: 'decimal', precision: 10, scale: 2 })
