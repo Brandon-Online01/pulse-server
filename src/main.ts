@@ -13,22 +13,22 @@ async function bootstrap() {
 
 	app.enableCors({
 		origin: [
-			...process.env.ALLOWED_ORIGINS?.split(',') ||
-			['http://localhost:3000'],
+			...(process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000']),
 			'https://loro.co.za',
 			'https://www.loro.co.za',
-			'https://*.loro.co.za'
+			'https://*.loro.co.za',
 		],
 		methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
 		credentials: true,
 		allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'token'],
 		exposedHeaders: ['Content-Range', 'X-Content-Range'],
-		maxAge: 3600 // 1 hour
+		maxAge: 3600, // 1 hour
 	});
 
 	const config = new DocumentBuilder()
 		.setTitle('LORO API DOCS')
-		.setDescription(`
+		.setDescription(
+			`
 LORO API documentation with detailed endpoints and schemas definitions.
 
 ## Key Features
@@ -63,7 +63,8 @@ Required environment variables:
 - Location updates
 - Task assignments
 - Status changes
-`)
+`,
+		)
 		// Core Features
 		.addTag('auth', 'JWT-based authentication and authorization system with role management')
 		.addTag('user', 'User management with role-based access control and permissions')
@@ -88,6 +89,7 @@ Required environment variables:
 
 		// Business Operations
 		.addTag('clients', 'Client management with location-based services and geofencing')
+		.addTag('client-auth', 'Client authentication with JWT-based authentication')
 		.addTag('leads', 'Sales lead tracking with location and territory management')
 		.addTag('claims', 'Insurance claims processing with document attachments')
 		.addTag('journal', 'Daily activity logging for management and audit trails')
@@ -115,9 +117,7 @@ Required environment variables:
 
 	const document = SwaggerModule.createDocument(app, config, {
 		deepScanRoutes: true,
-		operationIdFactory: (
-			methodKey: string
-		) => methodKey,
+		operationIdFactory: (methodKey: string) => methodKey,
 	});
 
 	// Add WebSocket documentation
@@ -133,33 +133,33 @@ Required environment variables:
 						event: {
 							type: 'string',
 							enum: ['newQuotation', 'locationUpdate', 'taskAssigned', 'statusChange'],
-							description: 'WebSocket event name'
+							description: 'WebSocket event name',
 						},
 						data: {
 							type: 'object',
 							properties: {
 								id: {
 									type: 'string',
-									description: 'The unique identifier of the event'
+									description: 'The unique identifier of the event',
 								},
 								type: {
 									type: 'string',
-									description: 'The type of event'
+									description: 'The type of event',
 								},
 								payload: {
 									type: 'object',
-									description: 'Event-specific data payload'
+									description: 'Event-specific data payload',
 								},
 								timestamp: {
 									type: 'string',
 									format: 'date-time',
-									description: 'Event timestamp'
-								}
-							}
-						}
-					}
-				}
-			}
+									description: 'Event timestamp',
+								},
+							},
+						},
+					},
+				},
+			},
 		},
 		paths: {
 			...document.paths,
@@ -228,15 +228,15 @@ Required environment variables:
 							content: {
 								'application/json': {
 									schema: {
-										$ref: '#/components/schemas/WebSocketNewQuotation'
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
+										$ref: '#/components/schemas/WebSocketNewQuotation',
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	};
 
 	SwaggerModule.setup('api', app, wsDocument, {

@@ -50,4 +50,7 @@ export enum EmailType {
     TASK_FLAG_RESOLVED = 'task_flag_resolved',
     // Task Feedback related emails
     TASK_FEEDBACK_ADDED = 'task_feedback_added',
+    // Client authentication related emails
+    CLIENT_PASSWORD_RESET = 'client_password_reset',
+    CLIENT_PASSWORD_CHANGED = 'client_password_changed',
 } 

@@ -44,7 +44,6 @@ export class SetPasswordInput {
   @IsString()
   @ApiProperty({
     example: 'abc123',
-    description: 'The verification token sent via email',
   })
   token: string;
 

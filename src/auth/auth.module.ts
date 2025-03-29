@@ -10,10 +10,19 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { PendingSignup } from './entities/pending-signup.entity';
 import { PasswordReset } from './entities/password-reset.entity';
 import { LicensingModule } from '../licensing/licensing.module';
+import { ClientAuthService } from './client-auth.service';
+import { ClientAuthController } from './client-auth.controller';
+import { ClientPasswordReset } from './entities/client-password-reset.entity';
+import { ClientAuth } from '../clients/entities/client.auth.entity';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([PendingSignup, PasswordReset]),
+        TypeOrmModule.forFeature([
+            PendingSignup, 
+            PasswordReset, 
+            ClientPasswordReset, 
+            ClientAuth
+        ]),
         JwtModule.register({
             global: true,
             secret: 'K9HXmP$2vL5nR8qY3wZ7jB4cF6hN9kM@pT2xS5vA8dG4jE7mQ9nU',
@@ -23,8 +32,13 @@ import { LicensingModule } from '../licensing/licensing.module';
         RewardsModule,
         LicensingModule,
     ],
-    controllers: [AuthController],
-    providers: [AuthService, PendingSignupService, PasswordResetService],
-    exports: [AuthService],
+    controllers: [AuthController, ClientAuthController],
+    providers: [
+        AuthService, 
+        PendingSignupService, 
+        PasswordResetService,
+        ClientAuthService
+    ],
+    exports: [AuthService, ClientAuthService],
 })
 export class AuthModule { }
