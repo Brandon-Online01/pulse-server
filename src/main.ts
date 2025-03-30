@@ -108,11 +108,11 @@ Required environment variables:
 		.addTag('reports', 'Business analytics with location and route insights')
 		.addTag('rewards', 'Performance tracking and employee recognition system')
 		.addTag('resellers', 'Partner management with territory mapping and analytics')
-		.addTag('feedback', 'Feedback management with location and territory management')
+		.addTag('Feedback', 'Feedback management with location and territory management')
 
 		.addBearerAuth()
 		.addServer('https://api.loro.co.za', 'Production')
-		.addServer('http://localhost:4400', 'Development')
+		.addServer('https://api.dev.loro.co.za', 'Development')
 		.addServer('wss://api.loro.co.za', 'WebSocket')
 		.build();
 

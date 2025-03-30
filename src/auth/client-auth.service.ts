@@ -30,11 +30,7 @@ export class ClientAuthService {
 	}
 
 	private getOrganisationRef(organisation: any): string {
-		return String(
-			typeof organisation === 'object'
-				? organisation.uid
-				: organisation
-		);
+		return String(typeof organisation === 'object' ? organisation.uid : organisation);
 	}
 
 	async clientSignIn(signInInput: ClientSignInInput) {
@@ -104,13 +100,12 @@ export class ClientAuthService {
 					expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
 				});
 
-				return {
+				const response = {
 					accessToken,
 					refreshToken,
 					profileData: {
 						uid: clientAuth.client.uid,
 						email: clientAuth.email,
-						// Add other client properties as needed
 						licenseInfo: {
 							licenseId: String(activeLicense?.uid),
 							plan: activeLicense?.plan,
@@ -120,6 +115,8 @@ export class ClientAuthService {
 					},
 					message: 'Authentication successful',
 				};
+
+				return response;
 			}
 
 			// For clients without an organization (should be rare)
@@ -137,16 +134,17 @@ export class ClientAuthService {
 				expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
 			});
 
-			return {
+			const response = {
 				accessToken,
 				refreshToken,
 				profileData: {
 					uid: clientAuth.client.uid,
 					email: clientAuth.email,
-					// Add other client properties as needed
 				},
 				message: 'Authentication successful',
 			};
+
+			return response;
 		} catch (error) {
 			return {
 				message: error?.message || 'Authentication failed',
@@ -396,7 +394,7 @@ export class ClientAuthService {
 					profileData: null,
 				};
 			}
-			
+
 			return {
 				message: error?.message || 'Failed to refresh token',
 				accessToken: null,
