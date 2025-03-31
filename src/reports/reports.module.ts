@@ -8,6 +8,7 @@ import { Branch } from '../branch/entities/branch.entity';
 import { User } from '../user/entities/user.entity';
 import { Report } from './entities/report.entity';
 import { MainReportGenerator } from './generators/main-report.generator';
+import { QuotationReportGenerator } from './generators/quotation-report.generator';
 import { Attendance } from '../attendance/entities/attendance.entity';
 import { Claim } from '../claims/entities/claim.entity';
 import { Lead } from '../leads/entities/lead.entity';
@@ -20,6 +21,8 @@ import { Product } from '../products/entities/product.entity';
 import { CheckIn } from '../check-ins/entities/check-in.entity';
 import { Doc } from '../docs/entities/doc.entity';
 import { Notification } from '../notifications/entities/notification.entity';
+import { Quotation } from '../shop/entities/quotation.entity';
+import { QuotationItem } from '../shop/entities/quotation-item.entity';
 import { CacheModule } from '@nestjs/cache-manager';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
@@ -60,10 +63,16 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 			CheckIn,
 			Doc,
 			Notification,
+			Quotation,
+			QuotationItem,
 		]),
 	],
 	controllers: [ReportsController],
-	providers: [ReportsService, MainReportGenerator],
+	providers: [
+		ReportsService, 
+		MainReportGenerator,
+		QuotationReportGenerator
+	],
 	exports: [ReportsService],
 })
 export class ReportsModule {}

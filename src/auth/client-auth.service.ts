@@ -82,13 +82,20 @@ export class ClientAuthService {
 				}
 
 				// Generate JWT tokens with client-specific fields and license information
+				// Restrict client permissions to quotations only
+				const clientPermissions = {
+					'quotations.view': true,
+					'quotations.access': true,
+				};
+
 				const payload = {
 					uid: clientAuth.uid,
 					role: AccessLevel.CLIENT,
 					organisationRef,
 					licenseId: String(activeLicense?.uid),
 					licensePlan: activeLicense?.plan,
-					features: activeLicense?.features,
+					// Override with quotations-only permissions
+					features: clientPermissions,
 					branch: clientAuth.client?.branch?.uid ? { uid: clientAuth.client.branch.uid } : null,
 				};
 
@@ -110,7 +117,8 @@ export class ClientAuthService {
 							licenseId: String(activeLicense?.uid),
 							plan: activeLicense?.plan,
 							status: activeLicense?.status,
-							features: activeLicense?.features,
+							// Return the restricted permissions
+							features: clientPermissions,
 						},
 					},
 					message: 'Authentication successful',
@@ -120,9 +128,16 @@ export class ClientAuthService {
 			}
 
 			// For clients without an organization (should be rare)
+			// Still restrict to quotations-only access
+			const clientPermissions = {
+				'quotations.view': true,
+				'quotations.access': true,
+			};
+
 			const payload = {
 				uid: clientAuth.uid,
 				role: AccessLevel.CLIENT,
+				features: clientPermissions,
 				branch: clientAuth.client?.branch?.uid ? { uid: clientAuth.client.branch.uid } : null,
 			};
 
@@ -140,6 +155,7 @@ export class ClientAuthService {
 				profileData: {
 					uid: clientAuth.client.uid,
 					email: clientAuth.email,
+					features: clientPermissions,
 				},
 				message: 'Authentication successful',
 			};
@@ -322,13 +338,19 @@ export class ClientAuthService {
 				}
 
 				// Generate new JWT tokens with client-specific fields and license information
+				// Maintain the restricted quotations-only permissions
+				const clientPermissions = {
+					'quotations.view': true,
+					'quotations.access': true,
+				};
+
 				const newPayload = {
 					uid: clientAuth.uid,
 					role: AccessLevel.CLIENT,
 					organisationRef,
 					licenseId: String(activeLicense?.uid),
 					licensePlan: activeLicense?.plan,
-					features: activeLicense?.features,
+					features: clientPermissions,
 					branch: clientAuth.client?.branch?.uid ? { uid: clientAuth.client.branch.uid } : null,
 				};
 
@@ -352,7 +374,7 @@ export class ClientAuthService {
 							licenseId: String(activeLicense?.uid),
 							plan: activeLicense?.plan,
 							status: activeLicense?.status,
-							features: activeLicense?.features,
+							features: clientPermissions,
 						},
 					},
 					message: 'Tokens refreshed successfully',
@@ -360,9 +382,16 @@ export class ClientAuthService {
 			}
 
 			// For clients without an organization (should be rare)
+			// Maintain the restricted quotations-only permissions
+			const clientPermissions = {
+				'quotations.view': true,
+				'quotations.access': true,
+			};
+
 			const newPayload = {
 				uid: clientAuth.uid,
 				role: AccessLevel.CLIENT,
+				features: clientPermissions,
 				branch: clientAuth.client?.branch?.uid ? { uid: clientAuth.client.branch.uid } : null,
 			};
 
@@ -382,6 +411,7 @@ export class ClientAuthService {
 					uid: clientAuth.client.uid,
 					email: clientAuth.email,
 					// Add other client properties as needed
+					features: clientPermissions
 				},
 				message: 'Tokens refreshed successfully',
 			};

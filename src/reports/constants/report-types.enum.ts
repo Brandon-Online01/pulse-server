@@ -1,5 +1,6 @@
 export enum ReportType {
   MAIN = 'main',
   USER = 'user',
-  SHIFT = 'shift'
+  SHIFT = 'shift',
+  QUOTATION = 'quotation'
 } 

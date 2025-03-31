@@ -7,6 +7,7 @@ import { Report } from './entities/report.entity';
 import { ReportType } from './constants/report-types.enum';
 import { ReportParamsDto } from './dto/report-params.dto';
 import { MainReportGenerator } from './generators/main-report.generator';
+import { QuotationReportGenerator } from './generators/quotation-report.generator';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { ConfigService } from '@nestjs/config';
@@ -20,6 +21,7 @@ export class ReportsService {
     @InjectRepository(Report)
     private reportRepository: Repository<Report>,
     private mainReportGenerator: MainReportGenerator,
+    private quotationReportGenerator: QuotationReportGenerator,
     @Inject(CACHE_MANAGER)
     private cacheManager: Cache,
     private readonly configService: ConfigService
@@ -28,11 +30,18 @@ export class ReportsService {
   }
 
   private getCacheKey(params: ReportParamsDto): string {
-    const { type, organisationId, branchId, dateRange } = params;
+    const { type, organisationId, branchId, dateRange, filters } = params;
+    
+    // For quotation reports, include clientId in the cache key
+    const clientIdStr = type === ReportType.QUOTATION && filters?.clientId 
+      ? `_client${filters.clientId}` 
+      : '';
+      
     const dateStr = dateRange 
       ? `_${dateRange.start.toISOString()}_${dateRange.end.toISOString()}`
       : '';
-    return `${this.CACHE_PREFIX}${type}_org${organisationId}${branchId ? `_branch${branchId}` : ''}${dateStr}`;
+      
+    return `${this.CACHE_PREFIX}${type}_org${organisationId}${branchId ? `_branch${branchId}` : ''}${clientIdStr}${dateStr}`;
   }
 
   async create(createReportDto: CreateReportDto) {
@@ -77,6 +86,9 @@ export class ReportsService {
       case ReportType.MAIN:
         reportData = await this.mainReportGenerator.generate(params);
         break;
+      case ReportType.QUOTATION:
+        reportData = await this.quotationReportGenerator.generate(params);
+        break;
       case ReportType.USER:
         // Will be implemented later
         throw new Error('User report type not implemented yet');
@@ -95,7 +107,8 @@ export class ReportsService {
       filters: {
         organisationId: params.organisationId,
         branchId: params.branchId,
-        dateRange: params.dateRange
+        dateRange: params.dateRange,
+        ...params.filters  // Include any additional filters
       },
       generatedBy: {
         uid: currentUser.uid

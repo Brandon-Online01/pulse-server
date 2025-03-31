@@ -25,4 +25,8 @@ export class ReportParamsDto {
   @IsOptional()
   @IsObject()
   filters?: Record<string, any>;
+  
+  @IsOptional()
+  @IsNumber()
+  userId?: number;
 } 

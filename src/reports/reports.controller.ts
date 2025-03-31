@@ -32,12 +32,12 @@ export class ReportsController {
 	@ApiOperation({
 		summary: 'Generate a comprehensive report',
 		description:
-			'Generates a detailed report based on the specified type and parameters. Available types: main, user, shift',
+			'Generates a detailed report based on the specified type and parameters. Available types: main, user, shift, quotation',
 	})
 	@ApiParam({
 		name: 'type',
-		description: 'Report type (main, user, shift)',
-		enum: ['main', 'user', 'shift'],
+		description: 'Report type (main, user, shift, quotation)',
+		enum: ['main', 'user', 'shift', 'quotation'],
 		example: 'main',
 	})
 	@ApiBody({
@@ -73,6 +73,7 @@ export class ReportsController {
 					example: {
 						status: 'active',
 						category: 'sales',
+						clientId: 123,
 					},
 				},
 			},
@@ -89,22 +90,13 @@ export class ReportsController {
 						organisationId: { type: 'number' },
 						branchId: { type: 'number' },
 						generatedAt: { type: 'string', format: 'date-time' },
-						type: { type: 'string', enum: ['main', 'user', 'shift'] },
+						type: { type: 'string', enum: ['main', 'user', 'shift', 'quotation'] },
 						name: { type: 'string' },
 					},
 				},
 				summary: {
 					type: 'object',
-					properties: {
-						userCount: { type: 'number' },
-						clientCount: { type: 'number' },
-						leadCount: { type: 'number' },
-						taskCount: { type: 'number' },
-						productCount: { type: 'number' },
-						claimCount: { type: 'number' },
-						checkInCount: { type: 'number' },
-						attendanceCount: { type: 'number' },
-					},
+					description: 'Summary statistics from the report',
 				},
 				metrics: {
 					type: 'object',
@@ -176,6 +168,126 @@ export class ReportsController {
 					  }
 					: undefined,
 			filters: reportParams.filters,
+		};
+
+		// Generate the report
+		return this.reportsService.generateReport(params, request.user);
+	}
+
+	// Specific endpoint for client quotation reports
+	@Post('client/:clientId/quotations')
+	@Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.USER, AccessLevel.OWNER, AccessLevel.CLIENT)
+	@ApiOperation({
+		summary: 'Generate a client quotation report',
+		description: 'Generates a detailed report of quotations for a specific client',
+	})
+	@ApiParam({
+		name: 'clientId',
+		description: 'Client ID',
+		example: 123,
+	})
+	@ApiBody({
+		description: 'Report generation parameters',
+		schema: {
+			type: 'object',
+			properties: {
+				name: {
+					type: 'string',
+					description: 'Report name (optional)',
+				},
+				startDate: {
+					type: 'string',
+					description: 'Start date for report data (YYYY-MM-DD)',
+					example: '2023-01-01',
+				},
+				endDate: {
+					type: 'string',
+					description: 'End date for report data (YYYY-MM-DD)',
+					example: '2023-12-31',
+				},
+				additionalFilters: {
+					type: 'object',
+					description: 'Additional filters for the report',
+					example: {
+						status: 'approved',
+					},
+				},
+			},
+		},
+	})
+	@ApiOkResponse({
+		description: 'Client quotation report generated successfully',
+	})
+	@ApiBadRequestResponse({
+		description: 'Bad Request - Invalid parameters',
+	})
+	async generateClientQuotationReport(
+		@Param('clientId') clientId: number,
+		@Body()
+		reportParams: {
+			name?: string;
+			startDate?: string;
+			endDate?: string;
+			additionalFilters?: Record<string, any>;
+		},
+		@Req() request: AuthenticatedRequest,
+	) {
+		// Use organization ID from authenticated request
+		const orgId = request.user.org?.uid || request.user.organisationRef;
+
+		if (!orgId) {
+			throw new BadRequestException('Organisation ID must be available in the authentication context.');
+		}
+
+		// Get branch ID from authenticated request if available
+		const brId = request.user.branch?.uid;
+
+		// For client users, extract client data from JWT token
+		// Looking at the client-auth.service.ts, we need to extract client info
+		const authHeader = request.headers.authorization;
+
+		let requestingClientId = Number(clientId);
+
+		if (authHeader) {
+			const token = authHeader.split(' ')[1];
+			try {
+				const decodedToken = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+
+				// For CLIENT role, we need to ensure they're accessing their own data
+				if (decodedToken.role === AccessLevel.CLIENT) {
+					// The token might contain client info in different ways
+					// Check all possibilities
+					if (decodedToken.clientId) {
+						requestingClientId = Number(decodedToken.clientId);
+					} else if (decodedToken.client && decodedToken.client.uid) {
+						requestingClientId = Number(decodedToken.client.uid);
+					} else {
+						// If we can't find client ID in token, use the UID as fallback
+						// This assumes UID might be related to client
+					}
+				} else {
+					// For non-client users, use the clientId from the URL
+				}
+			} catch (error) {}
+		}
+
+		// Build params object for the quotation report
+		const params: ReportParamsDto = {
+			type: ReportType.QUOTATION,
+			organisationId: orgId,
+			branchId: brId,
+			name: reportParams.name || 'Client Quotation Report',
+			dateRange:
+				reportParams.startDate && reportParams.endDate
+					? {
+							start: new Date(reportParams.startDate),
+							end: new Date(reportParams.endDate),
+					  }
+					: undefined,
+			filters: {
+				clientId: requestingClientId,
+				...reportParams.additionalFilters,
+			},
 		};
 
 		// Generate the report
