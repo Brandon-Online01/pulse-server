@@ -25,7 +25,6 @@ import { Quotation } from '../shop/entities/quotation.entity';
 import { QuotationItem } from '../shop/entities/quotation-item.entity';
 import { CacheModule } from '@nestjs/cache-manager';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { MapReportGenerator } from './generators/map-report.generator';
 import { UserModule } from '../user/user.module';
 import { CheckInsModule } from '../check-ins/check-ins.module';
 import { ClientsModule } from '../clients/clients.module';
@@ -83,12 +82,7 @@ import { OrganisationModule } from '../organisation/organisation.module';
 		OrganisationModule,
 	],
 	controllers: [ReportsController],
-	providers: [
-		ReportsService, 
-		MainReportGenerator,
-		QuotationReportGenerator,
-		MapReportGenerator,
-	],
+	providers: [ReportsService, MainReportGenerator, QuotationReportGenerator],
 	exports: [ReportsService],
 })
 export class ReportsModule {}

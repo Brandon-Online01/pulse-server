@@ -83,11 +83,13 @@ export class MainReportGenerator {
 			notifications,
 		] = await Promise.all([
 			this.userRepository.find({
-				where: [{ 
-					...orgFilter, 
-					...branchFilter, 
-					...dateFilter 
-				}],
+				where: [
+					{
+						...orgFilter,
+						...branchFilter,
+						...dateFilter,
+					},
+				],
 			}),
 
 			this.attendanceRepository.find({
