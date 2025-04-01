@@ -1,6 +1,8 @@
-import { Controller, Post, Body, Param, UseGuards, Req, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Body, Param, Get, Query, UseGuards, Req, BadRequestException } from '@nestjs/common';
 import { ReportsService } from './reports.service';
 import { ReportParamsDto } from './dto/report-params.dto';
+import { MapReportParamsDto } from './dto/map-report-params.dto';
+import { MapDataResponseDto } from './dto/map-data-response.dto';
 import { ReportType } from './constants/report-types.enum';
 import { AuthenticatedRequest } from '../lib/interfaces/authenticated-request.interface';
 import {
@@ -12,6 +14,8 @@ import {
 	ApiOkResponse,
 	ApiBadRequestResponse,
 	ApiUnauthorizedResponse,
+	ApiQuery,
+	ApiResponse,
 } from '@nestjs/swagger';
 import { RoleGuard } from '../guards/role.guard';
 import { AuthGuard } from '../guards/auth.guard';
@@ -175,7 +179,7 @@ export class ReportsController {
 	}
 
 	// Specific endpoint for client quotation reports
-	@Post('client/:clientId/quotations')
+	@Get('client/:clientId')
 	@Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.USER, AccessLevel.OWNER, AccessLevel.CLIENT)
 	@ApiOperation({
 		summary: 'Generate a client quotation report',
@@ -292,5 +296,46 @@ export class ReportsController {
 
 		// Generate the report
 		return this.reportsService.generateReport(params, request.user);
+	}
+
+	// Add this new endpoint
+	@Get('map-data')
+	@ApiOperation({ summary: 'Get map data for dashboard visualization' })
+	@ApiResponse({
+		status: 200,
+		description: 'Returns map data including workers, clients, competitors, quotations, events and map configuration',
+		type: MapDataResponseDto,
+	})
+	async getMapData(
+		@Req() request: AuthenticatedRequest,
+		@Query('organisationId') organisationId?: string,
+		@Query('branchId') branchId?: string,
+		@Query('startDate') startDate?: string,
+		@Query('endDate') endDate?: string,
+		@Query('userId') userId?: string,
+		@Query('markerTypes') markerTypes?: string,
+		@Query('activeOnly') activeOnly?: string,
+	): Promise<any> {
+		// Prepare parameters for report generation
+		const mapParams: MapReportParamsDto = {
+			organisationId: organisationId ? parseInt(organisationId, 10) : 
+				(typeof request.user.organisationRef === 'number' 
+					? request.user.organisationRef 
+					: parseInt(request.user.organisationRef || '0', 10)),
+			branchId: branchId ? parseInt(branchId, 10) : undefined,
+			type: ReportType.MAP,
+			dateRange: startDate && endDate ? {
+				start: new Date(startDate),
+				end: new Date(endDate)
+			} : undefined,
+			mapFilters: {
+				userId: userId ? parseInt(userId, 10) : undefined,
+				markerTypes: markerTypes ? markerTypes.split(',') : undefined,
+				activeOnly: activeOnly === 'true'
+			}
+		};
+
+		// Generate the map data
+		return this.reportsService.generateReport(mapParams, request.user);
 	}
 }

@@ -186,10 +186,10 @@ export class QuotationReportGenerator {
 
 			// Most frequently ordered products
 			const frequentProducts = this.getFrequentProducts(quotations);
-
+			
 			// Group quotations by creator
 			const byCreator = this.getQuotationsByCreator(quotations);
-
+			
 			// Get conversion metrics
 			const conversionMetrics = this.getConversionMetrics(quotations);
 
@@ -201,10 +201,10 @@ export class QuotationReportGenerator {
 				filters: {
 					organisationId,
 					branchId,
-					clientId,
+					clientId
 				},
 				generatedBy: {
-					uid: params.userId || 1,
+					uid: params.userId || 1
 				},
 				metadata: {
 					organisationId,
@@ -232,7 +232,7 @@ export class QuotationReportGenerator {
 					convertedToOrderCount: quotations.filter((q) => q.isConverted).length,
 					pendingValue: conversionMetrics.pendingValue,
 					pendingClientValue: conversionMetrics.pendingClientValue,
-					conversionRate: conversionMetrics.conversionRate,
+					conversionRate: conversionMetrics.conversionRate
 				},
 				metrics: {
 					byStatus: Object.keys(byStatus).map((status) => ({
@@ -243,7 +243,7 @@ export class QuotationReportGenerator {
 					timeline,
 					frequentProducts: frequentProducts.slice(0, 10),
 					byCreator: byCreator,
-					conversion: conversionMetrics,
+					conversion: conversionMetrics
 				},
 				charts: {
 					// Bar chart for quotation values
@@ -254,148 +254,146 @@ export class QuotationReportGenerator {
 							fullNumber: quote.quotationNumber,
 							date: quote.quotationDate || quote.createdAt,
 							status: quote.status,
-							itemCount: quote.quotationItems?.length || 0,
+							itemCount: quote.quotationItems?.length || 0
 						})),
 						config: {
-							xAxisLabel: 'QUOTATIONS',
-							yAxisLabel: 'AMOUNT (ZAR)',
-							barColor: '#3b82f6',
-						},
+							xAxisLabel: "QUOTATIONS",
+							yAxisLabel: "AMOUNT (ZAR)",
+							barColor: "#3b82f6"
+						}
 					},
-
+					
 					// Pie chart for status distribution
 					statusDistribution: {
 						data: Object.entries(byStatus).map(([status, quotes]) => ({
 							name: status.toLowerCase(),
 							value: quotes.length,
-							status: status,
+							status: status
 						})),
 						config: {
 							colors: {
-								pending: '#3b82f6',
-								approved: '#22c55e',
-								rejected: '#ef4444',
-								completed: '#a855f7',
-								convertedToOrder: '#f97316',
-							},
-						},
+								pending: "#3b82f6",
+								approved: "#22c55e",
+								rejected: "#ef4444",
+								completed: "#a855f7",
+								convertedToOrder: "#f97316"
+							}
+						}
 					},
-
+					
 					// Line chart for timeline
 					timeline: {
 						data: quotations.map((quote) => ({
-							name: quote.quotationDate
+							name: quote.quotationDate 
 								? new Date(quote.quotationDate).toISOString().split('T')[0]
 								: quote.createdAt
-								? new Date(quote.createdAt).toISOString().split('T')[0]
-								: 'Unknown',
+									? new Date(quote.createdAt).toISOString().split('T')[0] 
+									: 'Unknown',
 							value: Number(quote.totalAmount || 0),
 							fullNumber: quote.quotationNumber,
 							status: quote.status,
-							itemCount: quote.quotationItems?.length || 0,
+							itemCount: quote.quotationItems?.length || 0
 						})),
 						config: {
-							xAxisLabel: 'DATE',
-							yAxisLabel: 'AMOUNT (ZAR)',
-							lineColor: '#3b82f6',
-						},
+							xAxisLabel: "DATE",
+							yAxisLabel: "AMOUNT (ZAR)",
+							lineColor: "#3b82f6"
+						}
 					},
-
+					
 					// Bar chart for product frequency
 					productFrequency: {
-						data: frequentProducts.slice(0, 10).map((product) => ({
+						data: frequentProducts.slice(0, 10).map(product => ({
 							name: product.name,
 							value: product.orderedCount,
 							uid: product.uid,
 							sku: product.sku,
 							price: product.price,
 							imageUrl: product.imageUrl,
-							category: product.category,
+							category: product.category
 						})),
 						config: {
-							xAxisLabel: 'PRODUCTS',
-							yAxisLabel: 'QUANTITY',
-							barColor: '#3b82f6',
-						},
+							xAxisLabel: "PRODUCTS",
+							yAxisLabel: "QUANTITY",
+							barColor: "#3b82f6"
+						}
 					},
-
+					
 					// Bar chart for item quantities by quotation
 					itemQuantities: {
 						data: quotations.map((quote) => {
 							const items = quote.quotationItems || [];
 							const totalQuantity = items.reduce((sum, item) => sum + (item.quantity || 0), 0);
-
+							
 							return {
-								name:
-									quote.quotationNumber?.substring(quote.quotationNumber.length - 8) ||
-									`#${quote.uid}`,
+								name: quote.quotationNumber?.substring(quote.quotationNumber.length - 8) || `#${quote.uid}`,
 								quantity: totalQuantity,
 								fullNumber: quote.quotationNumber,
 								date: quote.quotationDate || quote.createdAt,
 								status: quote.status,
-								itemCount: items.length,
+								itemCount: items.length
 							};
 						}),
 						config: {
-							xAxisLabel: 'QUOTATIONS',
-							yAxisLabel: 'TOTAL QUANTITY',
-							barColor: '#3b82f6',
-						},
+							xAxisLabel: "QUOTATIONS",
+							yAxisLabel: "TOTAL QUANTITY",
+							barColor: "#3b82f6"
+						}
 					},
-
+					
 					// Monthly distribution
 					monthlyDistribution: {
-						data: timeline.map((item) => ({
+						data: timeline.map(item => ({
 							name: item.month,
 							count: item.count,
-							value: item.value,
+							value: item.value
 						})),
 						config: {
-							xAxisLabel: 'MONTH',
-							yAxisLabel: 'AMOUNT (ZAR)',
-							barColor: '#3b82f6',
-						},
+							xAxisLabel: "MONTH",
+							yAxisLabel: "AMOUNT (ZAR)",
+							barColor: "#3b82f6"
+						}
 					},
-
+					
 					// Quotations by creator chart
 					creatorDistribution: {
-						data: byCreator.map((creator) => ({
+						data: byCreator.map(creator => ({
 							name: creator.name || creator.email.split('@')[0],
 							value: creator.quotationCount,
 							totalAmount: creator.totalAmount,
 							uid: creator.uid,
 							photoURL: creator.photoURL,
 							role: creator.role,
-							email: creator.email,
+							email: creator.email
 						})),
 						config: {
-							xAxisLabel: 'STAFF MEMBER',
-							yAxisLabel: 'QUOTATIONS',
-							barColor: '#a855f7',
-						},
+							xAxisLabel: "STAFF MEMBER",
+							yAxisLabel: "QUOTATIONS",
+							barColor: "#a855f7"
+						}
 					},
-
+					
 					// Conversion status chart
 					conversionStatus: {
 						data: [
 							{
-								name: 'Converted',
+								name: "Converted",
 								value: conversionMetrics.convertedQuotations,
-								color: '#22c55e',
+								color: "#22c55e"
 							},
 							{
-								name: 'Not Converted',
+								name: "Not Converted",
 								value: quotations.length - conversionMetrics.convertedQuotations,
-								color: '#3b82f6',
-							},
+								color: "#3b82f6"
+							}
 						],
 						config: {
 							colors: {
-								Converted: '#22c55e',
-								'Not Converted': '#3b82f6',
-							},
-						},
-					},
+								"Converted": "#22c55e",
+								"Not Converted": "#3b82f6"
+							}
+						}
+					}
 				},
 				data: {
 					quotations,
@@ -458,7 +456,7 @@ export class QuotationReportGenerator {
 							price: item.product.price,
 							imageUrl: item.product.imageUrl,
 							category: item.product.category,
-							description: item.product.description,
+							description: item.product.description
 						},
 					};
 				}
@@ -480,9 +478,9 @@ export class QuotationReportGenerator {
 
 		quotations.forEach((quotation) => {
 			if (!quotation.placedBy || !quotation.placedBy.uid) return;
-
+			
 			const creatorId = quotation.placedBy.uid;
-
+			
 			if (!creatorCounts[creatorId]) {
 				creatorCounts[creatorId] = {
 					count: 0,
@@ -492,11 +490,11 @@ export class QuotationReportGenerator {
 						name: `${quotation.placedBy.name || ''} ${quotation.placedBy.surname || ''}`.trim(),
 						email: quotation.placedBy.email,
 						photoURL: quotation.placedBy.photoURL,
-						role: quotation.placedBy.role,
-					},
+						role: quotation.placedBy.role
+					}
 				};
 			}
-
+			
 			creatorCounts[creatorId].count += 1;
 			creatorCounts[creatorId].totalAmount += Number(quotation.totalAmount || 0);
 		});
@@ -507,45 +505,45 @@ export class QuotationReportGenerator {
 				...user,
 				quotationCount: count,
 				totalAmount: totalAmount.toFixed(2),
-				averageAmount: (totalAmount / count).toFixed(2),
+				averageAmount: (totalAmount / count).toFixed(2)
 			}));
 	}
 
 	private getConversionMetrics(quotations: Quotation[]): any {
 		const total = quotations.length;
-		const converted = quotations.filter((q) => q.isConverted).length;
+		const converted = quotations.filter(q => q.isConverted).length;
 		const conversionRate = total > 0 ? (converted / total) * 100 : 0;
-
+		
 		const statusCounts: Record<string, { count: number; totalAmount: number }> = {};
-
+		
 		// Initialize with all relevant statuses
 		const relevantStatuses = [
-			OrderStatus.DRAFT,
-			OrderStatus.PENDING,
+			OrderStatus.DRAFT, 
+			OrderStatus.PENDING, 
 			OrderStatus.PENDING_INTERNAL,
-			OrderStatus.PENDING_CLIENT,
+			OrderStatus.PENDING_CLIENT, 
 			OrderStatus.NEGOTIATION,
-			OrderStatus.APPROVED,
+			OrderStatus.APPROVED, 
 			OrderStatus.REJECTED,
-			OrderStatus.COMPLETED,
+			OrderStatus.COMPLETED
 		];
-
-		relevantStatuses.forEach((status) => {
+		
+		relevantStatuses.forEach(status => {
 			statusCounts[status] = { count: 0, totalAmount: 0 };
 		});
-
+		
 		// Count quotations by status
-		quotations.forEach((quotation) => {
+		quotations.forEach(quotation => {
 			const status = quotation.status;
-
+			
 			if (!statusCounts[status]) {
 				statusCounts[status] = { count: 0, totalAmount: 0 };
 			}
-
+			
 			statusCounts[status].count += 1;
 			statusCounts[status].totalAmount += Number(quotation.totalAmount || 0);
 		});
-
+		
 		return {
 			totalQuotations: total,
 			convertedQuotations: converted,
@@ -557,8 +555,8 @@ export class QuotationReportGenerator {
 			byStatus: Object.entries(statusCounts).map(([status, data]) => ({
 				status,
 				count: data.count,
-				totalAmount: data.totalAmount.toFixed(2),
-			})),
+				totalAmount: data.totalAmount.toFixed(2)
+			}))
 		};
 	}
 }

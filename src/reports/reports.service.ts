@@ -8,6 +8,8 @@ import { ReportType } from './constants/report-types.enum';
 import { ReportParamsDto } from './dto/report-params.dto';
 import { MainReportGenerator } from './generators/main-report.generator';
 import { QuotationReportGenerator } from './generators/quotation-report.generator';
+import { MapReportGenerator } from './generators/map-report.generator';
+import { MapReportParamsDto } from './dto/map-report-params.dto';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { ConfigService } from '@nestjs/config';
@@ -22,6 +24,7 @@ export class ReportsService {
     private reportRepository: Repository<Report>,
     private mainReportGenerator: MainReportGenerator,
     private quotationReportGenerator: QuotationReportGenerator,
+    private mapReportGenerator: MapReportGenerator,
     @Inject(CACHE_MANAGER)
     private cacheManager: Cache,
     private readonly configService: ConfigService
@@ -88,6 +91,9 @@ export class ReportsService {
         break;
       case ReportType.QUOTATION:
         reportData = await this.quotationReportGenerator.generate(params);
+        break;
+      case ReportType.MAP:
+        reportData = await this.mapReportGenerator.generate(params as MapReportParamsDto);
         break;
       case ReportType.USER:
         // Will be implemented later
