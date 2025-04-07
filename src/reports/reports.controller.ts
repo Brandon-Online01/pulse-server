@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Param, Get, UseGuards, Req, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Body, Param, Get, UseGuards, Req, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
 import { ReportsService } from './reports.service';
 import { ReportParamsDto } from './dto/report-params.dto';
 import { ReportType } from './constants/report-types.enum';
@@ -24,6 +24,8 @@ import { Roles } from '../decorators/role.decorator';
 @UseGuards(AuthGuard, RoleGuard)
 @ApiUnauthorizedResponse({ description: 'Unauthorized - Invalid credentials or missing token' })
 export class ReportsController {
+	private readonly logger = new Logger(ReportsController.name);
+
 	constructor(private readonly reportsService: ReportsService) {}
 
 	// Add helper function to add random offset to coordinates
@@ -779,6 +781,70 @@ export class ReportsController {
 				return `Ended ${['Morning', 'Day', 'Evening', 'Night'][index % 4]} shift`;
 			default:
 				return `Event ${index + 1} details`;
+		}
+	}
+
+	@Post('daily-report/:userId')
+	@Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.OWNER)
+	@ApiOperation({
+		summary: 'Generate a daily report for a specific user',
+		description: 'Generates and sends a daily activity report for a specific user',
+	})
+	@ApiParam({
+		name: 'userId',
+		description: 'ID of the user to generate report for',
+		type: 'number',
+	})
+	@ApiOkResponse({
+		description: 'Report generated and sent successfully',
+		schema: {
+			type: 'object',
+			properties: {
+				success: { type: 'boolean' },
+				message: { type: 'string' },
+				reportId: { type: 'number' }
+			}
+		}
+	})
+	@ApiBadRequestResponse({
+		description: 'Bad Request - Invalid user ID',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string' }
+			}
+		}
+	})
+	async generateDailyReportForUser(
+		@Param('userId') userId: number,
+		@Req() request: AuthenticatedRequest
+	) {
+		try {
+			// Validate userId
+			if (!userId || isNaN(Number(userId))) {
+				throw new BadRequestException('Valid user ID is required');
+			}
+			
+			// Create report parameters with the organization from the request context
+			const params: ReportParamsDto = {
+				type: ReportType.USER_DAILY,
+				organisationId: request.user.organisationRef || request.user.org?.uid,
+				filters: {
+					userId: Number(userId)
+				}
+			};
+			
+			// Generate and send report
+			const report = await this.reportsService.generateUserDailyReport(params);
+			
+			return {
+				success: true,
+				message: `Daily report generated and sent successfully`,
+				reportId: report.uid
+			};
+		} catch (error) {
+			this.logger.error(`Error generating manual daily report: ${error.message}`, error.stack);
+			throw error;
 		}
 	}
 }

@@ -1,6 +1,7 @@
 import { EmailType } from '../enums/email.enums';
 import { TaskStatus, TaskPriority, TaskFlagStatus, TaskFlagItemStatus } from '../enums/task.enums';
 import { SubTaskStatus } from '../enums/status.enums';
+import { LeadStatus } from '../enums/lead.enums';
 
 export interface BaseEmailData {
 	name: string;
@@ -220,6 +221,51 @@ export interface TaskReminderData extends BaseEmailData {
 	};
 }
 
+export interface TaskOverdueMissedData extends BaseEmailData {
+	overdueTasks: Array<{
+		uid: number;
+		title: string;
+		description: string;
+		deadline: string;
+		priority: TaskPriority;
+		status: TaskStatus;
+		progress: number;
+		daysOverdue: number;
+	}>;
+	missedTasks: Array<{
+		uid: number;
+		title: string;
+		description: string;
+		deadline: string;
+		priority: TaskPriority;
+		status: TaskStatus;
+		progress: number;
+		daysOverdue: number;
+	}>;
+	overdueMissedCount: {
+		overdue: number;
+		missed: number;
+		total: number;
+	};
+	dashboardLink: string;
+}
+
+export interface LeadReminderData extends BaseEmailData {
+	leads: Array<{
+		uid: number;
+		name: string;
+		email?: string;
+		phone?: string;
+		createdAt: string;
+		image?: string;
+		latitude?: number;
+		longitude?: number;
+		notes?: string;
+	}>;
+	dashboardLink: string;
+	leadsCount: number;
+}
+
 export interface TaskFlagEmailData extends BaseEmailData {
 	taskId: number;
 	taskTitle: string;
@@ -320,9 +366,11 @@ export interface EmailDataMap {
 	[EmailType.TASK_COMPLETED]: TaskCompletedEmailData;
 	[EmailType.TASK_REMINDER_ASSIGNEE]: TaskReminderData;
 	[EmailType.TASK_REMINDER_CREATOR]: TaskReminderData;
+	[EmailType.TASK_OVERDUE_MISSED]: TaskOverdueMissedData;
 	[EmailType.NEW_USER_ADMIN_NOTIFICATION]: NewUserAdminNotificationData;
 	[EmailType.LEAD_CONVERTED_CLIENT]: LeadConvertedClientData;
 	[EmailType.LEAD_CONVERTED_CREATOR]: LeadConvertedCreatorData;
+	[EmailType.LEAD_REMINDER]: LeadReminderData;
 	[EmailType.TASK_FLAG_CREATED]: TaskFlagEmailData;
 	[EmailType.TASK_FLAG_UPDATED]: TaskFlagEmailData;
 	[EmailType.TASK_FLAG_RESOLVED]: TaskFlagEmailData;

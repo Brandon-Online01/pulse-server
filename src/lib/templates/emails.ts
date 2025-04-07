@@ -1,46 +1,53 @@
 import {
-  SignupEmailData,
-  VerificationEmailData,
-  PasswordResetData,
-  PasswordChangedData,
-  InvoiceData,
-  DailyReportData,
-  LicenseEmailData,
-  LicenseLimitData,
-  QuotationData,
-  QuotationInternalData,
-  QuotationResellerData,
-  TaskEmailData,
-  TaskReminderData,
-  NewUserAdminNotificationData,
-  TaskCompletedEmailData,
-  LeadConvertedClientData,
-  LeadConvertedCreatorData,
-  TaskFlagEmailData,
-  TaskFeedbackEmailData,
+	SignupEmailData,
+	VerificationEmailData,
+	PasswordResetData,
+	PasswordChangedData,
+	InvoiceData,
+	DailyReportData,
+	LicenseEmailData,
+	LicenseLimitData,
+	QuotationData,
+	QuotationInternalData,
+	QuotationResellerData,
+	TaskEmailData,
+	TaskReminderData,
+	NewUserAdminNotificationData,
+	TaskCompletedEmailData,
+	LeadConvertedClientData,
+	LeadConvertedCreatorData,
+	TaskFlagEmailData,
+	TaskFeedbackEmailData,
+	LeadReminderData,
+	TaskOverdueMissedData,
 } from '../types/email-templates.types';
 import { formatDate } from '../utils/date.utils';
 
 const BASE_STYLES = {
-  wrapper: '@media (max-width: 600px) { width: 100% !important; padding: 10px !important; } width: 100%; padding: 20px; background-color: #f9fafb;',
-  container: 'max-width: 600px; margin: 0 auto; font-family: "Unbounded", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #1f2937; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);',
-  button: 'display: inline-block; padding: 16px 32px; background-color: #A855F7; color: white; text-decoration: none; border-radius: 12px; font-weight: 600; text-align: center; transition: all 0.2s; box-shadow: 0 4px 6px rgba(168, 85, 247, 0.2); font-family: "Unbounded", sans-serif;',
-  header: 'background-color: #A855F7; color: white; padding: 40px 20px; text-align: center; border-radius: 0;',
-  footer: 'background-color: #ffffff; padding: 32px 20px; text-align: center; margin-top: 32px; color: #6c757d; border-top: 1px solid #f3f4f6;',
-  alert: 'background-color: #faf5ff; border-left: 4px solid #A855F7; padding: 20px; margin: 24px 0; border-radius: 8px;',
-  card: 'background-color: #ffffff; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); padding: 32px; margin: 24px 0; border: 1px solid #f3f4f6;',
-  heading: 'margin: 0 0 20px; color: #A855F7; font-size: 22px; font-weight: 600; font-family: "Unbounded", sans-serif;',
-  text: 'margin: 0 0 20px; color: #4b5563; font-size: 16px; line-height: 1.8; font-family: "Unbounded", sans-serif;',
-  link: 'color: #A855F7; text-decoration: none; font-weight: 500; transition: color 0.2s; margin: 0 12px; font-family: "Unbounded", sans-serif;',
-  grid: 'display: grid; grid-template-columns: 1fr; gap: 24px; @media (min-width: 480px) { grid-template-columns: 1fr 1fr; }',
-  highlight: 'background: #faf5ff; border-radius: 12px; padding: 24px; margin-bottom: 32px; border: 1px solid #e9d5ff;',
-  badge: 'display: inline-block; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 500; background-color: #A855F7; color: white; font-family: "Unbounded", sans-serif;',
-  divider: 'border: 0; border-top: 1px solid #f3f4f6; margin: 32px 0;',
-  icon: 'display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; background: #faf5ff; border-radius: 50%; margin-right: 16px; font-size: 20px;',
-  flexRow: 'display: flex; align-items: center;',
-  flexColumn: 'display: flex; flex-direction: column; gap: 8px;',
-  tag: 'display: inline-block; padding: 6px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; background: #faf5ff; color: #A855F7; margin: 0 12px 12px 0; font-family: "Unbounded", sans-serif;',
-  subheading: 'margin: 0 0 16px; color: #A855F7; font-size: 18px; font-weight: 600; font-family: "Unbounded", sans-serif;',
+	wrapper:
+		'@media (max-width: 600px) { width: 100% !important; padding: 10px !important; } width: 100%; padding: 20px; background-color: #f9fafb;',
+	container:
+		'max-width: 600px; margin: 0 auto; font-family: "Unbounded", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #1f2937; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);',
+	button: 'display: inline-block; padding: 16px 32px; background-color: #A855F7; color: white; text-decoration: none; border-radius: 12px; font-weight: 600; text-align: center; transition: all 0.2s; box-shadow: 0 4px 6px rgba(168, 85, 247, 0.2); font-family: "Unbounded", sans-serif;',
+	header: 'background-color: #A855F7; color: white; padding: 40px 20px; text-align: center; border-radius: 0;',
+	footer: 'background-color: #ffffff; padding: 32px 20px; text-align: center; margin-top: 32px; color: #6c757d; border-top: 1px solid #f3f4f6;',
+	alert: 'background-color: #faf5ff; border-left: 4px solid #A855F7; padding: 20px; margin: 24px 0; border-radius: 8px;',
+	card: 'background-color: #ffffff; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); padding: 32px; margin: 24px 0; border: 1px solid #f3f4f6;',
+	heading:
+		'margin: 0 0 20px; color: #A855F7; font-size: 22px; font-weight: 600; font-family: "Unbounded", sans-serif;',
+	text: 'margin: 0 0 20px; color: #4b5563; font-size: 16px; line-height: 1.8; font-family: "Unbounded", sans-serif;',
+	link: 'color: #A855F7; text-decoration: none; font-weight: 500; transition: color 0.2s; margin: 0 12px; font-family: "Unbounded", sans-serif;',
+	grid: 'display: grid; grid-template-columns: 1fr; gap: 24px; @media (min-width: 480px) { grid-template-columns: 1fr 1fr; }',
+	highlight:
+		'background: #faf5ff; border-radius: 12px; padding: 24px; margin-bottom: 32px; border: 1px solid #e9d5ff;',
+	badge: 'display: inline-block; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 500; background-color: #A855F7; color: white; font-family: "Unbounded", sans-serif;',
+	divider: 'border: 0; border-top: 1px solid #f3f4f6; margin: 32px 0;',
+	icon: 'display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; background: #faf5ff; border-radius: 50%; margin-right: 16px; font-size: 20px;',
+	flexRow: 'display: flex; align-items: center;',
+	flexColumn: 'display: flex; flex-direction: column; gap: 8px;',
+	tag: 'display: inline-block; padding: 6px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; background: #faf5ff; color: #A855F7; margin: 0 12px 12px 0; font-family: "Unbounded", sans-serif;',
+	subheading:
+		'margin: 0 0 16px; color: #A855F7; font-size: 18px; font-weight: 600; font-family: "Unbounded", sans-serif;',
 };
 
 const createSection = (title: string, content: string) => `
@@ -69,17 +76,23 @@ export const Signup = (data: SignupEmailData): string => `
               </a>
             </div>
 
-            ${data.mobileAppLink ? `
+            ${
+				data.mobileAppLink
+					? `
             <div style="${BASE_STYLES.alert}">
               <p style="margin: 0;">
                 <strong>Mobile App:</strong> You can also access your account on our mobile app.
                 <a href="${data.mobileAppLink}" style="color: #A855F7; font-weight: 500;">Download now</a>
               </p>
             </div>
-            ` : ''}
+            `
+					: ''
+			}
           </div>
 
-          ${createSection("🔐 Security Tips", `
+          ${createSection(
+				'🔐 Security Tips',
+				`
             <ul style="list-style: none; padding: 0; margin: 0;">
               <li style="margin-bottom: 12px; display: flex; align-items: center;">
                 <span style="color: #A855F7; margin-right: 8px;">✓</span>
@@ -94,7 +107,8 @@ export const Signup = (data: SignupEmailData): string => `
                 Keep your recovery email updated
               </li>
             </ul>
-          `)}
+          `,
+			)}
         </div>
 
         <div style="${BASE_STYLES.footer}">
@@ -210,22 +224,29 @@ export const PasswordChanged = (data: PasswordChangedData): string => `
 `;
 
 export const NewQuotationClient = (data: QuotationData): string => {
-  const itemsList = data.quotationItems.map(item => `
+	const itemsList = data.quotationItems
+		.map(
+			(item) => `
     <tr>
       <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">${item.quantity}x</td>
       <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">
         <div style="font-weight: 500;">${item.product.name}</div>
         <div style="font-size: 12px; color: #666;">Code: ${item.product.code}</div>
       </td>
-      <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: right;">${new Intl.NumberFormat('en-US', { style: 'currency', currency: data.currency }).format(item.totalPrice)}</td>
+      <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: right;">${new Intl.NumberFormat('en-US', {
+			style: 'currency',
+			currency: data.currency,
+		}).format(item.totalPrice)}</td>
     </tr>
-  `).join('');
+  `,
+		)
+		.join('');
 
-  // Generate approve/decline URLs if reviewUrl is available
-  const approveUrl = data.reviewUrl ? `${data.reviewUrl}&action=approve` : '';
-  const declineUrl = data.reviewUrl ? `${data.reviewUrl}&action=decline` : '';
+	// Generate approve/decline URLs if reviewUrl is available
+	const approveUrl = data.reviewUrl ? `${data.reviewUrl}&action=approve` : '';
+	const declineUrl = data.reviewUrl ? `${data.reviewUrl}&action=decline` : '';
 
-  return `
+	return `
     <div style="${BASE_STYLES.wrapper}">
       <div style="${BASE_STYLES.container}">
         <div style="${BASE_STYLES.header}">
@@ -236,7 +257,9 @@ export const NewQuotationClient = (data: QuotationData): string => {
         <div style="padding: 24px 20px;">
           <div style="${BASE_STYLES.card}">
             <h2 style="${BASE_STYLES.heading}">Dear ${data.name},</h2>
-            <p style="${BASE_STYLES.text}">Thank you for your interest in our products. We are pleased to provide you with the following quotation:</p>
+            <p style="${
+				BASE_STYLES.text
+			}">Thank you for your interest in our products. We are pleased to provide you with the following quotation:</p>
             
             <div style="margin: 24px 0; background: #f7fafc; border-radius: 8px; padding: 16px;">
               <table style="width: 100%; border-collapse: collapse;">
@@ -251,7 +274,10 @@ export const NewQuotationClient = (data: QuotationData): string => {
                   ${itemsList}
                   <tr>
                     <td colspan="2" style="padding: 12px; font-weight: 600;">Total Amount</td>
-                    <td style="padding: 12px; text-align: right; font-weight: 600;">${new Intl.NumberFormat('en-US', { style: 'currency', currency: data.currency }).format(data.total)}</td>
+                    <td style="padding: 12px; text-align: right; font-weight: 600;">${new Intl.NumberFormat('en-US', {
+						style: 'currency',
+						currency: data.currency,
+					}).format(data.total)}</td>
                   </tr>
                 </tbody>
               </table>
@@ -278,7 +304,9 @@ export const NewQuotationClient = (data: QuotationData): string => {
                     <table border="0" cellspacing="0" cellpadding="0">
                       <tr>
                         <td align="center" style="border-radius: 8px;" bgcolor="#10b981">
-                          <a href="${approveUrl}" target="_blank" style="${BASE_STYLES.button}; background-color: #10b981; color: white; font-weight: 600; padding: 12px 24px; font-size: 16px; text-decoration: none; display: inline-block; border-radius: 8px;">
+                          <a href="${approveUrl}" target="_blank" style="${
+		BASE_STYLES.button
+	}; background-color: #10b981; color: white; font-weight: 600; padding: 12px 24px; font-size: 16px; text-decoration: none; display: inline-block; border-radius: 8px;">
                             APPROVE
                           </a>
                         </td>
@@ -290,7 +318,9 @@ export const NewQuotationClient = (data: QuotationData): string => {
                     <table border="0" cellspacing="0" cellpadding="0">
                       <tr>
                         <td align="center" style="border-radius: 8px;" bgcolor="#ef4444">
-                          <a href="${declineUrl}" target="_blank" style="${BASE_STYLES.button}; background-color: #ef4444; color: white; font-weight: 600; padding: 12px 24px; font-size: 16px; text-decoration: none; display: inline-block; border-radius: 8px;">
+                          <a href="${declineUrl}" target="_blank" style="${
+		BASE_STYLES.button
+	}; background-color: #ef4444; color: white; font-weight: 600; padding: 12px 24px; font-size: 16px; text-decoration: none; display: inline-block; border-radius: 8px;">
                             DECLINE
                           </a>
                         </td>
@@ -302,7 +332,9 @@ export const NewQuotationClient = (data: QuotationData): string => {
                     <table border="0" cellspacing="0" cellpadding="0">
                       <tr>
                         <td align="center" style="border-radius: 8px;" bgcolor="#6b7280">
-                          <a href="${data.reviewUrl}" target="_blank" style="${BASE_STYLES.button}; background-color: #6b7280; color: white; font-weight: 600; padding: 12px 24px; font-size: 16px; text-decoration: none; display: inline-block; border-radius: 8px;">
+                          <a href="${data.reviewUrl}" target="_blank" style="${
+		BASE_STYLES.button
+	}; background-color: #6b7280; color: white; font-weight: 600; padding: 12px 24px; font-size: 16px; text-decoration: none; display: inline-block; border-radius: 8px;">
                             REVIEW DETAILS
                           </a>
                         </td>
@@ -325,15 +357,22 @@ export const NewQuotationClient = (data: QuotationData): string => {
 };
 
 export const NewQuotationInternal = (data: QuotationInternalData): string => {
-  const itemsList = data.quotationItems.map(item => `
+	const itemsList = data.quotationItems
+		.map(
+			(item) => `
     <tr>
       <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">${item.quantity}x</td>
       <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">${item.product.uid}</td>
-      <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: right;">${new Intl.NumberFormat('en-US', { style: 'currency', currency: data.currency }).format(item.totalPrice)}</td>
+      <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: right;">${new Intl.NumberFormat('en-US', {
+			style: 'currency',
+			currency: data.currency,
+		}).format(item.totalPrice)}</td>
     </tr>
-  `).join('');
+  `,
+		)
+		.join('');
 
-  return `
+	return `
     <div style="${BASE_STYLES.wrapper}">
       <div style="${BASE_STYLES.container}">
         <div style="${BASE_STYLES.header}">
@@ -350,8 +389,16 @@ export const NewQuotationInternal = (data: QuotationInternalData): string => {
               </div>
               <div>
                 <h4 style="margin: 0 0 8px; color: #4a5568;">Priority</h4>
-                <span style="background: ${data.priority === 'high' ? '#fed7d7' : data.priority === 'medium' ? '#fefcbf' : '#e6fffa'}; 
-                             color: ${data.priority === 'high' ? '#c53030' : data.priority === 'medium' ? '#b7791f' : '#2c7a7b'}; 
+                <span style="background: ${
+					data.priority === 'high' ? '#fed7d7' : data.priority === 'medium' ? '#fefcbf' : '#e6fffa'
+				}; 
+                             color: ${
+									data.priority === 'high'
+										? '#c53030'
+										: data.priority === 'medium'
+										? '#b7791f'
+										: '#2c7a7b'
+								}; 
                              padding: 4px 12px; 
                              border-radius: 12px; 
                              font-weight: 500;">
@@ -373,18 +420,25 @@ export const NewQuotationInternal = (data: QuotationInternalData): string => {
                   ${itemsList}
                   <tr>
                     <td colspan="2" style="padding: 12px; font-weight: 600;">Total Amount</td>
-                    <td style="padding: 12px; text-align: right; font-weight: 600;">${new Intl.NumberFormat('en-US', { style: 'currency', currency: data.currency }).format(data.total)}</td>
+                    <td style="padding: 12px; text-align: right; font-weight: 600;">${new Intl.NumberFormat('en-US', {
+						style: 'currency',
+						currency: data.currency,
+					}).format(data.total)}</td>
                   </tr>
                 </tbody>
               </table>
             </div>
 
-            ${data.notes ? `
+            ${
+				data.notes
+					? `
               <div style="${BASE_STYLES.alert}">
                 <p style="margin: 0; font-weight: 500;">Additional Notes:</p>
                 <p style="margin: 8px 0 0;">${data.notes}</p>
               </div>
-            ` : ''}
+            `
+					: ''
+			}
           </div>
 
           <div style="${BASE_STYLES.card}">
@@ -407,15 +461,22 @@ export const NewQuotationInternal = (data: QuotationInternalData): string => {
 };
 
 export const NewQuotationReseller = (data: QuotationResellerData): string => {
-  const itemsList = data.quotationItems.map(item => `
+	const itemsList = data.quotationItems
+		.map(
+			(item) => `
     <tr>
       <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">${item.quantity}x</td>
       <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">${item.product.uid}</td>
-      <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: right;">${new Intl.NumberFormat('en-US', { style: 'currency', currency: data.currency }).format(item.totalPrice)}</td>
+      <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: right;">${new Intl.NumberFormat('en-US', {
+			style: 'currency',
+			currency: data.currency,
+		}).format(item.totalPrice)}</td>
     </tr>
-  `).join('');
+  `,
+		)
+		.join('');
 
-  return `
+	return `
     <div style="${BASE_STYLES.wrapper}">
       <div style="${BASE_STYLES.container}">
         <div style="${BASE_STYLES.header}">
@@ -441,7 +502,10 @@ export const NewQuotationReseller = (data: QuotationResellerData): string => {
                   ${itemsList}
                   <tr>
                     <td colspan="2" style="padding: 12px; font-weight: 600;">Total Amount</td>
-                    <td style="padding: 12px; text-align: right; font-weight: 600;">${new Intl.NumberFormat('en-US', { style: 'currency', currency: data.currency }).format(data.total)}</td>
+                    <td style="padding: 12px; text-align: right; font-weight: 600;">${new Intl.NumberFormat('en-US', {
+						style: 'currency',
+						currency: data.currency,
+					}).format(data.total)}</td>
                   </tr>
                 </tbody>
               </table>
@@ -451,7 +515,10 @@ export const NewQuotationReseller = (data: QuotationResellerData): string => {
               <h4 style="margin: 0 0 8px; color: #4a5568;">Commission Details</h4>
               <p style="margin: 0;">
                 <strong>Reseller Code:</strong> ${data.resellerCode}<br>
-                <strong>Commission Amount:</strong> ${new Intl.NumberFormat('en-US', { style: 'currency', currency: data.currency }).format(data.resellerCommission)}
+                <strong>Commission Amount:</strong> ${new Intl.NumberFormat('en-US', {
+					style: 'currency',
+					currency: data.currency,
+				}).format(data.resellerCommission)}
               </p>
             </div>
 
@@ -475,109 +542,120 @@ export const NewQuotationReseller = (data: QuotationResellerData): string => {
 };
 
 export const QuotationStatusUpdate = (data: QuotationData): string => {
-  const itemsList = data.quotationItems.map(item => `
+	const itemsList = data.quotationItems
+		.map(
+			(item) => `
     <tr>
-      <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; font-family: 'Unbounded', sans-serif;">${item.quantity}x</td>
+      <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; font-family: 'Unbounded', sans-serif;">${
+			item.quantity
+		}x</td>
       <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; font-family: 'Unbounded', sans-serif;">
         <div style="font-weight: 500; font-family: 'Unbounded', sans-serif;">${item.product.name}</div>
-        <div style="font-size: 12px; color: #666; font-family: 'Unbounded', sans-serif;">Code: ${item.product.code}</div>
+        <div style="font-size: 12px; color: #666; font-family: 'Unbounded', sans-serif;">Code: ${
+			item.product.code
+		}</div>
       </td>
-      <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: right; font-family: 'Unbounded', sans-serif;">${new Intl.NumberFormat('en-US', { style: 'currency', currency: data.currency }).format(item.totalPrice)}</td>
+      <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: right; font-family: 'Unbounded', sans-serif;">${new Intl.NumberFormat(
+			'en-US',
+			{ style: 'currency', currency: data.currency },
+		).format(item.totalPrice)}</td>
     </tr>
-  `).join('');
+  `,
+		)
+		.join('');
 
-  // Get status information
-  const statusInfo = {
-    pending: {
-      title: 'Pending Review',
-      description: 'Your quotation is currently being reviewed by our team.',
-      color: '#A855F7', // Purple color (matching the header)
-      next: 'Our team will process your quotation shortly.'
-    },
-    inprogress: {
-      title: 'In Progress',
-      description: 'Your quotation is currently being processed.',
-      color: '#A855F7', // Purple color (matching the header)
-      next: 'We\'re working on preparing your order based on the quotation.'
-    },
-    approved: {
-      title: 'Approved',
-      description: 'Your quotation has been approved.',
-      color: '#A855F7', // Purple color (matching the header)
-      next: 'We\'ll be in touch soon to arrange delivery or collection details.'
-    },
-    rejected: {
-      title: 'Not Approved',
-      description: 'Unfortunately, your quotation could not be approved at this time.',
-      color: '#A855F7', // Purple color (matching the header)
-      next: 'Please contact our customer service for more information.'
-    },
-    completed: {
-      title: 'Completed',
-      description: 'Your order has been successfully completed.',
-      color: '#A855F7', // Purple color (matching the header)
-      next: 'Thank you for your business!'
-    },
-    cancelled: {
-      title: 'Cancelled',
-      description: 'Your quotation has been cancelled as requested.',
-      color: '#A855F7', // Purple color (matching the header)
-      next: 'If you wish to place a new order, please create a new quotation.'
-    },
-    postponed: {
-      title: 'Postponed',
-      description: 'Your quotation has been temporarily postponed.',
-      color: '#A855F7', // Purple color (matching the header) 
-      next: 'We\'ll contact you with additional information about next steps.'
-    },
-    outfordelivery: {
-      title: 'Out for Delivery',
-      description: 'Your order is now out for delivery.',
-      color: '#A855F7', // Purple color (matching the header)
-      next: 'You should receive your items shortly.'
-    },
-    delivered: {
-      title: 'Delivered',
-      description: 'Your order has been delivered successfully.',
-      color: '#A855F7', // Purple color (matching the header)
-      next: 'We hope you enjoy your purchase!'
-    },
-    sourcing: {
-      title: 'Sourcing',
-      description: 'We are currently sourcing the items from your quotation.',
-      color: '#A855F7', // Purple color (matching the header)
-      next: 'Once all items are sourced, we\'ll move to the packing phase.'
-    },
-    packing: {
-      title: 'Packing',
-      description: 'Your order is currently being packed.',
-      color: '#A855F7', // Purple color (matching the header)
-      next: 'Once packing is complete, your order will move to fulfillment.'
-    },
-    in_fulfillment: {
-      title: 'In Fulfillment',
-      description: 'Your order is now in the fulfillment process.',
-      color: '#A855F7', // Purple color (matching the header)
-      next: 'We\'re preparing your order for shipping or pickup.'
-    },
-    paid: {
-      title: 'Paid',
-      description: 'We\'ve received payment for your order.',
-      color: '#A855F7', // Purple color (matching the header)
-      next: 'Your order will be prepared for delivery soon.'
-    },
-    returned: {
-      title: 'Returned',
-      description: 'Your order has been marked as returned.',
-      color: '#A855F7', // Purple color (matching the header)
-      next: 'Our team will process the return and contact you regarding next steps.'
-    }
-  };
+	// Get status information
+	const statusInfo = {
+		pending: {
+			title: 'Pending Review',
+			description: 'Your quotation is currently being reviewed by our team.',
+			color: '#A855F7', // Purple color (matching the header)
+			next: 'Our team will process your quotation shortly.',
+		},
+		inprogress: {
+			title: 'In Progress',
+			description: 'Your quotation is currently being processed.',
+			color: '#A855F7', // Purple color (matching the header)
+			next: "We're working on preparing your order based on the quotation.",
+		},
+		approved: {
+			title: 'Approved',
+			description: 'Your quotation has been approved.',
+			color: '#A855F7', // Purple color (matching the header)
+			next: "We'll be in touch soon to arrange delivery or collection details.",
+		},
+		rejected: {
+			title: 'Not Approved',
+			description: 'Unfortunately, your quotation could not be approved at this time.',
+			color: '#A855F7', // Purple color (matching the header)
+			next: 'Please contact our customer service for more information.',
+		},
+		completed: {
+			title: 'Completed',
+			description: 'Your order has been successfully completed.',
+			color: '#A855F7', // Purple color (matching the header)
+			next: 'Thank you for your business!',
+		},
+		cancelled: {
+			title: 'Cancelled',
+			description: 'Your quotation has been cancelled as requested.',
+			color: '#A855F7', // Purple color (matching the header)
+			next: 'If you wish to place a new order, please create a new quotation.',
+		},
+		postponed: {
+			title: 'Postponed',
+			description: 'Your quotation has been temporarily postponed.',
+			color: '#A855F7', // Purple color (matching the header)
+			next: "We'll contact you with additional information about next steps.",
+		},
+		outfordelivery: {
+			title: 'Out for Delivery',
+			description: 'Your order is now out for delivery.',
+			color: '#A855F7', // Purple color (matching the header)
+			next: 'You should receive your items shortly.',
+		},
+		delivered: {
+			title: 'Delivered',
+			description: 'Your order has been delivered successfully.',
+			color: '#A855F7', // Purple color (matching the header)
+			next: 'We hope you enjoy your purchase!',
+		},
+		sourcing: {
+			title: 'Sourcing',
+			description: 'We are currently sourcing the items from your quotation.',
+			color: '#A855F7', // Purple color (matching the header)
+			next: "Once all items are sourced, we'll move to the packing phase.",
+		},
+		packing: {
+			title: 'Packing',
+			description: 'Your order is currently being packed.',
+			color: '#A855F7', // Purple color (matching the header)
+			next: 'Once packing is complete, your order will move to fulfillment.',
+		},
+		in_fulfillment: {
+			title: 'In Fulfillment',
+			description: 'Your order is now in the fulfillment process.',
+			color: '#A855F7', // Purple color (matching the header)
+			next: "We're preparing your order for shipping or pickup.",
+		},
+		paid: {
+			title: 'Paid',
+			description: "We've received payment for your order.",
+			color: '#A855F7', // Purple color (matching the header)
+			next: 'Your order will be prepared for delivery soon.',
+		},
+		returned: {
+			title: 'Returned',
+			description: 'Your order has been marked as returned.',
+			color: '#A855F7', // Purple color (matching the header)
+			next: 'Our team will process the return and contact you regarding next steps.',
+		},
+	};
 
-  const status = data.status.toLowerCase();
-  const statusDisplay = statusInfo[status] || statusInfo.pending;
+	const status = data.status.toLowerCase();
+	const statusDisplay = statusInfo[status] || statusInfo.pending;
 
-  return `
+	return `
     <div style="${BASE_STYLES.wrapper}">
       <div style="${BASE_STYLES.container}">
         <div style="${BASE_STYLES.header}">
@@ -588,7 +666,9 @@ export const QuotationStatusUpdate = (data: QuotationData): string => {
         <div style="padding: 24px 20px;">
           <div style="${BASE_STYLES.card}">
             <h2 style="${BASE_STYLES.heading}">Dear ${data.name},</h2>
-            <p style="${BASE_STYLES.text}">This is to inform you that the status of your quotation has been updated to:</p>
+            <p style="${
+				BASE_STYLES.text
+			}">This is to inform you that the status of your quotation has been updated to:</p>
             
             <div style="${BASE_STYLES.highlight}">
               <div style="display: inline-block; width: 100%; text-align: center;">
@@ -596,7 +676,9 @@ export const QuotationStatusUpdate = (data: QuotationData): string => {
                   ${statusDisplay.title}
                 </div>
               </div>
-              <p style="margin: 12px 0 0; color: #4b5563; font-family: 'Unbounded', sans-serif; text-align: center; font-size: 15px;">${statusDisplay.description}</p>
+              <p style="margin: 12px 0 0; color: #4b5563; font-family: 'Unbounded', sans-serif; text-align: center; font-size: 15px;">${
+					statusDisplay.description
+				}</p>
             </div>
 
             <div style="margin: 24px 0; background: #f7fafc; border-radius: 8px; padding: 16px;">
@@ -613,7 +695,10 @@ export const QuotationStatusUpdate = (data: QuotationData): string => {
                   ${itemsList}
                   <tr>
                     <td colspan="2" style="padding: 12px; font-weight: 600; font-family: 'Unbounded', sans-serif;">Total Amount</td>
-                    <td style="padding: 12px; text-align: right; font-weight: 600; font-family: 'Unbounded', sans-serif;">${new Intl.NumberFormat('en-US', { style: 'currency', currency: data.currency }).format(data.total)}</td>
+                    <td style="padding: 12px; text-align: right; font-weight: 600; font-family: 'Unbounded', sans-serif;">${new Intl.NumberFormat(
+						'en-US',
+						{ style: 'currency', currency: data.currency },
+					).format(data.total)}</td>
                   </tr>
                 </tbody>
               </table>
@@ -645,7 +730,7 @@ export const QuotationStatusUpdate = (data: QuotationData): string => {
 };
 
 export const Invoice = (data: InvoiceData): string => {
-  return `
+	return `
     <div style="${BASE_STYLES?.wrapper}">
       <div style="${BASE_STYLES?.container}">
         <div style="${BASE_STYLES?.header}">
@@ -695,24 +780,25 @@ export const Invoice = (data: InvoiceData): string => {
 };
 
 export const DailyReport = (data: DailyReportData): string => {
-  const {
-    name,
-    date,
-    metrics: {
-      xp,
-      attendance,
-      totalQuotations,
-      totalRevenue,
-      newCustomers,
-      quotationGrowth,
-      revenueGrowth,
-      customerGrowth,
-      userSpecific,
-    },
-    tracking,
-  } = data;
+	const {
+		name,
+		date,
+		metrics: {
+			xp,
+			attendance,
+			totalQuotations,
+			totalRevenue,
+			newCustomers,
+			quotationGrowth,
+			revenueGrowth,
+			customerGrowth,
+			userSpecific,
+		},
+		tracking,
+	} = data;
 
-  const xpSection = xp ? `
+	const xpSection = xp
+		? `
     <div style="${BASE_STYLES.card}">
       <h3 style="${BASE_STYLES.heading}">✨ XP & Level</h3>
       <div style="display: grid; gap: 12px;">
@@ -730,15 +816,19 @@ export const DailyReport = (data: DailyReportData): string => {
         </div>
       </div>
     </div>
-  ` : '';
+  `
+		: '';
 
-  const attendanceSection = attendance ? `
+	const attendanceSection = attendance
+		? `
     <div style="${BASE_STYLES.card}">
       <h3 style="${BASE_STYLES.heading}">⏰ Today's Schedule</h3>
       <div style="display: grid; gap: 12px;">
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f7fafc; border-radius: 8px;">
           <span>Status</span>
-          <strong style="color: ${attendance.status === 'PRESENT' ? '#48bb78' : '#a0aec0'}">${attendance.status}</strong>
+          <strong style="color: ${attendance.status === 'PRESENT' ? '#48bb78' : '#a0aec0'}">${
+				attendance.status
+		  }</strong>
         </div>
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f7fafc; border-radius: 8px;">
           <span>Start Time</span>
@@ -754,9 +844,10 @@ export const DailyReport = (data: DailyReportData): string => {
         </div>
       </div>
     </div>
-  ` : '';
+  `
+		: '';
 
-  const metricsSection = `
+	const metricsSection = `
     <div style="${BASE_STYLES.card}">
       <h3 style="${BASE_STYLES.heading}">Today's Performance</h3>
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px;">
@@ -779,7 +870,8 @@ export const DailyReport = (data: DailyReportData): string => {
     </div>
   `;
 
-  const userMetricsSection = userSpecific ? `
+	const userMetricsSection = userSpecific
+		? `
     <div style="${BASE_STYLES.card}">
       <h3 style="${BASE_STYLES.heading}">Your Activity</h3>
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 16px;">
@@ -805,9 +897,11 @@ export const DailyReport = (data: DailyReportData): string => {
         </div>
       </div>
     </div>
-  ` : '';
+  `
+		: '';
 
-  const trackingSection = tracking ? `
+	const trackingSection = tracking
+		? `
     <div style="${BASE_STYLES.card}">
       <h3 style="${BASE_STYLES.heading}">📍 Location Tracking</h3>
       <div style="display: grid; gap: 12px;">
@@ -819,17 +913,22 @@ export const DailyReport = (data: DailyReportData): string => {
           <span>Average Time per Location</span>
           <strong>${tracking.averageTimePerLocation}</strong>
                 </div>
-        ${tracking.locations.map(location => `
+        ${tracking.locations
+			.map(
+				(location) => `
           <div style="padding: 12px; background: #f7fafc; border-radius: 8px;">
             <div style="font-weight: 500; margin-bottom: 4px;">${location.address}</div>
             <div style="color: #718096; font-size: 14px;">Time spent: ${location.timeSpent}</div>
                 </div>
-              `).join('')}
+              `,
+			)
+			.join('')}
             </div>
           </div>
-  ` : '';
+  `
+		: '';
 
-  return `
+	return `
     <div style="${BASE_STYLES.wrapper}">
       <div style="${BASE_STYLES.container}">
         <div style="${BASE_STYLES.header}">
@@ -876,7 +975,9 @@ export const LicenseCreated = (data: LicenseEmailData): string => `
         <div style="padding: 24px 20px;">
           <div style="${BASE_STYLES.card}">
             <h2 style="${BASE_STYLES.heading}">Welcome, ${data.name}! 💫</h2>
-            <p style="${BASE_STYLES.text}">Your new license has been created successfully. Here are your license details:</p>
+            <p style="${
+				BASE_STYLES.text
+			}">Your new license has been created successfully. Here are your license details:</p>
 
             <div style="${BASE_STYLES.highlight}">
               <div style="display: grid; gap: 12px;">
@@ -891,7 +992,9 @@ export const LicenseCreated = (data: LicenseEmailData): string => `
               </div>
             </div>
 
-            ${createSection("📊 License Limits", `
+            ${createSection(
+				'📊 License Limits',
+				`
               <div style="display: grid; gap: 12px;">
                 <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
                   <span>Max Users</span>
@@ -914,7 +1017,8 @@ export const LicenseCreated = (data: LicenseEmailData): string => `
                   <strong>${data.limits.integrationLimit}</strong>
                 </div>
               </div>
-            `)}
+            `,
+			)}
           </div>
         </div>
 
@@ -944,7 +1048,9 @@ export const LicenseUpdated = (data: LicenseEmailData): string => `
         <div style="padding: 24px 20px;">
           <div style="${BASE_STYLES.card}">
             <h2 style="${BASE_STYLES.heading}">Hi ${data.name},</h2>
-            <p style="${BASE_STYLES.text}">Your license has been updated successfully. Here are your current license details:</p>
+            <p style="${
+				BASE_STYLES.text
+			}">Your license has been updated successfully. Here are your current license details:</p>
 
             <div style="${BASE_STYLES.highlight}">
               <div style="display: grid; gap: 12px;">
@@ -959,7 +1065,9 @@ export const LicenseUpdated = (data: LicenseEmailData): string => `
               </div>
             </div>
 
-            ${createSection("📊 Updated License Limits", `
+            ${createSection(
+				'📊 Updated License Limits',
+				`
               <div style="display: grid; gap: 12px;">
                 <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
                   <span>Max Users</span>
@@ -982,7 +1090,8 @@ export const LicenseUpdated = (data: LicenseEmailData): string => `
                   <strong>${data.limits.integrationLimit}</strong>
                 </div>
               </div>
-            `)}
+            `,
+			)}
           </div>
         </div>
 
@@ -1026,7 +1135,9 @@ export const LicenseLimitReached = (data: LicenseLimitData): string => `
               </div>
             </div>
 
-            ${createSection("📈 Next Steps", `
+            ${createSection(
+				'📈 Next Steps',
+				`
               <ul style="list-style: none; padding: 0; margin: 0;">
                 <li style="margin-bottom: 12px; display: flex; align-items: center;">
                   <span style="background: #dc3545; color: white; margin-right: 8px; padding: 4px 8px; border-radius: 4px;">1</span>
@@ -1041,7 +1152,8 @@ export const LicenseLimitReached = (data: LicenseLimitData): string => `
                   Contact support for assistance
                 </li>
               </ul>
-            `)}
+            `,
+			)}
           </div>
         </div>
 
@@ -1066,7 +1178,9 @@ export const LicenseRenewed = (data: LicenseEmailData): string => `
         <div style="padding: 24px 20px;">
           <div style="${BASE_STYLES.card}">
             <h2 style="${BASE_STYLES.heading}">Thank you, ${data.name}! 💫</h2>
-            <p style="${BASE_STYLES.text}">Your license has been renewed successfully. Here are your updated license details:</p>
+            <p style="${
+				BASE_STYLES.text
+			}">Your license has been renewed successfully. Here are your updated license details:</p>
 
             <div style="${BASE_STYLES.highlight}">
               <div style="display: grid; gap: 12px;">
@@ -1081,7 +1195,9 @@ export const LicenseRenewed = (data: LicenseEmailData): string => `
               </div>
             </div>
 
-            ${createSection("📊 License Limits", `
+            ${createSection(
+				'📊 License Limits',
+				`
               <div style="display: grid; gap: 12px;">
                 <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
                   <span>Max Users</span>
@@ -1104,7 +1220,8 @@ export const LicenseRenewed = (data: LicenseEmailData): string => `
                   <strong>${data.limits.integrationLimit}</strong>
                 </div>
               </div>
-            `)}
+            `,
+			)}
           </div>
         </div>
 
@@ -1129,7 +1246,9 @@ export const LicenseSuspended = (data: LicenseEmailData): string => `
         <div style="padding: 24px 20px;">
           <div style="${BASE_STYLES.card}">
             <h2 style="${BASE_STYLES.heading}">Hi ${data.name},</h2>
-            <p style="${BASE_STYLES.text}">Your license has been suspended. Please contact support immediately to resolve this issue.</p>
+            <p style="${
+				BASE_STYLES.text
+			}">Your license has been suspended. Please contact support immediately to resolve this issue.</p>
 
             <div style="${BASE_STYLES.alert}">
               <div style="display: grid; gap: 12px;">
@@ -1148,7 +1267,9 @@ export const LicenseSuspended = (data: LicenseEmailData): string => `
               </div>
             </div>
 
-            ${createSection("⚡ Next Steps", `
+            ${createSection(
+				'⚡ Next Steps',
+				`
               <ul style="list-style: none; padding: 0; margin: 0;">
                 <li style="margin-bottom: 12px; display: flex; align-items: center;">
                   <span style="background: #dc3545; color: white; margin-right: 8px; padding: 4px 8px; border-radius: 4px;">1</span>
@@ -1163,7 +1284,8 @@ export const LicenseSuspended = (data: LicenseEmailData): string => `
                   Prepare necessary documentation
                 </li>
               </ul>
-            `)}
+            `,
+			)}
           </div>
         </div>
 
@@ -1188,7 +1310,9 @@ export const LicenseActivated = (data: LicenseEmailData): string => `
         <div style="padding: 24px 20px;">
           <div style="${BASE_STYLES.card}">
             <h2 style="${BASE_STYLES.heading}">Welcome back, ${data.name}! 🌟</h2>
-            <p style="${BASE_STYLES.text}">Your license has been activated successfully. You now have full access to all features and services according to your plan.</p>
+            <p style="${
+				BASE_STYLES.text
+			}">Your license has been activated successfully. You now have full access to all features and services according to your plan.</p>
 
             <div style="${BASE_STYLES.highlight}">
               <div style="display: grid; gap: 12px;">
@@ -1203,7 +1327,9 @@ export const LicenseActivated = (data: LicenseEmailData): string => `
               </div>
             </div>
 
-            ${createSection("📊 Available Resources", `
+            ${createSection(
+				'📊 Available Resources',
+				`
               <div style="display: grid; gap: 12px;">
                 <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
                   <span>Max Users</span>
@@ -1226,7 +1352,8 @@ export const LicenseActivated = (data: LicenseEmailData): string => `
                   <strong>${data.limits.integrationLimit}</strong>
                 </div>
               </div>
-            `)}
+            `,
+			)}
           </div>
         </div>
 
@@ -1243,71 +1370,100 @@ export const LicenseActivated = (data: LicenseEmailData): string => `
 `;
 
 export const NewTask = (data: TaskEmailData): string => {
-  const formatDeadline = (date: string) => {
-    const deadlineDate = new Date(date);
-    return deadlineDate.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+	const formatDeadline = (date: string) => {
+		const deadlineDate = new Date(date);
+		return deadlineDate.toLocaleDateString('en-US', {
+			weekday: 'long',
+			year: 'numeric',
+			month: 'long',
+			day: 'numeric',
+			hour: '2-digit',
+			minute: '2-digit',
+		});
+	};
 
-  const getPriorityEmoji = (priority: string) => {
-    switch (priority?.toUpperCase()) {
-      case 'HIGH': return '🔴';
-      case 'MEDIUM': return '🟡';
-      case 'LOW': return '🟢';
-      default: return '⚪';
-    }
-  };
+	const getPriorityEmoji = (priority: string) => {
+		switch (priority?.toUpperCase()) {
+			case 'HIGH':
+				return '🔴';
+			case 'MEDIUM':
+				return '🟡';
+			case 'LOW':
+				return '🟢';
+			default:
+				return '⚪';
+		}
+	};
 
-  const getTaskTypeEmoji = (type: string) => {
-    switch (type?.toUpperCase()) {
-      case 'IN_PERSON_MEETING': return '👥';
-      case 'VIRTUAL_MEETING': return '💻';
-      case 'PHONE_CALL': return '📱';
-      case 'EMAIL': return '📧';
-      case 'DOCUMENT': return '📄';
-      case 'RESEARCH': return '🔍';
-      case 'DEVELOPMENT': return '💻';
-      case 'DESIGN': return '🎨';
-      case 'REVIEW': return '👀';
-      default: return '📋';
-    }
-  };
+	const getTaskTypeEmoji = (type: string) => {
+		switch (type?.toUpperCase()) {
+			case 'IN_PERSON_MEETING':
+				return '👥';
+			case 'VIRTUAL_MEETING':
+				return '💻';
+			case 'PHONE_CALL':
+				return '📱';
+			case 'EMAIL':
+				return '📧';
+			case 'DOCUMENT':
+				return '📄';
+			case 'RESEARCH':
+				return '🔍';
+			case 'DEVELOPMENT':
+				return '💻';
+			case 'DESIGN':
+				return '🎨';
+			case 'REVIEW':
+				return '👀';
+			default:
+				return '📋';
+		}
+	};
 
-  const subtasksList = data.subtasks?.length > 0 
-    ? `<div style="${BASE_STYLES.card}">
+	const subtasksList =
+		data.subtasks?.length > 0
+			? `<div style="${BASE_STYLES.card}">
         <div style="${BASE_STYLES.flexRow}">
           <span style="${BASE_STYLES.icon}">📝</span>
           <h3 style="${BASE_STYLES.heading}">Subtasks</h3>
         </div>
         <ul style="list-style: none; padding: 0; margin: 0;">
-          ${data.subtasks.map((subtask, index) => `
+          ${data.subtasks
+				.map(
+					(subtask, index) => `
             <li style="margin-bottom: 20px; padding: 20px; background: #faf5ff; border-radius: 12px;">
               <div style="${BASE_STYLES.flexRow}">
-                <span style="color: #A855F7; margin-right: 16px; font-size: 18px; font-family: Unbounded, sans-serif;">${index + 1}</span>
+                <span style="color: #A855F7; margin-right: 16px; font-size: 18px; font-family: Unbounded, sans-serif;">${
+					index + 1
+				}</span>
                 <div style="${BASE_STYLES.flexColumn}">
-                  <strong style="color: #1f2937; font-family: Unbounded, sans-serif; font-size: 16px; margin-bottom: 8px;">${subtask.title}</strong>
-                  ${subtask.description ? `<span style="font-size: 14px; color: #6b7280; font-family: Unbounded, sans-serif; line-height: 1.6;">${subtask.description}</span>` : ''}
+                  <strong style="color: #1f2937; font-family: Unbounded, sans-serif; font-size: 16px; margin-bottom: 8px;">${
+						subtask.title
+					}</strong>
+                  ${
+						subtask.description
+							? `<span style="font-size: 14px; color: #6b7280; font-family: Unbounded, sans-serif; line-height: 1.6;">${subtask.description}</span>`
+							: ''
+					}
                 </div>
               </div>
             </li>
-          `).join('')}
+          `,
+				)
+				.join('')}
         </ul>
       </div>`
-    : '';
+			: '';
 
-  return `
+	return `
     <div style="${BASE_STYLES.wrapper}">
       <div style="${BASE_STYLES.container}">
         <div style="${BASE_STYLES.header}">
           <div style="font-size: 56px; margin-bottom: 24px;">✨</div>
           <h1 style="margin: 0 0 12px; font-size: 28px; font-family: Unbounded, sans-serif; font-weight: 600;">New Task Assigned</h1>
-          <p style="margin: 0; opacity: 0.9; font-family: Unbounded, sans-serif; font-size: 16px;">Task ID: ${data.taskId}</p>
+          <p style="margin: 0; opacity: 0.9; font-family: Unbounded, sans-serif; font-size: 16px;">Task ID: ${
+				data.taskId
+			}</p>
         </div>
 
         <div style="padding: 32px 24px;">
@@ -1319,7 +1475,10 @@ export const NewTask = (data: TaskEmailData): string => {
             
             <div style="margin: 24px 0;">
               <span style="${BASE_STYLES.tag}">${getPriorityEmoji(data.priority)} ${data.priority}</span>
-              <span style="${BASE_STYLES.tag}">${getTaskTypeEmoji(data.taskType)} ${data.taskType.replace(/_/g, ' ')}</span>
+              <span style="${BASE_STYLES.tag}">${getTaskTypeEmoji(data.taskType)} ${data.taskType.replace(
+		/_/g,
+		' ',
+	)}</span>
               <span style="${BASE_STYLES.tag}">🎯 ${data.status}</span>
             </div>
 
@@ -1332,33 +1491,45 @@ export const NewTask = (data: TaskEmailData): string => {
             <div style="${BASE_STYLES.grid}">
               <div style="${BASE_STYLES.flexColumn}">
                 <span style="color: #6b7280; font-size: 14px; font-family: Unbounded, sans-serif;">⏰ Deadline</span>
-                <strong style="color: #1f2937; font-family: Unbounded, sans-serif; font-size: 16px; margin-top: 8px;">${formatDeadline(data.deadline)}</strong>
+                <strong style="color: #1f2937; font-family: Unbounded, sans-serif; font-size: 16px; margin-top: 8px;">${formatDeadline(
+					data.deadline,
+				)}</strong>
               </div>
               <div style="${BASE_STYLES.flexColumn}">
                 <span style="color: #6b7280; font-size: 14px; font-family: Unbounded, sans-serif;">👤 Assigned by</span>
-                <strong style="color: #1f2937; font-family: Unbounded, sans-serif; font-size: 16px; margin-top: 8px;">${data.assignedBy}</strong>
+                <strong style="color: #1f2937; font-family: Unbounded, sans-serif; font-size: 16px; margin-top: 8px;">${
+					data.assignedBy
+				}</strong>
               </div>
             </div>
           </div>
 
           ${subtasksList}
 
-          ${data.attachments?.length > 0 ? `
+          ${
+				data.attachments?.length > 0
+					? `
             <div style="${BASE_STYLES.card}">
               <div style="${BASE_STYLES.flexRow}">
                 <span style="${BASE_STYLES.icon}">📎</span>
                 <h3 style="${BASE_STYLES.heading}">Attachments</h3>
               </div>
               <div style="display: grid; gap: 16px;">
-                ${data.attachments.map(attachment => `
+                ${data.attachments
+					.map(
+						(attachment) => `
                   <a href="${attachment.url}" style="${BASE_STYLES.flexRow}; padding: 16px; background: #faf5ff; border-radius: 12px; text-decoration: none;">
                     <span style="margin-right: 16px; font-size: 20px;">📄</span>
                     <span style="color: #A855F7; font-family: Unbounded, sans-serif;">${attachment.name}</span>
                   </a>
-                `).join('')}
+                `,
+					)
+					.join('')}
               </div>
             </div>
-          ` : ''}
+          `
+					: ''
+			}
 
           <div style="text-align: center; margin-top: 40px;">
             <a href="${process.env.FRONTEND_URL}/tasks/${data.taskId}" style="${BASE_STYLES.button}">
@@ -1381,66 +1552,89 @@ export const NewTask = (data: TaskEmailData): string => {
 };
 
 export const TaskUpdated = (data: TaskEmailData): string => {
-  const formatDeadline = (date: string) => {
-    const deadlineDate = new Date(date);
-    return deadlineDate.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+	const formatDeadline = (date: string) => {
+		const deadlineDate = new Date(date);
+		return deadlineDate.toLocaleDateString('en-US', {
+			weekday: 'long',
+			year: 'numeric',
+			month: 'long',
+			day: 'numeric',
+			hour: '2-digit',
+			minute: '2-digit',
+		});
+	};
 
-  const getPriorityEmoji = (priority: string) => {
-    switch (priority?.toUpperCase()) {
-      case 'HIGH': return '🔴';
-      case 'MEDIUM': return '🟡';
-      case 'LOW': return '🟢';
-      default: return '⚪';
-    }
-  };
+	const getPriorityEmoji = (priority: string) => {
+		switch (priority?.toUpperCase()) {
+			case 'HIGH':
+				return '🔴';
+			case 'MEDIUM':
+				return '🟡';
+			case 'LOW':
+				return '🟢';
+			default:
+				return '⚪';
+		}
+	};
 
-  const getTaskTypeEmoji = (type: string) => {
-    switch (type?.toUpperCase()) {
-      case 'IN_PERSON_MEETING': return '👥';
-      case 'VIRTUAL_MEETING': return '💻';
-      case 'PHONE_CALL': return '📱';
-      case 'EMAIL': return '📧';
-      case 'DOCUMENT': return '📄';
-      case 'RESEARCH': return '🔍';
-      case 'DEVELOPMENT': return '💻';
-      case 'DESIGN': return '🎨';
-      case 'REVIEW': return '👀';
-      default: return '📋';
-    }
-  };
+	const getTaskTypeEmoji = (type: string) => {
+		switch (type?.toUpperCase()) {
+			case 'IN_PERSON_MEETING':
+				return '👥';
+			case 'VIRTUAL_MEETING':
+				return '💻';
+			case 'PHONE_CALL':
+				return '📱';
+			case 'EMAIL':
+				return '📧';
+			case 'DOCUMENT':
+				return '📄';
+			case 'RESEARCH':
+				return '🔍';
+			case 'DEVELOPMENT':
+				return '💻';
+			case 'DESIGN':
+				return '🎨';
+			case 'REVIEW':
+				return '👀';
+			default:
+				return '📋';
+		}
+	};
 
-  const subtasksList = data.subtasks?.length > 0 
-    ? `<div style="${BASE_STYLES.card}">
+	const subtasksList =
+		data.subtasks?.length > 0
+			? `<div style="${BASE_STYLES.card}">
         <div style="${BASE_STYLES.flexRow}">
           <span style="${BASE_STYLES.icon}">📝</span>
           <h3 style="${BASE_STYLES.heading}">Subtasks</h3>
         </div>
         <ul style="list-style: none; padding: 0; margin: 0;">
-          ${data.subtasks.map((subtask, index) => `
+          ${data.subtasks
+				.map(
+					(subtask, index) => `
             <li style="margin-bottom: 12px; padding: 12px; background: #faf5ff; border-radius: 8px;">
               <div style="${BASE_STYLES.flexRow}">
                 <span style="color: #A855F7; margin-right: 8px;">${index + 1}</span>
                 <div style="${BASE_STYLES.flexColumn}">
                   <strong style="color: #1f2937;">${subtask.title}</strong>
-                  ${subtask.description ? `<span style="font-size: 14px; color: #6b7280;">${subtask.description}</span>` : ''}
+                  ${
+						subtask.description
+							? `<span style="font-size: 14px; color: #6b7280;">${subtask.description}</span>`
+							: ''
+					}
                   <span style="font-size: 12px; color: #A855F7; margin-top: 4px;">Status: ${subtask.status}</span>
                 </div>
               </div>
             </li>
-          `).join('')}
+          `,
+				)
+				.join('')}
         </ul>
       </div>`
-    : '';
+			: '';
 
-  return `
+	return `
     <div style="${BASE_STYLES.wrapper}">
       <div style="${BASE_STYLES.container}">
         <div style="${BASE_STYLES.header}">
@@ -1458,7 +1652,10 @@ export const TaskUpdated = (data: TaskEmailData): string => {
             
             <div style="margin: 16px 0;">
               <span style="${BASE_STYLES.tag}">${getPriorityEmoji(data.priority)} ${data.priority}</span>
-              <span style="${BASE_STYLES.tag}">${getTaskTypeEmoji(data.taskType)} ${data.taskType.replace(/_/g, ' ')}</span>
+              <span style="${BASE_STYLES.tag}">${getTaskTypeEmoji(data.taskType)} ${data.taskType.replace(
+		/_/g,
+		' ',
+	)}</span>
               <span style="${BASE_STYLES.tag}">🎯 ${data.status}</span>
             </div>
 
@@ -1471,7 +1668,9 @@ export const TaskUpdated = (data: TaskEmailData): string => {
             <div style="${BASE_STYLES.grid}">
               <div style="${BASE_STYLES.flexColumn}">
                 <span style="color: #6b7280; font-size: 14px;">⏰ Deadline</span>
-                <strong style="color: #1f2937;">${data.deadline ? formatDeadline(data.deadline) : 'No deadline set'}</strong>
+                <strong style="color: #1f2937;">${
+					data.deadline ? formatDeadline(data.deadline) : 'No deadline set'
+				}</strong>
               </div>
               <div style="${BASE_STYLES.flexColumn}">
                 <span style="color: #6b7280; font-size: 14px;">👤 Last updated by</span>
@@ -1482,22 +1681,30 @@ export const TaskUpdated = (data: TaskEmailData): string => {
 
           ${subtasksList}
 
-          ${data.attachments?.length > 0 ? `
+          ${
+				data.attachments?.length > 0
+					? `
             <div style="${BASE_STYLES.card}">
               <div style="${BASE_STYLES.flexRow}">
                 <span style="${BASE_STYLES.icon}">📎</span>
                 <h3 style="${BASE_STYLES.heading}">Attachments</h3>
               </div>
               <div style="display: grid; gap: 12px;">
-                ${data.attachments.map(attachment => `
+                ${data.attachments
+					.map(
+						(attachment) => `
                   <a href="${attachment.url}" style="${BASE_STYLES.flexRow}; padding: 12px; background: #faf5ff; border-radius: 8px; text-decoration: none;">
                     <span style="margin-right: 8px;">📄</span>
                     <span style="color: #A855F7;">${attachment.name}</span>
                   </a>
-                `).join('')}
+                `,
+					)
+					.join('')}
               </div>
             </div>
-          ` : ''}
+          `
+					: ''
+			}
 
           <div style="text-align: center; margin-top: 32px;">
             <a href="${process.env.FRONTEND_URL}/tasks/${data.taskId}" style="${BASE_STYLES.button}">
@@ -1544,9 +1751,12 @@ export const TaskReminderAssignee = (data: TaskReminderData): string => `
                 <div style="display: flex; justify-content: space-between;">
                   <span>Priority</span>
                   <strong style="color: ${
-                    data.task.priority === 'HIGH' ? '#dc3545' : 
-                    data.task.priority === 'MEDIUM' ? '#ffc107' : '#28a745'
-                  }">${data.task.priority}</strong>
+						data.task.priority === 'HIGH'
+							? '#dc3545'
+							: data.task.priority === 'MEDIUM'
+							? '#ffc107'
+							: '#28a745'
+					}">${data.task.priority}</strong>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
                   <span>Status</span>
@@ -1558,24 +1768,34 @@ export const TaskReminderAssignee = (data: TaskReminderData): string => `
             <div style="${BASE_STYLES.card}">
               <h3 style="${BASE_STYLES.heading}">Progress</h3>
               <div style="background: #e9ecef; border-radius: 10px; padding: 3px;">
-                <div style="background: #0d6efd; border-radius: 8px; padding: 8px; color: white; text-align: center; width: ${data.task.progress}%">
+                <div style="background: #0d6efd; border-radius: 8px; padding: 8px; color: white; text-align: center; width: ${
+					data.task.progress
+				}%">
                   ${data.task.progress}%
                 </div>
               </div>
             </div>
 
-            ${data.task.subtasks?.length ? `
+            ${
+				data.task.subtasks?.length
+					? `
               <div style="${BASE_STYLES.card}">
                 <h3 style="${BASE_STYLES.heading}">Subtasks</h3>
                 <ul style="list-style: none; padding: 0; margin: 0;">
-                  ${data.task.subtasks.map(st => `
+                  ${data.task.subtasks
+						.map(
+							(st) => `
                     <li style="padding: 12px; background: #f7fafc; border-radius: 8px; margin-bottom: 8px;">
                       ${st.title} - ${st.status}
                     </li>
-                  `).join('')}
+                  `,
+						)
+						.join('')}
                 </ul>
               </div>
-            ` : ''}
+            `
+					: ''
+			}
           </div>
 
           <div style="${BASE_STYLES.alert}">
@@ -1592,7 +1812,7 @@ export const TaskReminderAssignee = (data: TaskReminderData): string => `
 `;
 
 export const TaskReminderCreator = (data: TaskReminderData): string => {
-  return `
+	return `
     <div style="${BASE_STYLES.wrapper}">
       <div style="${BASE_STYLES.container}">
         <div style="${BASE_STYLES.header}">
@@ -1617,9 +1837,12 @@ export const TaskReminderCreator = (data: TaskReminderData): string => {
                 <div style="display: flex; justify-content: space-between;">
                   <span>Priority</span>
                   <strong style="color: ${
-                    data.task.priority === 'HIGH' ? '#dc3545' : 
-                    data.task.priority === 'MEDIUM' ? '#ffc107' : '#28a745'
-                  }">${data.task.priority}</strong>
+						data.task.priority === 'HIGH'
+							? '#dc3545'
+							: data.task.priority === 'MEDIUM'
+							? '#ffc107'
+							: '#28a745'
+					}">${data.task.priority}</strong>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
                   <span>Status</span>
@@ -1635,27 +1858,39 @@ export const TaskReminderCreator = (data: TaskReminderData): string => {
             <div style="${BASE_STYLES.card}">
               <h3 style="${BASE_STYLES.heading}">Assignees</h3>
               <div style="display: grid; gap: 8px;">
-                ${data.task.assignees.map(assignee => `
+                ${data.task.assignees
+					.map(
+						(assignee) => `
                   <div style="padding: 12px; background: #f7fafc; border-radius: 8px;">
                     <strong>${assignee.name}</strong>
                     <div style="color: #666; font-size: 14px;">${assignee.email}</div>
                   </div>
-                `).join('')}
+                `,
+					)
+					.join('')}
               </div>
             </div>
 
-            ${data.task.subtasks?.length ? `
+            ${
+				data.task.subtasks?.length
+					? `
               <div style="${BASE_STYLES.card}">
                 <h3 style="${BASE_STYLES.heading}">Subtasks Status</h3>
                 <ul style="list-style: none; padding: 0; margin: 0;">
-                  ${data.task.subtasks.map(st => `
+                  ${data.task.subtasks
+						.map(
+							(st) => `
                     <li style="padding: 12px; background: #f7fafc; border-radius: 8px; margin-bottom: 8px;">
                       ${st.title} - ${st.status}
                     </li>
-                  `).join('')}
+                  `,
+						)
+						.join('')}
                 </ul>
               </div>
-            ` : ''}
+            `
+					: ''
+			}
           </div>
 
           <div style="${BASE_STYLES.alert}">
@@ -1724,82 +1959,116 @@ export const NewUserAdminNotification = (data: NewUserAdminNotificationData): st
 `;
 
 export const TaskCompleted = (data: TaskCompletedEmailData): string => {
-  const formatDeadline = (date: string) => {
-    if (!date) return 'No deadline set';
-    try {
-      const dateObj = new Date(date);
-      return dateObj.toLocaleString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-    } catch (e) {
-      return date;
-    }
-  };
+	const formatDeadline = (date: string) => {
+		if (!date) return 'No deadline set';
+		try {
+			const dateObj = new Date(date);
+			return dateObj.toLocaleString('en-US', {
+				year: 'numeric',
+				month: 'short',
+				day: 'numeric',
+				hour: '2-digit',
+				minute: '2-digit',
+			});
+		} catch (e) {
+			return date;
+		}
+	};
 
-  const getPriorityEmoji = (priority: string) => {
-    switch (priority.toUpperCase()) {
-      case 'HIGH': return '🔴';
-      case 'MEDIUM': return '🟠';
-      case 'LOW': return '🟢';
-      default: return '⚪';
-    }
-  };
+	const getPriorityEmoji = (priority: string) => {
+		switch (priority.toUpperCase()) {
+			case 'HIGH':
+				return '🔴';
+			case 'MEDIUM':
+				return '🟠';
+			case 'LOW':
+				return '🟢';
+			default:
+				return '⚪';
+		}
+	};
 
-  const getTaskTypeEmoji = (type: string) => {
-    switch (type.toUpperCase()) {
-      case 'INSTALLATION': return '🔧';
-      case 'REPAIR': return '🛠️';
-      case 'MAINTENANCE': return '🔩';
-      case 'INSPECTION': return '🔍';
-      case 'CONSULTATION': return '💬';
-      case 'DELIVERY': return '📦';
-      case 'MEETING': return '👥';
-      case 'TRAINING': return '📚';
-      case 'OTHER': return '📝';
-      default: return '📋';
-    }
-  };
+	const getTaskTypeEmoji = (type: string) => {
+		switch (type.toUpperCase()) {
+			case 'INSTALLATION':
+				return '🔧';
+			case 'REPAIR':
+				return '🛠️';
+			case 'MAINTENANCE':
+				return '🔩';
+			case 'INSPECTION':
+				return '🔍';
+			case 'CONSULTATION':
+				return '💬';
+			case 'DELIVERY':
+				return '📦';
+			case 'MEETING':
+				return '👥';
+			case 'TRAINING':
+				return '📚';
+			case 'OTHER':
+				return '📝';
+			default:
+				return '📋';
+		}
+	};
 
-  const jobCardsList = data.jobCards && data.jobCards.length > 0 ? `
+	const jobCardsList =
+		data.jobCards && data.jobCards.length > 0
+			? `
     <div style="${BASE_STYLES.card}">
       <h3 style="margin: 0 0 16px; color: #374151; font-size: 16px;">Job Cards</h3>
       <ul style="list-style: none; padding: 0; margin: 0;">
-        ${data.jobCards.map(card => `
+        ${data.jobCards
+			.map(
+				(card) => `
           <li style="margin-bottom: 12px;">
             <a href="${card.url}" style="${BASE_STYLES.button}" target="_blank">
               View ${card.name}
             </a>
           </li>
-        `).join('')}
+        `,
+			)
+			.join('')}
       </ul>
     </div>
-  ` : '';
+  `
+			: '';
 
-  const subtasksList = data.subtasks && data.subtasks.length > 0 ? `
+	const subtasksList =
+		data.subtasks && data.subtasks.length > 0
+			? `
     <div style="${BASE_STYLES.card}">
       <h3 style="margin: 0 0 16px; color: #374151; font-size: 16px;">Completed Work</h3>
       <ul style="list-style: none; padding: 0; margin: 0;">
-        ${data.subtasks.map(subtask => `
+        ${data.subtasks
+			.map(
+				(subtask) => `
           <li style="padding: 12px; background: #f7fafc; border-radius: 8px; margin-bottom: 8px;">
             <div style="font-weight: 600;">${subtask.title}</div>
-            ${subtask.description ? `<div style="font-size: 14px; color: #64748b; margin-top: 4px;">${subtask.description}</div>` : ''}
+            ${
+				subtask.description
+					? `<div style="font-size: 14px; color: #64748b; margin-top: 4px;">${subtask.description}</div>`
+					: ''
+			}
           </li>
-        `).join('')}
+        `,
+			)
+			.join('')}
       </ul>
     </div>
-  ` : '';
+  `
+			: '';
 
-  return `
+	return `
     <div style="${BASE_STYLES.wrapper}">
       <div style="${BASE_STYLES.container}">
         <div style="${BASE_STYLES.header}">
           <div style="font-size: 56px; margin-bottom: 24px;">✅</div>
           <h1 style="margin: 0 0 12px; font-size: 28px; font-family: Unbounded, sans-serif; font-weight: 600;">Task Completed</h1>
-          <p style="margin: 0; opacity: 0.9; font-family: Unbounded, sans-serif; font-size: 16px;">Task ID: ${data.taskId}</p>
+          <p style="margin: 0; opacity: 0.9; font-family: Unbounded, sans-serif; font-size: 16px;">Task ID: ${
+				data.taskId
+			}</p>
         </div>
 
         <div style="padding: 32px 24px;">
@@ -1811,7 +2080,10 @@ export const TaskCompleted = (data: TaskCompletedEmailData): string => {
             
             <div style="margin: 24px 0;">
               <span style="${BASE_STYLES.tag}">${getPriorityEmoji(data.priority)} ${data.priority}</span>
-              <span style="${BASE_STYLES.tag}">${getTaskTypeEmoji(data.taskType)} ${data.taskType.replace(/_/g, ' ')}</span>
+              <span style="${BASE_STYLES.tag}">${getTaskTypeEmoji(data.taskType)} ${data.taskType.replace(
+		/_/g,
+		' ',
+	)}</span>
               <span style="${BASE_STYLES.tag}">✅ COMPLETED</span>
             </div>
 
@@ -1824,11 +2096,15 @@ export const TaskCompleted = (data: TaskCompletedEmailData): string => {
             <div style="${BASE_STYLES.grid}">
               <div style="${BASE_STYLES.flexColumn}">
                 <span style="color: #6b7280; font-size: 14px; font-family: Unbounded, sans-serif;">⏰ Completed On</span>
-                <strong style="color: #1f2937; font-family: Unbounded, sans-serif; font-size: 16px; margin-top: 8px;">${formatDeadline(data.completionDate)}</strong>
+                <strong style="color: #1f2937; font-family: Unbounded, sans-serif; font-size: 16px; margin-top: 8px;">${formatDeadline(
+					data.completionDate,
+				)}</strong>
               </div>
               <div style="${BASE_STYLES.flexColumn}">
                 <span style="color: #6b7280; font-size: 14px; font-family: Unbounded, sans-serif;">👤 Completed by</span>
-                <strong style="color: #1f2937; font-family: Unbounded, sans-serif; font-size: 16px; margin-top: 8px;">${data.completedBy || data.assignedBy}</strong>
+                <strong style="color: #1f2937; font-family: Unbounded, sans-serif; font-size: 16px; margin-top: 8px;">${
+					data.completedBy || data.assignedBy
+				}</strong>
               </div>
             </div>
           </div>
@@ -1873,13 +2149,17 @@ export const LeadConvertedClient = (data: LeadConvertedClientData): string => `
               This transition gives you access to our full suite of services and dedicated support.
             </p>
             
-            ${data.dashboardLink ? `
+            ${
+				data.dashboardLink
+					? `
             <div style="text-align: center; margin: 24px 0;">
               <a href="${data.dashboardLink}" style="${BASE_STYLES.button}">
                 Access Your Client Dashboard
               </a>
             </div>
-            ` : ''}
+            `
+					: ''
+			}
 
             <div style="${BASE_STYLES.alert}">
               <p style="margin: 0;">
@@ -1889,7 +2169,11 @@ export const LeadConvertedClient = (data: LeadConvertedClientData): string => `
             </div>
           </div>
 
-          ${data.accountManagerName ? createSection("👋 Your Dedicated Manager", `
+          ${
+				data.accountManagerName
+					? createSection(
+							'👋 Your Dedicated Manager',
+							`
             <p style="${BASE_STYLES.text}">
               You've been assigned a dedicated account manager to ensure your experience with us is exceptional:
             </p>
@@ -1898,18 +2182,32 @@ export const LeadConvertedClient = (data: LeadConvertedClientData): string => `
               ${data.accountManagerEmail ? `<p style="margin: 0 0 6px;">📧 ${data.accountManagerEmail}</p>` : ''}
               ${data.accountManagerPhone ? `<p style="margin: 0;">📱 ${data.accountManagerPhone}</p>` : ''}
             </div>
-          `) : ''}
+          `,
+					  )
+					: ''
+			}
 
-          ${data.nextSteps && data.nextSteps.length > 0 ? createSection("🚀 Next Steps", `
+          ${
+				data.nextSteps && data.nextSteps.length > 0
+					? createSection(
+							'🚀 Next Steps',
+							`
             <ul style="list-style: none; padding: 0; margin: 0;">
-              ${data.nextSteps.map(step => `
+              ${data.nextSteps
+					.map(
+						(step) => `
                 <li style="margin-bottom: 12px; display: flex; align-items: flex-start;">
                   <span style="color: #A855F7; margin-right: 8px;">✓</span>
                   <span>${step}</span>
                 </li>
-              `).join('')}
+              `,
+					)
+					.join('')}
             </ul>
-          `) : ''}
+          `,
+					  )
+					: ''
+			}
         </div>
 
         <div style="${BASE_STYLES.footer}">
@@ -1942,16 +2240,22 @@ export const LeadConvertedCreator = (data: LeadConvertedCreatorData): string => 
               </p>
             </div>
 
-            ${data.dashboardLink ? `
+            ${
+				data.dashboardLink
+					? `
             <div style="text-align: center; margin: 24px 0;">
               <a href="${data.dashboardLink}" style="${BASE_STYLES.button}">
                 View Client Details
               </a>
             </div>
-            ` : ''}
+            `
+					: ''
+			}
           </div>
 
-          ${createSection("📋 Client Details", `
+          ${createSection(
+				'📋 Client Details',
+				`
             <p style="${BASE_STYLES.text}">
               Here's a summary of the new client's information:
             </p>
@@ -1960,9 +2264,12 @@ export const LeadConvertedCreator = (data: LeadConvertedCreatorData): string => 
               <p style="margin: 0 0 6px;">📧 ${data.clientEmail}</p>
               ${data.clientPhone ? `<p style="margin: 0;">📱 ${data.clientPhone}</p>` : ''}
             </div>
-          `)}
+          `,
+			)}
 
-          ${createSection("⚡ Next Steps", `
+          ${createSection(
+				'⚡ Next Steps',
+				`
             <ul style="list-style: none; padding: 0; margin: 0;">
               <li style="margin-bottom: 12px; display: flex; align-items: flex-start;">
                 <span style="color: #A855F7; margin-right: 8px;">✓</span>
@@ -1977,11 +2284,104 @@ export const LeadConvertedCreator = (data: LeadConvertedCreatorData): string => 
                 <span>Develop an account growth strategy</span>
               </li>
             </ul>
-          `)}
+          `,
+			)}
         </div>
 
         <div style="${BASE_STYLES.footer}">
           <p style="margin: 0;">The client has been notified of their new status.</p>
+        </div>
+      </div>
+    </div>
+`;
+
+export const LeadReminder = (data: LeadReminderData): string => `
+    <div style="${BASE_STYLES.wrapper}">
+      <div style="${BASE_STYLES.container}">
+        <div style="${BASE_STYLES.header}">
+          <h1 style="margin: 16px 0 8px; font-size: 24px;">Pending Leads Reminder 🔔</h1>
+          <p style="margin: 0; opacity: 0.9;">You have ${data.leadsCount} lead(s) waiting for action</p>
+        </div>
+
+        <div style="padding: 24px 20px;">
+          <div style="${BASE_STYLES.card}">
+            <h2 style="${BASE_STYLES.heading}">Hi ${data.name},</h2>
+            <p style="${BASE_STYLES.text}">
+              This is a friendly reminder that you have ${
+					data.leadsCount
+				} lead(s) in pending status that require your attention.
+              Timely follow-up increases conversion rates by up to 40%.
+            </p>
+            
+            <div style="text-align: center; margin: 24px 0;">
+              <a href="${data.dashboardLink}" style="${BASE_STYLES.button}">
+                View Your Leads
+              </a>
+            </div>
+          </div>
+
+          <div style="${BASE_STYLES.card}">
+            <h3 style="${BASE_STYLES.subheading}">Pending Leads:</h3>
+            
+            ${data.leads
+				.map(
+					(lead, index) => `
+              <div style="padding: 16px; background: ${
+					index % 2 === 0 ? '#f9fafb' : '#ffffff'
+				}; border-radius: 8px; margin-bottom: 12px; border: 1px solid #f3f4f6;">
+                <div style="${BASE_STYLES.flexRow}">
+                  ${
+						lead.image
+							? `<div style="width: 48px; height: 48px; border-radius: 50%; background-color: #f3f4f6; margin-right: 16px; background-image: url('${lead.image}'); background-size: cover;"></div>`
+							: `<div style="width: 48px; height: 48px; border-radius: 50%; background-color: #f3f4f6; margin-right: 16px; display: flex; align-items: center; justify-content: center; color: #A855F7; font-weight: 600;">${
+									lead.name ? lead.name.charAt(0).toUpperCase() : '?'
+							  }</div>`
+					}
+                  <div style="${BASE_STYLES.flexColumn}">
+                    <span style="font-weight: 600; font-size: 16px;">${lead.name || 'Unnamed Lead'}</span>
+                    ${lead.email ? `<span style="color: #6c757d; font-size: 14px;">${lead.email}</span>` : ''}
+                    ${lead.phone ? `<span style="color: #6c757d; font-size: 14px;">${lead.phone}</span>` : ''}
+                    <span style="color: #6c757d; font-size: 14px;">Created: ${lead.createdAt}</span>
+                  </div>
+                </div>
+                ${
+					lead.notes
+						? `
+                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed #f3f4f6;">
+                  <p style="margin: 0; color: #6c757d; font-size: 14px;">${lead.notes}</p>
+                </div>
+                `
+						: ''
+				}
+              </div>
+            `,
+				)
+				.join('')}
+          </div>
+
+          ${createSection(
+				'💡 Quick Tips',
+				`
+            <ul style="list-style: none; padding: 0; margin: 0;">
+              <li style="margin-bottom: 12px; display: flex; align-items: center;">
+                <span style="color: #A855F7; margin-right: 8px;">✓</span>
+                Respond to new leads within 5 minutes to increase conversion chances by 80%
+              </li>
+              <li style="margin-bottom: 12px; display: flex; align-items: center;">
+                <span style="color: #A855F7; margin-right: 8px;">✓</span>
+                Use email and phone for initial contact - don't rely on just one method
+              </li>
+              <li style="display: flex; align-items: center;">
+                <span style="color: #A855F7; margin-right: 8px;">✓</span>
+                Document all interactions in the lead's notes for better follow-up
+              </li>
+            </ul>
+          `,
+			)}
+        </div>
+
+        <div style="${BASE_STYLES.footer}">
+          <p style="margin: 0;">This is an automated reminder from Loro.</p>
         </div>
       </div>
     </div>
@@ -2003,32 +2403,52 @@ export const TaskFlagCreated = (data: TaskFlagEmailData): string => `
                         <strong>Flag Title:</strong> ${data.flagTitle}<br>
                         <strong>Description:</strong> ${data.flagDescription}<br>
                         <strong>Created By:</strong> ${data.createdBy.name}<br>
-                        ${data.flagDeadline ? `<strong>Deadline:</strong> ${new Date(data.flagDeadline).toLocaleDateString()}<br>` : ''}
+                        ${
+							data.flagDeadline
+								? `<strong>Deadline:</strong> ${new Date(data.flagDeadline).toLocaleDateString()}<br>`
+								: ''
+						}
                         <strong>Status:</strong> ${data.flagStatus}
                     </p>
 
-                    ${data.items && data.items.length > 0 ? `
+                    ${
+						data.items && data.items.length > 0
+							? `
                         <h3 style="${BASE_STYLES.subheading}">Checklist Items</h3>
                         <ul style="list-style: none; padding: 0;">
-                            ${data.items.map(item => `
+                            ${data.items
+								.map(
+									(item) => `
                                 <li style="margin-bottom: 8px;">
                                     • ${item.title}${item.description ? ` - ${item.description}` : ''}
                                 </li>
-                            `).join('')}
+                            `,
+								)
+								.join('')}
                         </ul>
-                    ` : ''}
+                    `
+							: ''
+					}
 
-                    ${data.comments && data.comments.length > 0 ? `
+                    ${
+						data.comments && data.comments.length > 0
+							? `
                         <h3 style="${BASE_STYLES.subheading}">Initial Comments</h3>
-                        ${data.comments.map(comment => `
+                        ${data.comments
+							.map(
+								(comment) => `
                             <div style="margin-bottom: 16px;">
                                 <p style="${BASE_STYLES.text}">
                                     <strong>${comment.createdBy.name}:</strong> ${comment.content}<br>
                                     <small style="color: #666;">${new Date(comment.createdAt).toLocaleString()}</small>
                                 </p>
                             </div>
-                        `).join('')}
-                    ` : ''}
+                        `,
+							)
+							.join('')}
+                    `
+							: ''
+					}
                 </div>
             </div>
 
@@ -2057,16 +2477,24 @@ export const TaskFlagUpdated = (data: TaskFlagEmailData): string => `
                         <strong>Updated By:</strong> ${data.createdBy.name}
                     </p>
 
-                    ${data.items && data.items.length > 0 ? `
+                    ${
+						data.items && data.items.length > 0
+							? `
                         <h3 style="${BASE_STYLES.subheading}">Checklist Progress</h3>
                         <ul style="list-style: none; padding: 0;">
-                            ${data.items.map(item => `
+                            ${data.items
+								.map(
+									(item) => `
                                 <li style="margin-bottom: 8px;">
                                     • ${item.title} - ${item.status}
                                 </li>
-                            `).join('')}
+                            `,
+								)
+								.join('')}
                         </ul>
-                    ` : ''}
+                    `
+							: ''
+					}
                 </div>
             </div>
 
@@ -2095,28 +2523,45 @@ export const TaskFlagResolved = (data: TaskFlagEmailData): string => `
                         <strong>Resolution Time:</strong> ${new Date().toLocaleString()}
                     </p>
 
-                    ${data.items && data.items.length > 0 ? `
+                    ${
+						data.items && data.items.length > 0
+							? `
                         <h3 style="${BASE_STYLES.subheading}">Completed Checklist</h3>
                         <ul style="list-style: none; padding: 0;">
-                            ${data.items.map(item => `
+                            ${data.items
+								.map(
+									(item) => `
                                 <li style="margin-bottom: 8px;">
                                     • ${item.title} - ${item.status}
                                 </li>
-                            `).join('')}
+                            `,
+								)
+								.join('')}
                         </ul>
-                    ` : ''}
+                    `
+							: ''
+					}
 
-                    ${data.comments && data.comments.length > 0 ? `
+                    ${
+						data.comments && data.comments.length > 0
+							? `
                         <h3 style="${BASE_STYLES.subheading}">Latest Comments</h3>
-                        ${data.comments.slice(-2).map(comment => `
+                        ${data.comments
+							.slice(-2)
+							.map(
+								(comment) => `
                             <div style="margin-bottom: 16px;">
                                 <p style="${BASE_STYLES.text}">
                                     <strong>${comment.createdBy.name}:</strong> ${comment.content}<br>
                                     <small style="color: #666;">${new Date(comment.createdAt).toLocaleString()}</small>
                                 </p>
                             </div>
-                        `).join('')}
-                    ` : ''}
+                        `,
+							)
+							.join('')}
+                    `
+							: ''
+					}
                 </div>
             </div>
 
@@ -2158,3 +2603,400 @@ export const TaskFeedbackAdded = (data: TaskFeedbackEmailData): string => `
         </div>
     </div>
 `;
+
+export const TaskOverdueMissed = (data: TaskOverdueMissedData): string => {
+	// Helper function for priority badges inside the function
+	const getPriorityBadge = (priority) => {
+		switch (priority) {
+			case 'URGENT':
+				return '🔴 Urgent';
+			case 'HIGH':
+				return '🟠 High';
+			case 'MEDIUM':
+				return '🟡 Medium';
+			case 'LOW':
+				return '🟢 Low';
+			default:
+				return priority;
+		}
+	};
+
+	return `
+    <div style="${BASE_STYLES.wrapper}">
+      <div style="${BASE_STYLES.container}">
+        <div style="${BASE_STYLES.header}">
+          <h1 style="margin: 16px 0 8px; font-size: 24px;">Attention Required: Overdue & Missed Tasks ⚠️</h1>
+          <p style="margin: 0; opacity: 0.9;">You have ${
+				data.overdueMissedCount.total
+			} task(s) that need your attention</p>
+        </div>
+
+        <div style="padding: 24px 20px;">
+          <div style="${BASE_STYLES.card}">
+            <h2 style="${BASE_STYLES.heading}">Hi ${data.name},</h2>
+            <p style="${BASE_STYLES.text}">
+              This is a notification regarding your overdue and missed tasks:
+            </p>
+            
+            <div style="${BASE_STYLES.highlight}">
+              <div style="${BASE_STYLES.flexRow}">
+                <div style="text-align: center; padding: 0 12px; flex: 1;">
+                  <div style="font-size: 32px; font-weight: 700; color: #EF4444;">${
+						data.overdueMissedCount.overdue
+					}</div>
+                  <div style="font-size: 14px; color: #6c757d;">Overdue Tasks</div>
+                </div>
+                <div style="text-align: center; padding: 0 12px; flex: 1;">
+                  <div style="font-size: 32px; font-weight: 700; color: #F59E0B;">${
+						data.overdueMissedCount.missed
+					}</div>
+                  <div style="font-size: 14px; color: #6c757d;">Missed Tasks</div>
+                </div>
+                <div style="text-align: center; padding: 0 12px; flex: 1;">
+                  <div style="font-size: 32px; font-weight: 700; color: #6366F1;">${data.overdueMissedCount.total}</div>
+                  <div style="font-size: 14px; color: #6c757d;">Total</div>
+                </div>
+              </div>
+            </div>
+            
+            <div style="text-align: center; margin: 24px 0;">
+              <a href="${data.dashboardLink}" style="${BASE_STYLES.button}">
+                View & Manage Tasks
+              </a>
+            </div>
+          </div>
+
+          ${
+				data.overdueTasks.length > 0
+					? `
+          <div style="${BASE_STYLES.card}">
+            <h3 style="${BASE_STYLES.subheading}">🔴 Overdue Tasks</h3>
+            
+            ${data.overdueTasks
+				.map(
+					(task, index) => `
+              <div style="padding: 16px; background: ${
+					index % 2 === 0 ? '#f9fafb' : '#ffffff'
+				}; border-radius: 8px; margin-bottom: 12px; border-left: 4px solid #EF4444;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                  <div>
+                    <h4 style="margin: 0 0 8px; font-size: 16px; font-weight: 600;">${task.title}</h4>
+                    <p style="margin: 0 0 8px; color: #6c757d; font-size: 14px;">${task.description}</p>
+                  </div>
+                  <div style="text-align: right;">
+                    <span style="display: inline-block; padding: 4px 8px; background: #FEE2E2; color: #EF4444; border-radius: 4px; font-size: 12px; font-weight: 500;">
+                      ${task.daysOverdue} day${task.daysOverdue !== 1 ? 's' : ''} overdue
+                    </span>
+                  </div>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-top: 12px;">
+                  <div style="color: #6c757d; font-size: 12px;">
+                    <span style="margin-right: 8px;">📆 Due: ${task.deadline}</span>
+                    <span style="margin-right: 8px;">⏱️ Progress: ${task.progress}%</span>
+                  </div>
+                  <div>
+                    <span style="display: inline-block; padding: 4px 8px; background: #F3F4F6; color: #374151; border-radius: 4px; font-size: 12px; font-weight: 500;">
+                      ${getPriorityBadge(task.priority)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            `,
+				)
+				.join('')}
+          </div>
+          `
+					: ''
+			}
+
+          ${
+				data.missedTasks.length > 0
+					? `
+          <div style="${BASE_STYLES.card}">
+            <h3 style="${BASE_STYLES.subheading}">🟠 Missed Tasks</h3>
+            
+            ${data.missedTasks
+				.map(
+					(task, index) => `
+              <div style="padding: 16px; background: ${
+					index % 2 === 0 ? '#f9fafb' : '#ffffff'
+				}; border-radius: 8px; margin-bottom: 12px; border-left: 4px solid #F59E0B;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                  <div>
+                    <h4 style="margin: 0 0 8px; font-size: 16px; font-weight: 600;">${task.title}</h4>
+                    <p style="margin: 0 0 8px; color: #6c757d; font-size: 14px;">${task.description}</p>
+                  </div>
+                  <div style="text-align: right;">
+                    <span style="display: inline-block; padding: 4px 8px; background: #FEF3C7; color: #F59E0B; border-radius: 4px; font-size: 12px; font-weight: 500;">
+                      ${task.daysOverdue} day${task.daysOverdue !== 1 ? 's' : ''} missed
+                    </span>
+                  </div>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-top: 12px;">
+                  <div style="color: #6c757d; font-size: 12px;">
+                    <span style="margin-right: 8px;">📆 Was due: ${task.deadline}</span>
+                    <span style="margin-right: 8px;">⏱️ Progress: ${task.progress}%</span>
+                  </div>
+                  <div>
+                    <span style="display: inline-block; padding: 4px 8px; background: #F3F4F6; color: #374151; border-radius: 4px; font-size: 12px; font-weight: 500;">
+                      ${getPriorityBadge(task.priority)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            `,
+				)
+				.join('')}
+          </div>
+          `
+					: ''
+			}
+
+          ${createSection(
+				'💡 Productivity Tips',
+				`
+            <ul style="list-style: none; padding: 0; margin: 0;">
+              <li style="margin-bottom: 12px; display: flex; align-items: center;">
+                <span style="color: #A855F7; margin-right: 8px;">✓</span>
+                Complete smaller tasks first to build momentum
+              </li>
+              <li style="margin-bottom: 12px; display: flex; align-items: center;">
+                <span style="color: #A855F7; margin-right: 8px;">✓</span>
+                Break down large tasks into smaller, manageable steps
+              </li>
+              <li style="margin-bottom: 12px; display: flex; align-items: center;">
+                <span style="color: #A855F7; margin-right: 8px;">✓</span>
+                Set reminders 30 minutes before deadlines
+              </li>
+              <li style="display: flex; align-items: center;">
+                <span style="color: #A855F7; margin-right: 8px;">✓</span>
+                Reschedule tasks you can't complete rather than missing them
+              </li>
+            </ul>
+          `,
+			)}
+        </div>
+
+        <div style="${BASE_STYLES.footer}">
+          <p style="margin: 0;">This is an automated notification from Loro.</p>
+        </div>
+      </div>
+    </div>
+  `;
+};
+
+// Add this at the end of the file, before the last export
+
+export const UserDailyReport = (data: DailyReportData): string => {
+	// Function to format attendance status with color
+	const formatAttendanceStatus = (status: string): string => {
+		const statusMap = {
+			PRESENT: '#4CAF50',
+			COMPLETED: '#2196F3',
+			ON_BREAK: '#FF9800',
+			NOT_PRESENT: '#F44336',
+		};
+
+		const statusColor = statusMap[status] || '#757575';
+
+		return `<span style="color: ${statusColor}; font-weight: bold;">${status}</span>`;
+	};
+
+	// Productivity tips based on user's day
+	const getProductivityTip = (): string => {
+		const tips = [
+			'Schedule your most challenging tasks during your peak energy hours.',
+			'Break large projects into smaller, manageable tasks.',
+			'Use the Pomodoro Technique: work for 25 minutes, then take a 5-minute break.',
+			'Keep your workspace organized to minimize distractions.',
+			'Set clear priorities for tomorrow before ending your day.',
+			'Reflect on what went well today and what could be improved.',
+		];
+
+		return tips[Math.floor(Math.random() * tips.length)];
+	};
+
+	// Get metrics from data
+	const { attendance, totalQuotations, totalRevenue, newCustomers, userSpecific } = data.metrics;
+	const { todayLeads, todayClaims, todayTasks, todayQuotations, hoursWorked } = userSpecific || {
+		todayLeads: 0,
+		todayClaims: 0,
+		todayTasks: 0,
+		todayQuotations: 0,
+		hoursWorked: 0,
+	};
+
+	// Format time values
+	const formattedHours = typeof hoursWorked === 'number' ? hoursWorked.toFixed(1) : '0.0';
+
+	return `
+  <!DOCTYPE html>
+  <html>
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Your Daily Report</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          line-height: 1.6;
+          color: #333;
+          margin: 0;
+          padding: 0;
+        }
+        .container {
+          max-width: 600px;
+          margin: 0 auto;
+          padding: 20px;
+        }
+        .header {
+          background: #4361ee;
+          color: white;
+          padding: 20px;
+          text-align: center;
+          border-radius: 6px 6px 0 0;
+        }
+        .content {
+          background: #fff;
+          padding: 20px;
+          border: 1px solid #ddd;
+          border-top: none;
+          border-radius: 0 0 6px 6px;
+        }
+        .summary-card {
+          background: #f9f9f9;
+          border-radius: 6px;
+          padding: 15px;
+          margin-bottom: 20px;
+          border-left: 4px solid #4361ee;
+        }
+        .metric-row {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 10px;
+          padding-bottom: 10px;
+          border-bottom: 1px solid #eee;
+        }
+        .metric-row:last-child {
+          border-bottom: none;
+        }
+        .metric-label {
+          font-weight: bold;
+          color: #555;
+        }
+        .metric-value {
+          font-weight: bold;
+          color: #4361ee;
+        }
+        .section {
+          margin-bottom: 25px;
+        }
+        .section-title {
+          font-size: 18px;
+          font-weight: bold;
+          margin-bottom: 15px;
+          padding-bottom: 5px;
+          border-bottom: 2px solid #4361ee;
+          color: #333;
+        }
+        .footer {
+          text-align: center;
+          padding: 20px;
+          color: #777;
+          font-size: 12px;
+        }
+        .tip-box {
+          background-color: #e3f2fd;
+          border-left: 4px solid #2196F3;
+          padding: 15px;
+          margin: 20px 0;
+          border-radius: 4px;
+        }
+        .tip-title {
+          font-weight: bold;
+          color: #2196F3;
+          margin-bottom: 10px;
+        }
+        .button {
+          background-color: #4361ee;
+          color: white;
+          padding: 10px 20px;
+          text-decoration: none;
+          border-radius: 4px;
+          display: inline-block;
+          margin-top: 15px;
+        }
+        .tracking-section {
+          background: #f5f5f5;
+          border-radius: 6px;
+          padding: 15px;
+          margin-top: 20px;
+        }
+        .location-item {
+          padding: 10px;
+          margin-bottom: 8px;
+          background: white;
+          border-radius: 4px;
+          border-left: 3px solid #ff9800;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>Daily Activity Report</h1>
+          <p>${data.date}</p>
+        </div>
+        
+        <div class="content">
+          <h2>Hi ${data.name},</h2>
+          <p>Here's your daily activity summary. Below you'll find an overview of your productivity and accomplishments for the day.</p>
+          
+          <div class="summary-card">
+            <div class="metric-row">
+              <span class="metric-label">Hours Worked:</span>
+              <span class="metric-value">${formattedHours} hours</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-label">Tasks Completed:</span>
+              <span class="metric-value">${todayTasks}</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-label">New Leads:</span>
+              <span class="metric-value">${todayLeads}</span>
+            </div>
+            ${
+				attendance
+					? `
+            <div class="metric-row">
+              <span class="metric-label">Attendance Status:</span>
+              <span class="metric-value">${formatAttendanceStatus(attendance.status)}</span>
+            </div>
+            `
+					: ''
+			}
+          </div>
+          
+          ${
+				attendance
+					? `
+          <div class="section">
+            <h3 class="section-title">Attendance Details</h3>
+            <div class="metric-row">
+              <span class="metric-label">Check-in Time:</span>
+              <span class="metric-value">${attendance.startTime || 'N/A'}</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-label">Check-out Time:</span>
+              <span class="metric-value">${attendance.endTime || 'N/A'}</span>
+            </div>
+          </div>
+          `
+					: ''
+			}
+        </div>
+      </div>
+    </body>
+  </html>
+  `;
+};

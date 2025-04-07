@@ -5,15 +5,19 @@ import { Lead } from './entities/lead.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RewardsModule } from '../rewards/rewards.module';
 import { LicensingModule } from 'src/licensing/licensing.module';
+import { LeadsReminderService } from './leads-reminder.service';
+import { User } from '../user/entities/user.entity';
+import { CommunicationModule } from '../communication/communication.module';
 
 @Module({
   imports: [
     LicensingModule,
-    TypeOrmModule.forFeature([Lead]),
-    RewardsModule
+    TypeOrmModule.forFeature([Lead, User]),
+    RewardsModule,
+    CommunicationModule
   ],
   controllers: [LeadsController],
-  providers: [LeadsService],
+  providers: [LeadsService, LeadsReminderService],
   exports: [LeadsService],
 })
 export class LeadsModule { }

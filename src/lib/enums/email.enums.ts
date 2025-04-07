@@ -5,6 +5,7 @@ export enum EmailType {
     PASSWORD_CHANGED = 'password_changed',
     INVOICE = 'invoice',
     DAILY_REPORT = 'daily_report',
+    USER_DAILY_REPORT = 'user_daily_report',
     // Quotation related emails
     ORDER_RECEIVED_CLIENT = 'order_received_client',
     NEW_QUOTATION_CLIENT = 'new_quotation_client',
@@ -39,11 +40,13 @@ export enum EmailType {
     TASK_COMPLETED = 'task_completed',
     TASK_REMINDER_ASSIGNEE = 'TASK_REMINDER_ASSIGNEE',
     TASK_REMINDER_CREATOR = 'TASK_REMINDER_CREATOR',
+    TASK_OVERDUE_MISSED = 'task_overdue_missed',
     // User related emails
     NEW_USER_ADMIN_NOTIFICATION = 'new_user_admin_notification',
     // Lead related emails
     LEAD_CONVERTED_CLIENT = 'lead_converted_client',
     LEAD_CONVERTED_CREATOR = 'lead_converted_creator',
+    LEAD_REMINDER = 'lead_reminder',
     // Task Flag related emails
     TASK_FLAG_CREATED = 'task_flag_created',
     TASK_FLAG_UPDATED = 'task_flag_updated',

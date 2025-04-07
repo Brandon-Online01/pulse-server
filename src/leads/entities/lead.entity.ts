@@ -1,4 +1,12 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import {
+	Entity,
+	Column,
+	PrimaryGeneratedColumn,
+	CreateDateColumn,
+	UpdateDateColumn,
+	ManyToOne,
+	JoinColumn,
+} from 'typeorm';
 import { User } from '../../user/entities/user.entity';
 import { Branch } from '../../branch/entities/branch.entity';
 import { Client } from '../../clients/entities/client.entity';
@@ -7,54 +15,66 @@ import { Organisation } from 'src/organisation/entities/organisation.entity';
 
 @Entity('leads')
 export class Lead {
-    @PrimaryGeneratedColumn()
-    uid: number;
+	@PrimaryGeneratedColumn()
+	uid: number;
 
-    @Column()
-    name: string;
+	@Column({ nullable: true })
+	name: string;
 
-    @Column()
-    email: string;
+	@Column({ nullable: true })
+	companyName: string;
 
-    @Column()
-    phone: string;
+	@Column({ nullable: true })
+	email: string;
 
-    @Column({ nullable: true })
-    notes: string;
+	@Column({ nullable: true })
+	phone: string;
 
-    @Column({ type: 'enum', enum: LeadStatus, default: LeadStatus.PENDING })
-    status: LeadStatus;
+	@Column({ nullable: true })
+	notes: string;
 
-    @Column({ type: 'boolean', default: false })
-    isDeleted: boolean;
+	@Column({ type: 'enum', enum: LeadStatus, default: LeadStatus.PENDING })
+	status: LeadStatus;
 
-    @CreateDateColumn()
-    createdAt: Date;
+	@Column({ type: 'boolean', default: false })
+	isDeleted: boolean;
 
-    @UpdateDateColumn()
-    updatedAt: Date;
+	@Column({ nullable: true })
+	image: string;
 
-    @ManyToOne(() => User, { onDelete: 'SET NULL' })
-    @JoinColumn({ name: 'ownerUid' })
-    owner: User;
+	@Column({ type: 'decimal', precision: 10, scale: 7, nullable: true })
+	latitude: number;
 
-    @Column({ nullable: true })
-    ownerUid: number;
+	@Column({ type: 'decimal', precision: 10, scale: 7, nullable: true })
+	longitude: number;
 
-    @ManyToOne(() => Organisation, { onDelete: 'SET NULL' })
-    @JoinColumn({ name: 'organisationUid' })
-    organisation: Organisation;
+	@CreateDateColumn()
+	createdAt: Date;
 
-    @Column({ nullable: true })
-    organisationUid: number;
+	@UpdateDateColumn()
+	updatedAt: Date;
 
-    @ManyToOne(() => Branch, { onDelete: 'SET NULL' })
-    @JoinColumn({ name: 'branchUid' })
-    branch: Branch;
+	@ManyToOne(() => User, { onDelete: 'SET NULL' })
+	@JoinColumn({ name: 'ownerUid' })
+	owner: User;
 
-    @Column({ nullable: true })
-    branchUid: number;
+	@Column({ nullable: true })
+	ownerUid: number;
 
-    @ManyToOne(() => Client, (client) => client?.leads)
-    client: Client;
+	@ManyToOne(() => Organisation, { onDelete: 'SET NULL' })
+	@JoinColumn({ name: 'organisationUid' })
+	organisation: Organisation;
+
+	@Column({ nullable: true })
+	organisationUid: number;
+
+	@ManyToOne(() => Branch, { onDelete: 'SET NULL' })
+	@JoinColumn({ name: 'branchUid' })
+	branch: Branch;
+
+	@Column({ nullable: true })
+	branchUid: number;
+
+	@ManyToOne(() => Client, (client) => client?.leads)
+	client: Client;
 }

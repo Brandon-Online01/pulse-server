@@ -21,6 +21,7 @@ import {
 	NewTask,
 	TaskUpdated,
 	TaskCompleted,
+	UserDailyReport,
 } from '../lib/templates/emails';
 // Quotation related templates
 import {
@@ -43,6 +44,7 @@ import {
 import {
 	TaskReminderAssignee,
 	TaskReminderCreator,
+	TaskOverdueMissed,
 } from '../lib/templates/emails';
 // User related templates
 import {
@@ -52,6 +54,7 @@ import {
 import {
 	LeadConvertedClient,
 	LeadConvertedCreator,
+	LeadReminder,
 } from '../lib/templates/emails';
 // Email data types
 import { 
@@ -72,9 +75,11 @@ import {
 	TaskCompletedEmailData,
 	LeadConvertedClientData,
 	LeadConvertedCreatorData,
+	LeadReminderData,
 	TaskEmailData,
 	TaskFlagEmailData,
 	TaskFeedbackEmailData,
+	TaskOverdueMissedData,
 } from '../lib/types/email-templates.types';
 import { 
 	TaskFlagCreated,
@@ -197,6 +202,11 @@ export class CommunicationService {
 					subject: 'Daily Report',
 					body: DailyReport(data as DailyReportData),
 				};
+			case EmailType.USER_DAILY_REPORT:
+				return {
+					subject: 'Your Daily Activity Summary',
+					body: UserDailyReport(data as DailyReportData),
+				};
 			case EmailType.LICENSE_CREATED:
 				return {
 					subject: 'License Created Successfully',
@@ -272,6 +282,11 @@ export class CommunicationService {
 					subject: 'Task Deadline Alert',
 					body: TaskReminderCreator(data as TaskReminderData),
 				};
+			case EmailType.TASK_OVERDUE_MISSED:
+				return {
+					subject: 'Action Required: Overdue & Missed Tasks',
+					body: TaskOverdueMissed(data as TaskOverdueMissedData),
+				};
 			case EmailType.LEAD_CONVERTED_CLIENT:
 				return {
 					subject: 'Welcome Aboard! Your Account Has Been Upgraded',
@@ -281,6 +296,11 @@ export class CommunicationService {
 				return {
 					subject: 'Lead Successfully Converted to Client',
 					body: LeadConvertedCreator(data as LeadConvertedCreatorData),
+				};
+			case EmailType.LEAD_REMINDER:
+				return {
+					subject: 'Pending Leads Require Your Attention',
+					body: LeadReminder(data as LeadReminderData),
 				};
 			case EmailType.TASK_FLAG_CREATED:
 				return {

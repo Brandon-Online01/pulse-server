@@ -32,6 +32,12 @@ import { CompetitorsModule } from '../competitors/competitors.module';
 import { ShopModule } from '../shop/shop.module';
 import { TasksModule } from '../tasks/tasks.module';
 import { OrganisationModule } from '../organisation/organisation.module';
+import { UserDailyReportGenerator } from './generators/user-daily-report.generator';
+import { AttendanceService } from '../attendance/attendance.service';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { CommunicationModule } from '../communication/communication.module';
+import { Reward } from '../rewards/entities/reward.entity';
+import { RewardsModule } from '../rewards/rewards.module';
 
 @Module({
 	imports: [
@@ -72,6 +78,7 @@ import { OrganisationModule } from '../organisation/organisation.module';
 			Notification,
 			Quotation,
 			QuotationItem,
+			Reward,
 		]),
 		UserModule,
 		CheckInsModule,
@@ -80,9 +87,18 @@ import { OrganisationModule } from '../organisation/organisation.module';
 		ShopModule,
 		TasksModule,
 		OrganisationModule,
+		EventEmitterModule,
+		CommunicationModule,
+		RewardsModule,
 	],
 	controllers: [ReportsController],
-	providers: [ReportsService, MainReportGenerator, QuotationReportGenerator],
-	exports: [ReportsService],
+	providers: [
+		ReportsService,
+		MainReportGenerator,
+		QuotationReportGenerator,
+		UserDailyReportGenerator,
+		AttendanceService,
+	],
+	exports: [TypeOrmModule, ReportsService],
 })
 export class ReportsModule {}

@@ -82,6 +82,7 @@ import { Reward } from './rewards/entities/reward.entity';
 import { Order } from './shop/entities/order.entity';
 import { OrderItem } from './shop/entities/order-item.entity';
 import { ClientAuth } from './clients/entities/client.auth.entity';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
 	imports: [
@@ -186,7 +187,8 @@ import { ClientAuth } from './clients/entities/client.auth.entity';
 		RewardsModule,
 		LicensingModule,
 		CompetitorsModule,
-		ReportsModule
+		ReportsModule,
+		ScheduleModule.forRoot(),
 	],
 	controllers: [],
 	providers: [

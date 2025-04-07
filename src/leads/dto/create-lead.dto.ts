@@ -1,31 +1,31 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsObject, IsOptional, IsString } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsNumber, IsObject, IsOptional, IsString } from 'class-validator';
 import { LeadStatus } from 'src/lib/enums/lead.enums';
 
 export class CreateLeadDto {
-	@IsNotEmpty()
+	@IsOptional()
 	@IsString()
 	@ApiProperty({
 		description: 'Full name of the lead',
 		example: 'John Doe',
 	})
-	name: string;
+	name?: string;
 
-	@IsNotEmpty()
+	@IsOptional()
 	@IsEmail()
 	@ApiProperty({
 		description: 'Email of the lead',
 		example: 'john.doe@example.com',
 	})
-	email: string;
+	email?: string;
 
-	@IsNotEmpty()
+	@IsOptional()
 	@IsString()
 	@ApiProperty({
 		description: 'Phone number of the lead',
 		example: '+351912345678',
 	})
-	phone: string;
+	phone?: string;
 
 	@IsOptional()
 	@IsString()
@@ -33,7 +33,31 @@ export class CreateLeadDto {
 		description: 'Notes of the lead',
 		example: 'Some notes about the lead',
 	})
-	notes: string;
+	notes?: string;
+
+	@IsOptional()
+	@IsString()
+	@ApiProperty({
+		description: 'Image of the lead',
+		example: 'https://storage.googleapis.com/bucket/image.jpg',
+	})
+	image?: string;
+
+	@IsOptional()
+	@IsNumber()
+	@ApiProperty({
+		description: 'Latitude coordinate of the lead',
+		example: -33.9249,
+	})
+	latitude?: number;
+
+	@IsOptional()
+	@IsNumber()
+	@ApiProperty({
+		description: 'Longitude coordinate of the lead',
+		example: 18.4241,
+	})
+	longitude?: number;
 
 	@IsOptional()
 	@IsString()
@@ -41,7 +65,7 @@ export class CreateLeadDto {
 		description: 'Status of the lead',
 		example: LeadStatus.PENDING,
 	})
-	status: LeadStatus;
+	status?: LeadStatus;
 
 	@IsOptional()
 	@IsString()
@@ -49,7 +73,7 @@ export class CreateLeadDto {
 		description: 'Is deleted of the lead',
 		example: false,
 	})
-	isDeleted: boolean;
+	isDeleted?: boolean;
 
 	@IsNotEmpty()
 	@IsObject()

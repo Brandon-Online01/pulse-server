@@ -31,6 +31,9 @@ export class Report {
 	@Column({ type: 'json' })
 	reportData: Record<string, any>;
 
+	@Column({ nullable: true })
+	notes: string;
+
 	@ManyToOne(() => Organisation, (organisation) => organisation.reports)
 	organisation: Organisation;
 
