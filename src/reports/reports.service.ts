@@ -2,7 +2,7 @@ import { Injectable, Inject, Logger, NotFoundException, OnModuleInit } from '@ne
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateReportDto } from './dto/create-report.dto';
 import { UpdateReportDto } from './dto/update-report.dto';
-import { Repository, Not, IsNull } from 'typeorm';
+import { Repository, MoreThanOrEqual } from 'typeorm';
 import { Report } from './entities/report.entity';
 import { ReportType } from './constants/report-types.enum';
 import { ReportParamsDto } from './dto/report-params.dto';
@@ -17,11 +17,13 @@ import { User } from '../user/entities/user.entity';
 import { CommunicationService } from '../communication/communication.service';
 import { EmailType } from '../lib/enums/email.enums';
 import { Cron } from '@nestjs/schedule';
+import { LiveOverviewReportGenerator } from './generators/live-overview-report.generator';
 
 @Injectable()
 export class ReportsService implements OnModuleInit {
 	private readonly logger = new Logger(ReportsService.name);
 	private readonly CACHE_PREFIX = 'reports:';
+	private readonly LIVE_OVERVIEW_CACHE_TTL = 60; // 1 minute
 	private readonly CACHE_TTL: number;
 	private reportCache = new Map<string, any>();
 
@@ -38,6 +40,7 @@ export class ReportsService implements OnModuleInit {
 		private readonly configService: ConfigService,
 		private eventEmitter: EventEmitter2,
 		private communicationService: CommunicationService,
+		private readonly liveOverviewReportGenerator: LiveOverviewReportGenerator,
 	) {
 		this.CACHE_TTL = this.configService.get<number>('CACHE_EXPIRATION_TIME') || 300;
 	}
@@ -52,44 +55,76 @@ export class ReportsService implements OnModuleInit {
 		try {
 			this.logger.log('Starting automated end-of-day report generation');
 			
-			// Find all users with email addresses
-			const users = await this.userRepository.find({
-				where: { 
-					email: Not(IsNull())
-				},
-				relations: ['organisation']
-			});
+			// Find users with active attendance records (who haven't checked out yet)
+			const queryBuilder = this.userRepository
+				.createQueryBuilder('user')
+				.innerJoinAndSelect('user.organisation', 'organisation')
+				.innerJoin(
+					'attendance', 
+					'attendance', 
+					'attendance.ownerUid = user.uid AND (attendance.status = :statusPresent OR attendance.status = :statusBreak) AND attendance.checkOut IS NULL',
+					{ statusPresent: 'present', statusBreak: 'on break' }
+				)
+				.where('user.email IS NOT NULL');
+				
+			const usersWithActiveShifts = await queryBuilder.getMany();
 			
-			this.logger.log(`Found ${users.length} users for daily reports`);
+			this.logger.log(`Found ${usersWithActiveShifts.length} users with active shifts for daily reports`);
 			
-			// Generate reports for each user
+			if (usersWithActiveShifts.length === 0) {
+				this.logger.log('No users with active shifts found, skipping report generation');
+				return;
+			}
+			
+			// Generate reports only for users with active shifts
 			const results = await Promise.allSettled(
-				users.map(async (user) => {
+				usersWithActiveShifts.map(async (user) => {
 					try {
 						if (!user.organisation) {
 							return { userId: user.uid, success: false, reason: 'No organisation found' };
 						}
 						
+						// Check if report already generated today for this user
+						const today = new Date();
+						today.setHours(0, 0, 0, 0);
+						
+						const existingReport = await this.reportRepository.findOne({
+							where: {
+								owner: { uid: user.uid },
+								reportType: ReportType.USER_DAILY,
+								generatedAt: MoreThanOrEqual(today),
+							},
+						});
+						
+						if (existingReport) {
+							return { 
+								userId: user.uid, 
+								success: false, 
+								reason: 'Report already generated today',
+							};
+						}
+						
 						const params: ReportParamsDto = {
 							type: ReportType.USER_DAILY,
 							organisationId: user.organisation.uid,
-							filters: { userId: user.uid }
+							filters: { userId: user.uid },
 						};
 						
 						await this.generateUserDailyReport(params);
+						this.logger.log(`Successfully generated end-of-day report for user ${user.uid} with active shift`);
 						return { userId: user.uid, success: true };
 					} catch (error) {
 						return { 
 							userId: user.uid, 
 							success: false, 
-							reason: error.message 
+							reason: error.message,
 						};
 					}
-				})
+				}),
 			);
 			
 			// Log results
-			const successful = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
+			const successful = results.filter((r) => r.status === 'fulfilled' && r.value.success).length;
 			const failed = results.length - successful;
 			
 			this.logger.log(`End-of-day reports completed: ${successful} successful, ${failed} failed`);
@@ -211,15 +246,14 @@ export class ReportsService implements OnModuleInit {
 			const savedReport = await this.reportRepository.save(newReport);
 
 			// Send email directly to ensure delivery
-			await this.sendUserDailyReportEmail(user.uid, reportData.emailData)
-				.catch(error => {
-					this.logger.error(`Failed to send email directly: ${error.message}`, error.stack);
-					// Update report with error info
-					newReport.notes = `Email delivery attempted directly: ${error.message}`;
-					this.reportRepository.save(newReport).catch(err => 
-						this.logger.error(`Failed to update report with notes: ${err.message}`)
-					);
-				});
+			await this.sendUserDailyReportEmail(user.uid, reportData.emailData).catch((error) => {
+				this.logger.error(`Failed to send email directly: ${error.message}`, error.stack);
+				// Update report with error info
+				newReport.notes = `Email delivery attempted directly: ${error.message}`;
+				this.reportRepository
+					.save(newReport)
+					.catch((err) => this.logger.error(`Failed to update report with notes: ${err.message}`));
+			});
 
 			// Also emit event as a backup mechanism
 			this.eventEmitter.emit('report.generated', {
@@ -230,7 +264,7 @@ export class ReportsService implements OnModuleInit {
 			});
 
 			this.logger.log(`Daily report generated and email sending initiated for user ${userId}`);
-			
+
 			return savedReport;
 		} catch (error) {
 			this.logger.error(`Error generating user daily report: ${error.message}`, error.stack);
@@ -239,15 +273,21 @@ export class ReportsService implements OnModuleInit {
 	}
 
 	async generateReport(params: ReportParamsDto, currentUser: any): Promise<Record<string, any>> {
-		// Check cache first
+		// Determine appropriate cache TTL based on report type
+		const cacheTtl = params.type === ReportType.LIVE_OVERVIEW ? this.LIVE_OVERVIEW_CACHE_TTL : this.CACHE_TTL;
+		
+		// Check cache first (except for live overview which should always be fresh)
 		const cacheKey = this.getCacheKey(params);
-		const cachedReport = await this.cacheManager.get<Record<string, any>>(cacheKey);
-
-		if (cachedReport) {
-			return {
-				...cachedReport,
-				fromCache: true,
-			};
+		
+		if (params.type !== ReportType.LIVE_OVERVIEW) {
+			const cachedReport = await this.cacheManager.get<Record<string, any>>(cacheKey);
+			
+			if (cachedReport) {
+				return {
+					...cachedReport,
+					fromCache: true,
+				};
+			}
 		}
 
 		// Generate report data based on type
@@ -262,6 +302,9 @@ export class ReportsService implements OnModuleInit {
 				break;
 			case ReportType.USER_DAILY:
 				reportData = await this.userDailyReportGenerator.generate(params);
+				break;
+			case ReportType.LIVE_OVERVIEW:
+				reportData = await this.liveOverviewReportGenerator.generate(params);
 				break;
 			case ReportType.USER:
 				// Will be implemented later
@@ -290,8 +333,8 @@ export class ReportsService implements OnModuleInit {
 			...reportData,
 		};
 
-		// Cache the report
-		await this.cacheManager.set(cacheKey, report, this.CACHE_TTL);
+		// Cache the report with appropriate TTL
+		await this.cacheManager.set(cacheKey, report, cacheTtl);
 
 		// Return the report data directly without saving to database
 		return report;
@@ -317,7 +360,7 @@ export class ReportsService implements OnModuleInit {
 			// Get user with full profile
 			const user = await this.userRepository.findOne({
 				where: { uid: userId },
-				relations: ['organisation']
+				relations: ['organisation'],
 			});
 
 			if (!user || !user.email) {
@@ -353,7 +396,7 @@ export class ReportsService implements OnModuleInit {
 				emailData.tracking = {
 					totalDistance: '0 km',
 					locations: [],
-					averageTimePerLocation: '0 min'
+					averageTimePerLocation: '0 min',
 				};
 			}
 
@@ -364,7 +407,7 @@ export class ReportsService implements OnModuleInit {
 			const emailService = this.communicationService as any;
 			try {
 				const result = await emailService.sendEmail(EmailType.USER_DAILY_REPORT, [user.email], emailData);
-				
+
 				if (result && result.success) {
 					this.logger.log(`Daily report email sent successfully to user ${userId} (${user.email})`);
 				} else {
@@ -380,9 +423,9 @@ export class ReportsService implements OnModuleInit {
 			try {
 				const report = await this.reportRepository.findOne({
 					where: { owner: { uid: userId }, reportType: ReportType.USER_DAILY },
-					order: { generatedAt: 'DESC' }
+					order: { generatedAt: 'DESC' },
 				});
-				
+
 				if (report) {
 					report.notes = `Email delivery failed: ${error.message}`;
 					await this.reportRepository.save(report);

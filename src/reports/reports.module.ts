@@ -38,6 +38,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { CommunicationModule } from '../communication/communication.module';
 import { Reward } from '../rewards/entities/reward.entity';
 import { RewardsModule } from '../rewards/rewards.module';
+import { LiveOverviewReportGenerator } from './generators/live-overview-report.generator';
 
 @Module({
 	imports: [
@@ -97,6 +98,7 @@ import { RewardsModule } from '../rewards/rewards.module';
 		MainReportGenerator,
 		QuotationReportGenerator,
 		UserDailyReportGenerator,
+		LiveOverviewReportGenerator,
 		AttendanceService,
 	],
 	exports: [TypeOrmModule, ReportsService],

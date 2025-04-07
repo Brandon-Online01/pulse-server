@@ -3,5 +3,6 @@ export enum ReportType {
   USER = 'user',
   USER_DAILY = 'user_daily',
   SHIFT = 'shift',
-  QUOTATION = 'quotation'
+  QUOTATION = 'quotation',
+  LIVE_OVERVIEW = 'live_overview'
 } 

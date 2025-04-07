@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Param, Get, UseGuards, Req, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
+import { Controller, Post, Body, Param, Get, UseGuards, Req, BadRequestException, Logger } from '@nestjs/common';
 import { ReportsService } from './reports.service';
 import { ReportParamsDto } from './dto/report-params.dto';
 import { ReportType } from './constants/report-types.enum';
@@ -42,7 +42,7 @@ export class ReportsController {
 		let lat = this.addRandomOffset(baseCoords[0]);
 		let lng = this.addRandomOffset(baseCoords[1]);
 		let coordKey = `${lat.toFixed(6)},${lng.toFixed(6)}`;
-		
+
 		// If coordinates are already used, regenerate with larger offsets until unique
 		let attempts = 0;
 		while (this.usedCoordinates.has(coordKey) && attempts < 10) {
@@ -53,7 +53,7 @@ export class ReportsController {
 			coordKey = `${lat.toFixed(6)},${lng.toFixed(6)}`;
 			attempts++;
 		}
-		
+
 		// Store the unique coordinates
 		this.usedCoordinates.add(coordKey);
 		return [lat, lng];
@@ -396,7 +396,7 @@ export class ReportsController {
 	private generateMockMapData(): any {
 		// Reset the set of used coordinates for each new map data generation
 		this.usedCoordinates = new Set();
-		
+
 		// Generate mock data for the map
 		return {
 			workers: this.generateMockWorkers(),
@@ -457,7 +457,8 @@ export class ReportsController {
 		];
 
 		const workers = [];
-		const locationImageUrl = 'https://images.pexels.com/photos/31382339/pexels-photo-31382339/free-photo-of-facade-of-itaewon-jjajang-restaurant-at-night.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1';
+		const locationImageUrl =
+			'https://images.pexels.com/photos/31382339/pexels-photo-31382339/free-photo-of-facade-of-itaewon-jjajang-restaurant-at-night.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1';
 
 		// Ensure all worker types are represented by distributing them evenly
 		// Prioritize one worker type per African location
@@ -465,7 +466,7 @@ export class ReportsController {
 			// Choose a location, prioritizing African locations (7-12)
 			const locationIndex = i < 6 ? i + 7 : i % globalLocations.length;
 			const location = globalLocations[locationIndex];
-			
+
 			// Generate unique coordinates based on the location
 			const uniquePosition = this.getUniqueCoordinates(location.coords);
 
@@ -496,10 +497,10 @@ export class ReportsController {
 			// Mainly add workers to African locations
 			const locationIndex = i < 3 ? i + 7 : i % globalLocations.length;
 			const location = globalLocations[locationIndex];
-			
+
 			// Generate unique coordinates
 			const uniquePosition = this.getUniqueCoordinates(location.coords);
-			
+
 			const workerId = 1000 + workerTypes.length + i;
 			workers.push({
 				id: workerId,
@@ -541,7 +542,7 @@ export class ReportsController {
 			{ city: 'Johannesburg', coords: [-26.2041, 28.0473], address: 'Sandton, Johannesburg, South Africa' },
 			{ city: 'Cape Town', coords: [-33.9249, 18.4241], address: 'City Centre, Cape Town, South Africa' },
 			{ city: 'Durban', coords: [-29.8587, 31.0218], address: 'City Centre, Durban, South Africa' },
-			
+
 			// Other African Countries
 			{ city: 'Lagos', coords: [6.5244, 3.3792], address: 'Victoria Island, Lagos, Nigeria' },
 			{ city: 'Nairobi', coords: [-1.2864, 36.8172], address: 'Westlands, Nairobi, Kenya' },
@@ -549,13 +550,14 @@ export class ReportsController {
 			{ city: 'Accra', coords: [5.6037, -0.187], address: 'Airport Residential, Accra, Ghana' },
 		];
 
-		const locationImageUrl = 'https://images.pexels.com/photos/31382339/pexels-photo-31382339/free-photo-of-facade-of-itaewon-jjajang-restaurant-at-night.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1';
+		const locationImageUrl =
+			'https://images.pexels.com/photos/31382339/pexels-photo-31382339/free-photo-of-facade-of-itaewon-jjajang-restaurant-at-night.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1';
 
 		// Create one client per location, ensuring sparse distribution
 		return globalLocations.map((location, i) => {
 			// Check if this is an African location (index 4+ are African)
 			const isAfrican = i >= 4;
-			
+
 			// Generate unique coordinates with larger spread
 			const uniquePosition = this.getUniqueCoordinates(location.coords);
 
@@ -607,13 +609,14 @@ export class ReportsController {
 			{ city: 'Accra', coords: [5.6037, -0.187], address: 'Airport Residential, Accra, Ghana' },
 		];
 
-		const locationImageUrl = 'https://images.pexels.com/photos/31382339/pexels-photo-31382339/free-photo-of-facade-of-itaewon-jjajang-restaurant-at-night.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1';
+		const locationImageUrl =
+			'https://images.pexels.com/photos/31382339/pexels-photo-31382339/free-photo-of-facade-of-itaewon-jjajang-restaurant-at-night.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1';
 
 		// Create one competitor per location, ensuring sparse distribution
 		return globalLocations.map((location, i) => {
 			// Check if this is an African location (index 4+ are African)
 			const isAfrican = i >= 4;
-			
+
 			// Generate unique coordinates with larger spread
 			const uniquePosition = this.getUniqueCoordinates(location.coords);
 
@@ -645,7 +648,7 @@ export class ReportsController {
 		const globalLocations = [
 			// Middle East - just 1 city
 			{ city: 'Dubai', coords: [25.2048, 55.2708], address: 'Downtown, Dubai, UAE' },
-			
+
 			// Asia - just 1 city
 			{ city: 'Singapore', coords: [1.3521, 103.8198], address: 'Marina Bay, Singapore' },
 
@@ -656,7 +659,7 @@ export class ReportsController {
 			{ city: 'Nairobi', coords: [-1.3031, 36.7073], address: 'Lavington, Nairobi, Kenya' },
 			{ city: 'Cairo', coords: [30.0771, 31.0175], address: '6th of October City, Cairo, Egypt' },
 			{ city: 'Accra', coords: [5.6037, -0.1546], address: 'East Legon, Accra, Ghana' },
-			
+
 			// Europe - just 1 city
 			{ city: 'Stockholm', coords: [59.3293, 18.0686], address: 'Norrmalm, Stockholm, Sweden' },
 		];
@@ -665,7 +668,7 @@ export class ReportsController {
 		return globalLocations.map((location, i) => {
 			// Generate unique coordinates with larger spread
 			const uniquePosition = this.getUniqueCoordinates(location.coords);
-			
+
 			return {
 				id: 4000 + i,
 				quotationNumber: `QT-${2023}-${4000 + i}`,
@@ -680,7 +683,7 @@ export class ReportsController {
 				totalAmount: (Math.floor(Math.random() * 100000) + 10000).toFixed(2), // ZAR amounts (higher values)
 				currency: 'ZAR', // Specify ZAR currency
 				placedBy: `Sales Agent ${(i % 5) + 1}`,
-			}
+			};
 		});
 	}
 
@@ -714,7 +717,8 @@ export class ReportsController {
 			{ lat: 5.6037, lng: -0.187, address: 'Central Accra, Ghana' },
 		];
 
-		const locationImageUrl = 'https://images.pexels.com/photos/31382339/pexels-photo-31382339/free-photo-of-facade-of-itaewon-jjajang-restaurant-at-night.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1';
+		const locationImageUrl =
+			'https://images.pexels.com/photos/31382339/pexels-photo-31382339/free-photo-of-facade-of-itaewon-jjajang-restaurant-at-night.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1';
 		const events = [];
 
 		// Create exactly two events per location, ensuring a variety of event types
@@ -726,7 +730,7 @@ export class ReportsController {
 				const timestamp = new Date(
 					new Date().setMinutes(new Date().getMinutes() - (locIndex * 2 + i) * 30),
 				).toISOString();
-				
+
 				// Generate unique coordinates with larger spread
 				const uniqueCoords = this.getUniqueCoordinates([location.lat, location.lng]);
 
@@ -802,48 +806,144 @@ export class ReportsController {
 			properties: {
 				success: { type: 'boolean' },
 				message: { type: 'string' },
-				reportId: { type: 'number' }
-			}
-		}
+				reportId: { type: 'number' },
+			},
+		},
 	})
 	@ApiBadRequestResponse({
 		description: 'Bad Request - Invalid user ID',
 		schema: {
 			type: 'object',
 			properties: {
-				message: { type: 'string' }
-			}
-		}
+				message: { type: 'string' },
+			},
+		},
 	})
-	async generateDailyReportForUser(
-		@Param('userId') userId: number,
-		@Req() request: AuthenticatedRequest
-	) {
+	async generateDailyReportForUser(@Param('userId') userId: number, @Req() request: AuthenticatedRequest) {
 		try {
 			// Validate userId
 			if (!userId || isNaN(Number(userId))) {
 				throw new BadRequestException('Valid user ID is required');
 			}
-			
+
 			// Create report parameters with the organization from the request context
 			const params: ReportParamsDto = {
 				type: ReportType.USER_DAILY,
 				organisationId: request.user.organisationRef || request.user.org?.uid,
 				filters: {
-					userId: Number(userId)
-				}
+					userId: Number(userId),
+				},
 			};
-			
+
 			// Generate and send report
 			const report = await this.reportsService.generateUserDailyReport(params);
-			
+
 			return {
 				success: true,
 				message: `Daily report generated and sent successfully`,
-				reportId: report.uid
+				reportId: report.uid,
 			};
 		} catch (error) {
 			this.logger.error(`Error generating manual daily report: ${error.message}`, error.stack);
+			throw error;
+		}
+	}
+
+	@Get('live-overview')
+	@Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.OWNER)
+	@ApiOperation({
+		summary: 'Generate a live organization overview report',
+		description: 'Generates a real-time overview of organization-wide metrics and performance indicators',
+	})
+	@ApiBody({
+		description: 'Report generation parameters',
+		schema: {
+			type: 'object',
+			properties: {
+				organisationId: {
+					type: 'number',
+					description: 'Organization ID (optional if available from auth context)',
+				},
+				branchId: {
+					type: 'number',
+					description: 'Branch ID (optional - include to filter by specific branch)',
+				},
+				name: {
+					type: 'string',
+					description: 'Report name (optional)',
+				},
+			},
+		},
+	})
+	@ApiOkResponse({
+		description: 'Live overview report generated successfully',
+		schema: {
+			type: 'object',
+			properties: {
+				metadata: {
+					type: 'object',
+					properties: {
+						reportType: { type: 'string', example: 'live_overview' },
+						organisationId: { type: 'number' },
+						branchId: { type: 'number' },
+						generatedAt: { type: 'string', format: 'date-time' },
+						name: { type: 'string' },
+					},
+				},
+				summary: {
+					type: 'object',
+					description: 'High-level summary of organization performance metrics',
+				},
+				metrics: {
+					type: 'object',
+					description: 'Detailed real-time metrics for various business areas',
+				},
+			},
+		},
+	})
+	@ApiBadRequestResponse({
+		description: 'Bad Request - Invalid parameters',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', example: 'Organisation ID is required' },
+			},
+		},
+	})
+	async generateLiveOverviewReport(
+		@Body()
+		reportParams: {
+			organisationId?: number;
+			branchId?: number;
+			name?: string;
+		},
+		@Req() request: AuthenticatedRequest,
+	) {
+		try {
+			// Use organization ID from authenticated request if not provided
+			const orgId = reportParams.organisationId || request.user.org?.uid || request.user.organisationRef;
+
+			if (!orgId) {
+				throw new BadRequestException(
+					'Organisation ID is required. Either specify it in the request body or it must be available in the authentication context.',
+				);
+			}
+
+			// Use branch ID from authenticated request if not provided
+			const brId = reportParams.branchId || request.user.branch?.uid;
+
+			// Build params object for the live overview report
+			const params: ReportParamsDto = {
+				type: ReportType.LIVE_OVERVIEW,
+				organisationId: orgId,
+				branchId: brId,
+				name: reportParams.name || 'Live Organization Overview',
+			};
+
+			// Generate the report
+			return this.reportsService.generateReport(params, request.user);
+		} catch (error) {
+			this.logger.error(`Error generating live overview report: ${error.message}`, error.stack);
 			throw error;
 		}
 	}

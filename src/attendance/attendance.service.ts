@@ -15,9 +15,12 @@ import { XP_VALUES } from '../lib/constants/constants';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ReportType, ReportFormat, ReportTimeframe } from '../lib/enums/report.enums';
 import { BreakDetail } from './interfaces/break-detail.interface';
+import { Logger } from '@nestjs/common';
 
 @Injectable()
 export class AttendanceService {
+	private readonly logger = new Logger(AttendanceService.name);
+
 	constructor(
 		@InjectRepository(Attendance)
 		private attendanceRepository: Repository<Attendance>,
@@ -119,6 +122,7 @@ export class AttendanceService {
 				});
 
 				// Emit the daily-report event with the user ID
+				this.logger.log(`Triggering daily report generation for user ${checkOutDto.owner.uid} after check-out`);
 				this.eventEmitter.emit('daily-report', {
 					userId: checkOutDto.owner.uid,
 				});
