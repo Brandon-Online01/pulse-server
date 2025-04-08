@@ -3,6 +3,8 @@ import { Task } from './task.entity';
 import { User } from 'src/user/entities/user.entity';
 import { TaskFlagStatus } from '../../lib/enums/task.enums';
 import { TaskFlagItem } from './task-flag-item.entity';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsArray, IsOptional } from 'class-validator';
 
 @Entity('task_flags')
 export class TaskFlag {
@@ -11,7 +13,7 @@ export class TaskFlag {
 
     @Column({ type: 'varchar', length: 255 })
     title: string;
-
+    
     @Column({ type: 'text' })
     description: string;
 
@@ -37,6 +39,9 @@ export class TaskFlag {
         createdAt: Date;
         createdBy: { uid: number; name: string };
     }[];
+
+    @Column({ type: 'json', nullable: true })
+    attachments: string[];
 
     @ManyToOne(() => Task, (task) => task.flags)
     task: Task;

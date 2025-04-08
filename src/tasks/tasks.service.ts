@@ -766,11 +766,11 @@ export class TasksService {
 
 				// Delete existing subtasks
 				if (existingSubtasks.length > 0) {
-					await this.subtaskRepository.delete(existingSubtasks.map(st => st.uid));
+					await this.subtaskRepository.delete(existingSubtasks.map((st) => st.uid));
 				}
 
 				// Create new subtasks
-				const newSubtasks = subtasks.map(subtask => ({
+				const newSubtasks = subtasks.map((subtask) => ({
 					...subtask,
 					task: { uid: ref },
 					status: SubTaskStatus.PENDING,
@@ -1597,7 +1597,7 @@ export class TasksService {
 			// Find the task to flag with all necessary relations
 			const task = await this.taskRepository.findOne({
 				where: { uid: createTaskFlagDto.taskId },
-				relations: ['creator', 'assignees'],
+				relations: ['creator'], // Removed 'assignees' since it's a JSON column, not a relation
 			});
 			if (!task) {
 				throw new Error(`Task with ID ${createTaskFlagDto.taskId} not found`);
@@ -1627,6 +1627,11 @@ export class TasksService {
 			// Add deadline if provided
 			if (createTaskFlagDto.deadline) {
 				taskFlag.deadline = new Date(createTaskFlagDto.deadline);
+			}
+
+			// Handle attachments
+			if (createTaskFlagDto.attachments?.length) {
+				taskFlag.attachments = createTaskFlagDto.attachments;
 			}
 
 			// Initialize comments as empty array if not adding a comment
@@ -1664,14 +1669,37 @@ export class TasksService {
 				savedItems = await this.taskFlagItemRepository.save(items);
 			}
 
-			// Send email notifications
+			// Clear cache for this task's flags
+			await this.clearTaskFlagCache(task.uid);
+			await this.clearTaskCache(task.uid);
+
+			// Create response object first
+			const response = {
+				flagId: savedFlag.uid,
+				message: 'Task flag created successfully'
+			};
+
+			// Send email notifications asynchronously
+			this.sendTaskFlagEmailNotification(task, taskFlag, savedFlag, user, savedItems).catch(error => {
+				console.error('Failed to send task flag email notification:', error.message);
+			});
+
+			return response;
+		} catch (error) {
+			throw new Error(`Failed to create task flag: ${error.message}`);
+		}
+	}
+
+	// Helper method to send email notifications for task flags
+	private async sendTaskFlagEmailNotification(task: Task, taskFlag: TaskFlag, savedFlag: TaskFlag, user: User, savedItems: TaskFlagItem[]): Promise<void> {
+		try {
 			const recipients = new Set<string>();
 
 			// Get full creator details
 			const taskCreator =
-				task.creator?.[0] &&
+				task.creator &&
 				(await this.userRepository.findOne({
-					where: { uid: task.creator[0].uid },
+					where: { uid: task.creator.uid },
 					select: ['email'],
 				}));
 			if (taskCreator?.email) {
@@ -1728,16 +1756,9 @@ export class TasksService {
 					comments: this.transformCommentsForEmail(taskFlag.comments),
 				});
 			}
-
-			// Clear cache for this task's flags
-			await this.clearTaskFlagCache(task.uid);
-			await this.clearTaskCache(task.uid);
-
-			return {
-				flagId: savedFlag.uid,
-			};
 		} catch (error) {
-			throw new Error(`Failed to create task flag: ${error.message}`);
+			console.error('Error sending task flag email notification:', error.message);
+			// Don't rethrow - we don't want this to affect the main operation
 		}
 	}
 
@@ -1837,77 +1858,6 @@ export class TasksService {
 			// Save the updated flag
 			await this.taskFlagRepository.save(taskFlag);
 
-			// Send email notifications if status has changed
-			if (updateTaskFlagDto.status && updateTaskFlagDto.status !== previousStatus) {
-				const recipients = new Set<string>();
-
-				// Get full creator details
-				const taskCreator =
-					taskFlag.task.creator?.[0] &&
-					(await this.userRepository.findOne({
-						where: { uid: taskFlag.task.creator[0].uid },
-						select: ['email'],
-					}));
-				if (taskCreator?.email) {
-					recipients.add(taskCreator.email);
-				}
-
-				// Get full assignee details
-				const assigneeIds = taskFlag.task.assignees?.map((a) => a.uid) || [];
-				if (assigneeIds.length > 0) {
-					const assignees = await this.userRepository.find({
-						where: { uid: In(assigneeIds) },
-						select: ['email'],
-					});
-					assignees.forEach((assignee) => {
-						if (assignee.email) {
-							recipients.add(assignee.email);
-						}
-					});
-				}
-
-				// Get flag creator details
-				const flagCreator =
-					taskFlag.createdBy?.uid &&
-					(await this.userRepository.findOne({
-						where: { uid: taskFlag.createdBy.uid },
-						select: ['email'],
-					}));
-				if (flagCreator?.email) {
-					recipients.add(flagCreator.email);
-				}
-
-				const emailRecipients = Array.from(recipients).filter((email) => email);
-
-				if (emailRecipients.length > 0) {
-					const emailType =
-						updateTaskFlagDto.status === TaskFlagStatus.RESOLVED
-							? EmailType.TASK_FLAG_RESOLVED
-							: EmailType.TASK_FLAG_UPDATED;
-
-					await this.communicationService.sendEmail(emailType, emailRecipients, {
-						name: 'Team Member',
-						taskId: taskFlag.task.uid,
-						taskTitle: taskFlag.task.title,
-						flagId: taskFlag.uid,
-						flagTitle: taskFlag.title,
-						flagDescription: taskFlag.description,
-						flagStatus: taskFlag.status,
-						flagDeadline: taskFlag.deadline?.toISOString(),
-						createdBy: {
-							name: `${taskFlag.createdBy.name} ${taskFlag.createdBy.surname}`,
-							email: flagCreator?.email || '',
-						},
-						items: taskFlag.items?.map((item) => ({
-							title: item.title,
-							description: item.description,
-							status: item.status,
-						})),
-						comments: this.transformCommentsForEmail(taskFlag.comments),
-					});
-				}
-			}
-
 			// Check for flags and update the task status if needed
 			if (taskFlag.task?.uid) {
 				await this.checkFlagsAndUpdateTaskStatus(taskFlag.task.uid);
@@ -1916,9 +1866,91 @@ export class TasksService {
 			// Clear cache for this flag and its related task
 			await this.clearTaskFlagCache(taskFlag.task?.uid, flagId);
 
-			return {
+			// Prepare success response first before email sending
+			const successResponse = {
 				message: 'Task flag updated successfully',
 			};
+
+			// Send email notifications asynchronously if status has changed
+			if (updateTaskFlagDto.status && updateTaskFlagDto.status !== previousStatus) {
+				// Use setTimeout with 0 to make this non-blocking
+				setTimeout(async () => {
+					try {
+						const recipients = new Set<string>();
+
+						// Get full creator details
+						const taskCreator =
+							taskFlag.task.creator &&
+							(await this.userRepository.findOne({
+								where: { uid: taskFlag.task.creator.uid },
+								select: ['email'],
+							}));
+						if (taskCreator?.email) {
+							recipients.add(taskCreator.email);
+						}
+
+						// Get full assignee details
+						const assigneeIds = taskFlag.task.assignees?.map((a) => a.uid) || [];
+						if (assigneeIds.length > 0) {
+							const assignees = await this.userRepository.find({
+								where: { uid: In(assigneeIds) },
+								select: ['email'],
+							});
+							assignees.forEach((assignee) => {
+								if (assignee.email) {
+									recipients.add(assignee.email);
+								}
+							});
+						}
+
+						// Get flag creator details
+						const flagCreator =
+							taskFlag.createdBy?.uid &&
+							(await this.userRepository.findOne({
+								where: { uid: taskFlag.createdBy.uid },
+								select: ['email'],
+							}));
+						if (flagCreator?.email) {
+							recipients.add(flagCreator.email);
+						}
+
+						const emailRecipients = Array.from(recipients).filter((email) => email);
+
+						if (emailRecipients.length > 0) {
+							const emailType =
+								updateTaskFlagDto.status === TaskFlagStatus.RESOLVED
+									? EmailType.TASK_FLAG_RESOLVED
+									: EmailType.TASK_FLAG_UPDATED;
+
+							await this.communicationService.sendEmail(emailType, emailRecipients, {
+								name: 'Team Member',
+								taskId: taskFlag.task.uid,
+								taskTitle: taskFlag.task.title,
+								flagId: taskFlag.uid,
+								flagTitle: taskFlag.title,
+								flagDescription: taskFlag.description,
+								flagStatus: taskFlag.status,
+								flagDeadline: taskFlag.deadline?.toISOString(),
+								createdBy: {
+									name: `${taskFlag.createdBy.name} ${taskFlag.createdBy.surname}`,
+									email: flagCreator?.email || '',
+								},
+								items: taskFlag.items?.map((item) => ({
+									title: item.title,
+									description: item.description,
+									status: item.status,
+								})),
+								comments: this.transformCommentsForEmail(taskFlag.comments),
+							});
+						}
+					} catch (error) {
+						// Log error but don't throw - this allows task resolution to succeed even if email fails
+						console.error(`Email notification failed for task flag ${flagId}: ${error.message}`);
+					}
+				}, 0);
+			}
+
+			return successResponse;
 		} catch (error) {
 			throw new Error(`Failed to update task flag: ${error.message}`);
 		}
@@ -1970,9 +2002,9 @@ export class TasksService {
 
 					// Get full creator details
 					const taskCreator =
-						flagItem.taskFlag.task.creator?.[0] &&
+						flagItem.taskFlag.task.creator &&
 						(await this.userRepository.findOne({
-							where: { uid: flagItem.taskFlag.task.creator[0].uid },
+							where: { uid: flagItem.taskFlag.task.creator.uid },
 							select: ['email'],
 						}));
 					if (taskCreator?.email) {
