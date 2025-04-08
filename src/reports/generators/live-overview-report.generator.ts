@@ -10,7 +10,7 @@ import { Client } from '../../clients/entities/client.entity';
 import { CheckIn } from '../../check-ins/entities/check-in.entity';
 import { Quotation } from '../../shop/entities/quotation.entity';
 import { TaskStatus, TaskPriority, TaskType } from '../../lib/enums/task.enums';
-import { LeadStatus } from '../../lib/enums/lead.enums';
+import { LeadStatus, LeadCategory } from '../../lib/enums/lead.enums';
 import { AttendanceStatus } from '../../lib/enums/attendance.enums';
 import { startOfDay, endOfDay, format, differenceInMinutes, subHours, subDays } from 'date-fns';
 import { ReportParamsDto } from '../dto/report-params.dto';
@@ -971,31 +971,45 @@ export class LiveOverviewReportGenerator {
 		const branchFilter = branchId ? { branch: { uid: branchId } } : {};
 
 		try {
-			// Since we don't have direct category support, let's use a different approach
-			// We'll manually handle this by checking lead types or sources
+			// Initialize result with all lead categories
 			const result: Record<string, number> = {
-				Uncategorized: 0,
+				'Uncategorized': 0,
 				'Walk-in': 0,
-				Referral: 0,
-				Website: 0,
-				Phone: 0,
-				Email: 0,
+				'Referral': 0,
+				'Website': 0,
+				'Phone': 0,
+				'Email': 0,
 				'Social Media': 0,
 			};
 
-			// Get all lead counts
-			const totalCount = await this.leadRepository.count({
+			// Map enum values to display names for the frontend
+			const categoryDisplayMap: Record<string, string> = {
+				[LeadCategory.OTHER]: 'Uncategorized',
+				[LeadCategory.WALK_IN]: 'Walk-in',
+				[LeadCategory.REFERRAL]: 'Referral',
+				[LeadCategory.WEBSITE]: 'Website',
+				[LeadCategory.PHONE]: 'Phone',
+				[LeadCategory.EMAIL]: 'Email',
+				[LeadCategory.SOCIAL_MEDIA]: 'Social Media',
+				[LeadCategory.BUSINESS]: 'Business',
+				[LeadCategory.PERSONAL]: 'Personal',
+			};
+
+			// Get all leads
+			const leads = await this.leadRepository.find({
 				where: {
 					...orgFilter,
 					...branchFilter,
 				},
+				select: ['category']
 			});
 
-			// Set all leads as uncategorized for now
-			result['Uncategorized'] = totalCount;
+			// Count leads by category
+			leads.forEach(lead => {
+				const displayCategory = categoryDisplayMap[lead.category] || 'Uncategorized';
+				result[displayCategory] = (result[displayCategory] || 0) + 1;
+			});
 
-			// In a real implementation, you would count leads by their actual categories
-			// For now, we're returning preset values
 			return result;
 		} catch (error) {
 			this.logger.error(`Error collecting lead category distribution: ${error.message}`, error.stack);
@@ -2485,8 +2499,8 @@ export class LiveOverviewReportGenerator {
 
 					return {
 						assigneeId: assignee.assigneeId,
-						assigneeName: 'test name',
-						assigneePhotoURL: 'test photo',
+						assigneeName: 'Sales Rep',
+						assigneePhotoURL: '',
 						totalTasks: assignee.totalTasks,
 						completedTasks: assignee.completedTasks,
 						completionRate,

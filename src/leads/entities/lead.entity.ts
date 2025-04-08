@@ -10,7 +10,7 @@ import {
 import { User } from '../../user/entities/user.entity';
 import { Branch } from '../../branch/entities/branch.entity';
 import { Client } from '../../clients/entities/client.entity';
-import { LeadStatus } from '../../lib/enums/lead.enums';
+import { LeadCategory, LeadStatus } from '../../lib/enums/lead.enums';
 import { Organisation } from 'src/organisation/entities/organisation.entity';
 
 @Entity('leads')
@@ -29,6 +29,9 @@ export class Lead {
 
 	@Column({ nullable: true })
 	phone: string;
+
+	@Column({ nullable: true, type: 'enum', enum: LeadCategory, default: LeadCategory.OTHER })
+	category: LeadCategory;
 
 	@Column({ nullable: true })
 	notes: string;

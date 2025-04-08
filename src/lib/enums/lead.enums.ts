@@ -4,5 +4,17 @@ export enum LeadStatus {
     REVIEW = "REVIEW",
     DECLINED = "DECLINED",
     CONVERTED = "CONVERTED",
-    CANCELLED = "CANCELLED"
+    CANCELLED = "CANCELLED",
 } 
+
+export enum LeadCategory {
+    BUSINESS = "BUSINESS",
+    PERSONAL = "PERSONAL",
+    WALK_IN = "WALK_IN",
+    REFERRAL = "REFERRAL",
+    PHONE = "PHONE",
+    EMAIL = "EMAIL",
+    SOCIAL_MEDIA = "SOCIAL_MEDIA",
+    WEBSITE = "WEBSITE",
+    OTHER = "OTHER",
+}
