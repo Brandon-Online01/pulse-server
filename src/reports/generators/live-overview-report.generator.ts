@@ -9,7 +9,7 @@ import { Journal } from '../../journal/entities/journal.entity';
 import { Client } from '../../clients/entities/client.entity';
 import { CheckIn } from '../../check-ins/entities/check-in.entity';
 import { Quotation } from '../../shop/entities/quotation.entity';
-import { TaskStatus, TaskPriority } from '../../lib/enums/task.enums';
+import { TaskStatus, TaskPriority, TaskType } from '../../lib/enums/task.enums';
 import { LeadStatus } from '../../lib/enums/lead.enums';
 import { AttendanceStatus } from '../../lib/enums/attendance.enums';
 import { startOfDay, endOfDay, format, differenceInMinutes, subHours, subDays } from 'date-fns';
@@ -53,7 +53,7 @@ export class LiveOverviewReportGenerator {
 			this.logger.log(`Generating live overview report for org ${organisationId}, branch ${branchId || 'all'}`);
 
 			// Collect all metrics in parallel for better performance
-			const [workforceMetrics, taskMetrics, leadMetrics, salesMetrics, clientMetrics, locationData] =
+			const [workforceMetrics, taskMetrics, leadMetrics, salesMetrics, clientMetrics, locationData, comprehensiveTaskMetrics] =
 				await Promise.all([
 					this.collectLiveWorkforceMetrics(organisationId, branchId),
 					this.collectLiveTaskMetrics(organisationId, branchId),
@@ -61,6 +61,7 @@ export class LiveOverviewReportGenerator {
 					this.collectLiveSalesMetrics(organisationId, branchId),
 					this.collectLiveClientMetrics(organisationId, branchId),
 					this.collectLiveLocationData(organisationId, branchId),
+					this.collectComprehensiveTaskMetrics(organisationId, branchId),
 				]);
 
 			return {
@@ -95,7 +96,10 @@ export class LiveOverviewReportGenerator {
 				},
 				metrics: {
 					workforce: workforceMetrics,
-					tasks: taskMetrics,
+					tasks: {
+						...taskMetrics,
+						comprehensive: comprehensiveTaskMetrics,
+					},
 					leads: leadMetrics,
 					sales: salesMetrics,
 					clients: clientMetrics,
@@ -2104,5 +2108,532 @@ export class LiveOverviewReportGenerator {
 			}));
 
 		return locationsData;
+	}
+
+	/**
+	 * Collects comprehensive task metrics including historical data and advanced analytics
+	 * This method extends task metrics beyond the current day to provide a complete picture
+	 */
+	private async collectComprehensiveTaskMetrics(organisationId: number, branchId?: number): Promise<Record<string, any>> {
+		try {
+			const today = new Date();
+			const startOfToday = startOfDay(today);
+			
+			// Create base filters
+			const orgFilter = { organisation: { uid: organisationId } };
+			const branchFilter = branchId ? { branch: { uid: branchId } } : {};
+
+			// Historical timeframes
+			const lastWeekStart = subDays(startOfToday, 7);
+			const lastMonthStart = subDays(startOfToday, 30);
+			const lastQuarterStart = subDays(startOfToday, 90);
+
+			// 1. Task Volume Trends
+			// Weekly volume
+			const weeklyTaskVolume = await this.taskRepository.count({
+				where: {
+					...orgFilter,
+					...branchFilter,
+					createdAt: MoreThanOrEqual(lastWeekStart),
+				},
+			});
+
+			// Monthly volume
+			const monthlyTaskVolume = await this.taskRepository.count({
+				where: {
+					...orgFilter,
+					...branchFilter,
+					createdAt: MoreThanOrEqual(lastMonthStart),
+				},
+			});
+
+			// Quarterly volume
+			const quarterlyTaskVolume = await this.taskRepository.count({
+				where: {
+					...orgFilter,
+					...branchFilter,
+					createdAt: MoreThanOrEqual(lastQuarterStart),
+				},
+			});
+
+			// 2. Completion Rate Trends
+			// Weekly completion rate
+			const weeklyCompletedTasks = await this.taskRepository.count({
+				where: {
+					...orgFilter,
+					...branchFilter,
+					status: TaskStatus.COMPLETED,
+					completionDate: MoreThanOrEqual(lastWeekStart),
+				},
+			});
+			
+			const weeklyCompletionRate = weeklyTaskVolume > 0 
+				? Math.round((weeklyCompletedTasks / weeklyTaskVolume) * 100) 
+				: 0;
+
+			// Monthly completion rate
+			const monthlyCompletedTasks = await this.taskRepository.count({
+				where: {
+					...orgFilter,
+					...branchFilter,
+					status: TaskStatus.COMPLETED,
+					completionDate: MoreThanOrEqual(lastMonthStart),
+				},
+			});
+			
+			const monthlyCompletionRate = monthlyTaskVolume > 0 
+				? Math.round((monthlyCompletedTasks / monthlyTaskVolume) * 100) 
+				: 0;
+
+			// Quarterly completion rate
+			const quarterlyCompletedTasks = await this.taskRepository.count({
+				where: {
+					...orgFilter,
+					...branchFilter,
+					status: TaskStatus.COMPLETED,
+					completionDate: MoreThanOrEqual(lastQuarterStart),
+				},
+			});
+			
+			const quarterlyCompletionRate = quarterlyTaskVolume > 0 
+				? Math.round((quarterlyCompletedTasks / quarterlyTaskVolume) * 100) 
+				: 0;
+
+			// 3. Task Aging Analysis
+			// Get tasks by age in each status
+			const taskAging = await this.getTaskAgingAnalysis(organisationId, branchId);
+
+			// 4. Priority-based analysis
+			const priorityAnalysis = await this.getTaskPriorityAnalysis(organisationId, branchId);
+
+			// 5. Task Type Distribution
+			const taskTypeDistribution = await this.getTaskTypeDistribution(organisationId, branchId);
+
+			// 6. Assignee Performance Metrics
+			const assigneePerformance = await this.getAssigneePerformanceMetrics(organisationId, branchId);
+
+			// 7. Workload Distribution
+			const workloadDistribution = await this.getWorkloadDistribution(organisationId, branchId);
+
+			return {
+				volumeTrends: {
+					weekly: weeklyTaskVolume,
+					monthly: monthlyTaskVolume,
+					quarterly: quarterlyTaskVolume,
+				},
+				completionRates: {
+					weekly: weeklyCompletionRate,
+					monthly: monthlyCompletionRate,
+					quarterly: quarterlyCompletionRate,
+					weeklyCount: weeklyCompletedTasks,
+					monthlyCount: monthlyCompletedTasks,
+					quarterlyCount: quarterlyCompletedTasks,
+				},
+				taskAging,
+				priorityAnalysis,
+				taskTypeDistribution,
+				assigneePerformance,
+				workloadDistribution,
+			};
+		} catch (error) {
+			this.logger.error(`Error collecting comprehensive task metrics: ${error.message}`, error.stack);
+			return {
+				volumeTrends: {
+					weekly: 0,
+					monthly: 0,
+					quarterly: 0,
+				},
+				completionRates: {
+					weekly: 0,
+					monthly: 0,
+					quarterly: 0,
+					weeklyCount: 0,
+					monthlyCount: 0,
+					quarterlyCount: 0,
+				},
+				taskAging: {},
+				priorityAnalysis: {},
+				taskTypeDistribution: {},
+				assigneePerformance: [],
+				workloadDistribution: [],
+			};
+		}
+	}
+
+	/**
+	 * Analyze how long tasks stay in each status
+	 */
+	private async getTaskAgingAnalysis(organisationId: number, branchId?: number): Promise<Record<string, any>> {
+		try {
+			const orgFilter = { organisation: { uid: organisationId } };
+			const branchFilter = branchId ? { branch: { uid: branchId } } : {};
+
+			// Define age buckets in days
+			const ageBuckets = {
+				'1-7_days': { min: 1, max: 7 },
+				'8-14_days': { min: 8, max: 14 },
+				'15-30_days': { min: 15, max: 30 },
+				'31-60_days': { min: 31, max: 60 },
+				'60+_days': { min: 61, max: 999 }
+			};
+
+			const result: Record<string, any> = {};
+			const now = new Date();
+
+			// For each task status, get aging distribution
+			for (const status of Object.values(TaskStatus)) {
+				// Skip COMPLETED and CANCELLED for aging analysis
+				if (status === TaskStatus.COMPLETED || status === TaskStatus.CANCELLED) {
+					continue;
+				}
+
+				const statusTasks = await this.taskRepository.find({
+					where: {
+						...orgFilter,
+						...branchFilter,
+						status,
+					},
+					select: ['uid', 'createdAt', 'updatedAt'],
+				});
+
+				const agingDistribution: Record<string, number> = {};
+
+				// Initialize buckets
+				Object.keys(ageBuckets).forEach(bucket => {
+					agingDistribution[bucket] = 0;
+				});
+
+				// Count tasks in each bucket
+				statusTasks.forEach(task => {
+					const ageInDays = Math.floor((now.getTime() - new Date(task.createdAt).getTime()) / (1000 * 3600 * 24));
+					
+					for (const [bucketName, range] of Object.entries(ageBuckets)) {
+						if (ageInDays >= range.min && ageInDays <= range.max) {
+							agingDistribution[bucketName]++;
+							break;
+						}
+					}
+				});
+
+				result[status] = {
+					count: statusTasks.length,
+					distribution: agingDistribution
+				};
+			}
+
+			return result;
+		} catch (error) {
+			this.logger.error(`Error analyzing task aging: ${error.message}`, error.stack);
+			return {};
+		}
+	}
+
+	/**
+	 * Get priority-based task analysis
+	 */
+	private async getTaskPriorityAnalysis(organisationId: number, branchId?: number): Promise<Record<string, any>> {
+		try {
+			const orgFilter = { organisation: { uid: organisationId } };
+			const branchFilter = branchId ? { branch: { uid: branchId } } : {};
+			const today = new Date();
+			const lastMonthStart = subDays(today, 30);
+
+			const result: Record<string, any> = {};
+
+			// For each priority level
+			for (const priority of Object.values(TaskPriority)) {
+				// Get tasks created in last 30 days with this priority
+				const tasksWithPriority = await this.taskRepository.find({
+					where: {
+						...orgFilter,
+						...branchFilter,
+						priority,
+						createdAt: MoreThanOrEqual(lastMonthStart),
+					},
+					select: ['uid', 'status', 'createdAt', 'completionDate'],
+				});
+
+				const completedTasks = tasksWithPriority.filter(task => 
+					task.status === TaskStatus.COMPLETED && task.completionDate
+				);
+
+				// Calculate average completion time in hours
+				let avgCompletionTime = 0;
+				if (completedTasks.length > 0) {
+					const totalCompletionTime = completedTasks.reduce((sum, task) => {
+						const createdAt = new Date(task.createdAt).getTime();
+						const completedAt = new Date(task.completionDate).getTime();
+						return sum + (completedAt - createdAt) / (1000 * 60 * 60); // Convert to hours
+					}, 0);
+					avgCompletionTime = Math.round(totalCompletionTime / completedTasks.length);
+				}
+
+				// Calculate completion rate
+				const completionRate = tasksWithPriority.length > 0 
+					? Math.round((completedTasks.length / tasksWithPriority.length) * 100) 
+					: 0;
+
+				result[priority] = {
+					totalCount: tasksWithPriority.length,
+					completedCount: completedTasks.length,
+					completionRate,
+					avgCompletionTimeHours: avgCompletionTime,
+				};
+			}
+
+			return result;
+		} catch (error) {
+			this.logger.error(`Error analyzing task priorities: ${error.message}`, error.stack);
+			return {};
+		}
+	}
+
+	/**
+	 * Get task distribution by type
+	 */
+	private async getTaskTypeDistribution(organisationId: number, branchId?: number): Promise<Record<string, any>> {
+		try {
+			const orgFilter = { organisation: { uid: organisationId } };
+			const branchFilter = branchId ? { branch: { uid: branchId } } : {};
+
+			const result: Record<string, any> = {};
+
+			// For each task type
+			for (const taskType of Object.values(TaskType)) {
+				const count = await this.taskRepository.count({
+					where: {
+						...orgFilter,
+						...branchFilter,
+						taskType,
+					},
+				});
+
+				const completedCount = await this.taskRepository.count({
+					where: {
+						...orgFilter,
+						...branchFilter,
+						taskType,
+						status: TaskStatus.COMPLETED,
+					},
+				});
+
+				result[taskType] = {
+					totalCount: count,
+					completedCount,
+					completionRate: count > 0 ? Math.round((completedCount / count) * 100) : 0,
+				};
+			}
+
+			return result;
+		} catch (error) {
+			this.logger.error(`Error analyzing task types: ${error.message}`, error.stack);
+			return {};
+		}
+	}
+
+	/**
+	 * Get performance metrics by assignee
+	 */
+	private async getAssigneePerformanceMetrics(organisationId: number, branchId?: number): Promise<any[]> {
+		try {
+			const orgFilter = { organisation: { uid: organisationId } };
+			const branchFilter = branchId ? { branch: { uid: branchId } } : {};
+			const lastMonthStart = subDays(new Date(), 30);
+
+			// Get all tasks with assignees in the last 30 days
+			const tasks = await this.taskRepository.find({
+				where: {
+					...orgFilter,
+					...branchFilter,
+					createdAt: MoreThanOrEqual(lastMonthStart),
+				},
+				select: ['uid', 'assignees', 'status', 'createdAt', 'completionDate', 'priority'],
+			});
+
+			// Create a map to track assignee metrics
+			const assigneeMap: Record<number, any> = {};
+
+			// Process each task
+			tasks.forEach(task => {
+				if (!task.assignees || task.assignees.length === 0) return;
+
+				// We'll use the first assignee for simplicity
+				const assigneeId = task.assignees[0].uid;
+				
+				// Initialize assignee record if not exists
+				if (!assigneeMap[assigneeId]) {
+					assigneeMap[assigneeId] = {
+						assigneeId,
+						totalTasks: 0,
+						completedTasks: 0,
+						highPriorityTasks: 0,
+						highPriorityCompleted: 0,
+						avgCompletionTimeHours: 0,
+						totalCompletionTimeHours: 0,
+					};
+				}
+				
+				// Update assignee metrics
+				assigneeMap[assigneeId].totalTasks++;
+				
+				if (task.status === TaskStatus.COMPLETED) {
+					assigneeMap[assigneeId].completedTasks++;
+					
+					if (task.completionDate) {
+						const completionTime = 
+							(new Date(task.completionDate).getTime() - new Date(task.createdAt).getTime()) / (1000 * 60 * 60);
+						assigneeMap[assigneeId].totalCompletionTimeHours += completionTime;
+					}
+				}
+				
+				if (task.priority === TaskPriority.HIGH || task.priority === TaskPriority.URGENT) {
+					assigneeMap[assigneeId].highPriorityTasks++;
+					
+					if (task.status === TaskStatus.COMPLETED) {
+						assigneeMap[assigneeId].highPriorityCompleted++;
+					}
+				}
+			});
+
+			// Calculate averages and rates
+			return Object.values(assigneeMap).map(assignee => {
+				// Calculate completion rate
+				const completionRate = assignee.totalTasks > 0 
+					? Math.round((assignee.completedTasks / assignee.totalTasks) * 100) 
+					: 0;
+				
+				// Calculate average completion time
+				const avgCompletionTime = assignee.completedTasks > 0 
+					? Math.round(assignee.totalCompletionTimeHours / assignee.completedTasks) 
+					: 0;
+				
+				// Calculate high priority completion rate
+				const highPriorityCompletionRate = assignee.highPriorityTasks > 0 
+					? Math.round((assignee.highPriorityCompleted / assignee.highPriorityTasks) * 100) 
+					: 0;
+				
+				return {
+					assigneeId: assignee.assigneeId,
+					totalTasks: assignee.totalTasks,
+					completedTasks: assignee.completedTasks,
+					completionRate,
+					avgCompletionTimeHours: avgCompletionTime,
+					highPriorityTasks: assignee.highPriorityTasks,
+					highPriorityCompleted: assignee.highPriorityCompleted,
+					highPriorityCompletionRate: highPriorityCompletionRate,
+				};
+			}).sort((a, b) => b.totalTasks - a.totalTasks).slice(0, 10); // Return top 10 by total tasks
+		} catch (error) {
+			this.logger.error(`Error analyzing assignee performance: ${error.message}`, error.stack);
+			return [];
+		}
+	}
+
+	/**
+	 * Get workload distribution among users
+	 */
+	private async getWorkloadDistribution(organisationId: number, branchId?: number): Promise<any[]> {
+		try {
+			const orgFilter = { organisation: { uid: organisationId } };
+			const branchFilter = branchId ? { branch: { uid: branchId } } : {};
+
+			// Get all active users
+			const users = await this.userRepository.find({
+				where: {
+					...orgFilter,
+					...branchFilter,
+				},
+				select: ['uid'],
+			});
+
+			const result = [];
+
+			// For each user, get their active tasks
+			for (const user of users) {
+				const activeTasks = await this.taskRepository.count({
+					where: {
+						...orgFilter,
+						...branchFilter,
+						assignees: { uid: user.uid },
+						status: Not(In([TaskStatus.COMPLETED, TaskStatus.CANCELLED])),
+					},
+				});
+
+				const pendingTasks = await this.taskRepository.count({
+					where: {
+						...orgFilter,
+						...branchFilter,
+						assignees: { uid: user.uid },
+						status: TaskStatus.PENDING,
+					},
+				});
+
+				const inProgressTasks = await this.taskRepository.count({
+					where: {
+						...orgFilter,
+						...branchFilter,
+						assignees: { uid: user.uid },
+						status: TaskStatus.IN_PROGRESS,
+					},
+				});
+
+				const overdueTasks = await this.taskRepository.count({
+					where: {
+						...orgFilter,
+						...branchFilter,
+						assignees: { uid: user.uid },
+						status: TaskStatus.OVERDUE,
+					},
+				});
+
+				const highPriorityTasks = await this.taskRepository.count({
+					where: {
+						...orgFilter,
+						...branchFilter,
+						assignees: { uid: user.uid },
+						status: Not(In([TaskStatus.COMPLETED, TaskStatus.CANCELLED])),
+						priority: In([TaskPriority.HIGH, TaskPriority.URGENT]),
+					},
+				});
+
+				// Only include users with at least one task
+				if (activeTasks > 0) {
+					result.push({
+						userId: user.uid,
+						activeTasks,
+						pendingTasks,
+						inProgressTasks,
+						overdueTasks,
+						highPriorityTasks,
+						workloadScore: this.calculateWorkloadScore(pendingTasks, inProgressTasks, overdueTasks, highPriorityTasks),
+					});
+				}
+			}
+
+			// Sort by workload score (highest first)
+			return result.sort((a, b) => b.workloadScore - a.workloadScore);
+		} catch (error) {
+			this.logger.error(`Error analyzing workload distribution: ${error.message}`, error.stack);
+			return [];
+		}
+	}
+
+	/**
+	 * Calculate a workload score based on task counts and priorities
+	 * This is a simple weighted formula that can be adjusted
+	 */
+	private calculateWorkloadScore(pending: number, inProgress: number, overdue: number, highPriority: number): number {
+		// Weights for different types of tasks
+		const PENDING_WEIGHT = 1;
+		const IN_PROGRESS_WEIGHT = 1.5;
+		const OVERDUE_WEIGHT = 2.5;
+		const HIGH_PRIORITY_WEIGHT = 2;
+
+		return Math.round(
+			(pending * PENDING_WEIGHT) +
+			(inProgress * IN_PROGRESS_WEIGHT) +
+			(overdue * OVERDUE_WEIGHT) +
+			(highPriority * HIGH_PRIORITY_WEIGHT)
+		);
 	}
 }
