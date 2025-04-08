@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, In, MoreThanOrEqual, Not, Repository, LessThanOrEqual, IsNull } from 'typeorm';
+import { Between, In, MoreThanOrEqual, Not, Repository, LessThanOrEqual, IsNull, Raw } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
 import { Attendance } from '../../attendance/entities/attendance.entity';
 import { Task } from '../../tasks/entities/task.entity';
@@ -555,7 +555,7 @@ export class LiveOverviewReportGenerator {
 					status: TaskStatus.COMPLETED,
 					completionDate: MoreThanOrEqual(startOfToday),
 				},
-				relations: ['assignees', 'creator'],
+				relations: ['creator'],
 				order: {
 					completionDate: 'DESC',
 				},
@@ -576,7 +576,7 @@ export class LiveOverviewReportGenerator {
 					status: Not(In([TaskStatus.COMPLETED, TaskStatus.CANCELLED])),
 					deadline: Between(startOfToday, endOfDay(next7Days)),
 				},
-				relations: ['assignees', 'creator'],
+				relations: ['creator'],
 				order: {
 					deadline: 'ASC',
 				},
@@ -775,8 +775,7 @@ export class LiveOverviewReportGenerator {
 		organisationId: number,
 		branchId?: number,
 		startDate = startOfDay(new Date()),
-	): Promise<Array<{ userId: number; userName: string; completedCount: number }>> {
-		// Create base filters
+	): Promise<Array<{ userId: number; userName: string; userPhotoURL: string; completedCount: number }>> {
 		const orgFilter = { organisation: { uid: organisationId } };
 		const branchFilter = branchId ? { branch: { uid: branchId } } : {};
 
@@ -788,11 +787,10 @@ export class LiveOverviewReportGenerator {
 				status: TaskStatus.COMPLETED,
 				completionDate: MoreThanOrEqual(startDate),
 			},
-			relations: ['assignees'],
 		});
 
 		// Count task completions per user
-		const userCompletionMap = new Map<number, { count: number; name: string }>();
+		const userCompletionMap = new Map<number, { count: number }>();
 
 		tasks.forEach((task) => {
 			if (task.assignees && task.assignees.length > 0) {
@@ -801,18 +799,38 @@ export class LiveOverviewReportGenerator {
 
 				userCompletionMap.set(assignee.uid, {
 					count: currentCount + 1,
-					name: String(assignee?.uid),
 				});
 			}
 		});
 
+		// Get user details for all assignees
+		const assigneeIds = Array.from(userCompletionMap.keys());
+		let userDetails: User[] = [];
+		
+		if (assigneeIds.length > 0) {
+			userDetails = await this.userRepository.find({
+				where: { uid: In(assigneeIds) },
+				select: ['uid', 'name', 'photoURL'],
+			});
+		}
+		
+		// Create a map for quick lookup of user details
+		const userMap = new Map<number, User>();
+		userDetails.forEach(user => {
+			userMap.set(user.uid, user);
+		});
+
 		// Convert map to array and sort by completion count
 		const sortedUsers = Array.from(userCompletionMap.entries())
-			.map(([userId, data]) => ({
-				userId,
-				userName: data.name,
-				completedCount: data.count,
-			}))
+			.map(([userId, data]) => {
+				const userDetail = userMap.get(userId);
+				return {
+					userId,
+					userName: userDetail?.name || 'Unknown User',
+					userPhotoURL: userDetail?.photoURL || '',
+					completedCount: data.count,
+				};
+			})
 			.sort((a, b) => b.completedCount - a.completedCount)
 			.slice(0, 5); // Get top 5 users
 
@@ -1091,7 +1109,7 @@ export class LiveOverviewReportGenerator {
 		organisationId: number,
 		branchId?: number,
 		startDate = startOfDay(new Date()),
-	): Promise<Array<{ userId: number; userName: string; leadCount: number; conversionRate: number }>> {
+	): Promise<Array<{ userId: number; userName: string; userPhotoURL: string; leadCount: number; conversionRate: number }>> {
 		// Create base filters
 		const orgFilter = { organisation: { uid: organisationId } };
 		const branchFilter = branchId ? { branch: { uid: branchId } } : {};
@@ -1111,9 +1129,10 @@ export class LiveOverviewReportGenerator {
 		const leadsByUser = new Map<
 			number,
 			{
-				name: string;
 				total: number;
 				converted: number;
+				photoURL?: string;
+				name: string;
 			}
 		>();
 
@@ -1122,6 +1141,7 @@ export class LiveOverviewReportGenerator {
 				const userId = lead.owner.uid;
 				const currentData = leadsByUser.get(userId) || {
 					name: lead.owner.name,
+					photoURL: lead.owner.photoURL,
 					total: 0,
 					converted: 0,
 				};
@@ -1143,6 +1163,7 @@ export class LiveOverviewReportGenerator {
 			.map(([userId, data]) => ({
 				userId,
 				userName: data.name,
+				userPhotoURL: data.photoURL || '',
 				leadCount: data.total,
 				conversionRate: data.total > 0 ? Math.round((data.converted / data.total) * 100) : 0,
 			}))
@@ -1389,7 +1410,7 @@ export class LiveOverviewReportGenerator {
 		organisationId: number,
 		branchId?: number,
 		startDate = startOfDay(new Date()),
-	): Promise<Array<{ userId: number; userName: string; quotations: number; revenue: number }>> {
+	): Promise<Array<{ userId: number; userName: string; userPhotoURL: string; quotations: number; revenue: number }>> {
 		// Create base filters
 		const orgFilter = { organisation: { uid: organisationId } };
 		const branchFilter = branchId ? { branch: { uid: branchId } } : {};
@@ -1409,6 +1430,7 @@ export class LiveOverviewReportGenerator {
 			number,
 			{
 				name: string;
+				photoURL: string;
 				quotations: number;
 				revenue: number;
 			}
@@ -1419,6 +1441,7 @@ export class LiveOverviewReportGenerator {
 				const userId = quotation.placedBy.uid;
 				const currentData = userMap.get(userId) || {
 					name: quotation.placedBy.name,
+					photoURL: quotation.placedBy.photoURL || '',
 					quotations: 0,
 					revenue: 0,
 				};
@@ -1443,6 +1466,7 @@ export class LiveOverviewReportGenerator {
 			.map(([userId, data]) => ({
 				userId,
 				userName: data.name,
+				userPhotoURL: data.photoURL,
 				quotations: data.quotations,
 				revenue: data.revenue,
 			}))
@@ -1557,7 +1581,7 @@ export class LiveOverviewReportGenerator {
 					...branchFilter,
 					checkInTime: MoreThanOrEqual(startOfToday),
 				},
-				relations: ['client', 'user'],
+				relations: ['client', 'owner'],
 			});
 
 			const interactionsToday = clientCheckIns.length;
@@ -1858,7 +1882,7 @@ export class LiveOverviewReportGenerator {
 		organisationId: number,
 		branchId?: number,
 		startDate = startOfDay(new Date()),
-	): Promise<Array<{ userId: number; userName: string; interactions: number; uniqueClients: number }>> {
+	): Promise<Array<{ userId: number; userName: string; userPhotoURL: string; interactions: number; uniqueClients: number }>> {
 		// Create base filters
 		const orgFilter = { organisation: { uid: organisationId } };
 		const branchFilter = branchId ? { branch: { uid: branchId } } : {};
@@ -1870,7 +1894,7 @@ export class LiveOverviewReportGenerator {
 				...branchFilter,
 				checkInTime: MoreThanOrEqual(startDate),
 			},
-			relations: ['user', 'client'],
+			relations: ['owner', 'client'],
 		});
 
 		// Group check-ins by user
@@ -1878,6 +1902,7 @@ export class LiveOverviewReportGenerator {
 			number,
 			{
 				name: string;
+				photoURL: string;
 				interactions: number;
 				clients: Set<number>;
 			}
@@ -1887,7 +1912,8 @@ export class LiveOverviewReportGenerator {
 			if (checkIn?.owner) {
 				const userId = checkIn.owner.uid;
 				const currentData = userMap.get(userId) || {
-					name: checkIn.owner.username,
+					name: checkIn.owner.name || checkIn.owner.username || 'Unknown',
+					photoURL: checkIn.owner.photoURL || '',
 					interactions: 0,
 					clients: new Set<number>(),
 				};
@@ -1909,6 +1935,7 @@ export class LiveOverviewReportGenerator {
 			.map(([userId, data]) => ({
 				userId,
 				userName: data.name,
+				userPhotoURL: data.photoURL,
 				interactions: data.interactions,
 				uniqueClients: data.clients.size,
 			}))
@@ -2502,6 +2529,23 @@ export class LiveOverviewReportGenerator {
 				}
 			});
 
+			// Get user details for all assignees
+			const assigneeIds = Object.keys(assigneeMap).map(id => parseInt(id, 10));
+			let userDetails: User[] = [];
+			
+			if (assigneeIds.length > 0) {
+				userDetails = await this.userRepository.find({
+					where: { uid: In(assigneeIds) },
+					select: ['uid', 'name', 'photoURL'],
+				});
+			}
+			
+			// Create a map for quick lookup of user details
+			const userMap = new Map<number, User>();
+			userDetails.forEach(user => {
+				userMap.set(user.uid, user);
+			});
+
 			// Calculate averages and rates
 			return Object.values(assigneeMap)
 				.map((assignee) => {
@@ -2520,11 +2564,14 @@ export class LiveOverviewReportGenerator {
 						assignee.highPriorityTasks > 0
 							? Math.round((assignee.highPriorityCompleted / assignee.highPriorityTasks) * 100)
 							: 0;
+							
+					// Get user details from our map
+					const userDetail = userMap.get(assignee.assigneeId);
 
 					return {
 						assigneeId: assignee.assigneeId,
-						assigneeName: 'Sales Rep',
-						assigneePhotoURL: '',
+						assigneeName: userDetail?.name || 'Unknown User',
+						assigneePhotoURL: userDetail?.photoURL || '',
 						totalTasks: assignee.totalTasks,
 						completedTasks: assignee.completedTasks,
 						completionRate,
@@ -2550,13 +2597,13 @@ export class LiveOverviewReportGenerator {
 			const orgFilter = { organisation: { uid: organisationId } };
 			const branchFilter = branchId ? { branch: { uid: branchId } } : {};
 
-			// Get all active users
+			// Get all active users with name and photo details
 			const users = await this.userRepository.find({
 				where: {
 					...orgFilter,
 					...branchFilter,
 				},
-				select: ['uid'],
+				select: ['uid', 'name', 'photoURL'],
 			});
 
 			const result = [];
@@ -2567,7 +2614,7 @@ export class LiveOverviewReportGenerator {
 					where: {
 						...orgFilter,
 						...branchFilter,
-						assignees: { uid: user.uid },
+						assignees: Raw(value => `JSON_CONTAINS(${value}, '{"uid": ${user.uid}}')`),
 						status: Not(In([TaskStatus.COMPLETED, TaskStatus.CANCELLED])),
 					},
 				});
@@ -2576,7 +2623,7 @@ export class LiveOverviewReportGenerator {
 					where: {
 						...orgFilter,
 						...branchFilter,
-						assignees: { uid: user.uid },
+						assignees: Raw(value => `JSON_CONTAINS(${value}, '{"uid": ${user.uid}}')`),
 						status: TaskStatus.PENDING,
 					},
 				});
@@ -2585,7 +2632,7 @@ export class LiveOverviewReportGenerator {
 					where: {
 						...orgFilter,
 						...branchFilter,
-						assignees: { uid: user.uid },
+						assignees: Raw(value => `JSON_CONTAINS(${value}, '{"uid": ${user.uid}}')`),
 						status: TaskStatus.IN_PROGRESS,
 					},
 				});
@@ -2594,7 +2641,7 @@ export class LiveOverviewReportGenerator {
 					where: {
 						...orgFilter,
 						...branchFilter,
-						assignees: { uid: user.uid },
+						assignees: Raw(value => `JSON_CONTAINS(${value}, '{"uid": ${user.uid}}')`),
 						status: TaskStatus.OVERDUE,
 					},
 				});
@@ -2603,7 +2650,7 @@ export class LiveOverviewReportGenerator {
 					where: {
 						...orgFilter,
 						...branchFilter,
-						assignees: { uid: user.uid },
+						assignees: Raw(value => `JSON_CONTAINS(${value}, '{"uid": ${user.uid}}')`),
 						status: Not(In([TaskStatus.COMPLETED, TaskStatus.CANCELLED])),
 						priority: In([TaskPriority.HIGH, TaskPriority.URGENT]),
 					},
@@ -2613,6 +2660,8 @@ export class LiveOverviewReportGenerator {
 				if (activeTasks > 0) {
 					result.push({
 						userId: user.uid,
+						userName: user.name || 'Unknown User',
+						userPhotoURL: user.photoURL || '',
 						activeTasks,
 						pendingTasks,
 						inProgressTasks,
