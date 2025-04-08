@@ -39,6 +39,7 @@ import { CommunicationModule } from '../communication/communication.module';
 import { Reward } from '../rewards/entities/reward.entity';
 import { RewardsModule } from '../rewards/rewards.module';
 import { LiveOverviewReportGenerator } from './generators/live-overview-report.generator';
+import { ProductAnalytics } from '../products/entities/product-analytics.entity';
 
 @Module({
 	imports: [
@@ -74,6 +75,7 @@ import { LiveOverviewReportGenerator } from './generators/live-overview-report.g
 			Asset,
 			Client,
 			Product,
+			ProductAnalytics,
 			CheckIn,
 			Doc,
 			Notification,

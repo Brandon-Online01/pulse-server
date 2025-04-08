@@ -18,6 +18,9 @@ import { Branch } from '../../branch/entities/branch.entity';
 import { Organisation } from '../../organisation/entities/organisation.entity';
 import { GeneralStatus } from '../../lib/enums/status.enums';
 import { ClientRiskLevel } from '../../lib/enums/client.enums';
+import { Product } from '../../products/entities/product.entity';
+import { ProductAnalytics } from '../../products/entities/product-analytics.entity';
+import { ProductStatus } from '../../lib/enums/product.enums';
 
 @Injectable()
 export class LiveOverviewReportGenerator {
@@ -44,6 +47,10 @@ export class LiveOverviewReportGenerator {
 		private branchRepository: Repository<Branch>,
 		@InjectRepository(Organisation)
 		private organisationRepository: Repository<Organisation>,
+		@InjectRepository(Product)
+		private productRepository: Repository<Product>,
+		@InjectRepository(ProductAnalytics)
+		private productAnalyticsRepository: Repository<ProductAnalytics>,
 	) {}
 
 	async generate(params: ReportParamsDto): Promise<Record<string, any>> {
@@ -53,20 +60,29 @@ export class LiveOverviewReportGenerator {
 			this.logger.log(`Generating live overview report for org ${organisationId}, branch ${branchId || 'all'}`);
 
 			// Collect all metrics in parallel for better performance
-			const [workforceMetrics, taskMetrics, leadMetrics, salesMetrics, clientMetrics, locationData, comprehensiveTaskMetrics] =
-				await Promise.all([
-					this.collectLiveWorkforceMetrics(organisationId, branchId),
-					this.collectLiveTaskMetrics(organisationId, branchId),
-					this.collectLiveLeadMetrics(organisationId, branchId),
-					this.collectLiveSalesMetrics(organisationId, branchId),
-					this.collectLiveClientMetrics(organisationId, branchId),
-					this.collectLiveLocationData(organisationId, branchId),
-					this.collectComprehensiveTaskMetrics(organisationId, branchId),
-				]);
+			const [
+				workforceMetrics,
+				taskMetrics,
+				leadMetrics,
+				salesMetrics,
+				clientMetrics,
+				locationData,
+				comprehensiveTaskMetrics,
+				productMetrics,
+			] = await Promise.all([
+				this.collectLiveWorkforceMetrics(organisationId, branchId),
+				this.collectLiveTaskMetrics(organisationId, branchId),
+				this.collectLiveLeadMetrics(organisationId, branchId),
+				this.collectLiveSalesMetrics(organisationId, branchId),
+				this.collectLiveClientMetrics(organisationId, branchId),
+				this.collectLiveLocationData(organisationId, branchId),
+				this.collectComprehensiveTaskMetrics(organisationId, branchId),
+				this.collectProductMetrics(organisationId, branchId),
+			]);
 
 			return {
-				name: "Live Organization Overview",
-				type: "live_overview",
+				name: 'Live Organization Overview',
+				type: 'live_overview',
 				generatedAt: new Date().toISOString(),
 				filters: {
 					organisationId,
@@ -93,6 +109,8 @@ export class LiveOverviewReportGenerator {
 					quotationsToday: salesMetrics.quotationsToday,
 					revenueToday: salesMetrics.revenueToday,
 					clientInteractionsToday: clientMetrics.interactionsToday,
+					activeProducts: productMetrics.activeProductsCount,
+					totalProductRevenue: productMetrics.totalRevenue,
 				},
 				metrics: {
 					workforce: workforceMetrics,
@@ -104,74 +122,13 @@ export class LiveOverviewReportGenerator {
 					sales: salesMetrics,
 					clients: clientMetrics,
 					locations: locationData,
+					products: productMetrics,
 				},
 			};
 		} catch (error) {
 			this.logger.error(`Error generating live overview report: ${error.message}`, error.stack);
 			throw new Error(`Failed to generate live overview report: ${error.message}`);
 		}
-	}
-
-	/**
-	 * Defines access roles and permissions for the live overview report.
-	 * This determines what parts of the report different roles can access.
-	 */
-	private defineAccessRoles(): Record<string, any> {
-		return {
-			owner: {
-				title: 'Owner',
-				description: 'Full access to all data and metrics',
-				sections: ['workforce', 'tasks', 'leads', 'sales', 'clients', 'locations'],
-				actions: ['view', 'export', 'share', 'configure'],
-			},
-			admin: {
-				title: 'Administrator',
-				description: 'Full access to all data and metrics',
-				sections: ['workforce', 'tasks', 'leads', 'sales', 'clients', 'locations'],
-				actions: ['view', 'export', 'share', 'configure'],
-			},
-			manager: {
-				title: 'Manager',
-				description: 'Access to all metrics except sensitive financial data',
-				sections: ['workforce', 'tasks', 'leads', 'sales', 'clients', 'locations'],
-				actions: ['view', 'export', 'share'],
-				restrictions: ['detailed_financial'],
-			},
-			supervisor: {
-				title: 'Supervisor',
-				description: 'Access to workforce, tasks, and basic performance metrics',
-				sections: ['workforce', 'tasks', 'leads', 'clients'],
-				actions: ['view', 'export'],
-				restrictions: ['financial', 'sensitive_location'],
-			},
-			user: {
-				title: 'Standard User',
-				description: 'Limited access to basic metrics relevant to their role',
-				sections: ['workforce', 'tasks'],
-				actions: ['view'],
-				restrictions: ['financial', 'client_data', 'sensitive_location'],
-			},
-			developer: {
-				title: 'Developer',
-				description: 'Technical access for development and debugging',
-				sections: ['workforce', 'tasks', 'leads', 'sales', 'clients', 'locations'],
-				actions: ['view', 'export', 'configure'],
-			},
-			support: {
-				title: 'Support Staff',
-				description: 'Limited access to help with support queries',
-				sections: ['workforce', 'tasks'],
-				actions: ['view'],
-				restrictions: ['financial', 'client_data', 'sensitive_location'],
-			},
-			client: {
-				title: 'Client',
-				description: 'Very limited access to relevant data only',
-				sections: ['tasks'],
-				actions: ['view'],
-				restrictions: ['financial', 'workforce', 'internal_data', 'sensitive_location'],
-			},
-		};
 	}
 
 	private async collectLiveWorkforceMetrics(organisationId: number, branchId?: number): Promise<Record<string, any>> {
@@ -199,9 +156,10 @@ export class LiveOverviewReportGenerator {
 			});
 
 			// Get active employees (currently checked in)
-			const activeEmployees = allTodayAttendance.filter(employee => 
-				(employee.status === AttendanceStatus.PRESENT || employee.status === AttendanceStatus.ON_BREAK) && 
-				employee.checkOut === null
+			const activeEmployees = allTodayAttendance.filter(
+				(employee) =>
+					(employee.status === AttendanceStatus.PRESENT || employee.status === AttendanceStatus.ON_BREAK) &&
+					employee.checkOut === null,
 			);
 
 			const activeCount = activeEmployees.length;
@@ -224,7 +182,7 @@ export class LiveOverviewReportGenerator {
 
 			// Get completed shifts for the day
 			const completedShifts = allTodayAttendance.filter(
-				shift => shift.status === AttendanceStatus.COMPLETED && shift.checkOut !== null
+				(shift) => shift.status === AttendanceStatus.COMPLETED && shift.checkOut !== null,
 			);
 
 			// Calculate minutes from completed shifts
@@ -289,11 +247,12 @@ export class LiveOverviewReportGenerator {
 
 			// Get all employees with attendance records today
 			const employeesWithAttendanceToday = allTodayAttendance
-				.filter((record, index, self) => 
-					// Deduplicate by employee ID
-					index === self.findIndex(r => r.owner?.uid === record.owner?.uid)
+				.filter(
+					(record, index, self) =>
+						// Deduplicate by employee ID
+						index === self.findIndex((r) => r.owner?.uid === record.owner?.uid),
 				)
-				.map(record => ({
+				.map((record) => ({
 					uid: record.owner?.uid,
 					name: record.owner?.name,
 					position: record.owner?.role || 'Staff',
@@ -301,9 +260,11 @@ export class LiveOverviewReportGenerator {
 					checkInTime: format(new Date(record.checkIn), 'HH:mm:ss'),
 					checkOutTime: record.checkOut ? format(new Date(record.checkOut), 'HH:mm:ss') : null,
 					breakCount: record.breakCount || 0,
-					totalWorkTime: record.checkOut 
-						? Math.round(differenceInMinutes(new Date(record.checkOut), new Date(record.checkIn)) / 60 * 10) / 10
-						: Math.round(differenceInMinutes(new Date(), new Date(record.checkIn)) / 60 * 10) / 10,
+					totalWorkTime: record.checkOut
+						? Math.round(
+								(differenceInMinutes(new Date(record.checkOut), new Date(record.checkIn)) / 60) * 10,
+						  ) / 10
+						: Math.round((differenceInMinutes(new Date(), new Date(record.checkIn)) / 60) * 10) / 10,
 					isActive: record.checkOut === null && record.status !== AttendanceStatus.COMPLETED,
 				}));
 
@@ -325,7 +286,7 @@ export class LiveOverviewReportGenerator {
 					checkInTime: format(new Date(employee.checkIn), 'HH:mm:ss'),
 					breakCount: employee.breakCount || 0,
 					totalHoursToday: employee.checkIn
-						? Math.round(differenceInMinutes(new Date(), new Date(employee.checkIn)) / 60 * 10) / 10
+						? Math.round((differenceInMinutes(new Date(), new Date(employee.checkIn)) / 60) * 10) / 10
 						: 0,
 				})),
 			};
@@ -551,7 +512,7 @@ export class LiveOverviewReportGenerator {
 				},
 			});
 
-			const overallCompletionRate = 
+			const overallCompletionRate =
 				totalTasksCount > 0 ? Math.round((totalCompletedTasks / totalTasksCount) * 100) : 0;
 
 			// Get task distribution by priority - count ALL tasks by priority
@@ -584,7 +545,7 @@ export class LiveOverviewReportGenerator {
 			// Get upcoming tasks (due in the next 7 days)
 			const next7Days = new Date();
 			next7Days.setDate(next7Days.getDate() + 7);
-			
+
 			const upcomingTasks = await this.taskRepository.find({
 				where: {
 					...orgFilter,
@@ -629,8 +590,9 @@ export class LiveOverviewReportGenerator {
 					assignedToId: task.assignees?.length > 0 && task.assignees[0]?.uid ? task.assignees[0].uid : null,
 					assignedTo: task.assignees?.length > 0 ? 'User #' + task.assignees[0].uid : 'Unassigned',
 					deadline: task.deadline ? format(new Date(task.deadline), 'PP') : 'No deadline',
-					daysRemaining: task.deadline ? 
-						Math.ceil((new Date(task.deadline).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : null,
+					daysRemaining: task.deadline
+						? Math.ceil((new Date(task.deadline).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+						: null,
 				})),
 			};
 		} catch (error) {
@@ -663,14 +625,14 @@ export class LiveOverviewReportGenerator {
 		try {
 			const orgFilter = { organisation: { uid: organisationId } };
 			const branchFilter = branchId ? { branch: { uid: branchId } } : {};
-			
+
 			// Initialize result object
 			const result: Record<string, any> = {
 				all: {},
 				active: {},
 				completed: {},
 			};
-			
+
 			// Count all tasks by priority
 			for (const priority of Object.values(TaskPriority)) {
 				// All tasks with this priority
@@ -681,7 +643,7 @@ export class LiveOverviewReportGenerator {
 						priority,
 					},
 				});
-				
+
 				// Active tasks with this priority (not completed or cancelled)
 				const activeCount = await this.taskRepository.count({
 					where: {
@@ -691,7 +653,7 @@ export class LiveOverviewReportGenerator {
 						status: Not(In([TaskStatus.COMPLETED, TaskStatus.CANCELLED])),
 					},
 				});
-				
+
 				// Completed tasks with this priority
 				const completedCount = await this.taskRepository.count({
 					where: {
@@ -701,13 +663,13 @@ export class LiveOverviewReportGenerator {
 						status: TaskStatus.COMPLETED,
 					},
 				});
-				
+
 				// Store counts
 				result.all[priority.toLowerCase()] = totalCount;
 				result.active[priority.toLowerCase()] = activeCount;
 				result.completed[priority.toLowerCase()] = completedCount;
 			}
-			
+
 			return result;
 		} catch (error) {
 			this.logger.error(`Error getting task priority distribution: ${error.message}`, error.stack);
@@ -719,14 +681,17 @@ export class LiveOverviewReportGenerator {
 		}
 	}
 
-	private async getTaskStatusDistribution(organisationId: number, branchId?: number): Promise<Record<string, number>> {
+	private async getTaskStatusDistribution(
+		organisationId: number,
+		branchId?: number,
+	): Promise<Record<string, number>> {
 		try {
 			const orgFilter = { organisation: { uid: organisationId } };
 			const branchFilter = branchId ? { branch: { uid: branchId } } : {};
-			
+
 			// Initialize result object
 			const result: Record<string, number> = {};
-			
+
 			// Count tasks for each status
 			for (const status of Object.values(TaskStatus)) {
 				const count = await this.taskRepository.count({
@@ -736,10 +701,10 @@ export class LiveOverviewReportGenerator {
 						status,
 					},
 				});
-				
+
 				result[status.toLowerCase()] = count;
 			}
-			
+
 			return result;
 		} catch (error) {
 			this.logger.error(`Error getting task status distribution: ${error.message}`, error.stack);
@@ -1009,12 +974,12 @@ export class LiveOverviewReportGenerator {
 			// Since we don't have direct category support, let's use a different approach
 			// We'll manually handle this by checking lead types or sources
 			const result: Record<string, number> = {
-				'Uncategorized': 0,
+				Uncategorized: 0,
 				'Walk-in': 0,
-				'Referral': 0,
-				'Website': 0,
-				'Phone': 0,
-				'Email': 0,
+				Referral: 0,
+				Website: 0,
+				Phone: 0,
+				Email: 0,
 				'Social Media': 0,
 			};
 
@@ -1276,7 +1241,7 @@ export class LiveOverviewReportGenerator {
 				totalItemsToday: quotations.reduce((acc, q) => acc + (q.totalItems || 0), 0),
 				revenueToday: totalRevenueToday,
 				revenueFormatted: totalRevenueFormatted,
-					pendingQuotationsCount: pendingQuotations.length,
+				pendingQuotationsCount: pendingQuotations.length,
 				pendingRevenue: totalPendingRevenue,
 				pendingRevenueFormatted: pendingRevenueFormatted,
 				averageOrderValue,
@@ -1313,7 +1278,7 @@ export class LiveOverviewReportGenerator {
 					}).format(
 						typeof quotation.totalAmount === 'string'
 							? parseFloat(quotation.totalAmount)
-							: quotation.totalAmount || 0
+							: quotation.totalAmount || 0,
 					),
 					itemCount: quotation.totalItems,
 					status: quotation.status,
@@ -1646,14 +1611,14 @@ export class LiveOverviewReportGenerator {
 				uniqueClientsCount,
 				totalClientCount,
 				activeClientsCount,
-				inactiveClientsCount, 
+				inactiveClientsCount,
 				clientEngagementRate,
 				clientsByCategory,
 				clientsByIndustry,
 				clientsByRiskLevel,
 				hourlyData,
 				topStaff,
-				recentClients: recentClients.map(client => ({
+				recentClients: recentClients.map((client) => ({
 					id: client.uid,
 					name: client.name,
 					contactPerson: client.contactPerson,
@@ -1676,7 +1641,7 @@ export class LiveOverviewReportGenerator {
 				uniqueClientsCount: 0,
 				totalClientCount: 0,
 				activeClientsCount: 0,
-				inactiveClientsCount: 0, 
+				inactiveClientsCount: 0,
 				clientEngagementRate: 0,
 				clientsByCategory: {},
 				clientsByIndustry: {},
@@ -1707,7 +1672,7 @@ export class LiveOverviewReportGenerator {
 			});
 
 			// Get unique categories
-			const uniqueCategories = [...new Set(clients.map(client => client.category || 'Other'))];
+			const uniqueCategories = [...new Set(clients.map((client) => client.category || 'Other'))];
 			const result: Record<string, number> = {};
 
 			// Count clients by category
@@ -1725,7 +1690,7 @@ export class LiveOverviewReportGenerator {
 			return result;
 		} catch (error) {
 			this.logger.error(`Error calculating client categories: ${error.message}`, error.stack);
-			return { 'Other': 0 };
+			return { Other: 0 };
 		}
 	}
 
@@ -1747,7 +1712,7 @@ export class LiveOverviewReportGenerator {
 			});
 
 			// Get unique industries
-			const uniqueIndustries = [...new Set(clients.map(client => client.industry || 'Other'))];
+			const uniqueIndustries = [...new Set(clients.map((client) => client.industry || 'Other'))];
 			const result: Record<string, number> = {};
 
 			// Count clients by industry
@@ -1765,7 +1730,7 @@ export class LiveOverviewReportGenerator {
 			return result;
 		} catch (error) {
 			this.logger.error(`Error calculating client industries: ${error.message}`, error.stack);
-			return { 'Other': 0 };
+			return { Other: 0 };
 		}
 	}
 
@@ -1779,7 +1744,7 @@ export class LiveOverviewReportGenerator {
 		try {
 			// Get all clients by risk level
 			const result: Record<string, number> = {};
-			
+
 			// Get count for each risk level
 			for (const riskLevel of Object.values(ClientRiskLevel)) {
 				const count = await this.clientRepository.count({
@@ -1795,7 +1760,7 @@ export class LiveOverviewReportGenerator {
 			return result;
 		} catch (error) {
 			this.logger.error(`Error calculating client risk levels: ${error.message}`, error.stack);
-			return { 'low': 0, 'medium': 0, 'high': 0, 'critical': 0 };
+			return { low: 0, medium: 0, high: 0, critical: 0 };
 		}
 	}
 
@@ -2114,11 +2079,14 @@ export class LiveOverviewReportGenerator {
 	 * Collects comprehensive task metrics including historical data and advanced analytics
 	 * This method extends task metrics beyond the current day to provide a complete picture
 	 */
-	private async collectComprehensiveTaskMetrics(organisationId: number, branchId?: number): Promise<Record<string, any>> {
+	private async collectComprehensiveTaskMetrics(
+		organisationId: number,
+		branchId?: number,
+	): Promise<Record<string, any>> {
 		try {
 			const today = new Date();
 			const startOfToday = startOfDay(today);
-			
+
 			// Create base filters
 			const orgFilter = { organisation: { uid: organisationId } };
 			const branchFilter = branchId ? { branch: { uid: branchId } } : {};
@@ -2166,10 +2134,9 @@ export class LiveOverviewReportGenerator {
 					completionDate: MoreThanOrEqual(lastWeekStart),
 				},
 			});
-			
-			const weeklyCompletionRate = weeklyTaskVolume > 0 
-				? Math.round((weeklyCompletedTasks / weeklyTaskVolume) * 100) 
-				: 0;
+
+			const weeklyCompletionRate =
+				weeklyTaskVolume > 0 ? Math.round((weeklyCompletedTasks / weeklyTaskVolume) * 100) : 0;
 
 			// Monthly completion rate
 			const monthlyCompletedTasks = await this.taskRepository.count({
@@ -2180,10 +2147,9 @@ export class LiveOverviewReportGenerator {
 					completionDate: MoreThanOrEqual(lastMonthStart),
 				},
 			});
-			
-			const monthlyCompletionRate = monthlyTaskVolume > 0 
-				? Math.round((monthlyCompletedTasks / monthlyTaskVolume) * 100) 
-				: 0;
+
+			const monthlyCompletionRate =
+				monthlyTaskVolume > 0 ? Math.round((monthlyCompletedTasks / monthlyTaskVolume) * 100) : 0;
 
 			// Quarterly completion rate
 			const quarterlyCompletedTasks = await this.taskRepository.count({
@@ -2194,10 +2160,9 @@ export class LiveOverviewReportGenerator {
 					completionDate: MoreThanOrEqual(lastQuarterStart),
 				},
 			});
-			
-			const quarterlyCompletionRate = quarterlyTaskVolume > 0 
-				? Math.round((quarterlyCompletedTasks / quarterlyTaskVolume) * 100) 
-				: 0;
+
+			const quarterlyCompletionRate =
+				quarterlyTaskVolume > 0 ? Math.round((quarterlyCompletedTasks / quarterlyTaskVolume) * 100) : 0;
 
 			// 3. Task Aging Analysis
 			// Get tasks by age in each status
@@ -2274,7 +2239,7 @@ export class LiveOverviewReportGenerator {
 				'8-14_days': { min: 8, max: 14 },
 				'15-30_days': { min: 15, max: 30 },
 				'31-60_days': { min: 31, max: 60 },
-				'60+_days': { min: 61, max: 999 }
+				'60+_days': { min: 61, max: 999 },
 			};
 
 			const result: Record<string, any> = {};
@@ -2299,14 +2264,16 @@ export class LiveOverviewReportGenerator {
 				const agingDistribution: Record<string, number> = {};
 
 				// Initialize buckets
-				Object.keys(ageBuckets).forEach(bucket => {
+				Object.keys(ageBuckets).forEach((bucket) => {
 					agingDistribution[bucket] = 0;
 				});
 
 				// Count tasks in each bucket
-				statusTasks.forEach(task => {
-					const ageInDays = Math.floor((now.getTime() - new Date(task.createdAt).getTime()) / (1000 * 3600 * 24));
-					
+				statusTasks.forEach((task) => {
+					const ageInDays = Math.floor(
+						(now.getTime() - new Date(task.createdAt).getTime()) / (1000 * 3600 * 24),
+					);
+
 					for (const [bucketName, range] of Object.entries(ageBuckets)) {
 						if (ageInDays >= range.min && ageInDays <= range.max) {
 							agingDistribution[bucketName]++;
@@ -2317,7 +2284,7 @@ export class LiveOverviewReportGenerator {
 
 				result[status] = {
 					count: statusTasks.length,
-					distribution: agingDistribution
+					distribution: agingDistribution,
 				};
 			}
 
@@ -2353,8 +2320,8 @@ export class LiveOverviewReportGenerator {
 					select: ['uid', 'status', 'createdAt', 'completionDate'],
 				});
 
-				const completedTasks = tasksWithPriority.filter(task => 
-					task.status === TaskStatus.COMPLETED && task.completionDate
+				const completedTasks = tasksWithPriority.filter(
+					(task) => task.status === TaskStatus.COMPLETED && task.completionDate,
 				);
 
 				// Calculate average completion time in hours
@@ -2369,9 +2336,10 @@ export class LiveOverviewReportGenerator {
 				}
 
 				// Calculate completion rate
-				const completionRate = tasksWithPriority.length > 0 
-					? Math.round((completedTasks.length / tasksWithPriority.length) * 100) 
-					: 0;
+				const completionRate =
+					tasksWithPriority.length > 0
+						? Math.round((completedTasks.length / tasksWithPriority.length) * 100)
+						: 0;
 
 				result[priority] = {
 					totalCount: tasksWithPriority.length,
@@ -2454,12 +2422,12 @@ export class LiveOverviewReportGenerator {
 			const assigneeMap: Record<number, any> = {};
 
 			// Process each task
-			tasks.forEach(task => {
+			tasks.forEach((task) => {
 				if (!task.assignees || task.assignees.length === 0) return;
 
 				// We'll use the first assignee for simplicity
-				const assigneeId = task.assignees[0].uid;
-				
+				const assigneeId = task.assignees[0]?.uid;
+
 				// Initialize assignee record if not exists
 				if (!assigneeMap[assigneeId]) {
 					assigneeMap[assigneeId] = {
@@ -2472,23 +2440,24 @@ export class LiveOverviewReportGenerator {
 						totalCompletionTimeHours: 0,
 					};
 				}
-				
+
 				// Update assignee metrics
 				assigneeMap[assigneeId].totalTasks++;
-				
+
 				if (task.status === TaskStatus.COMPLETED) {
 					assigneeMap[assigneeId].completedTasks++;
-					
+
 					if (task.completionDate) {
-						const completionTime = 
-							(new Date(task.completionDate).getTime() - new Date(task.createdAt).getTime()) / (1000 * 60 * 60);
+						const completionTime =
+							(new Date(task.completionDate).getTime() - new Date(task.createdAt).getTime()) /
+							(1000 * 60 * 60);
 						assigneeMap[assigneeId].totalCompletionTimeHours += completionTime;
 					}
 				}
-				
+
 				if (task.priority === TaskPriority.HIGH || task.priority === TaskPriority.URGENT) {
 					assigneeMap[assigneeId].highPriorityTasks++;
-					
+
 					if (task.status === TaskStatus.COMPLETED) {
 						assigneeMap[assigneeId].highPriorityCompleted++;
 					}
@@ -2496,33 +2465,39 @@ export class LiveOverviewReportGenerator {
 			});
 
 			// Calculate averages and rates
-			return Object.values(assigneeMap).map(assignee => {
-				// Calculate completion rate
-				const completionRate = assignee.totalTasks > 0 
-					? Math.round((assignee.completedTasks / assignee.totalTasks) * 100) 
-					: 0;
-				
-				// Calculate average completion time
-				const avgCompletionTime = assignee.completedTasks > 0 
-					? Math.round(assignee.totalCompletionTimeHours / assignee.completedTasks) 
-					: 0;
-				
-				// Calculate high priority completion rate
-				const highPriorityCompletionRate = assignee.highPriorityTasks > 0 
-					? Math.round((assignee.highPriorityCompleted / assignee.highPriorityTasks) * 100) 
-					: 0;
-				
-				return {
-					assigneeId: assignee.assigneeId,
-					totalTasks: assignee.totalTasks,
-					completedTasks: assignee.completedTasks,
-					completionRate,
-					avgCompletionTimeHours: avgCompletionTime,
-					highPriorityTasks: assignee.highPriorityTasks,
-					highPriorityCompleted: assignee.highPriorityCompleted,
-					highPriorityCompletionRate: highPriorityCompletionRate,
-				};
-			}).sort((a, b) => b.totalTasks - a.totalTasks).slice(0, 10); // Return top 10 by total tasks
+			return Object.values(assigneeMap)
+				.map((assignee) => {
+					// Calculate completion rate
+					const completionRate =
+						assignee.totalTasks > 0 ? Math.round((assignee.completedTasks / assignee.totalTasks) * 100) : 0;
+
+					// Calculate average completion time
+					const avgCompletionTime =
+						assignee.completedTasks > 0
+							? Math.round(assignee.totalCompletionTimeHours / assignee.completedTasks)
+							: 0;
+
+					// Calculate high priority completion rate
+					const highPriorityCompletionRate =
+						assignee.highPriorityTasks > 0
+							? Math.round((assignee.highPriorityCompleted / assignee.highPriorityTasks) * 100)
+							: 0;
+
+					return {
+						assigneeId: assignee.assigneeId,
+						assigneeName: 'test name',
+						assigneePhotoURL: 'test photo',
+						totalTasks: assignee.totalTasks,
+						completedTasks: assignee.completedTasks,
+						completionRate,
+						avgCompletionTimeHours: avgCompletionTime,
+						highPriorityTasks: assignee.highPriorityTasks,
+						highPriorityCompleted: assignee.highPriorityCompleted,
+						highPriorityCompletionRate: highPriorityCompletionRate,
+					};
+				})
+				.sort((a, b) => b.totalTasks - a.totalTasks)
+				.slice(0, 10); // Return top 10 by total tasks
 		} catch (error) {
 			this.logger.error(`Error analyzing assignee performance: ${error.message}`, error.stack);
 			return [];
@@ -2605,7 +2580,12 @@ export class LiveOverviewReportGenerator {
 						inProgressTasks,
 						overdueTasks,
 						highPriorityTasks,
-						workloadScore: this.calculateWorkloadScore(pendingTasks, inProgressTasks, overdueTasks, highPriorityTasks),
+						workloadScore: this.calculateWorkloadScore(
+							pendingTasks,
+							inProgressTasks,
+							overdueTasks,
+							highPriorityTasks,
+						),
 					});
 				}
 			}
@@ -2630,10 +2610,454 @@ export class LiveOverviewReportGenerator {
 		const HIGH_PRIORITY_WEIGHT = 2;
 
 		return Math.round(
-			(pending * PENDING_WEIGHT) +
-			(inProgress * IN_PROGRESS_WEIGHT) +
-			(overdue * OVERDUE_WEIGHT) +
-			(highPriority * HIGH_PRIORITY_WEIGHT)
+			pending * PENDING_WEIGHT +
+				inProgress * IN_PROGRESS_WEIGHT +
+				overdue * OVERDUE_WEIGHT +
+				highPriority * HIGH_PRIORITY_WEIGHT,
 		);
+	}
+
+	/**
+	 * Collect product-related metrics including performance analytics
+	 */
+	private async collectProductMetrics(organisationId: number, branchId?: number): Promise<Record<string, any>> {
+		try {
+			const orgFilter = { organisation: { uid: organisationId } };
+			const branchFilter = branchId ? { branch: { uid: branchId } } : {};
+
+			// 1. Basic product statistics
+			const totalProductsCount = await this.productRepository.count({
+				where: {
+					...orgFilter,
+					...branchFilter,
+					isDeleted: false,
+				},
+			});
+
+			const activeProductsCount = await this.productRepository.count({
+				where: {
+					...orgFilter,
+					...branchFilter,
+					status: ProductStatus.ACTIVE,
+					isDeleted: false,
+				},
+			});
+
+			const newProductsCount = await this.productRepository.count({
+				where: {
+					...orgFilter,
+					...branchFilter,
+					status: ProductStatus.NEW,
+					isDeleted: false,
+				},
+			});
+
+			const outOfStockCount = await this.productRepository.count({
+				where: {
+					...orgFilter,
+					...branchFilter,
+					status: ProductStatus.OUTOFSTOCK,
+					isDeleted: false,
+				},
+			});
+
+			const bestSellersCount = await this.productRepository.count({
+				where: {
+					...orgFilter,
+					...branchFilter,
+					status: ProductStatus.BEST_SELLER,
+					isDeleted: false,
+				},
+			});
+
+			// 2. Low stock alerts (products near reorder point)
+			const lowStockProducts = await this.productRepository.find({
+				where: {
+					...orgFilter,
+					...branchFilter,
+					isDeleted: false,
+				},
+				select: ['uid', 'name', 'sku', 'stockQuantity', 'reorderPoint', 'category'],
+			});
+
+			const lowStockAlerts = lowStockProducts
+				.filter((product) => product.stockQuantity <= product.reorderPoint)
+				.map((product) => ({
+					id: product.uid,
+					name: product.name,
+					sku: product.sku,
+					currentStock: product.stockQuantity,
+					reorderPoint: product.reorderPoint,
+					category: product.category,
+				}))
+				.slice(0, 10); // Limit to top 10 alerts
+
+			// 3. Product category distribution
+			const categoryDistribution = await this.getProductCategoryDistribution(organisationId, branchId);
+
+			// 4. Status distribution
+			const statusDistribution = await this.getProductStatusDistribution(organisationId, branchId);
+
+			// 5. Top performing products by revenue
+			const topPerformingProducts = await this.getTopPerformingProducts(organisationId, branchId);
+
+			// 6. Latest products
+			const latestProducts = await this.productRepository.find({
+				where: {
+					...orgFilter,
+					...branchFilter,
+					isDeleted: false,
+				},
+				order: {
+					createdAt: 'DESC',
+				},
+				select: ['uid', 'name', 'price', 'category', 'stockQuantity', 'status', 'createdAt'],
+				take: 5,
+			});
+
+			// 7. Product analytics summary
+			const productAnalyticsSummary = await this.getProductAnalyticsSummary(organisationId, branchId);
+
+			// 8. Calculate total inventory value
+			const inventoryValue = await this.calculateTotalInventoryValue(organisationId, branchId);
+
+			// 9. Calculate total revenue from product sales
+			const totalRevenue = productAnalyticsSummary.totalRevenue || 0;
+
+			// 10. Promotion metrics
+			const promotionMetrics = await this.getPromotionMetrics(organisationId, branchId);
+
+			return {
+				totalProductsCount,
+				activeProductsCount,
+				newProductsCount,
+				outOfStockCount,
+				bestSellersCount,
+				lowStockAlerts,
+				inventoryValue,
+				totalRevenue,
+				categoryDistribution,
+				statusDistribution,
+				topPerformingProducts,
+				latestProducts: latestProducts.map((product) => ({
+					id: product.uid,
+					name: product.name,
+					price: product.price,
+					category: product.category,
+					stockQuantity: product.stockQuantity,
+					status: product.status,
+					createdAt: format(new Date(product.createdAt), 'PP'),
+				})),
+				analytics: productAnalyticsSummary,
+				promotions: promotionMetrics,
+			};
+		} catch (error) {
+			this.logger.error(`Error collecting product metrics: ${error.message}`, error.stack);
+			return {
+				totalProductsCount: 0,
+				activeProductsCount: 0,
+				newProductsCount: 0,
+				outOfStockCount: 0,
+				bestSellersCount: 0,
+				lowStockAlerts: [],
+				inventoryValue: 0,
+				totalRevenue: 0,
+				categoryDistribution: {},
+				statusDistribution: {},
+				topPerformingProducts: [],
+				latestProducts: [],
+				analytics: {
+					averageSellPrice: 0,
+					averageProfitMargin: 0,
+					averageStockTurnover: 0,
+					totalUnitsSold: 0,
+					returnRate: 0,
+					conversionRate: 0,
+				},
+				promotions: {
+					activePromotionsCount: 0,
+					averageDiscountPercentage: 0,
+					productsOnPromotion: [],
+				},
+			};
+		}
+	}
+
+	/**
+	 * Get product category distribution
+	 */
+	private async getProductCategoryDistribution(
+		organisationId: number,
+		branchId?: number,
+	): Promise<Record<string, number>> {
+		try {
+			const orgFilter = { organisation: { uid: organisationId } };
+			const branchFilter = branchId ? { branch: { uid: branchId } } : {};
+
+			// Get all products
+			const products = await this.productRepository.find({
+				where: {
+					...orgFilter,
+					...branchFilter,
+					isDeleted: false,
+				},
+				select: ['category'],
+			});
+
+			// Count products by category
+			const distribution: Record<string, number> = {};
+
+			products.forEach((product) => {
+				const category = product.category || 'Uncategorized';
+
+				if (!distribution[category]) {
+					distribution[category] = 0;
+				}
+
+				distribution[category]++;
+			});
+
+			return distribution;
+		} catch (error) {
+			this.logger.error(`Error getting product category distribution: ${error.message}`, error.stack);
+			return {};
+		}
+	}
+
+	/**
+	 * Get product status distribution
+	 */
+	private async getProductStatusDistribution(
+		organisationId: number,
+		branchId?: number,
+	): Promise<Record<string, number>> {
+		try {
+			const orgFilter = { organisation: { uid: organisationId } };
+			const branchFilter = branchId ? { branch: { uid: branchId } } : {};
+			const result: Record<string, number> = {};
+
+			// Initialize all statuses with 0
+			for (const status of Object.values(ProductStatus)) {
+				result[status] = 0;
+			}
+
+			// Count products by status
+			for (const status of Object.values(ProductStatus)) {
+				const count = await this.productRepository.count({
+					where: {
+						...orgFilter,
+						...branchFilter,
+						status,
+						isDeleted: false,
+					},
+				});
+
+				result[status] = count;
+			}
+
+			return result;
+		} catch (error) {
+			this.logger.error(`Error getting product status distribution: ${error.message}`, error.stack);
+			return {};
+		}
+	}
+
+	/**
+	 * Get top performing products by revenue
+	 */
+	private async getTopPerformingProducts(organisationId: number, branchId?: number): Promise<any[]> {
+		try {
+			const orgFilter = { organisation: { uid: organisationId } };
+			const branchFilter = branchId ? { branch: { uid: branchId } } : {};
+
+			// Get products with their analytics
+			const products = await this.productRepository.find({
+				where: {
+					...orgFilter,
+					...branchFilter,
+					isDeleted: false,
+				},
+				relations: ['analytics'],
+				select: ['uid', 'name', 'price', 'category', 'status'],
+			});
+
+			// Sort products by revenue and take top 10
+			return products
+				.filter((product) => product.analytics?.totalRevenue > 0)
+				.map((product) => ({
+					id: product.uid,
+					name: product.name,
+					price: product.price,
+					category: product.category,
+					status: product.status,
+					totalRevenue: product.analytics?.totalRevenue || 0,
+					totalUnitsSold: product.analytics?.totalUnitsSold || 0,
+					profitMargin: product.analytics?.profitMargin || 0,
+				}))
+				.sort((a, b) => b.totalRevenue - a.totalRevenue)
+				.slice(0, 10);
+		} catch (error) {
+			this.logger.error(`Error getting top performing products: ${error.message}`, error.stack);
+			return [];
+		}
+	}
+
+	/**
+	 * Get summary of product analytics metrics
+	 */
+	private async getProductAnalyticsSummary(organisationId: number, branchId?: number): Promise<Record<string, any>> {
+		try {
+			const orgFilter = { organisation: { uid: organisationId } };
+			const branchFilter = branchId ? { branch: { uid: branchId } } : {};
+
+			// Get product analytics
+			const productAnalytics = await this.productAnalyticsRepository.find({
+				join: {
+					alias: 'analytics',
+					innerJoin: {
+						product: 'analytics.product',
+					},
+				},
+				where: {
+					product: {
+						...orgFilter,
+						...branchFilter,
+						isDeleted: false,
+					},
+				},
+			});
+
+			// Calculate average metrics
+			let totalSellPrice = 0;
+			let totalProfitMargin = 0;
+			let totalStockTurnover = 0;
+			let totalUnitsSold = 0;
+			let totalReturnRate = 0;
+			let totalConversionRate = 0;
+			let totalRevenue = 0;
+
+			const analyticsCount = productAnalytics.length;
+
+			productAnalytics.forEach((analytics) => {
+				if (analytics.averageSellingPrice) totalSellPrice += analytics.averageSellingPrice;
+				if (analytics.profitMargin) totalProfitMargin += analytics.profitMargin;
+				if (analytics.stockTurnoverRate) totalStockTurnover += analytics.stockTurnoverRate;
+				totalUnitsSold += analytics.totalUnitsSold || 0;
+				totalReturnRate += analytics.returnRate || 0;
+				totalConversionRate += analytics.conversionRate || 0;
+				totalRevenue += analytics.totalRevenue || 0;
+			});
+
+			return {
+				averageSellPrice: analyticsCount > 0 ? totalSellPrice / analyticsCount : 0,
+				averageProfitMargin: analyticsCount > 0 ? totalProfitMargin / analyticsCount : 0,
+				averageStockTurnover: analyticsCount > 0 ? totalStockTurnover / analyticsCount : 0,
+				totalUnitsSold,
+				returnRate: analyticsCount > 0 ? totalReturnRate / analyticsCount : 0,
+				conversionRate: analyticsCount > 0 ? totalConversionRate / analyticsCount : 0,
+				totalRevenue,
+			};
+		} catch (error) {
+			this.logger.error(`Error getting product analytics summary: ${error.message}`, error.stack);
+			return {
+				averageSellPrice: 0,
+				averageProfitMargin: 0,
+				averageStockTurnover: 0,
+				totalUnitsSold: 0,
+				returnRate: 0,
+				conversionRate: 0,
+				totalRevenue: 0,
+			};
+		}
+	}
+
+	/**
+	 * Calculate total inventory value
+	 */
+	private async calculateTotalInventoryValue(organisationId: number, branchId?: number): Promise<number> {
+		try {
+			const orgFilter = { organisation: { uid: organisationId } };
+			const branchFilter = branchId ? { branch: { uid: branchId } } : {};
+
+			// Get all products with stock quantity and price
+			const products = await this.productRepository.find({
+				where: {
+					...orgFilter,
+					...branchFilter,
+					isDeleted: false,
+				},
+				select: ['stockQuantity', 'price'],
+			});
+
+			// Calculate total inventory value
+			return products.reduce((total, product) => {
+				const productValue = product.stockQuantity * (product.price || 0);
+				return total + productValue;
+			}, 0);
+		} catch (error) {
+			this.logger.error(`Error calculating inventory value: ${error.message}`, error.stack);
+			return 0;
+		}
+	}
+
+	/**
+	 * Get metrics for products on promotion
+	 */
+	private async getPromotionMetrics(organisationId: number, branchId?: number): Promise<Record<string, any>> {
+		try {
+			const orgFilter = { organisation: { uid: organisationId } };
+			const branchFilter = branchId ? { branch: { uid: branchId } } : {};
+			const now = new Date();
+
+			// Get products currently on promotion
+			const productsOnPromotion = await this.productRepository.find({
+				where: {
+					...orgFilter,
+					...branchFilter,
+					isOnPromotion: true,
+					isDeleted: false,
+					promotionStartDate: LessThanOrEqual(now),
+					promotionEndDate: MoreThanOrEqual(now),
+				},
+				select: ['uid', 'name', 'price', 'salePrice', 'discount', 'promotionEndDate'],
+			});
+
+			// Calculate average discount percentage
+			let totalDiscountPercentage = 0;
+
+			productsOnPromotion.forEach((product) => {
+				if (product.discount) {
+					totalDiscountPercentage += product.discount;
+				} else if (product.price && product.salePrice) {
+					const discountPercent = ((product.price - product.salePrice) / product.price) * 100;
+					totalDiscountPercentage += discountPercent;
+				}
+			});
+
+			const averageDiscountPercentage =
+				productsOnPromotion.length > 0 ? totalDiscountPercentage / productsOnPromotion.length : 0;
+
+			return {
+				activePromotionsCount: productsOnPromotion.length,
+				averageDiscountPercentage,
+				productsOnPromotion: productsOnPromotion
+					.map((product) => ({
+						id: product.uid,
+						name: product.name,
+						regularPrice: product.price,
+						salePrice: product.salePrice,
+						discount: product.discount,
+						promotionEndsAt: format(new Date(product.promotionEndDate), 'PP'),
+					}))
+					.slice(0, 5), // Show top 5 promotional products
+			};
+		} catch (error) {
+			this.logger.error(`Error getting promotion metrics: ${error.message}`, error.stack);
+			return {
+				activePromotionsCount: 0,
+				averageDiscountPercentage: 0,
+				productsOnPromotion: [],
+			};
+		}
 	}
 }
