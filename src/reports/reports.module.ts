@@ -40,6 +40,8 @@ import { Reward } from '../rewards/entities/reward.entity';
 import { RewardsModule } from '../rewards/rewards.module';
 import { LiveOverviewReportGenerator } from './generators/live-overview-report.generator';
 import { ProductAnalytics } from '../products/entities/product-analytics.entity';
+import { TaskFlag } from '../tasks/entities/task-flag.entity';
+import { TaskFlagItem } from '../tasks/entities/task-flag-item.entity';
 
 @Module({
 	imports: [
@@ -82,6 +84,8 @@ import { ProductAnalytics } from '../products/entities/product-analytics.entity'
 			Quotation,
 			QuotationItem,
 			Reward,
+			TaskFlag,
+			TaskFlagItem,
 		]),
 		UserModule,
 		CheckInsModule,

@@ -9,7 +9,7 @@ import { Journal } from '../../journal/entities/journal.entity';
 import { Client } from '../../clients/entities/client.entity';
 import { CheckIn } from '../../check-ins/entities/check-in.entity';
 import { Quotation } from '../../shop/entities/quotation.entity';
-import { TaskStatus, TaskPriority, TaskType } from '../../lib/enums/task.enums';
+import { TaskStatus, TaskPriority, TaskType, TaskFlagStatus } from '../../lib/enums/task.enums';
 import { LeadStatus, LeadCategory } from '../../lib/enums/lead.enums';
 import { AttendanceStatus } from '../../lib/enums/attendance.enums';
 import { startOfDay, endOfDay, format, differenceInMinutes, subHours, subDays } from 'date-fns';
@@ -21,6 +21,10 @@ import { ClientRiskLevel } from '../../lib/enums/client.enums';
 import { Product } from '../../products/entities/product.entity';
 import { ProductAnalytics } from '../../products/entities/product-analytics.entity';
 import { ProductStatus } from '../../lib/enums/product.enums';
+import { Claim } from '../../claims/entities/claim.entity';
+import { ClaimStatus, ClaimCategory } from '../../lib/enums/finance.enums';
+import { TaskFlag } from '../../tasks/entities/task-flag.entity';
+import { TaskFlagItem } from '../../tasks/entities/task-flag-item.entity';
 
 @Injectable()
 export class LiveOverviewReportGenerator {
@@ -51,6 +55,12 @@ export class LiveOverviewReportGenerator {
 		private productRepository: Repository<Product>,
 		@InjectRepository(ProductAnalytics)
 		private productAnalyticsRepository: Repository<ProductAnalytics>,
+		@InjectRepository(Claim)
+		private claimRepository: Repository<Claim>,
+		@InjectRepository(TaskFlag)
+		private taskFlagRepository: Repository<TaskFlag>,
+		@InjectRepository(TaskFlagItem)
+		private taskFlagItemRepository: Repository<TaskFlagItem>,
 	) {}
 
 	async generate(params: ReportParamsDto): Promise<Record<string, any>> {
@@ -69,6 +79,9 @@ export class LiveOverviewReportGenerator {
 				locationData,
 				comprehensiveTaskMetrics,
 				productMetrics,
+				claimsMetrics,
+				journalMetrics,
+				taskFlagMetrics,
 			] = await Promise.all([
 				this.collectLiveWorkforceMetrics(organisationId, branchId),
 				this.collectLiveTaskMetrics(organisationId, branchId),
@@ -78,6 +91,9 @@ export class LiveOverviewReportGenerator {
 				this.collectLiveLocationData(organisationId, branchId),
 				this.collectComprehensiveTaskMetrics(organisationId, branchId),
 				this.collectProductMetrics(organisationId, branchId),
+				this.collectClaimsMetrics(organisationId, branchId),
+				this.collectJournalMetrics(organisationId, branchId),
+				this.collectTaskFlagMetrics(organisationId, branchId),
 			]);
 
 			return {
@@ -111,18 +127,25 @@ export class LiveOverviewReportGenerator {
 					clientInteractionsToday: clientMetrics.interactionsToday,
 					activeProducts: productMetrics.activeProductsCount,
 					totalProductRevenue: productMetrics.totalRevenue,
+					totalClaims: claimsMetrics.totalClaims,
+					pendingClaims: claimsMetrics.pendingClaims,
+					totalTaskFlags: taskFlagMetrics.totalFlags,
+					openTaskFlags: taskFlagMetrics.openFlags,
 				},
 				metrics: {
 					workforce: workforceMetrics,
 					tasks: {
 						...taskMetrics,
 						comprehensive: comprehensiveTaskMetrics,
+						flags: taskFlagMetrics,
 					},
 					leads: leadMetrics,
 					sales: salesMetrics,
 					clients: clientMetrics,
 					locations: locationData,
 					products: productMetrics,
+					claims: claimsMetrics,
+					journals: journalMetrics,
 				},
 			};
 		} catch (error) {
@@ -1073,12 +1096,13 @@ export class LiveOverviewReportGenerator {
 		const orgFilter = { organisation: { uid: organisationId } };
 		const branchFilter = branchId ? { branch: { uid: branchId } } : {};
 
-		// Get all leads with their creators
+		// Get all leads with their creators - remove date filter to count all leads
 		const leads = await this.leadRepository.find({
 			where: {
 				...orgFilter,
 				...branchFilter,
-				createdAt: MoreThanOrEqual(startDate),
+				// Remove the date filter to count all leads per user
+				// createdAt: MoreThanOrEqual(startDate),
 			},
 			relations: ['owner'],
 		});
@@ -3071,6 +3095,429 @@ export class LiveOverviewReportGenerator {
 				activePromotionsCount: 0,
 				averageDiscountPercentage: 0,
 				productsOnPromotion: [],
+			};
+		}
+	}
+
+	// New method to collect claims metrics
+	private async collectClaimsMetrics(organisationId: number, branchId?: number): Promise<Record<string, any>> {
+		try {
+			const today = new Date();
+			const startOfToday = startOfDay(today);
+			
+			// Create base filters
+			const orgFilter = { organisation: { uid: organisationId } };
+			const branchFilter = branchId ? { branch: { uid: branchId } } : {};
+			
+			// Get all claims
+			const claims = await this.claimRepository.find({
+				where: {
+					...orgFilter,
+					...branchFilter,
+					isDeleted: false,
+				},
+				relations: ['owner'],
+				order: {
+					createdAt: 'DESC',
+				},
+			});
+			
+			// Claims created today
+			const claimsToday = claims.filter(claim => 
+				claim.createdAt && new Date(claim.createdAt) >= startOfToday
+			);
+			
+			// Group claims by status
+			const statusCounts = {};
+			
+			// Initialize with all statuses
+			Object.values(ClaimStatus).forEach(status => {
+				statusCounts[status] = 0;
+			});
+			
+			// Count claims by status
+			claims.forEach(claim => {
+				if (claim.status) {
+					statusCounts[claim.status] = (statusCounts[claim.status] || 0) + 1;
+				}
+			});
+			
+			// Group claims by category
+			const categoryCounts = {};
+			
+			// Initialize with all categories
+			Object.values(ClaimCategory).forEach(category => {
+				categoryCounts[category] = 0;
+			});
+			
+			// Count claims by category
+			claims.forEach(claim => {
+				if (claim.category) {
+					categoryCounts[claim.category] = (categoryCounts[claim.category] || 0) + 1;
+				}
+			});
+			
+			// Calculate total claim value
+			const totalClaimValue = claims.reduce((total, claim) => {
+				const amount = typeof claim.amount === 'string' ? parseFloat(claim.amount) : claim.amount;
+				return total + (isNaN(amount) ? 0 : amount);
+			}, 0);
+			
+			// Format the total claim value with currency
+			const totalClaimValueFormatted = new Intl.NumberFormat('en-ZA', {
+				style: 'currency',
+				currency: 'ZAR',
+			}).format(totalClaimValue);
+			
+			// Get top claim creators
+			const claimsByUser = new Map();
+			
+			claims.forEach(claim => {
+				if (claim.owner) {
+					const userId = claim.owner.uid;
+					const currentData = claimsByUser.get(userId) || {
+						name: claim.owner.name,
+						count: 0,
+						value: 0,
+					};
+					
+					currentData.count++;
+					const amount = typeof claim.amount === 'string' ? parseFloat(claim.amount) : claim.amount;
+					currentData.value += isNaN(amount) ? 0 : amount;
+					
+					claimsByUser.set(userId, currentData);
+				}
+			});
+			
+			const topClaimCreators = Array.from(claimsByUser.entries())
+				.map(([userId, data]) => ({
+					userId,
+					userName: data.name,
+					claimCount: data.count,
+					totalValue: data.value,
+					formattedValue: new Intl.NumberFormat('en-ZA', {
+						style: 'currency',
+						currency: 'ZAR',
+					}).format(data.value),
+				}))
+				.sort((a, b) => b.claimCount - a.claimCount)
+				.slice(0, 5);
+			
+			return {
+				totalClaims: claims.length,
+				claimsToday: claimsToday.length,
+				pendingClaims: statusCounts[ClaimStatus.PENDING] || 0,
+				approvedClaims: statusCounts[ClaimStatus.APPROVED] || 0,
+				declinedClaims: statusCounts[ClaimStatus.DECLINED] || 0,
+				paidClaims: statusCounts[ClaimStatus.PAID] || 0,
+				totalClaimValue,
+				totalClaimValueFormatted,
+				statusDistribution: statusCounts,
+				categoryDistribution: categoryCounts,
+				topClaimCreators,
+				recentClaims: claims.slice(0, 10).map(claim => ({
+					uid: claim.uid,
+					amount: claim.amount,
+					comments: claim.comments, 
+					status: claim.status,
+					category: claim.category,
+					createdAt: claim.createdAt,
+					ownerName: claim.owner?.name,
+				})),
+			};
+		} catch (error) {
+			this.logger.error(`Error collecting claims metrics: ${error.message}`, error.stack);
+			return {
+				totalClaims: 0,
+				claimsToday: 0,
+				pendingClaims: 0,
+				approvedClaims: 0,
+				declinedClaims: 0,
+				paidClaims: 0,
+				totalClaimValue: 0,
+				totalClaimValueFormatted: '$0.00',
+				statusDistribution: {},
+				categoryDistribution: {},
+				topClaimCreators: [],
+				recentClaims: [],
+			};
+		}
+	}
+
+	// New method to collect journal metrics
+	private async collectJournalMetrics(organisationId: number, branchId?: number): Promise<Record<string, any>> {
+		try {
+			const today = new Date();
+			const startOfToday = startOfDay(today);
+			
+			// Create base filters
+			const orgFilter = { organisation: { uid: organisationId } };
+			const branchFilter = branchId ? { branch: { uid: branchId } } : {};
+			
+			// Get all journals
+			const journals = await this.journalRepository.find({
+				where: {
+					...orgFilter,
+					...branchFilter,
+					isDeleted: false,
+				},
+				relations: ['owner'],
+				order: {
+					createdAt: 'DESC',
+				},
+			});
+			
+			// Journals created today
+			const journalsToday = journals.filter(journal => 
+				journal.createdAt && new Date(journal.createdAt) >= startOfToday
+			);
+			
+			// Group journals by status
+			const statusCounts = {};
+			
+			// Count journal by status
+			journals.forEach(journal => {
+				if (journal.status) {
+					statusCounts[journal.status] = (statusCounts[journal.status] || 0) + 1;
+				}
+			});
+			
+			// Calculate recent journals activity
+			const last30DaysJournals = journals.filter(
+				journal => journal.createdAt && new Date(journal.createdAt) >= subDays(today, 30)
+			);
+			
+			// Group by days
+			const journalsByDay = {};
+			
+			last30DaysJournals.forEach(journal => {
+				if (journal.createdAt) {
+					const day = format(new Date(journal.createdAt), 'yyyy-MM-dd');
+					journalsByDay[day] = (journalsByDay[day] || 0) + 1;
+				}
+			});
+			
+			// Get top journal creators
+			const journalsByUser = new Map();
+			
+			journals.forEach(journal => {
+				if (journal.owner) {
+					const userId = journal.owner.uid;
+					const currentData = journalsByUser.get(userId) || {
+						name: journal.owner.name,
+						count: 0,
+					};
+					
+					currentData.count++;
+					journalsByUser.set(userId, currentData);
+				}
+			});
+			
+			const topJournalCreators = Array.from(journalsByUser.entries())
+				.map(([userId, data]) => ({
+					userId,
+					userName: data.name,
+					journalCount: data.count,
+				}))
+				.sort((a, b) => b.journalCount - a.journalCount)
+				.slice(0, 5);
+			
+			return {
+				totalJournals: journals.length,
+				journalsToday: journalsToday.length,
+				statusDistribution: statusCounts,
+				dailyActivity: journalsByDay,
+				topCreators: topJournalCreators,
+				recentJournals: journals.slice(0, 10).map(journal => ({
+					uid: journal.uid,
+					clientRef: journal.clientRef,
+					comments: journal.comments ? (journal.comments.length > 100 ? 
+						journal.comments.substring(0, 100) + '...' : journal.comments) : '',
+					status: journal.status,
+					createdAt: journal.createdAt,
+					ownerName: journal.owner?.name,
+				})),
+			};
+		} catch (error) {
+			this.logger.error(`Error collecting journal metrics: ${error.message}`, error.stack);
+			return {
+				totalJournals: 0,
+				journalsToday: 0,
+				statusDistribution: {},
+				dailyActivity: {},
+				topCreators: [],
+				recentJournals: [],
+			};
+		}
+	}
+	
+	// New method to collect task flag metrics
+	private async collectTaskFlagMetrics(organisationId: number, branchId?: number): Promise<Record<string, any>> {
+		try {
+			const today = new Date();
+			const startOfToday = startOfDay(today);
+			
+			// Create base filters
+			const orgFilter = { organisation: { uid: organisationId } };
+			const branchFilter = branchId ? { branch: { uid: branchId } } : {};
+			
+			// Get tasks for this organization/branch
+			const tasks = await this.taskRepository.find({
+				where: {
+					...orgFilter,
+					...branchFilter,
+					isDeleted: false,
+				},
+				relations: ['flags', 'flags.createdBy', 'flags.items'],
+			});
+			
+			// Extract all flags from tasks
+			const allFlags = tasks.reduce((flags, task) => {
+				if (task.flags && task.flags.length > 0) {
+					return [...flags, ...task.flags];
+				}
+				return flags;
+			}, []);
+			
+			// Flags created today
+			const flagsToday = allFlags.filter(flag => 
+				flag.createdAt && new Date(flag.createdAt) >= startOfToday
+			);
+			
+			// Group flags by status
+			const statusCounts = {};
+			
+			// Initialize with all statuses
+			Object.values(TaskFlagStatus).forEach(status => {
+				statusCounts[status] = 0;
+			});
+			
+			// Count flags by status
+			allFlags.forEach(flag => {
+				if (flag.status) {
+					statusCounts[flag.status] = (statusCounts[flag.status] || 0) + 1;
+				}
+			});
+			
+			// Calculate resolution times for resolved flags
+			const resolvedFlags = allFlags.filter(flag => 
+				flag.status === TaskFlagStatus.RESOLVED || flag.status === TaskFlagStatus.CLOSED
+			);
+			
+			let totalResolutionMinutes = 0;
+			let resolutionTimeCount = 0;
+			
+			resolvedFlags.forEach(flag => {
+				if (flag.createdAt && flag.updatedAt) {
+					const resolutionMinutes = differenceInMinutes(
+						new Date(flag.updatedAt),
+						new Date(flag.createdAt)
+					);
+					
+					if (resolutionMinutes > 0) {
+						totalResolutionMinutes += resolutionMinutes;
+						resolutionTimeCount++;
+					}
+				}
+			});
+			
+			// Calculate average resolution time in hours
+			const averageResolutionHours = resolutionTimeCount > 0 ? 
+				Math.round((totalResolutionMinutes / resolutionTimeCount) / 60 * 10) / 10 : 0;
+			
+			// Find tasks with most flags
+			const taskFlagCounts = new Map();
+			
+			tasks.forEach(task => {
+				if (task.flags && task.flags.length > 0) {
+					taskFlagCounts.set(task.uid, {
+						taskId: task.uid,
+						taskTitle: task.title,
+						flagCount: task.flags.length,
+						openFlagCount: task.flags.filter(f => 
+							f.status === TaskFlagStatus.OPEN || f.status === TaskFlagStatus.IN_PROGRESS
+						).length,
+					});
+				}
+			});
+			
+			const mostFlaggedTasks = Array.from(taskFlagCounts.values())
+				.sort((a, b) => b.flagCount - a.flagCount)
+				.slice(0, 5);
+			
+			// Get top flag creators
+			const flagsByUser = new Map();
+			
+			allFlags.forEach(flag => {
+				if (flag.createdBy) {
+					const userId = flag.createdBy.uid;
+					const currentData = flagsByUser.get(userId) || {
+						name: flag.createdBy.name,
+						count: 0,
+						resolvedCount: 0,
+					};
+					
+					currentData.count++;
+					
+					if (flag.status === TaskFlagStatus.RESOLVED || flag.status === TaskFlagStatus.CLOSED) {
+						currentData.resolvedCount++;
+					}
+					
+					flagsByUser.set(userId, currentData);
+				}
+			});
+			
+			const topFlagCreators = Array.from(flagsByUser.entries())
+				.map(([userId, data]) => ({
+					userId,
+					userName: data.name,
+					flagCount: data.count,
+					resolvedCount: data.resolvedCount,
+					resolutionRate: data.count > 0 ? Math.round((data.resolvedCount / data.count) * 100) : 0,
+				}))
+				.sort((a, b) => b.flagCount - a.flagCount)
+				.slice(0, 5);
+			
+			return {
+				totalFlags: allFlags.length,
+				flagsToday: flagsToday.length,
+				openFlags: statusCounts[TaskFlagStatus.OPEN] || 0,
+				inProgressFlags: statusCounts[TaskFlagStatus.IN_PROGRESS] || 0,
+				resolvedFlags: statusCounts[TaskFlagStatus.RESOLVED] || 0,
+				closedFlags: statusCounts[TaskFlagStatus.CLOSED] || 0,
+				averageResolutionHours,
+				statusDistribution: statusCounts,
+				mostFlaggedTasks,
+				topFlagCreators,
+				recentFlags: allFlags
+					.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+					.slice(0, 10)
+					.map(flag => ({
+						uid: flag.uid,
+						title: flag.title,
+						description: flag.description ? (flag.description.length > 100 ? 
+							flag.description.substring(0, 100) + '...' : flag.description) : '',
+						status: flag.status,
+						createdAt: flag.createdAt,
+						creatorName: flag.createdBy?.name,
+						taskId: flag.task?.uid,
+						taskTitle: flag.task?.title,
+					})),
+			};
+		} catch (error) {
+			this.logger.error(`Error collecting task flag metrics: ${error.message}`, error.stack);
+			return {
+				totalFlags: 0,
+				flagsToday: 0,
+				openFlags: 0,
+				inProgressFlags: 0,
+				resolvedFlags: 0,
+				closedFlags: 0,
+				averageResolutionHours: 0,
+				statusDistribution: {},
+				mostFlaggedTasks: [],
+				topFlagCreators: [],
+				recentFlags: [],
 			};
 		}
 	}
