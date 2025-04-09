@@ -850,10 +850,10 @@ export class ReportsController {
 	}
 
 	@Get('live-overview')
-	@Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.OWNER)
+	@Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.USER, AccessLevel.OWNER)
 	@ApiOperation({
-		summary: 'Generate a live organization overview report',
-		description: 'Generates a real-time overview of organization-wide metrics and performance indicators',
+		summary: 'Generate a live organizational overview report',
+		description: 'Generates a real-time report of organizational metrics and KPIs',
 	})
 	@ApiBody({
 		description: 'Report generation parameters',
@@ -866,37 +866,15 @@ export class ReportsController {
 				},
 				branchId: {
 					type: 'number',
-					description: 'Branch ID (optional - include to filter by specific branch)',
+					description: 'Branch ID (optional)',
 				},
 				name: {
 					type: 'string',
 					description: 'Report name (optional)',
 				},
-			},
-		},
-	})
-	@ApiOkResponse({
-		description: 'Live overview report generated successfully',
-		schema: {
-			type: 'object',
-			properties: {
-				metadata: {
-					type: 'object',
-					properties: {
-						reportType: { type: 'string', example: 'live_overview' },
-						organisationId: { type: 'number' },
-						branchId: { type: 'number' },
-						generatedAt: { type: 'string', format: 'date-time' },
-						name: { type: 'string' },
-					},
-				},
-				summary: {
-					type: 'object',
-					description: 'High-level summary of organization performance metrics',
-				},
-				metrics: {
-					type: 'object',
-					description: 'Detailed real-time metrics for various business areas',
+				forceFresh: {
+					type: 'boolean',
+					description: 'Force a fresh report generation, bypassing cache (optional)',
 				},
 			},
 		},
@@ -916,6 +894,7 @@ export class ReportsController {
 			organisationId?: number;
 			branchId?: number;
 			name?: string;
+			forceFresh?: boolean;
 		},
 		@Req() request: AuthenticatedRequest,
 	) {
@@ -938,6 +917,9 @@ export class ReportsController {
 				organisationId: orgId,
 				branchId: brId,
 				name: reportParams.name || 'Live Organization Overview',
+				filters: {
+					forceFresh: reportParams.forceFresh || false,
+				},
 			};
 
 			// Generate the report

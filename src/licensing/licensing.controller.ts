@@ -1,9 +1,11 @@
 import { Controller, Get, Post, Body, Patch, Param, UseGuards, UseFilters } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { LicensingService } from './licensing.service';
+import { LicenseUsageService } from './license-usage.service';
 import { CreateLicenseDto } from './dto/create-license.dto';
 import { UpdateLicenseDto } from './dto/update-license.dto';
 import { License } from './entities/license.entity';
+import { ConsolidatedLicenseUsageDto } from './dto/consolidated-license-usage.dto';
 import { AuthGuard } from '../guards/auth.guard';
 import { RoleGuard } from '../guards/role.guard';
 import { LicenseRateLimitGuard } from './lib/guards/license-rate-limit.guard';
@@ -17,7 +19,10 @@ import { isPublic } from '../decorators/public.decorator';
 // @UseGuards(AuthGuard, RoleGuard, LicenseRateLimitGuard)
 @UseFilters(LicenseExceptionFilter)
 export class LicensingController {
-    constructor(private readonly licensingService: LicensingService) { }
+    constructor(
+        private readonly licensingService: LicensingService,
+        private readonly licenseUsageService: LicenseUsageService
+    ) { }
 
     @Post()
     @isPublic()
@@ -126,5 +131,28 @@ export class LicensingController {
     @ApiResponse({ status: 429, description: 'Too Many Requests' })
     activate(@Param('ref') ref: string): Promise<License> {
         return this.licensingService.activateLicense(ref);
+    }
+
+    @Get('usage/consolidated/:licenseId')
+    @Roles(AccessLevel.ADMIN, AccessLevel.DEVELOPER, AccessLevel.SUPPORT, AccessLevel.MANAGER)
+    @ApiOperation({ summary: 'Get consolidated usage metrics for a specific license' })
+    @ApiResponse({ status: 200, description: 'Returns consolidated usage metrics', type: ConsolidatedLicenseUsageDto })
+    @ApiResponse({ status: 401, description: 'Unauthorized' })
+    @ApiResponse({ status: 403, description: 'Forbidden' })
+    @ApiResponse({ status: 404, description: 'License not found' })
+    @ApiResponse({ status: 429, description: 'Too Many Requests' })
+    getConsolidatedUsage(@Param('licenseId') licenseId: string): Promise<ConsolidatedLicenseUsageDto> {
+        return this.licenseUsageService.getConsolidatedLicenseUsage(licenseId);
+    }
+
+    @Get('usage/consolidated')
+    @Roles(AccessLevel.ADMIN, AccessLevel.DEVELOPER, AccessLevel.SUPPORT)
+    @ApiOperation({ summary: 'Get consolidated usage metrics for all licenses' })
+    @ApiResponse({ status: 200, description: 'Returns consolidated usage metrics for all licenses', type: Object })
+    @ApiResponse({ status: 401, description: 'Unauthorized' })
+    @ApiResponse({ status: 403, description: 'Forbidden' })
+    @ApiResponse({ status: 429, description: 'Too Many Requests' })
+    getAllConsolidatedUsage(): Promise<Record<string, ConsolidatedLicenseUsageDto>> {
+        return this.licenseUsageService.getAllConsolidatedLicenseUsage();
     }
 } 

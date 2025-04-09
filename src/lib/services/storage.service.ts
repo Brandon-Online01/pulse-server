@@ -42,6 +42,9 @@ export class StorageService implements OnModuleInit {
 	onModuleInit() {
 		try {
 			const credentials = getStorageConfig(this.configService);
+
+			console.log(credentials);
+
 			this.storage = new Storage({
 				projectId: this.configService.get<string>('GOOGLE_CLOUD_PROJECT_ID'),
 				credentials,
@@ -73,10 +76,10 @@ export class StorageService implements OnModuleInit {
 	): Promise<Doc> {
 		// Get content type for content field
 		const contentType = mimeType.split('/')[0];
-		
+
 		// Use docId for description if available
 		const description = metadata?.docId?.toString() || '';
-		
+
 		const doc = this.docsRepository.create({
 			title: originalName,
 			content: contentType, // Use content type
@@ -152,7 +155,7 @@ export class StorageService implements OnModuleInit {
 					const userRepo = this.connection.getRepository(User);
 					const user = await userRepo.findOne({
 						where: { uid: parseInt(uploadedBy, 10) },
-						relations: ['organisation']
+						relations: ['organisation'],
 					});
 
 					if (user) {
@@ -178,13 +181,13 @@ export class StorageService implements OnModuleInit {
 				file.mimetype,
 				file.size,
 				userOwnerId,
-				userBranchId
+				userBranchId,
 			);
 
 			// Set organization if found
 			if (organisationId) {
 				await this.docsRepository.update(doc.uid, {
-					organisation: { uid: organisationId } as any
+					organisation: { uid: organisationId } as any,
 				});
 			}
 
@@ -212,10 +215,7 @@ export class StorageService implements OnModuleInit {
 			const fileName = doc.url.split('/').pop();
 			if (fileName) {
 				// Check both the root location and the loro folder
-				const fileLocations = [
-					fileName,
-					`loro/${fileName}`
-				];
+				const fileLocations = [fileName, `loro/${fileName}`];
 
 				// Try to delete from both possible locations
 				for (const location of fileLocations) {
@@ -237,12 +237,9 @@ export class StorageService implements OnModuleInit {
 	async getSignedUrl(fileName: string, expiresIn = 3600): Promise<string> {
 		try {
 			const bucket = this.storage.bucket(this.bucket);
-			
+
 			// Check both the root location and the loro folder
-			const fileLocations = [
-				fileName,
-				`loro/${fileName}`
-			];
+			const fileLocations = [fileName, `loro/${fileName}`];
 
 			let url;
 			// Try to get signed URL from both possible locations
@@ -258,11 +255,11 @@ export class StorageService implements OnModuleInit {
 					break; // Exit once the file is found
 				}
 			}
-			
+
 			if (!url) {
 				throw new Error(`File ${fileName} not found in bucket`);
 			}
-			
+
 			return url;
 		} catch (error) {
 			throw error;
@@ -272,12 +269,9 @@ export class StorageService implements OnModuleInit {
 	async getMetadata(fileName: string): Promise<any> {
 		try {
 			const bucket = this.storage.bucket(this.bucket);
-			
+
 			// Check both the root location and the loro folder
-			const fileLocations = [
-				fileName,
-				`loro/${fileName}`
-			];
+			const fileLocations = [fileName, `loro/${fileName}`];
 
 			let metadata;
 			// Try to get metadata from both possible locations
@@ -289,11 +283,11 @@ export class StorageService implements OnModuleInit {
 					break; // Exit once the file is found
 				}
 			}
-			
+
 			if (!metadata) {
 				throw new Error(`File ${fileName} not found in bucket`);
 			}
-			
+
 			return metadata;
 		} catch (error) {
 			throw error;

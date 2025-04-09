@@ -6,6 +6,7 @@ import { LicenseEvent, LicenseEventType } from './entities/license-event.entity'
 import { License } from './entities/license.entity';
 import { MetricType } from '../lib/enums/licenses';
 import { APIUsageMetadata } from '../lib/interfaces/licenses';
+import { ConsolidatedLicenseUsageDto, MetricUsageDto } from './dto/consolidated-license-usage.dto';
 
 @Injectable()
 export class LicenseUsageService {
@@ -388,5 +389,84 @@ export class LicenseUsageService {
             })),
             generatedAt: new Date(),
         };
+    }
+
+    /**
+     * Gets consolidated license usage metrics for a single license
+     * This consolidates all metrics into a single structure with metrics organized by type
+     * @param licenseId The license ID to get metrics for
+     * @returns Consolidated usage metrics
+     */
+    async getConsolidatedLicenseUsage(licenseId: string): Promise<ConsolidatedLicenseUsageDto> {
+        try {
+            // Get all metric types
+            const metricTypes = Object.values(MetricType);
+            
+            // Find the latest entry for each metric type
+            const latestMetrics = await Promise.all(
+                metricTypes.map(async (metricType) => {
+                    return this.usageRepository.findOne({
+                        where: { licenseId, metricType },
+                        order: { timestamp: 'DESC' }
+                    });
+                })
+            );
+            
+            // Build the consolidated utilization object
+            const utilization: Record<MetricType, MetricUsageDto> = {} as Record<MetricType, MetricUsageDto>;
+            
+            latestMetrics.forEach(metric => {
+                if (metric) {
+                    utilization[metric.metricType] = {
+                        currentValue: metric.currentValue,
+                        limit: metric.limit,
+                        utilizationPercentage: metric.utilizationPercentage,
+                        lastUpdated: metric.timestamp,
+                        metadata: metric.metadata
+                    };
+                }
+            });
+            
+            return {
+                licenseId,
+                utilization,
+                timestamp: new Date()
+            };
+        } catch (error) {
+            this.logger.error(`Failed to get consolidated license usage: ${error.message}`, error.stack);
+            throw error;
+        }
+    }
+
+    /**
+     * Gets consolidated license usage metrics for all licenses
+     * @returns Map of license IDs to consolidated metrics
+     */
+    async getAllConsolidatedLicenseUsage(): Promise<Record<string, ConsolidatedLicenseUsageDto>> {
+        try {
+            // Get all unique license IDs
+            const result = await this.usageRepository
+                .createQueryBuilder('usage')
+                .select('DISTINCT usage.licenseId', 'licenseId')
+                .getRawMany();
+                
+            const licenseIds = result.map(item => item.licenseId);
+            
+            // Get consolidated metrics for each license
+            const consolidatedMetrics = await Promise.all(
+                licenseIds.map(id => this.getConsolidatedLicenseUsage(id))
+            );
+            
+            // Convert to map of license ID -> metrics
+            const metricsMap: Record<string, ConsolidatedLicenseUsageDto> = {};
+            consolidatedMetrics.forEach(metrics => {
+                metricsMap[metrics.licenseId] = metrics;
+            });
+            
+            return metricsMap;
+        } catch (error) {
+            this.logger.error(`Failed to get all consolidated license usage: ${error.message}`, error.stack);
+            throw error;
+        }
     }
 } 

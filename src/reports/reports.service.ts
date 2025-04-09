@@ -23,7 +23,7 @@ import { LiveOverviewReportGenerator } from './generators/live-overview-report.g
 export class ReportsService implements OnModuleInit {
 	private readonly logger = new Logger(ReportsService.name);
 	private readonly CACHE_PREFIX = 'reports:';
-	private readonly LIVE_OVERVIEW_CACHE_TTL = 60; // 1 minute
+	private readonly LIVE_OVERVIEW_CACHE_TTL = 120; // 2 minutes
 	private readonly CACHE_TTL: number;
 	private reportCache = new Map<string, any>();
 
@@ -139,11 +139,14 @@ export class ReportsService implements OnModuleInit {
 		// For quotation reports, include clientId in the cache key
 		const clientIdStr = type === ReportType.QUOTATION && filters?.clientId ? `_client${filters.clientId}` : '';
 
+		// For live overview reports, include force refresh flag in key if present
+		const forceRefreshStr = type === ReportType.LIVE_OVERVIEW && filters?.forceFresh ? '_fresh' : '';
+
 		const dateStr = dateRange ? `_${dateRange.start.toISOString()}_${dateRange.end.toISOString()}` : '';
 
 		return `${this.CACHE_PREFIX}${type}_org${organisationId}${
 			branchId ? `_branch${branchId}` : ''
-		}${clientIdStr}${dateStr}`;
+		}${clientIdStr}${forceRefreshStr}${dateStr}`;
 	}
 
 	async create(createReportDto: CreateReportDto) {
@@ -276,18 +279,31 @@ export class ReportsService implements OnModuleInit {
 		// Determine appropriate cache TTL based on report type
 		const cacheTtl = params.type === ReportType.LIVE_OVERVIEW ? this.LIVE_OVERVIEW_CACHE_TTL : this.CACHE_TTL;
 		
-		// Check cache first (except for live overview which should always be fresh)
+		// Check if this is a forced fresh request (for live overview)
+		const forceFresh = params.type === ReportType.LIVE_OVERVIEW && params.filters?.forceFresh === true;
+		
+		// Check cache first (skip if forceFresh is true)
 		const cacheKey = this.getCacheKey(params);
 		
-		if (params.type !== ReportType.LIVE_OVERVIEW) {
+		if (!forceFresh) {
 			const cachedReport = await this.cacheManager.get<Record<string, any>>(cacheKey);
 			
 			if (cachedReport) {
+				this.logger.log(`Serving ${params.type} report from cache for org ${params.organisationId}`);
 				return {
 					...cachedReport,
 					fromCache: true,
+					cachedAt: cachedReport.generatedAt,
+					currentTime: new Date().toISOString(),
 				};
 			}
+		}
+
+		// Log cache miss or forced refresh
+		if (forceFresh) {
+			this.logger.log(`Force refreshing ${params.type} report for org ${params.organisationId}`);
+		} else {
+			this.logger.log(`Cache miss for ${params.type} report for org ${params.organisationId}`);
 		}
 
 		// Generate report data based on type
@@ -434,5 +450,94 @@ export class ReportsService implements OnModuleInit {
 				this.logger.error(`Failed to update report record: ${dbError.message}`);
 			}
 		}
+	}
+
+	/**
+	 * Clears all cached reports for a specific organization
+	 * @param organisationId The organization ID
+	 * @param reportType Optional specific report type to clear
+	 * @returns Number of cache keys cleared
+	 */
+	async clearOrganizationReportCache(organisationId: number, reportType?: ReportType): Promise<number> {
+		try {
+			const cacheKeyPattern = reportType 
+				? `${this.CACHE_PREFIX}${reportType}_org${organisationId}*` 
+				: `${this.CACHE_PREFIX}*_org${organisationId}*`;
+				
+			// For redis-based cache this would use a scan/delete pattern
+			// For the built-in cache we can only delete specific keys
+			// Since we don't know what cache implementation is being used, we'll log this
+			this.logger.log(`Clearing organization cache with pattern: ${cacheKeyPattern}`);
+			
+			// For now, we'll specifically clear the live overview cache
+			if (!reportType || reportType === ReportType.LIVE_OVERVIEW) {
+				const liveOverviewKey = `${this.CACHE_PREFIX}${ReportType.LIVE_OVERVIEW}_org${organisationId}`;
+				await this.cacheManager.del(liveOverviewKey);
+				
+				// If branch ID was specified, clear those too
+				const branchIds = await this.getBranchIdsForOrganization(organisationId);
+				for (const branchId of branchIds) {
+					const branchKey = `${this.CACHE_PREFIX}${ReportType.LIVE_OVERVIEW}_org${organisationId}_branch${branchId}`;
+					await this.cacheManager.del(branchKey);
+				}
+				
+				return 1 + branchIds.length;
+			}
+			
+			return 0;
+		} catch (error) {
+			this.logger.error(`Error clearing organization cache: ${error.message}`, error.stack);
+			return 0;
+		}
+	}
+
+	/**
+	 * Gets all branch IDs for an organization
+	 * @param organisationId The organization ID
+	 * @returns Array of branch IDs
+	 */
+	private async getBranchIdsForOrganization(organisationId: number): Promise<number[]> {
+		try {
+			// This assumes there's a branch repository with a findByOrganisation method
+			const branches = await this.reportRepository
+				.createQueryBuilder('r')
+				.select('DISTINCT r.branchUid', 'branchId')
+				.where('r.organisationUid = :organisationId', { organisationId })
+				.andWhere('r.branchUid IS NOT NULL')
+				.getRawMany();
+				
+			return branches.map(b => b.branchId);
+		} catch (error) {
+			this.logger.error(`Error getting branch IDs: ${error.message}`, error.stack);
+			return [];
+		}
+	}
+
+	// Event handlers for cache invalidation
+	@OnEvent('task.created')
+	@OnEvent('task.updated')
+	@OnEvent('task.deleted')
+	async handleTaskChange(payload: { organisationId: number; branchId?: number }) {
+		if (!payload || !payload.organisationId) return;
+		await this.clearOrganizationReportCache(payload.organisationId, ReportType.LIVE_OVERVIEW);
+		this.logger.log(`Cleared live overview cache due to task change in org ${payload.organisationId}`);
+	}
+
+	@OnEvent('lead.created')
+	@OnEvent('lead.updated')
+	@OnEvent('lead.deleted')
+	async handleLeadChange(payload: { organisationId: number; branchId?: number }) {
+		if (!payload || !payload.organisationId) return;
+		await this.clearOrganizationReportCache(payload.organisationId, ReportType.LIVE_OVERVIEW);
+		this.logger.log(`Cleared live overview cache due to lead change in org ${payload.organisationId}`);
+	}
+
+	@OnEvent('quotation.created')
+	@OnEvent('quotation.updated')
+	@OnEvent('quotation.deleted')
+	async handleQuotationChange(payload: { organisationId: number; branchId?: number }) {
+		if (!payload || !payload.organisationId) return;
+		await this.clearOrganizationReportCache(payload.organisationId, ReportType.LIVE_OVERVIEW);
+		this.logger.log(`Cleared live overview cache due to quotation change in org ${payload.organisationId}`);
 	}
 }
