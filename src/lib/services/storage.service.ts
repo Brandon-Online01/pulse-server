@@ -43,8 +43,6 @@ export class StorageService implements OnModuleInit {
 		try {
 			const credentials = getStorageConfig(this.configService);
 
-			console.log(credentials);
-
 			this.storage = new Storage({
 				projectId: this.configService.get<string>('GOOGLE_CLOUD_PROJECT_ID'),
 				credentials,

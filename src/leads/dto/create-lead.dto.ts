@@ -12,6 +12,14 @@ export class CreateLeadDto {
 	name?: string;
 
 	@IsOptional()
+	@IsString()
+	@ApiProperty({
+		description: 'Company name of the lead',
+		example: 'Acme Inc.',
+	})
+	companyName?: string;
+
+	@IsOptional()
 	@IsEmail()
 	@ApiProperty({
 		description: 'Email of the lead',
