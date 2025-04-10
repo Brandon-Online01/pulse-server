@@ -315,7 +315,7 @@ export class ProductsService {
 
 			// Apply search term - could be category, name, or description
 			queryBuilder.andWhere(
-				'(product.category ILIKE :searchTerm OR product.name ILIKE :searchTerm OR product.description ILIKE :searchTerm OR product.sku ILIKE :searchTerm OR product.barcode ILIKE :searchTerm)',
+				'(LOWER(product.category) LIKE LOWER(:searchTerm) OR LOWER(product.name) LIKE LOWER(:searchTerm) OR LOWER(product.description) LIKE LOWER(:searchTerm) OR LOWER(product.sku) LIKE LOWER(:searchTerm) OR LOWER(product.barcode) LIKE LOWER(:searchTerm))',
 				{ searchTerm: `%${searchTerm}%` },
 			);
 
