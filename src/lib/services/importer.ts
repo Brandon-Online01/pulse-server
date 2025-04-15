@@ -1007,16 +1007,36 @@ export class ImporterService implements OnModuleInit {
 
 	private mapQuotationStatus(bitStatus: string): OrderStatus {
 		switch (bitStatus?.toLowerCase()) {
-			case 'pending':
-				return OrderStatus.PENDING;
 			case 'completed':
 				return OrderStatus.COMPLETED;
 			case 'cancelled':
 				return OrderStatus.CANCELLED;
 			case 'in progress':
 				return OrderStatus.INPROGRESS;
-			default:
+			case 'approved':
+				return OrderStatus.APPROVED;
+			case 'rejected':
+				return OrderStatus.REJECTED;
+			case 'pending':
 				return OrderStatus.PENDING;
+			case 'delivered':
+				return OrderStatus.DELIVERED;
+			case 'paid':
+				return OrderStatus.PAID;
+			case 'outfordelivery':
+			case 'out_for_delivery':
+			case 'out-for-delivery':
+			case 'ofd':
+			case 'out for delivery':
+				return OrderStatus.OUTFORDELIVERY;
+			case 'postponed':
+				return OrderStatus.POSTPONED;
+			case 'sourcing':
+				return OrderStatus.SOURCING;
+			case 'packing':
+				return OrderStatus.PACKING;
+			default:
+				return OrderStatus.DRAFT;
 		}
 	}
 }

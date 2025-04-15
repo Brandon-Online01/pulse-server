@@ -29,7 +29,7 @@ export class Quotation {
 	@Column()
 	totalItems: number;
 
-	@Column({ type: 'enum', enum: OrderStatus, default: OrderStatus.PENDING })
+	@Column({ type: 'enum', enum: OrderStatus, default: OrderStatus.DRAFT })
 	status: OrderStatus;
 
 	@Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
