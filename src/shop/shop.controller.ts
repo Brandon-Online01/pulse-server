@@ -73,8 +73,9 @@ export class ShopController {
 		},
 	})
 	getBestSellers(@Req() req: AuthenticatedRequest) {
-		const orgId = req.user?.org?.uid;
-		return this.shopService.getBestSellers(orgId);
+		const orgId = req.user?.org?.uid || req.user?.organisationRef;
+		const branchId = req.user?.branch?.uid;
+		return this.shopService.getBestSellers(orgId, branchId);
 	}
 
 	@Get('new-arrivals')
@@ -116,8 +117,9 @@ export class ShopController {
 		},
 	})
 	getNewArrivals(@Req() req: AuthenticatedRequest) {
-		const orgId = req.user?.org?.uid;
-		return this.shopService.getNewArrivals(orgId);
+		const orgId = req.user?.org?.uid || req.user?.organisationRef;
+		const branchId = req.user?.branch?.uid;
+		return this.shopService.getNewArrivals(orgId, branchId);
 	}
 
 	@Get('hot-deals')
@@ -160,8 +162,9 @@ export class ShopController {
 		},
 	})
 	getHotDeals(@Req() req: AuthenticatedRequest) {
-		const orgId = req.user?.org?.uid;
-		return this.shopService.getHotDeals(orgId);
+		const orgId = req.user?.org?.uid || req.user?.organisationRef;
+		const branchId = req.user?.branch?.uid;
+		return this.shopService.getHotDeals(orgId, branchId);
 	}
 
 	@Get('categories')
@@ -195,8 +198,9 @@ export class ShopController {
 		},
 	})
 	categories(@Req() req: AuthenticatedRequest) {
-		const orgId = req.user?.org?.uid;
-		return this.shopService.categories(orgId);
+		const orgId = req.user?.org?.uid || req.user?.organisationRef;
+		const branchId = req.user?.branch?.uid;
+		return this.shopService.categories(orgId, branchId);
 	}
 
 	@Get('specials')
@@ -238,8 +242,9 @@ export class ShopController {
 		},
 	})
 	specials(@Req() req: AuthenticatedRequest) {
-		const orgId = req.user?.org?.uid;
-		return this.shopService.specials(orgId);
+		const orgId = req.user?.org?.uid || req.user?.organisationRef;
+		const branchId = req.user?.branch?.uid;
+		return this.shopService.specials(orgId, branchId);
 	}
 
 	@Post('quotation')
@@ -271,7 +276,7 @@ export class ShopController {
 		description: 'Bad Request - Invalid data provided',
 	})
 	createQuotation(@Body() quotationData: CheckoutDto, @Req() req: AuthenticatedRequest) {
-		const orgId = req.user?.org?.uid;
+		const orgId = req.user?.org?.uid || req.user?.organisationRef;
 		const branchId = req.user?.branch?.uid;
 		return this.shopService.createQuotation(quotationData, orgId, branchId);
 	}
@@ -325,7 +330,7 @@ export class ShopController {
 		},
 	})
 	getQuotations(@Req() req: AuthenticatedRequest) {
-		const orgId = req.user?.org?.uid;
+		const orgId = req.user?.org?.uid || req.user?.organisationRef;
 		const branchId = req.user?.branch?.uid;
 		return this.shopService.getAllQuotations(orgId, branchId);
 	}
@@ -389,7 +394,7 @@ export class ShopController {
 		},
 	})
 	getQuotationByRef(@Param('ref') ref: number, @Req() req: AuthenticatedRequest) {
-		const orgId = req.user?.org?.uid;
+		const orgId = req.user?.org?.uid || req.user?.organisationRef;
 		const branchId = req.user?.branch?.uid;
 		return this.shopService.getQuotationByRef(ref, orgId, branchId);
 	}
@@ -453,7 +458,7 @@ export class ShopController {
 		},
 	})
 	getQuotationsByUser(@Param('ref') ref: number, @Req() req: AuthenticatedRequest) {
-		const orgId = req.user?.org?.uid;
+		const orgId = req.user?.org?.uid || req.user?.organisationRef;
 		const branchId = req.user?.branch?.uid;
 		return this.shopService.getQuotationsByUser(ref, orgId, branchId);
 	}
@@ -512,7 +517,7 @@ export class ShopController {
 		@Body('status') status: OrderStatus,
 		@Req() req: AuthenticatedRequest,
 	) {
-		const orgId = req.user?.org?.uid;
+		const orgId = req.user?.org?.uid || req.user?.organisationRef;
 		const branchId = req.user?.branch?.uid;
 		return this.shopService.updateQuotationStatus(ref, status, orgId, branchId);
 	}
@@ -557,7 +562,7 @@ export class ShopController {
 		},
 	})
 	getBanner(@Req() req: AuthenticatedRequest) {
-		const orgId = req.user?.org?.uid;
+		const orgId = req.user?.org?.uid || req.user?.organisationRef;
 		const branchId = req.user?.branch?.uid;
 		return this.shopService.getBanner(orgId, branchId);
 	}
@@ -607,7 +612,7 @@ export class ShopController {
 		},
 	})
 	createBanner(@Body() bannerData: CreateBannerDto, @Req() req: AuthenticatedRequest) {
-		const orgId = req.user?.org?.uid;
+		const orgId = req.user?.org?.uid || req.user?.organisationRef;
 		const branchId = req.user?.branch?.uid;
 		return this.shopService.createBanner(bannerData, orgId, branchId);
 	}
@@ -659,7 +664,7 @@ export class ShopController {
 		},
 	})
 	updateBanner(@Param('ref') ref: number, @Body() bannerData: UpdateBannerDto, @Req() req: AuthenticatedRequest) {
-		const orgId = req.user?.org?.uid;
+		const orgId = req.user?.org?.uid || req.user?.organisationRef;
 		const branchId = req.user?.branch?.uid;
 		return this.shopService.updateBanner(ref, bannerData, orgId, branchId);
 	}
@@ -698,7 +703,7 @@ export class ShopController {
 		},
 	})
 	deleteBanner(@Param('ref') ref: number, @Req() req: AuthenticatedRequest) {
-		const orgId = req.user?.org?.uid;
+		const orgId = req.user?.org?.uid || req.user?.organisationRef;
 		const branchId = req.user?.branch?.uid;
 		return this.shopService.deleteBanner(ref, orgId, branchId);
 	}
@@ -719,7 +724,7 @@ export class ShopController {
 		description: "Generates SKUs for products that don't have them",
 	})
 	async generateMissingSKUs(@Req() req: AuthenticatedRequest) {
-		const orgId = req.user?.org?.uid;
+		const orgId = req.user?.org?.uid || req.user?.organisationRef;
 		const branchId = req.user?.branch?.uid;
 		return this.shopService.generateSKUsForExistingProducts(orgId, branchId);
 	}
@@ -739,7 +744,7 @@ export class ShopController {
 		description: 'Regenerates SKUs for all products in the system',
 	})
 	async regenerateAllSKUs(@Req() req: AuthenticatedRequest) {
-		const orgId = req.user?.org?.uid;
+		const orgId = req.user?.org?.uid || req.user?.organisationRef;
 		const branchId = req.user?.branch?.uid;
 		return this.shopService.regenerateAllSKUs(orgId, branchId);
 	}
@@ -911,7 +916,7 @@ export class ShopController {
 		},
 	})
 	async sendQuotationToClient(@Param('ref') ref: number, @Req() req: AuthenticatedRequest) {
-		const orgId = req.user?.org?.uid;
+		const orgId = req.user?.org?.uid || req.user?.organisationRef;
 		const branchId = req.user?.branch?.uid;
 		return this.shopService.sendQuotationToClient(ref, orgId, branchId);
 	}
