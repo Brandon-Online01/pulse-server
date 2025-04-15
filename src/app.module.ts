@@ -83,6 +83,7 @@ import { Order } from './shop/entities/order.entity';
 import { OrderItem } from './shop/entities/order-item.entity';
 import { ClientAuth } from './clients/entities/client.auth.entity';
 import { ScheduleModule } from '@nestjs/schedule';
+import { LibModule } from './lib/lib.module';
 
 @Module({
 	imports: [
@@ -153,7 +154,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 				Reward,
 				Order,
 				OrderItem,
-				Report, 
+				Report,
 			],
 			synchronize: true,
 			retryAttempts: 100,
@@ -173,6 +174,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 		FeedbackModule,
 		JournalModule,
 		LeadsModule,
+		LibModule,
 		NewsModule,
 		NotificationsModule,
 		OrganisationModule,
