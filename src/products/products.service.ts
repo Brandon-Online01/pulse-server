@@ -1,4 +1,4 @@
-import { Injectable, Inject, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, Logger } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { Product } from './entities/product.entity';
@@ -219,6 +219,8 @@ export class ProductsService {
 	async products(
 		page: number = 1,
 		limit: number = Number(process.env.DEFAULT_PAGE_LIMIT),
+		orgId?: number,
+		branchId?: number,
 	): Promise<PaginatedResponse<Product>> {
 		try {
 			const queryBuilder = this.productRepository
@@ -226,6 +228,16 @@ export class ProductsService {
 				.leftJoinAndSelect('product.organisation', 'organisation')
 				.leftJoinAndSelect('product.branch', 'branch')
 				.where('product.isDeleted = :isDeleted', { isDeleted: false });
+
+			// Filter by organization if provided
+			if (orgId) {
+				queryBuilder.andWhere('organisation.uid = :orgId', { orgId });
+			}
+
+			// Filter by branch if provided
+			if (branchId) {
+				queryBuilder.andWhere('branch.uid = :branchId', { branchId });
+			}
 
 			// Add pagination
 			queryBuilder
@@ -272,13 +284,23 @@ export class ProductsService {
 		}
 	}
 
-	async getProductByref(ref: number): Promise<{ product: Product | null; message: string }> {
+	async getProductByref(ref: number, orgId?: number, branchId?: number): Promise<{ product: Product | null; message: string }> {
 		try {
-			// Build where conditions without org and branch
-			const whereConditions = {
+			// Build where conditions
+			const whereConditions: any = {
 				uid: ref,
 				isDeleted: false,
 			};
+
+			// Add org filter if provided
+			if (orgId) {
+				whereConditions.organisation = { uid: orgId };
+			}
+
+			// Add branch filter if provided
+			if (branchId) {
+				whereConditions.branch = { uid: branchId };
+			}
 
 			const product = await this.productRepository.findOne({
 				where: whereConditions,
@@ -305,6 +327,8 @@ export class ProductsService {
 		searchTerm: string,
 		page: number = 1,
 		limit: number = 10,
+		orgId?: number,
+		branchId?: number,
 	): Promise<PaginatedResponse<Product>> {
 		try {
 			const queryBuilder = this.productRepository
@@ -312,6 +336,16 @@ export class ProductsService {
 				.leftJoinAndSelect('product.organisation', 'organisation')
 				.leftJoinAndSelect('product.branch', 'branch')
 				.where('product.isDeleted = :isDeleted', { isDeleted: false });
+
+			// Filter by organization if provided
+			if (orgId) {
+				queryBuilder.andWhere('organisation.uid = :orgId', { orgId });
+			}
+
+			// Filter by branch if provided
+			if (branchId) {
+				queryBuilder.andWhere('branch.uid = :branchId', { branchId });
+			}
 
 			// Apply search term - could be category, name, or description
 			queryBuilder.andWhere(

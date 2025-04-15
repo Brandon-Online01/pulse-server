@@ -5,6 +5,7 @@ import { LicenseUsageService } from './license-usage.service';
 import { MetricType } from '../lib/enums/licenses';
 import { LicensingService } from './licensing.service';
 import { Request } from 'express';
+import { Token } from '../lib/types/token';
 
 @Injectable()
 export class LicenseUsageInterceptor implements NestInterceptor {
@@ -17,7 +18,7 @@ export class LicenseUsageInterceptor implements NestInterceptor {
 
 	async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<any>> {
 		const request = context.switchToHttp().getRequest<Request>();
-		const user = request['user'];
+		const user = request['user'] as Token;
 
 		// Skip if no user or no license info
 		if (!user?.licenseId) {

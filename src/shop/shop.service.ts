@@ -339,13 +339,15 @@ export class ShopService {
                 })
             };
 
-            // Add organization and branch if available
+            // Add organization and branch if available - DIRECT COLUMN VALUES
             if (orgId) {
-                newQuotation['organisation'] = { uid: orgId };
+                // Store as direct column value instead of relation to ensure it's saved properly
+                newQuotation['organisationUid'] = orgId;
             }
             
             if (branchId) {
-                newQuotation['branch'] = { uid: branchId };
+                // Store as direct column value instead of relation to ensure it's saved properly
+                newQuotation['branchUid'] = branchId;
             }
 
             const savedQuotation = await this.quotationRepository.save(newQuotation);
@@ -562,31 +564,30 @@ export class ShopService {
     async getAllQuotations(orgId?: number, branchId?: number): Promise<{ quotations: Quotation[], message: string }> {
         try {
             const query = this.quotationRepository.createQueryBuilder('quotation')
-                .leftJoinAndSelect('quotation.placedBy', 'placedBy')
                 .leftJoinAndSelect('quotation.client', 'client')
+                .leftJoinAndSelect('quotation.placedBy', 'placedBy')
                 .leftJoinAndSelect('quotation.quotationItems', 'quotationItems')
                 .leftJoinAndSelect('quotationItems.product', 'product');
-            
+
+            // Add filtering by org and branch
             if (orgId) {
-                query.leftJoinAndSelect('quotation.organisation', 'organisation')
-                    .andWhere('organisation.uid = :orgId', { orgId });
+                query.andWhere('quotation.organisationUid = :orgId', { orgId });
             }
-            
+
             if (branchId) {
-                query.leftJoinAndSelect('quotation.branch', 'branch')
-                    .andWhere('branch.uid = :branchId', { branchId });
+                query.andWhere('quotation.branchUid = :branchId', { branchId });
             }
-            
+
             const quotations = await query.getMany();
-            
+
             return {
                 quotations,
-                message: process.env.SUCCESS_MESSAGE
+                message: process.env.SUCCESS_MESSAGE,
             };
         } catch (error) {
             return {
                 quotations: [],
-                message: error?.message
+                message: error?.message,
             };
         }
     }
@@ -594,32 +595,35 @@ export class ShopService {
     async getQuotationsByUser(ref: number, orgId?: number, branchId?: number): Promise<{ quotations: Quotation[], message: string }> {
         try {
             const query = this.quotationRepository.createQueryBuilder('quotation')
-                .leftJoinAndSelect('quotation.placedBy', 'placedBy')
                 .leftJoinAndSelect('quotation.client', 'client')
+                .leftJoinAndSelect('quotation.placedBy', 'placedBy')
                 .leftJoinAndSelect('quotation.quotationItems', 'quotationItems')
                 .leftJoinAndSelect('quotationItems.product', 'product')
                 .where('placedBy.uid = :ref', { ref });
-            
+
+            // Add filtering by org and branch
             if (orgId) {
-                query.leftJoinAndSelect('quotation.organisation', 'organisation')
-                    .andWhere('organisation.uid = :orgId', { orgId });
+                query.andWhere('quotation.organisationUid = :orgId', { orgId });
             }
-            
+
             if (branchId) {
-                query.leftJoinAndSelect('quotation.branch', 'branch')
-                    .andWhere('branch.uid = :branchId', { branchId });
+                query.andWhere('quotation.branchUid = :branchId', { branchId });
             }
-            
+
             const quotations = await query.getMany();
-            
+
+            if (!quotations?.length) {
+                throw new NotFoundException(process.env.QUOTATION_NOT_FOUND_MESSAGE);
+            }
+
             return {
                 quotations,
-                message: process.env.SUCCESS_MESSAGE
+                message: process.env.SUCCESS_MESSAGE,
             };
         } catch (error) {
             return {
                 quotations: [],
-                message: error?.message
+                message: error?.message,
             };
         }
     }
@@ -627,34 +631,36 @@ export class ShopService {
     async getQuotationByRef(ref: number, orgId?: number, branchId?: number): Promise<{ quotation: Quotation, message: string }> {
         try {
             const query = this.quotationRepository.createQueryBuilder('quotation')
-                .leftJoinAndSelect('quotation.placedBy', 'placedBy')
                 .leftJoinAndSelect('quotation.client', 'client')
+                .leftJoinAndSelect('quotation.placedBy', 'placedBy')
                 .leftJoinAndSelect('quotation.quotationItems', 'quotationItems')
                 .leftJoinAndSelect('quotationItems.product', 'product')
                 .where('quotation.uid = :ref', { ref });
-            
+
+            // Add filtering by org and branch
             if (orgId) {
-                query.leftJoinAndSelect('quotation.organisation', 'organisation')
-                    .andWhere('organisation.uid = :orgId', { orgId });
+                query.andWhere('quotation.organisationUid = :orgId', { orgId });
             }
-            
+
             if (branchId) {
-                query.leftJoinAndSelect('quotation.branch', 'branch')
-                    .andWhere('branch.uid = :branchId', { branchId });
+                query.andWhere('quotation.branchUid = :branchId', { branchId });
             }
-            
+
             const quotation = await query.getOne();
-            
+
             if (!quotation) {
-                throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
+                throw new NotFoundException(process.env.QUOTATION_NOT_FOUND_MESSAGE);
             }
-            
+
             return {
                 quotation,
-                message: process.env.SUCCESS_MESSAGE
+                message: process.env.SUCCESS_MESSAGE,
             };
         } catch (error) {
-            throw error;
+            return {
+                quotation: null,
+                message: error?.message,
+            };
         }
     }
 

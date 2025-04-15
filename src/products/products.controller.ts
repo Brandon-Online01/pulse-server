@@ -137,8 +137,10 @@ export class ProductsController {
 			},
 		},
 	})
-	products(@Query() query: PaginationQuery) {
-		return this.productsService.products(query.page, query.limit);
+	products(@Query() query: PaginationQuery, @Req() req: AuthenticatedRequest) {
+		const orgId = req.user?.org?.uid;
+		const branchId = req.user?.branch?.uid;
+		return this.productsService.products(query.page, query.limit, orgId, branchId);
 	}
 
 	@Get(':ref')
@@ -191,8 +193,10 @@ export class ProductsController {
 			},
 		},
 	})
-	getProductByref(@Param('ref') ref: number) {
-		return this.productsService.getProductByref(ref);
+	getProductByref(@Param('ref') ref: number, @Req() req: AuthenticatedRequest) {
+		const orgId = req.user?.org?.uid;
+		const branchId = req.user?.branch?.uid;
+		return this.productsService.getProductByref(ref, orgId, branchId);
 	}
 
 	@Get('category/:category')
@@ -245,8 +249,10 @@ export class ProductsController {
 			},
 		},
 	})
-	productsBySearchTerm(@Param('category') category: string) {
-		return this.productsService.productsBySearchTerm(category, 1, 10);
+	productsBySearchTerm(@Param('category') category: string, @Req() req: AuthenticatedRequest) {
+		const orgId = req.user?.org?.uid;
+		const branchId = req.user?.branch?.uid;
+		return this.productsService.productsBySearchTerm(category, 1, 10, orgId, branchId);
 	}
 
 	@Patch(':ref')
