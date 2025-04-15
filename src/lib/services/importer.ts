@@ -23,6 +23,7 @@ export class ImporterService implements OnModuleInit {
 	private branch: Branch;
 	private lastSyncTime: Date = new Date();
 	private isSynchronizing = false;
+	private categoryMap: Map<string, string> = new Map(); // Store category code -> description mappings
 
 	constructor(
 		private readonly configService: ConfigService,
@@ -78,7 +79,7 @@ export class ImporterService implements OnModuleInit {
 	}
 
 	// Main synchronization method that runs in the correct order
-	@Cron('0 */2 * * * *') // Run every 2 minutes instead of 30 seconds
+	@Cron('0 */1 * * * *') // Run every 1 minute instead of 30 seconds
 	async synchronizeAll() {
 		try {
 			if (!this.connection) {
@@ -173,7 +174,7 @@ export class ImporterService implements OnModuleInit {
 				this.logger.log(`Found ${clients.length} clients to sync`);
 
 				// Process clients in smaller batches to prevent overwhelming the database
-				const batchSize = 200;
+				const batchSize = 100;
 				for (let i = 0; i < clients.length; i += batchSize) {
 					const batch = clients.slice(i, i + batchSize);
 					this.logger.log(
@@ -201,6 +202,9 @@ export class ImporterService implements OnModuleInit {
 		try {
 			this.logger.log('Fetching products from BIT database...');
 
+			// Load categories first to have them available for product processing
+			await this.loadCategories();
+
 			// Using m_date instead of updated_at which doesn't exist in tblinventory
 			const products = await this.connection.query(`
 				SELECT * FROM tblinventory 
@@ -210,7 +214,7 @@ export class ImporterService implements OnModuleInit {
 				this.logger.log(`Found ${products.length} products to sync`);
 
 				// Process products in smaller batches to prevent overwhelming the database
-				const batchSize = 200;
+				const batchSize = 100;
 				for (let i = 0; i < products.length; i += batchSize) {
 					const batch = products.slice(i, i + batchSize);
 					this.logger.log(
@@ -299,6 +303,23 @@ export class ImporterService implements OnModuleInit {
 		await this.processQuotationsSync();
 	}
 
+	// Load categories from tblinventorycategory
+	private async loadCategories() {
+		try {
+			const categories = await this.connection.query('SELECT * FROM tblinventorycategory');
+
+			// Create a lookup map of code -> description
+			this.categoryMap.clear();
+			for (const cat of categories) {
+				this.categoryMap.set(cat.code, cat.description);
+			}
+
+			this.logger.log(`Loaded ${categories.length} categories from database`);
+		} catch (error) {
+			this.logger.error(`Error loading categories: ${error.message}`, error.stack);
+		}
+	}
+
 	private async processProducts(products: any[]) {
 		let createdCount = 0;
 		let updatedCount = 0;
@@ -313,7 +334,15 @@ export class ImporterService implements OnModuleInit {
 				const description = this.sanitizeString(bitProduct.description_2) || '';
 				const barcode =
 					this.sanitizeString(bitProduct.barcode) || this.sanitizeString(bitProduct.id?.toString());
-				const category = this.sanitizeString(bitProduct.category_main) || 'Other';
+
+				// Get category from the category map using category_main code
+				const categoryCode = this.sanitizeString(bitProduct.category_main) || '0';
+				let category = this.categoryMap.get(categoryCode) || 'Other';
+				if (!this.categoryMap.has(categoryCode)) {
+					this.logger.warn(
+						`Category code ${categoryCode} not found in category map for product ${bitProduct.id}`,
+					);
+				}
 
 				// Skip products without required data
 				if (!name || !productRef) {
@@ -615,7 +644,7 @@ export class ImporterService implements OnModuleInit {
 				this.sanitizeString(bitQuotation.delivery_notes) || this.sanitizeString(bitQuotation.reference_1) || '';
 
 			// Map status
-			const status = this.mapQuotationStatus(this.sanitizeString(bitQuotation.status) || 'pending');
+			const status = this.mapQuotationStatus(this.sanitizeString(bitQuotation.status) || 'draft');
 
 			// If quotation doesn't exist, create a new one
 			if (!quotation) {
