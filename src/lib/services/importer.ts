@@ -78,8 +78,7 @@ export class ImporterService implements OnModuleInit {
 	}
 
 	// Main synchronization method that runs in the correct order
-	// @Cron('0 */2 * * * *') // Run every 2 minutes instead of 30 seconds
-	@Cron('0 */1 * * * *') // Run every 1 minute instead of 30 seconds
+	@Cron('0 */2 * * * *') // Run every 2 minutes instead of 30 seconds
 	async synchronizeAll() {
 		try {
 			if (!this.connection) {
@@ -109,8 +108,8 @@ export class ImporterService implements OnModuleInit {
 			this.logger.log('Starting database synchronization...');
 
 			// Synchronize in the correct order (users, products, clients, quotations)
-			// await this.processUsersSync();
-			// await this.processProductsSync(); // Products first
+			await this.processUsersSync();
+			await this.processProductsSync(); // Products first
 			await this.processClientsSync(); // Clients second
 			await this.processQuotationsSync(); // Quotations last (depends on clients)
 
@@ -174,7 +173,7 @@ export class ImporterService implements OnModuleInit {
 				this.logger.log(`Found ${clients.length} clients to sync`);
 
 				// Process clients in smaller batches to prevent overwhelming the database
-				const batchSize = 10;
+				const batchSize = 200;
 				for (let i = 0; i < clients.length; i += batchSize) {
 					const batch = clients.slice(i, i + batchSize);
 					this.logger.log(
