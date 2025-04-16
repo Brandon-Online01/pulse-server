@@ -79,7 +79,7 @@ export class ImporterService implements OnModuleInit {
 	}
 
 	// Main synchronization method that runs in the correct order
-	@Cron('0 */1 * * * *') // Run every 1 minute instead of 30 seconds
+	@Cron('0 */60 * * * * *') // Run every 60 minutes (1 hour)
 	async synchronizeAll() {
 		try {
 			if (!this.connection) {
@@ -1018,7 +1018,7 @@ export class ImporterService implements OnModuleInit {
 			case 'rejected':
 				return OrderStatus.REJECTED;
 			case 'pending':
-				return OrderStatus.PENDING;
+				return OrderStatus.PENDING_INTERNAL;
 			case 'delivered':
 				return OrderStatus.DELIVERED;
 			case 'paid':
