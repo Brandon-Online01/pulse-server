@@ -76,6 +76,7 @@ Required environment variables:
 
 		// Location Services
 		.addTag('gps', 'Advanced location services with Google Maps integration')
+		.addTag('interactions', 'manage all interactions with leads and clients')
 		.addTag('geofence', 'Geofencing for organizations, branches, tasks, and clients')
 		.addTag('check-ins', 'GPS-based employee check-in system with location validation')
 		.addTag('branch', 'Branch management with geocoding and territory mapping')

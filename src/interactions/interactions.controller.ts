@@ -1,4 +1,16 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, Req, UseInterceptors } from '@nestjs/common';
+import {
+	Controller,
+	Get,
+	Post,
+	Body,
+	Patch,
+	Param,
+	Delete,
+	Query,
+	UseGuards,
+	Req,
+	UseInterceptors,
+} from '@nestjs/common';
 import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import { InteractionsService } from './interactions.service';
 import { CreateInteractionDto } from './dto/create-interaction.dto';
@@ -64,9 +76,11 @@ export class InteractionsController {
 		},
 	})
 	create(@Body() createInteractionDto: CreateInteractionDto, @Req() req: AuthenticatedRequest) {
-		const orgId = req.user?.org?.uid;
+		const orgId = req.user?.org?.uid || req.user?.organisationRef;
 		const branchId = req.user?.branch?.uid;
-		return this.interactionsService.create(createInteractionDto, orgId, branchId);
+		const user = req.user?.uid;
+
+		return this.interactionsService.create(createInteractionDto, orgId, branchId, user);
 	}
 
 	@Get()
@@ -115,7 +129,7 @@ export class InteractionsController {
 		@Query('leadUid') leadUid?: number,
 		@Query('clientUid') clientUid?: number,
 	) {
-		const orgId = req.user?.org?.uid;
+		const orgId = req.user?.org?.uid || req.user?.organisationRef;
 		const branchId = req.user?.branch?.uid;
 
 		return this.interactionsService.findAll(
@@ -171,7 +185,7 @@ export class InteractionsController {
 		},
 	})
 	findByLead(@Param('ref') ref: string, @Req() req: AuthenticatedRequest) {
-		const orgId = req.user?.org?.uid;
+		const orgId = req.user?.org?.uid || req.user?.organisationRef;
 		const branchId = req.user?.branch?.uid;
 		return this.interactionsService.findByLead(+ref, orgId, branchId);
 	}
@@ -214,7 +228,7 @@ export class InteractionsController {
 		},
 	})
 	findByClient(@Param('ref') ref: string, @Req() req: AuthenticatedRequest) {
-		const orgId = req.user?.org?.uid;
+		const orgId = req.user?.org?.uid || req.user?.organisationRef;
 		const branchId = req.user?.branch?.uid;
 		return this.interactionsService.findByClient(+ref, orgId, branchId);
 	}
@@ -255,7 +269,7 @@ export class InteractionsController {
 		},
 	})
 	findOne(@Param('ref') ref: string, @Req() req: AuthenticatedRequest) {
-		const orgId = req.user?.org?.uid;
+		const orgId = req.user?.org?.uid || req.user?.organisationRef;
 		const branchId = req.user?.branch?.uid;
 		return this.interactionsService.findOne(+ref, orgId, branchId);
 	}
@@ -291,7 +305,7 @@ export class InteractionsController {
 		@Body() updateInteractionDto: UpdateInteractionDto,
 		@Req() req: AuthenticatedRequest,
 	) {
-		const orgId = req.user?.org?.uid;
+		const orgId = req.user?.org?.uid || req.user?.organisationRef;
 		const branchId = req.user?.branch?.uid;
 		return this.interactionsService.update(+ref, updateInteractionDto, orgId, branchId);
 	}
@@ -322,7 +336,7 @@ export class InteractionsController {
 		},
 	})
 	remove(@Param('ref') ref: string, @Req() req: AuthenticatedRequest) {
-		const orgId = req.user?.org?.uid;
+		const orgId = req.user?.org?.uid || req.user?.organisationRef;
 		const branchId = req.user?.branch?.uid;
 		return this.interactionsService.remove(+ref, orgId, branchId);
 	}
