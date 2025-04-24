@@ -10,14 +10,10 @@ import { PaginatedResponse } from 'src/lib/types/paginated-response';
 import { Organisation } from '../organisation/entities/organisation.entity';
 import { Branch } from '../branch/entities/branch.entity';
 import { User } from 'src/user/entities/user.entity';
-import { Cache } from 'cache-manager';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { EventEmitter2 } from '@nestjs/event-emitter';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class InteractionsService {
-	private readonly CACHE_PREFIX = 'interactions:';
-	private readonly CACHE_TTL: number;
 	private readonly logger = new Logger(InteractionsService.name);
 
 	constructor(
@@ -27,69 +23,8 @@ export class InteractionsService {
 		private leadRepository: Repository<Lead>,
 		@InjectRepository(Client)
 		private clientRepository: Repository<Client>,
-		@Inject(CACHE_MANAGER)
-		private cacheManager: Cache,
-		private readonly eventEmitter: EventEmitter2,
-	) {
-		this.CACHE_TTL = Number(process.env.CACHE_EXPIRATION_TIME) || 30;
-	}
-
-	private getCacheKey(key: string | number): string {
-		return `${this.CACHE_PREFIX}${key}`;
-	}
-
-	private async invalidateInteractionCache(interaction: Interaction) {
-		try {
-			// Get all cache keys
-			const keys = await this.cacheManager.store.keys();
-
-			// Keys to clear
-			const keysToDelete = [];
-
-			// Add interaction-specific keys
-			keysToDelete.push(this.getCacheKey(interaction.uid), `${this.CACHE_PREFIX}all`);
-
-			// Add lead-specific keys if applicable
-			if (interaction.lead?.uid) {
-				keysToDelete.push(`${this.CACHE_PREFIX}lead_${interaction.lead.uid}`);
-			}
-
-			// Add client-specific keys if applicable
-			if (interaction.client?.uid) {
-				keysToDelete.push(`${this.CACHE_PREFIX}client_${interaction.client.uid}`);
-			}
-
-			// Add organization-specific keys
-			if (interaction.organisation?.uid) {
-				keysToDelete.push(`${this.CACHE_PREFIX}org_${interaction.organisation.uid}`);
-			}
-
-			// Add branch-specific keys
-			if (interaction.branch?.uid) {
-				keysToDelete.push(`${this.CACHE_PREFIX}branch_${interaction.branch.uid}`);
-			}
-
-			// Clear all pagination and search caches
-			const interactionListCaches = keys.filter(
-				(key) =>
-					key.startsWith(`${this.CACHE_PREFIX}page`) ||
-					key.startsWith(`${this.CACHE_PREFIX}search`) ||
-					key.includes('_limit'),
-			);
-			keysToDelete.push(...interactionListCaches);
-
-			// Clear all caches
-			await Promise.all(keysToDelete.map((key) => this.cacheManager.del(key)));
-
-			// Emit event for other services that might be caching interaction data
-			this.eventEmitter.emit('interactions.cache.invalidate', {
-				interactionId: interaction.uid,
-				keys: keysToDelete,
-			});
-		} catch (error) {
-			this.logger.error('Error invalidating interaction cache:', error);
-		}
-	}
+		private readonly configService: ConfigService,
+	) {}
 
 	async create(
 		createInteractionDto: CreateInteractionDto,
@@ -156,11 +91,8 @@ export class InteractionsService {
 
 			const savedInteraction = await this.interactionRepository.save(interaction);
 
-			// Invalidate relevant caches
-			await this.invalidateInteractionCache(savedInteraction);
-
 			const response = {
-				message: process.env.SUCCESS_MESSAGE || 'Interaction created successfully',
+				message: this.configService.get<string>('SUCCESS_MESSAGE') || 'Interaction created successfully',
 				data: savedInteraction,
 			};
 
@@ -191,21 +123,6 @@ export class InteractionsService {
 		try {
 			if (!orgId) {
 				throw new BadRequestException('Organization ID is required');
-			}
-
-			// Generate cache key based on parameters
-			const cacheKey = this.getCacheKey(
-				`page_${page}_limit_${limit}_org_${orgId}_branch_${branchId || 'all'}_` +
-					`lead_${filters?.leadUid || 'all'}_client_${filters?.clientUid || 'all'}_` +
-					`search_${filters?.search || 'none'}_date_${filters?.startDate?.toISOString() || 'all'}_${
-						filters?.endDate?.toISOString() || 'all'
-					}`,
-			);
-
-			// Try to get from cache first
-			const cachedResult = await this.cacheManager.get(cacheKey);
-			if (cachedResult) {
-				return cachedResult as PaginatedResponse<Interaction>;
 			}
 
 			const queryBuilder = this.interactionRepository
@@ -250,7 +167,7 @@ export class InteractionsService {
 			queryBuilder
 				.skip((page - 1) * limit)
 				.take(limit)
-				.orderBy('interaction.createdAt', 'ASC'); // Newest first, oldest last
+				.orderBy('interaction.createdAt', 'ASC');
 
 			const [interactions, total] = await queryBuilder.getManyAndCount();
 
@@ -262,11 +179,8 @@ export class InteractionsService {
 					limit,
 					totalPages: Math.ceil(total / limit),
 				},
-				message: process.env.SUCCESS_MESSAGE || 'Interactions retrieved successfully',
+				message: this.configService.get<string>('SUCCESS_MESSAGE') || 'Interactions retrieved successfully',
 			};
-
-			// Store in cache
-			await this.cacheManager.set(cacheKey, result, this.CACHE_TTL);
 
 			return result;
 		} catch (error) {
@@ -293,15 +207,6 @@ export class InteractionsService {
 				throw new BadRequestException('Organization ID is required');
 			}
 
-			// Generate cache key
-			const cacheKey = this.getCacheKey(`uid_${uid}_org_${orgId}_branch_${branchId || 'all'}`);
-
-			// Try to get from cache first
-			const cachedResult = await this.cacheManager.get(cacheKey);
-			if (cachedResult) {
-				return cachedResult as { interaction: Interaction; message: string };
-			}
-
 			const queryBuilder = this.interactionRepository
 				.createQueryBuilder('interaction')
 				.leftJoinAndSelect('interaction.createdBy', 'createdBy')
@@ -325,11 +230,8 @@ export class InteractionsService {
 
 			const result = {
 				interaction,
-				message: process.env.SUCCESS_MESSAGE || 'Interaction retrieved successfully',
+				message: this.configService.get<string>('SUCCESS_MESSAGE') || 'Interaction retrieved successfully',
 			};
-
-			// Store in cache
-			await this.cacheManager.set(cacheKey, result, this.CACHE_TTL);
 
 			return result;
 		} catch (error) {
@@ -346,15 +248,6 @@ export class InteractionsService {
 				throw new BadRequestException('Organization ID is required');
 			}
 
-			// Generate cache key
-			const cacheKey = this.getCacheKey(`lead_${leadUid}_org_${orgId}_branch_${branchId || 'all'}`);
-
-			// Try to get from cache first
-			const cachedResult = await this.cacheManager.get(cacheKey);
-			if (cachedResult) {
-				return cachedResult as PaginatedResponse<Interaction>;
-			}
-
 			const queryBuilder = this.interactionRepository
 				.createQueryBuilder('interaction')
 				.leftJoinAndSelect('interaction.createdBy', 'createdBy')
@@ -368,7 +261,7 @@ export class InteractionsService {
 				queryBuilder.andWhere('interaction.branch.uid = :branchId', { branchId });
 			}
 
-			queryBuilder.orderBy('interaction.createdAt', 'ASC'); // Newest first, oldest last
+			queryBuilder.orderBy('interaction.createdAt', 'ASC'); // Oldest first for chronological chat view
 
 			const [interactions, total] = await queryBuilder.getManyAndCount();
 
@@ -380,11 +273,8 @@ export class InteractionsService {
 					limit: total,
 					totalPages: 1,
 				},
-				message: process.env.SUCCESS_MESSAGE || 'Interactions retrieved successfully',
+				message: this.configService.get<string>('SUCCESS_MESSAGE') || 'Interactions retrieved successfully',
 			};
-
-			// Store in cache
-			await this.cacheManager.set(cacheKey, result, this.CACHE_TTL);
 
 			return result;
 		} catch (error) {
@@ -407,15 +297,6 @@ export class InteractionsService {
 				throw new BadRequestException('Organization ID is required');
 			}
 
-			// Generate cache key
-			const cacheKey = this.getCacheKey(`client_${clientUid}_org_${orgId}_branch_${branchId || 'all'}`);
-
-			// Try to get from cache first
-			const cachedResult = await this.cacheManager.get(cacheKey);
-			if (cachedResult) {
-				return cachedResult as PaginatedResponse<Interaction>;
-			}
-
 			const queryBuilder = this.interactionRepository
 				.createQueryBuilder('interaction')
 				.leftJoinAndSelect('interaction.createdBy', 'createdBy')
@@ -429,7 +310,7 @@ export class InteractionsService {
 				queryBuilder.andWhere('interaction.branch.uid = :branchId', { branchId });
 			}
 
-			queryBuilder.orderBy('interaction.createdAt', 'ASC'); // Newest first, oldest last
+			queryBuilder.orderBy('interaction.createdAt', 'ASC'); // Oldest first for chronological chat view
 
 			const [interactions, total] = await queryBuilder.getManyAndCount();
 
@@ -441,11 +322,8 @@ export class InteractionsService {
 					limit: total,
 					totalPages: 1,
 				},
-				message: process.env.SUCCESS_MESSAGE || 'Interactions retrieved successfully',
+				message: this.configService.get<string>('SUCCESS_MESSAGE') || 'Interactions retrieved successfully',
 			};
-
-			// Store in cache
-			await this.cacheManager.set(cacheKey, result, this.CACHE_TTL);
 
 			return result;
 		} catch (error) {
@@ -479,6 +357,7 @@ export class InteractionsService {
 				.leftJoinAndSelect('interaction.branch', 'branch')
 				.leftJoinAndSelect('interaction.lead', 'lead')
 				.leftJoinAndSelect('interaction.client', 'client')
+				.leftJoinAndSelect('interaction.createdBy', 'createdBy')
 				.where('interaction.uid = :uid', { uid })
 				.andWhere('interaction.isDeleted = :isDeleted', { isDeleted: false })
 				.andWhere('organisation.uid = :orgId', { orgId });
@@ -497,11 +376,8 @@ export class InteractionsService {
 			const updatedInteraction = { ...interaction, ...updateInteractionDto };
 			await this.interactionRepository.save(updatedInteraction);
 
-			// Invalidate cache
-			await this.invalidateInteractionCache(updatedInteraction);
-
 			return {
-				message: process.env.SUCCESS_MESSAGE || 'Interaction updated successfully',
+				message: this.configService.get<string>('SUCCESS_MESSAGE') || 'Interaction updated successfully',
 			};
 		} catch (error) {
 			return {
@@ -522,6 +398,7 @@ export class InteractionsService {
 				.leftJoinAndSelect('interaction.branch', 'branch')
 				.leftJoinAndSelect('interaction.lead', 'lead')
 				.leftJoinAndSelect('interaction.client', 'client')
+				.leftJoinAndSelect('interaction.createdBy', 'createdBy')
 				.where('interaction.uid = :uid', { uid })
 				.andWhere('interaction.isDeleted = :isDeleted', { isDeleted: false })
 				.andWhere('organisation.uid = :orgId', { orgId });
@@ -540,11 +417,8 @@ export class InteractionsService {
 			interaction.isDeleted = true;
 			await this.interactionRepository.save(interaction);
 
-			// Invalidate cache
-			await this.invalidateInteractionCache(interaction);
-
 			return {
-				message: process.env.SUCCESS_MESSAGE || 'Interaction deleted successfully',
+				message: this.configService.get<string>('SUCCESS_MESSAGE') || 'Interaction deleted successfully',
 			};
 		} catch (error) {
 			return {
