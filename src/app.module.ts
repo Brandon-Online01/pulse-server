@@ -84,6 +84,8 @@ import { OrderItem } from './shop/entities/order-item.entity';
 import { ClientAuth } from './clients/entities/client.auth.entity';
 import { ScheduleModule } from '@nestjs/schedule';
 import { LibModule } from './lib/lib.module';
+import { InteractionsModule } from './interactions/interactions.module';
+import { Interaction } from './interactions/entities/interaction.entity';
 
 @Module({
 	imports: [
@@ -155,6 +157,7 @@ import { LibModule } from './lib/lib.module';
 				Order,
 				OrderItem,
 				Report,
+				Interaction,
 			],
 			synchronize: true,
 			retryAttempts: 100,
@@ -172,6 +175,7 @@ import { LibModule } from './lib/lib.module';
 		CommunicationModule,
 		DocsModule,
 		FeedbackModule,
+		InteractionsModule,
 		JournalModule,
 		LeadsModule,
 		LibModule,

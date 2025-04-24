@@ -6,12 +6,14 @@ import {
 	UpdateDateColumn,
 	ManyToOne,
 	JoinColumn,
+	OneToMany,
 } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
 import { Branch } from '../../branch/entities/branch.entity';
 import { Client } from '../../clients/entities/client.entity';
 import { LeadCategory, LeadStatus } from '../../lib/enums/lead.enums';
 import { Organisation } from 'src/organisation/entities/organisation.entity';
+import { Interaction } from 'src/interactions/entities/interaction.entity';
 
 @Entity('leads')
 export class Lead {
@@ -80,4 +82,7 @@ export class Lead {
 
 	@ManyToOne(() => Client, (client) => client?.leads)
 	client: Client;
+	
+	@OneToMany(() => Interaction, (interaction) => interaction.lead)
+	interactions: Interaction[];
 }

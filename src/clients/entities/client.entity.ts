@@ -7,6 +7,7 @@ import { Column, Entity, OneToMany, ManyToOne, PrimaryGeneratedColumn, OneToOne 
 import { CheckIn } from '../../check-ins/entities/check-in.entity';
 import { Organisation } from 'src/organisation/entities/organisation.entity';
 import { Branch } from 'src/branch/entities/branch.entity';
+import { Interaction } from 'src/interactions/entities/interaction.entity';
 import {
 	ClientType,
 	ClientContactPreference,
@@ -226,4 +227,8 @@ export class Client {
 
 	@OneToOne(() => ClientAuth, (clientAuth) => clientAuth.client, { nullable: true })
 	portalCredentials: ClientAuth;
+
+	// Add the interactions relationship
+	@OneToMany(() => Interaction, (interaction) => interaction.client)
+	interactions: Interaction[];
 }

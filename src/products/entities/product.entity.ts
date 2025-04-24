@@ -41,6 +41,9 @@ export class Product {
     @Column({ nullable: false })
     productRef: string;
 
+    @Column({ nullable: true })
+    productReferenceCode: string;
+
     @Column({ default: 10 })
     reorderPoint: number;
 
@@ -52,6 +55,9 @@ export class Product {
 
     @Column({ nullable: true })
     barcode: string;
+
+    @Column({ nullable: true })
+    brand: string;
 
     @Column({ type: 'int', default: 0 })
     packageQuantity: number;
@@ -73,6 +79,7 @@ export class Product {
 
     @Column({ type: 'varchar', default: 'unit' })
     packageUnit: string;
+    
 
     @CreateDateColumn()
     createdAt: Date;

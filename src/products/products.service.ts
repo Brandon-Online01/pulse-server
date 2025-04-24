@@ -227,6 +227,7 @@ export class ProductsService {
 				.createQueryBuilder('product')
 				.leftJoinAndSelect('product.organisation', 'organisation')
 				.leftJoinAndSelect('product.branch', 'branch')
+				.leftJoinAndSelect('product.analytics', 'analytics')
 				.where('product.isDeleted = :isDeleted', { isDeleted: false });
 
 			// Filter by organization if provided
@@ -284,7 +285,11 @@ export class ProductsService {
 		}
 	}
 
-	async getProductByref(ref: number, orgId?: number, branchId?: number): Promise<{ product: Product | null; message: string }> {
+	async getProductByref(
+		ref: number,
+		orgId?: number,
+		branchId?: number,
+	): Promise<{ product: Product | null; message: string }> {
 		try {
 			// Build where conditions
 			const whereConditions: any = {

@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Connection, createConnection, Repository } from 'typeorm';
-import { Cron } from '@nestjs/schedule';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { Product } from '../../products/entities/product.entity';
@@ -79,7 +79,7 @@ export class ImporterService implements OnModuleInit {
 	}
 
 	// Main synchronization method that runs in the correct order
-	@Cron('0 */60 * * * * *') // Run every 60 minutes (1 hour)
+	@Cron(CronExpression.EVERY_HOUR) // Run every 60 minutes (1 hour)
 	async synchronizeAll() {
 		try {
 			if (!this.connection) {
