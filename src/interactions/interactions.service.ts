@@ -11,6 +11,7 @@ import { Organisation } from '../organisation/entities/organisation.entity';
 import { Branch } from '../branch/entities/branch.entity';
 import { User } from 'src/user/entities/user.entity';
 import { ConfigService } from '@nestjs/config';
+import { Quotation } from '../shop/entities/quotation.entity';
 
 @Injectable()
 export class InteractionsService {
@@ -37,9 +38,9 @@ export class InteractionsService {
 				throw new BadRequestException('Organization ID is required');
 			}
 
-			// Check if at least one of leadUid or clientUid is provided
-			if (!createInteractionDto.leadUid && !createInteractionDto.clientUid) {
-				throw new BadRequestException('Either leadUid or clientUid must be provided');
+			// Check if at least one of leadUid, clientUid, or quotationUid is provided
+			if (!createInteractionDto.leadUid && !createInteractionDto.clientUid && !createInteractionDto.quotationUid) {
+				throw new BadRequestException('Either leadUid, clientUid, or quotationUid must be provided');
 			}
 
 			// Create the interaction entity
@@ -89,6 +90,23 @@ export class InteractionsService {
 				interaction.client = client;
 			}
 
+			// Set quotation if provided
+			if (createInteractionDto.quotationUid) {
+				// Get the Quotation repository dynamically to avoid circular dependency
+				const dataSource = this.interactionRepository.manager.connection;
+				const quotationRepository = dataSource.getRepository(Quotation);
+				
+				const quotation = await quotationRepository.findOne({
+					where: { uid: createInteractionDto.quotationUid },
+				});
+				
+				if (!quotation) {
+					throw new NotFoundException(`Quotation with ID ${createInteractionDto.quotationUid} not found`);
+				}
+				
+				interaction.quotation = quotation;
+			}
+
 			const savedInteraction = await this.interactionRepository.save(interaction);
 
 			const response = {
@@ -119,7 +137,7 @@ export class InteractionsService {
 		limit: number = 25,
 		orgId?: number,
 		branchId?: number,
-	): Promise<PaginatedResponse<Interaction>> {
+): Promise<PaginatedResponse<Interaction>> {
 		try {
 			if (!orgId) {
 				throw new BadRequestException('Organization ID is required');
@@ -297,32 +315,44 @@ export class InteractionsService {
 				throw new BadRequestException('Organization ID is required');
 			}
 
+			if (!clientUid) {
+				throw new BadRequestException('Client ID is required');
+			}
+
 			const queryBuilder = this.interactionRepository
 				.createQueryBuilder('interaction')
 				.leftJoinAndSelect('interaction.createdBy', 'createdBy')
-				.leftJoinAndSelect('interaction.lead', 'lead')
 				.leftJoinAndSelect('interaction.client', 'client')
+				.leftJoinAndSelect('interaction.lead', 'lead')
 				.where('interaction.isDeleted = :isDeleted', { isDeleted: false })
-				.andWhere('client.uid = :clientUid', { clientUid })
-				.andWhere('interaction.organisation.uid = :orgId', { orgId });
+				.andWhere('client.uid = :clientUid', { clientUid });
 
+			// Add organization filter
+			queryBuilder.leftJoinAndSelect('interaction.organisation', 'organisation').andWhere(
+				'organisation.uid = :orgId',
+				{ orgId },
+			);
+
+			// Add branch filter if provided
 			if (branchId) {
-				queryBuilder.andWhere('interaction.branch.uid = :branchId', { branchId });
+				queryBuilder
+					.leftJoinAndSelect('interaction.branch', 'branch')
+					.andWhere('branch.uid = :branchId', { branchId });
 			}
 
-			queryBuilder.orderBy('interaction.createdAt', 'ASC'); // Oldest first for chronological chat view
+			queryBuilder.orderBy('interaction.createdAt', 'ASC');
 
-			const [interactions, total] = await queryBuilder.getManyAndCount();
+			const interactions = await queryBuilder.getMany();
 
 			const result = {
 				data: interactions,
 				meta: {
-					total,
+					total: interactions.length,
 					page: 1,
-					limit: total,
+					limit: interactions.length,
 					totalPages: 1,
 				},
-				message: this.configService.get<string>('SUCCESS_MESSAGE') || 'Interactions retrieved successfully',
+				message: this.configService.get<string>('SUCCESS_MESSAGE') || 'Client interactions retrieved successfully',
 			};
 
 			return result;
@@ -332,7 +362,67 @@ export class InteractionsService {
 				meta: {
 					total: 0,
 					page: 1,
-					limit: 0,
+					limit: 25,
+					totalPages: 0,
+				},
+				message: error?.message,
+			};
+		}
+	}
+
+	async findByQuotation(quotationUid: number, orgId?: number, branchId?: number): Promise<PaginatedResponse<Interaction>> {
+		try {
+			if (!orgId) {
+				throw new BadRequestException('Organization ID is required');
+			}
+
+			if (!quotationUid) {
+				throw new BadRequestException('Quotation ID is required');
+			}
+
+			const queryBuilder = this.interactionRepository
+				.createQueryBuilder('interaction')
+				.leftJoinAndSelect('interaction.createdBy', 'createdBy')
+				.leftJoinAndSelect('interaction.quotation', 'quotation')
+				.where('interaction.isDeleted = :isDeleted', { isDeleted: false })
+				.andWhere('quotation.uid = :quotationUid', { quotationUid });
+
+			// Add organization filter
+			queryBuilder.leftJoinAndSelect('interaction.organisation', 'organisation').andWhere(
+				'organisation.uid = :orgId',
+				{ orgId },
+			);
+
+			// Add branch filter if provided
+			if (branchId) {
+				queryBuilder
+					.leftJoinAndSelect('interaction.branch', 'branch')
+					.andWhere('branch.uid = :branchId', { branchId });
+			}
+
+			queryBuilder.orderBy('interaction.createdAt', 'ASC');
+
+			const interactions = await queryBuilder.getMany();
+
+			const result = {
+				data: interactions,
+				meta: {
+					total: interactions.length,
+					page: 1,
+					limit: interactions.length,
+					totalPages: 1,
+				},
+				message: this.configService.get<string>('SUCCESS_MESSAGE') || 'Quotation interactions retrieved successfully',
+			};
+
+			return result;
+		} catch (error) {
+			return {
+				data: [],
+				meta: {
+					total: 0,
+					page: 1,
+					limit: 25,
 					totalPages: 0,
 				},
 				message: error?.message,

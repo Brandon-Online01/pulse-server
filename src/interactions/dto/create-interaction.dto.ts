@@ -1,6 +1,7 @@
-import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsUrl } from 'class-validator';
 import { InteractionType } from '../../lib/enums/interaction.enums';
 import { ApiProperty } from '@nestjs/swagger';
+import { User } from '../../user/entities/user.entity';
 
 export class CreateInteractionDto {
 	@IsNotEmpty()
@@ -9,7 +10,7 @@ export class CreateInteractionDto {
 	message: string;
 
 	@IsOptional()
-	@IsString()
+	@IsUrl()
 	@ApiProperty({
 		description: 'The URL of the attachment',
 		example: 'https://example.com/attachment.jpg',
@@ -35,4 +36,9 @@ export class CreateInteractionDto {
 	@IsNumber()
 	@ApiProperty({ description: 'The client reference code', example: 1, required: false })
 	clientUid?: number;
+
+	@IsOptional()
+	@IsNumber()
+	@ApiProperty({ description: 'The quotation reference code', example: 1, required: false })
+	quotationUid?: number;
 }

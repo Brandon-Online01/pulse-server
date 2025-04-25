@@ -13,6 +13,7 @@ import { Client } from '../../clients/entities/client.entity';
 import { InteractionType } from '../../lib/enums/interaction.enums';
 import { Organisation } from 'src/organisation/entities/organisation.entity';
 import { Branch } from 'src/branch/entities/branch.entity';
+import { Quotation } from '../../shop/entities/quotation.entity';
 
 @Entity('interactions')
 export class Interaction {
@@ -56,4 +57,8 @@ export class Interaction {
 	@ManyToOne(() => Client, (client) => client.interactions, { nullable: true })
 	@JoinColumn()
 	client: Client;
+
+	@ManyToOne(() => Quotation, (quotation) => quotation.interactions, { nullable: true })
+	@JoinColumn()
+	quotation: Quotation;
 }

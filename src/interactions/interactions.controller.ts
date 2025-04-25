@@ -233,6 +233,49 @@ export class InteractionsController {
 		return this.interactionsService.findByClient(+ref, orgId, branchId);
 	}
 
+	@Get('quotation/:ref')
+	@UseInterceptors(CacheInterceptor)
+	@CacheTTL(30) // Cache for 30 seconds
+	@Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPERVISOR, AccessLevel.USER)
+	@ApiOperation({
+		summary: 'Get interactions by quotation',
+		description: 'Retrieves all interactions associated with a specific quotation',
+	})
+	@ApiParam({ name: 'ref', description: 'Quotation reference code', type: 'number' })
+	@ApiOkResponse({
+		description: 'Quotation interactions retrieved successfully',
+		schema: {
+			type: 'object',
+			properties: {
+				data: {
+					type: 'array',
+					items: {
+						type: 'object',
+						properties: {
+							uid: { type: 'number' },
+							// Other interaction properties
+						},
+					},
+				},
+				meta: {
+					type: 'object',
+					properties: {
+						total: { type: 'number' },
+						page: { type: 'number' },
+						limit: { type: 'number' },
+						totalPages: { type: 'number' },
+					},
+				},
+				message: { type: 'string', example: 'Success' },
+			},
+		},
+	})
+	findByQuotation(@Param('ref') ref: string, @Req() req: AuthenticatedRequest) {
+		const orgId = req.user?.org?.uid || req.user?.organisationRef;
+		const branchId = req.user?.branch?.uid;
+		return this.interactionsService.findByQuotation(+ref, orgId, branchId);
+	}
+
 	@Get(':ref')
 	@UseInterceptors(CacheInterceptor)
 	@CacheTTL(30) // Cache for 30 seconds

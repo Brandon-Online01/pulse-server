@@ -14,6 +14,7 @@ import {
 	OneToMany,
 } from 'typeorm';
 import { Order } from './order.entity';
+import { Interaction } from '../../interactions/entities/interaction.entity';
 
 @Entity('quotation')
 export class Quotation {
@@ -100,4 +101,7 @@ export class Quotation {
 
 	@ManyToOne(() => Organisation, (organisation) => organisation?.quotations, { nullable: true })
 	organisation: Organisation;
+
+	@OneToMany(() => Interaction, (interaction) => interaction.quotation)
+	interactions: Interaction[];
 }
