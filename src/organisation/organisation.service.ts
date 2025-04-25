@@ -29,7 +29,7 @@ export class OrganisationService {
 	private async clearOrganisationCache(ref?: string): Promise<void> {
 		// Clear the all organisations cache
 		await this.cacheManager.del(this.ALL_ORGS_CACHE_KEY);
-		
+
 		// If a specific ref is provided, clear that organisation's cache
 		if (ref) {
 			await this.cacheManager.del(this.getOrgCacheKey(ref));
@@ -61,7 +61,7 @@ export class OrganisationService {
 		try {
 			// Try to get from cache first
 			const cachedOrganisations = await this.cacheManager.get<Organisation[]>(this.ALL_ORGS_CACHE_KEY);
-			
+
 			if (cachedOrganisations) {
 				return {
 					organisations: cachedOrganisations,
@@ -90,7 +90,7 @@ export class OrganisationService {
 
 			// Store in cache
 			await this.cacheManager.set(this.ALL_ORGS_CACHE_KEY, organisations, {
-				ttl: this.DEFAULT_CACHE_TTL
+				ttl: this.DEFAULT_CACHE_TTL,
 			});
 
 			return {
@@ -110,7 +110,7 @@ export class OrganisationService {
 			// Try to get from cache first
 			const cacheKey = this.getOrgCacheKey(ref);
 			const cachedOrganisation = await this.cacheManager.get<Organisation>(cacheKey);
-			
+
 			if (cachedOrganisation) {
 				return {
 					organisation: cachedOrganisation,
@@ -121,7 +121,17 @@ export class OrganisationService {
 			// If not in cache, fetch from database
 			const organisation = await this.organisationRepository.findOne({
 				where: { ref, isDeleted: false },
-				relations: ['branches', 'settings', 'appearance', 'hours', 'assets', 'products', 'clients', 'users', 'resellers', 'banners', 'news', 'journals', 'docs', 'claims', 'attendances', 'reports', 'quotations', 'tasks', 'notifications', 'trackings', 'communicationLogs'],
+				relations: [
+					'branches',
+					'settings',
+					'appearance',
+					'hours',
+					'assets',
+					'products',
+					'clients',
+					'users',
+					'resellers',
+				],
 			});
 
 			if (!organisation) {
@@ -133,7 +143,7 @@ export class OrganisationService {
 
 			// Store in cache
 			await this.cacheManager.set(cacheKey, organisation, {
-				ttl: this.DEFAULT_CACHE_TTL
+				ttl: this.DEFAULT_CACHE_TTL,
 			});
 
 			return {

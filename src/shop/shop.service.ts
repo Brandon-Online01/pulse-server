@@ -130,23 +130,6 @@ export class ShopService {
 		}
 	}
 
-	/**
-	 * Formats a currency amount based on organization's currency settings
-	 * @param amount The amount to format
-	 * @param orgId Optional organization ID for specific currency settings
-	 * @returns Formatted currency string
-	 */
-	private async formatCurrencyForOrg(amount: number, orgId?: number): Promise<string> {
-		const currency = await this.getOrgCurrency(orgId);
-
-		return new Intl.NumberFormat(currency.locale, {
-			style: 'currency',
-			currency: currency.code,
-		})
-			.format(amount)
-			.replace(currency.code, currency.symbol);
-	}
-
 	// Original method - keep for backward compatibility
 	private formatCurrency(amount: number): string {
 		return new Intl.NumberFormat(this.currencyLocale, {
@@ -174,22 +157,14 @@ export class ShopService {
 			const allProducts = await query.getMany();
 
 			// Return empty categories array if no products found instead of throwing error
-			if (!allProducts || allProducts.length === 0) {
+			if (!allProducts || allProducts?.length === 0) {
 				return {
 					categories: [],
 					message: 'No products found',
 				};
 			}
 
-			// Format prices before returning products using org currency settings
-			const formattedProducts = await Promise.all(
-				allProducts.map(async (product) => ({
-					...product,
-					price: await this.formatCurrencyForOrg(Number(product.price) || 0, orgId),
-				})),
-			);
-
-			const categories = formattedProducts.map((product) => product?.category);
+			const categories = allProducts.map((product) => product?.category);
 			const uniqueCategories = [...new Set(categories)].filter(Boolean); // Filter out null/undefined values
 
 			const response = {
@@ -233,15 +208,6 @@ export class ShopService {
 			}
 
 			const products = await query.getMany();
-
-			// If products found, apply currency formatting
-			if (products && products.length > 0) {
-				for (const product of products) {
-					if (product.price) {
-						product['formattedPrice'] = await this.formatCurrencyForOrg(Number(product.price) || 0, orgId);
-					}
-				}
-			}
 
 			return { products: products ?? [] }; // Return empty array instead of null if no products
 		} catch (error) {
@@ -302,6 +268,10 @@ export class ShopService {
 
 			if (!quotationData?.owner?.uid) {
 				throw new Error('Owner is required');
+			}
+
+			if (!quotationData?.client?.uid) {
+				throw new Error('Client is required');
 			}
 
 			// Get organization-specific currency settings
@@ -382,6 +352,9 @@ export class ShopService {
 						updatedAt: new Date(),
 					};
 				}),
+				// Assign organisation and branch as relation objects if IDs exist
+				...(orgId && { organisation: { uid: orgId } }), // Assumes relation name is 'organisation' and expects { uid: ... }
+				...(branchId && { branch: { uid: branchId } }),
 			};
 
 			// Add organization and branch if available - DIRECT COLUMN VALUES
@@ -615,7 +588,8 @@ export class ShopService {
 				.leftJoinAndSelect('quotation.client', 'client')
 				.leftJoinAndSelect('quotation.placedBy', 'placedBy')
 				.leftJoinAndSelect('quotation.quotationItems', 'quotationItems')
-				.leftJoinAndSelect('quotationItems.product', 'product');
+				.leftJoinAndSelect('quotationItems.product', 'product')
+				.orderBy('quotation.createdAt', 'DESC');
 
 			// Add filtering by org and branch
 			if (orgId) {
