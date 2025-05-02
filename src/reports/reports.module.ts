@@ -42,6 +42,10 @@ import { LiveOverviewReportGenerator } from './generators/live-overview-report.g
 import { ProductAnalytics } from '../products/entities/product-analytics.entity';
 import { TaskFlag } from '../tasks/entities/task-flag.entity';
 import { TaskFlagItem } from '../tasks/entities/task-flag-item.entity';
+import { TrackingModule } from '../tracking/tracking.module';
+import { Tracking } from 'src/tracking/entities/tracking.entity';
+import { Competitor } from '../competitors/entities/competitor.entity';
+import { MapDataReportGenerator } from './generators/map-data-report.generator';
 
 @Module({
 	imports: [
@@ -86,6 +90,8 @@ import { TaskFlagItem } from '../tasks/entities/task-flag-item.entity';
 			Reward,
 			TaskFlag,
 			TaskFlagItem,
+			Tracking,
+			Competitor,
 		]),
 		UserModule,
 		CheckInsModule,
@@ -97,6 +103,7 @@ import { TaskFlagItem } from '../tasks/entities/task-flag-item.entity';
 		EventEmitterModule,
 		CommunicationModule,
 		RewardsModule,
+		TrackingModule,
 	],
 	controllers: [ReportsController],
 	providers: [
@@ -106,6 +113,7 @@ import { TaskFlagItem } from '../tasks/entities/task-flag-item.entity';
 		UserDailyReportGenerator,
 		LiveOverviewReportGenerator,
 		AttendanceService,
+		MapDataReportGenerator,
 	],
 	exports: [TypeOrmModule, ReportsService],
 })

@@ -18,6 +18,7 @@ import { CommunicationService } from '../communication/communication.service';
 import { EmailType } from '../lib/enums/email.enums';
 import { Cron } from '@nestjs/schedule';
 import { LiveOverviewReportGenerator } from './generators/live-overview-report.generator';
+import { MapDataReportGenerator } from './generators/map-data-report.generator';
 
 @Injectable()
 export class ReportsService implements OnModuleInit {
@@ -41,6 +42,7 @@ export class ReportsService implements OnModuleInit {
 		private eventEmitter: EventEmitter2,
 		private communicationService: CommunicationService,
 		private readonly liveOverviewReportGenerator: LiveOverviewReportGenerator,
+		private readonly mapDataReportGenerator: MapDataReportGenerator,
 	) {
 		this.CACHE_TTL = this.configService.get<number>('CACHE_EXPIRATION_TIME') || 300;
 	}
@@ -539,5 +541,34 @@ export class ReportsService implements OnModuleInit {
 		if (!payload || !payload.organisationId) return;
 		await this.clearOrganizationReportCache(payload.organisationId, ReportType.LIVE_OVERVIEW);
 		this.logger.log(`Cleared live overview cache due to quotation change in org ${payload.organisationId}`);
+	}
+
+	/* ---------------------------------------------------------
+	 * MAP-DATA helper (live map screen)
+	 * -------------------------------------------------------*/
+	async generateMapData(params: { organisationId: number; branchId?: number }): Promise<any> {
+		const cacheKey = `${this.CACHE_PREFIX}mapdata_org${params.organisationId}_${params.branchId || 'all'}`;
+
+		// Try cache first
+		const cached = await this.cacheManager.get(cacheKey);
+		if (cached) {
+			return cached;
+		}
+
+		const data = await this.mapDataReportGenerator.generate(params);
+
+		// Basic summary counts to match previous response structure
+		const summary = {
+			totalWorkers: data.workers.length,
+			totalClients: data.clients.length,
+			totalCompetitors: data.competitors.length,
+			totalQuotations: data.quotations.length,
+		};
+
+		const finalPayload = { data, summary };
+
+		await this.cacheManager.set(cacheKey, finalPayload, this.CACHE_TTL);
+
+		return finalPayload;
 	}
 }

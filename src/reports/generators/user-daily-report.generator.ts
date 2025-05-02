@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, In, MoreThanOrEqual, Not, Repository, LessThanOrEqual, IsNull, Like } from 'typeorm';
+import { Between, In, MoreThanOrEqual, Not, Repository, LessThanOrEqual, IsNull } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
 import { Attendance } from '../../attendance/entities/attendance.entity';
 import { Task } from '../../tasks/entities/task.entity';
@@ -15,6 +15,8 @@ import { startOfDay, endOfDay, format, differenceInMinutes } from 'date-fns';
 import { AttendanceService } from '../../attendance/attendance.service';
 import { ReportParamsDto } from '../dto/report-params.dto';
 import { Quotation } from '../../shop/entities/quotation.entity';
+import { TrackingService } from '../../tracking/tracking.service';
+import { Tracking } from '../../tracking/entities/tracking.entity';
 
 @Injectable()
 export class UserDailyReportGenerator {
@@ -38,6 +40,7 @@ export class UserDailyReportGenerator {
 		@InjectRepository(Quotation)
 		private quotationRepository: Repository<Quotation>,
 		private attendanceService: AttendanceService,
+		private trackingService: TrackingService,
 	) {}
 
 	async generate(params: ReportParamsDto): Promise<Record<string, any>> {
@@ -490,108 +493,72 @@ export class UserDailyReportGenerator {
 	}
 
 	private async collectLocationData(userId: number, startDate: Date, endDate: Date) {
-		// In a real implementation, this would connect to a location tracking service
-		// For this example, we'll use check-ins as a proxy for location data
-		const checkIns = await this.checkInRepository.find({
-			where: {
-				owner: { uid: userId },
-				checkInTime: Between(startDate, endDate),
-			},
-			order: { checkInTime: 'ASC' },
-		});
+		try {
+			// Use TrackingService to get real tracking data
+			const trackingResult = await this.trackingService.getDailyTracking(userId, startDate);
 
-		// If there's no tracking service, format attendance locations
-		const attendanceRecords = await this.attendanceRepository.find({
-			where: {
-				owner: { uid: userId },
-				checkIn: MoreThanOrEqual(startDate),
-				checkOut: LessThanOrEqual(endDate),
-			},
-			order: { checkIn: 'ASC' },
-		});
-
-		// Combine all location data
-		const locations = [];
-		let totalDistance = 0;
-
-		// Add attendance locations
-		attendanceRecords.forEach((record) => {
-			if (record.checkInLatitude && record.checkInLongitude) {
-				locations.push({
-					type: 'check-in',
-					timestamp: format(new Date(record.checkIn), 'HH:mm:ss'),
-					latitude: parseFloat(String(record.checkInLatitude)),
-					longitude: parseFloat(String(record.checkInLongitude)),
-					address: `${record?.checkInLatitude} ${record?.checkInLongitude}` || 'Unknown location',
-				});
+			if (!trackingResult || !trackingResult.data || !trackingResult.data.trackingPoints?.length) {
+				this.logger.warn(`No tracking data found for user ${userId} between ${startDate} and ${endDate}`);
+				// Return a default empty structure if no tracking data is found
+				return {
+					locations: [],
+					totalDistance: '0.0',
+					totalLocations: 0,
+					trackingData: {
+						totalDistance: '0.0 km',
+						locations: [],
+						averageTimePerLocation: '~',
+					},
+				};
 			}
 
-			if (record.checkOutLatitude && record.checkOutLongitude) {
-				locations.push({
-					type: 'check-out',
-					timestamp: record.checkOut ? format(new Date(record.checkOut), 'HH:mm:ss') : null,
-					latitude: parseFloat(String(record.checkOutLatitude)),
-					longitude: parseFloat(String(record.checkOutLongitude)),
-					address: `${record?.checkOutLatitude} ${record?.checkOutLongitude}` || 'Unknown location',
-				});
-			}
-		});
+			const trackingPoints: Tracking[] = trackingResult.data.trackingPoints;
+			// Use the distance calculated by TrackingService (assuming it returns distance in km)
+			const totalDistanceKm = parseFloat(trackingResult.data.totalDistance) || 0;
 
-		// Add check-in locations
-		checkIns.forEach((checkIn) => {
-			if (checkIn?.checkInLocation && checkIn.checkOutLocation) {
-				locations.push({
-					type: 'client-check-in',
-					timestamp: format(new Date(checkIn.checkInTime), 'HH:mm:ss'),
-					latitude: parseFloat(String(checkIn?.checkInLocation)),
-					longitude: parseFloat(String(checkIn?.checkInLocation)),
-					address: checkIn.checkInLocation || 'Unknown location',
-					clientName: checkIn.client?.name || 'Unknown client',
-				});
-			}
-		});
+			// Format location data from tracking points
+			const locations = trackingPoints.map((point) => ({
+				type: 'tracking-point', // Indicate the source of the location
+				timestamp: point.timestamp
+					? format(new Date(point.timestamp), 'HH:mm:ss')
+					: format(new Date(point.createdAt), 'HH:mm:ss'),
+				latitude: point.latitude,
+				longitude: point.longitude,
+				address: point.address || `${point.latitude}, ${point.longitude}`, // Use geocoded address if available
+				accuracy: point.accuracy,
+				speed: point.speed,
+			}));
 
-		// Estimate total distance (in a real implementation, this would use actual route data)
-		// Simple estimation using sequential points
-		for (let i = 1; i < locations.length; i++) {
-			const prev = locations[i - 1];
-			const curr = locations[i];
-			totalDistance += this.calculateDistance(prev.latitude, prev.longitude, curr.latitude, curr.longitude);
+			// Format for the tracking data structure used in email templates
+			const trackingData = {
+				totalDistance: `${totalDistanceKm.toFixed(1)} km`,
+				locations: locations.map((loc) => ({
+					address: loc.address,
+					timeSpent: '~', // TODO: Use locationAnalysis from trackingService if needed
+				})),
+				averageTimePerLocation: '~', // TODO: Use locationAnalysis from trackingService if needed
+			};
+
+			return {
+				locations,
+				totalDistance: totalDistanceKm.toFixed(1),
+				totalLocations: locations.length,
+				trackingData,
+			};
+		} catch (error) {
+			this.logger.error(`Error collecting location data for user ${userId}: ${error.message}`, error.stack);
+			// Return default structure on error to avoid breaking the report
+			return {
+				locations: [],
+				totalDistance: '0.0',
+				totalLocations: 0,
+				trackingData: {
+					totalDistance: '0.0 km',
+					locations: [],
+					averageTimePerLocation: '~',
+				},
+			};
 		}
-
-		// Format for the tracking data structure used in email templates
-		const trackingData = {
-			totalDistance: `${totalDistance.toFixed(1)} km`,
-			locations: locations.map((loc) => ({
-				address: loc.address,
-				timeSpent: '~', // Time spent would be calculated in a real implementation
-			})),
-			averageTimePerLocation: '~', // Would be calculated in a real implementation
-		};
-
-		return {
-			locations,
-			totalDistance: totalDistance.toFixed(1),
-			totalLocations: locations.length,
-			trackingData,
-		};
-	}
-
-	// Helper function to calculate distance between two coordinates (Haversine formula)
-	private calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-		const R = 6371; // Radius of the earth in km
-		const dLat = this.deg2rad(lat2 - lat1);
-		const dLon = this.deg2rad(lon2 - lon1);
-		const a =
-			Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-			Math.cos(this.deg2rad(lat1)) * Math.cos(this.deg2rad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-		const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-		const distance = R * c; // Distance in km
-		return distance;
-	}
-
-	private deg2rad(deg: number): number {
-		return deg * (Math.PI / 180);
 	}
 
 	private formatDuration(minutes: number): string {
