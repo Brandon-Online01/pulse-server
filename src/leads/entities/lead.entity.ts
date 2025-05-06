@@ -80,6 +80,9 @@ export class Lead {
 	@Column({ nullable: true })
 	branchUid: number;
 
+	@Column({ type: 'json', nullable: true })
+	assignees: { uid: number }[];
+
 	@ManyToOne(() => Client, (client) => client?.leads)
 	client: Client;
 	

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsNumber, IsObject, IsOptional, IsString } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsNumber, IsObject, IsOptional, IsString, IsArray } from 'class-validator';
 import { LeadStatus } from 'src/lib/enums/lead.enums';
 
 export class CreateLeadDto {
@@ -98,4 +98,13 @@ export class CreateLeadDto {
 		description: 'The branch reference code of the lead',
 	})
 	branch: { uid: number };
+
+	@IsOptional()
+	@IsArray()
+	@ApiProperty({
+		description: 'List of user IDs assigned to this lead',
+		example: [{ uid: 1 }, { uid: 2 }],
+		required: false,
+	})
+	assignees?: { uid: number }[];
 }
