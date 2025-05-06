@@ -55,6 +55,7 @@ import {
 	LeadConvertedClient,
 	LeadConvertedCreator,
 	LeadReminder,
+	LeadAssignedToUser,
 } from '../lib/templates/emails';
 // Email data types
 import { 
@@ -76,6 +77,7 @@ import {
 	LeadConvertedClientData,
 	LeadConvertedCreatorData,
 	LeadReminderData,
+	LeadAssignedToUserData,
 	TaskEmailData,
 	TaskFlagEmailData,
 	TaskFeedbackEmailData,
@@ -301,6 +303,11 @@ export class CommunicationService {
 				return {
 					subject: 'Pending Leads Require Your Attention',
 					body: LeadReminder(data as LeadReminderData),
+				};
+			case EmailType.LEAD_ASSIGNED_TO_USER:
+				return {
+					subject: 'You have been assigned a new lead',
+					body: LeadAssignedToUser(data as LeadAssignedToUserData),
 				};
 			case EmailType.TASK_FLAG_CREATED:
 				return {

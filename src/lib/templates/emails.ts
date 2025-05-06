@@ -20,6 +20,7 @@ import {
 	TaskFeedbackEmailData,
 	LeadReminderData,
 	TaskOverdueMissedData,
+	LeadAssignedToUserData,
 } from '../types/email-templates.types';
 import { formatDate } from '../utils/date.utils';
 
@@ -2998,5 +2999,55 @@ export const UserDailyReport = (data: DailyReportData): string => {
       </div>
     </body>
   </html>
+  `;
+};
+
+export const LeadAssignedToUser = (data: LeadAssignedToUserData): string => {
+	return `
+    <div style="${BASE_STYLES.wrapper}">
+      <div style="${BASE_STYLES.container}">
+        <div style="${BASE_STYLES.header}">
+          <div style="font-size: 56px; margin-bottom: 24px;">👤</div>
+          <h1 style="margin: 0 0 12px; font-size: 28px; font-family: Unbounded, sans-serif; font-weight: 600;">New Lead Assigned</h1>
+          <p style="margin: 0; opacity: 0.9; font-family: Unbounded, sans-serif; font-size: 16px;">Lead ID: ${
+						data.leadId
+					}</p>
+        </div>
+
+        <div style="padding: 32px 24px;">
+          <div style="${BASE_STYLES.card}">
+            <h2 style="${BASE_STYLES.heading}">Hi ${data.assigneeName},</h2>
+            <p style="${BASE_STYLES.text}">
+              You have been assigned a new lead: <strong>"${data.leadName}"</strong> by ${
+	data.leadCreatorName
+}.
+            </p>
+            ${
+							data.leadDetails
+								? `
+            <div style="${BASE_STYLES.highlight}">
+              <h3 style="${BASE_STYLES.subheading}">Lead Details:</h3>
+              <p style="${BASE_STYLES.text}">${data.leadDetails}</p>
+            </div>
+            `
+								: ''
+						}
+            <div style="text-align: center; margin: 32px 0;">
+              <a href="${data.leadLink}" style="${BASE_STYLES.button}">
+                View Lead
+              </a>
+            </div>
+          </div>
+
+          <div style="${BASE_STYLES.alert}">
+            <p style="margin: 0;">Please review the lead details and take appropriate action.</p>
+          </div>
+        </div>
+
+        <div style="${BASE_STYLES.footer}">
+          <p style="margin: 0;">This is an automated notification from Loro.</p>
+        </div>
+      </div>
+    </div>
   `;
 };

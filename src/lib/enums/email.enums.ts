@@ -47,6 +47,7 @@ export enum EmailType {
     LEAD_CONVERTED_CLIENT = 'lead_converted_client',
     LEAD_CONVERTED_CREATOR = 'lead_converted_creator',
     LEAD_REMINDER = 'lead_reminder',
+    LEAD_ASSIGNED_TO_USER = 'lead_assigned_to_user',
     // Task Flag related emails
     TASK_FLAG_CREATED = 'task_flag_created',
     TASK_FLAG_UPDATED = 'task_flag_updated',

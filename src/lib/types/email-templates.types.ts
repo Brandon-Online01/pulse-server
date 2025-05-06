@@ -329,6 +329,15 @@ export interface LeadConvertedCreatorData extends BaseEmailData {
 	dashboardLink?: string;
 }
 
+export interface LeadAssignedToUserData extends BaseEmailData {
+	assigneeName: string;
+	leadId: number | string;
+	leadName: string;
+	leadCreatorName: string;
+	leadDetails?: string;
+	leadLink: string;
+}
+
 export interface EmailDataMap {
 	[EmailType.SIGNUP]: SignupEmailData;
 	[EmailType.VERIFICATION]: VerificationEmailData;
@@ -371,6 +380,7 @@ export interface EmailDataMap {
 	[EmailType.LEAD_CONVERTED_CLIENT]: LeadConvertedClientData;
 	[EmailType.LEAD_CONVERTED_CREATOR]: LeadConvertedCreatorData;
 	[EmailType.LEAD_REMINDER]: LeadReminderData;
+	[EmailType.LEAD_ASSIGNED_TO_USER]: LeadAssignedToUserData;
 	[EmailType.TASK_FLAG_CREATED]: TaskFlagEmailData;
 	[EmailType.TASK_FLAG_UPDATED]: TaskFlagEmailData;
 	[EmailType.TASK_FLAG_RESOLVED]: TaskFlagEmailData;

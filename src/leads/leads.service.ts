@@ -1,6 +1,6 @@
 import { Between, Repository, In } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { Lead } from './entities/lead.entity';
 import { CreateLeadDto } from './dto/create-lead.dto';
 import { UpdateLeadDto } from './dto/update-lead.dto';
@@ -17,9 +17,15 @@ import { PaginatedResponse } from 'src/lib/types/paginated-response';
 import { Organisation } from '../organisation/entities/organisation.entity';
 import { Branch } from '../branch/entities/branch.entity';
 import { User } from '../user/entities/user.entity';
+import { CommunicationService } from '../communication/communication.service';
+import { ConfigService } from '@nestjs/config';
+import { EmailType } from '../lib/enums/email.enums';
+import { LeadAssignedToUserData } from '../lib/types/email-templates.types';
 
 @Injectable()
 export class LeadsService {
+	private readonly logger = new Logger(LeadsService.name);
+
 	constructor(
 		@InjectRepository(Lead)
 		private leadRepository: Repository<Lead>,
@@ -27,6 +33,8 @@ export class LeadsService {
 		private userRepository: Repository<User>,
 		private readonly eventEmitter: EventEmitter2,
 		private readonly rewardsService: RewardsService,
+		private readonly communicationService: CommunicationService,
+		private readonly configService: ConfigService,
 	) {}
 
 	async create(
@@ -66,6 +74,29 @@ export class LeadsService {
 			// Populate the lead with full relation data
 			const populatedLead = await this.populateLeadRelations(savedLead);
 
+			// Send email notification to assignees
+			if (populatedLead.assignees && populatedLead.assignees.length > 0) {
+				for (const assignee of populatedLead.assignees as User[]) {
+					if (assignee.email) {
+						const emailData: LeadAssignedToUserData = {
+							assigneeName: assignee.name || assignee.username,
+							leadId: populatedLead.uid,
+							leadName: populatedLead.name,
+							leadCreatorName: populatedLead.owner?.name || populatedLead.owner?.username || 'System',
+							leadDetails: populatedLead.notes,
+							leadLink: `${this.configService.get<string>('DASHBOARD_URL')}/leads/${populatedLead.uid}`,
+							name: assignee.name || assignee.username,
+						};
+						try {
+							await this.communicationService.sendEmail(EmailType.LEAD_ASSIGNED_TO_USER, [assignee.email], emailData);
+							this.logger.log(`Lead assignment email sent to ${assignee.email} for lead ${populatedLead.uid}`);
+						} catch (emailError) {
+							this.logger.error(`Failed to send lead assignment email to ${assignee.email}: ${emailError.message}`, emailError.stack);
+						}
+					}
+				}
+			}
+
 			const response = {
 				message: process.env.SUCCESS_MESSAGE,
 				data: populatedLead,
@@ -87,7 +118,7 @@ export class LeadsService {
 				title: 'Lead Created',
 				message: `A lead has been created`,
 				status: NotificationStatus.UNREAD,
-				owner: savedLead?.owner,
+				owner: populatedLead?.owner,
 			};
 
 			const recipients = [
@@ -113,6 +144,7 @@ export class LeadsService {
 
 			return response;
 		} catch (error) {
+			this.logger.error(`Error creating lead: ${error.message}`, error.stack);
 			const response = {
 				message: error?.message,
 				data: null,
@@ -345,35 +377,88 @@ export class LeadsService {
 				whereClause.branch = { uid: branchId };
 			}
 
-			// First check if the lead exists with these constraints
-			const leadExists = await this.leadRepository.findOne({
+			// Get lead before update to compare assignees
+			const leadBeforeUpdate = await this.leadRepository.findOne({
 				where: whereClause,
+				relations: ['assignees', 'owner', 'organisation', 'branch'],
 			});
 
-			if (!leadExists) {
+			if (!leadBeforeUpdate) {
 				return {
 					message: process.env.NOT_FOUND_MESSAGE,
 				};
 			}
+			const originalAssigneeIds = (leadBeforeUpdate.assignees as User[])?.map((a) => a.uid) || [];
 
-			// Handle assignees if provided
-			if (updateLeadDto.assignees) {
-				updateLeadDto.assignees = updateLeadDto.assignees.map((assignee) => ({ uid: assignee.uid }));
-			}
+			// Prepare payload for update. TypeORM handles { uid: X } for relations.
+			const updatePayload: any = {};
+			if (updateLeadDto.name !== undefined) updatePayload.name = updateLeadDto.name;
+			if (updateLeadDto.companyName !== undefined) updatePayload.companyName = updateLeadDto.companyName;
+			if (updateLeadDto.email !== undefined) updatePayload.email = updateLeadDto.email;
+			if (updateLeadDto.phone !== undefined) updatePayload.phone = updateLeadDto.phone;
+			if (updateLeadDto.notes !== undefined) updatePayload.notes = updateLeadDto.notes;
+			if (updateLeadDto.image !== undefined) updatePayload.image = updateLeadDto.image;
+			if (updateLeadDto.latitude !== undefined) updatePayload.latitude = updateLeadDto.latitude;
+			if (updateLeadDto.longitude !== undefined) updatePayload.longitude = updateLeadDto.longitude;
+			if (updateLeadDto.status !== undefined) updatePayload.status = updateLeadDto.status;
+			// isDeleted is handled by remove/restore methods
+
+			if (updateLeadDto.owner?.uid !== undefined) updatePayload.owner = { uid: updateLeadDto.owner.uid };
+			if (updateLeadDto.branch?.uid !== undefined) updatePayload.branch = { uid: updateLeadDto.branch.uid };
+			// Organisation is not part of UpdateLeadDto, it's fixed by orgId parameter in whereClause for operations.
+
+			if (updateLeadDto.assignees) { // If assignees array is provided (even if empty)
+				updatePayload.assignees = updateLeadDto.assignees.map((assignee) => ({ uid: assignee.uid }));
+			} else if (updateLeadDto.hasOwnProperty('assignees') && updateLeadDto.assignees === null) {
+                // Explicitly set to null if DTO provides null (to clear assignees)
+                updatePayload.assignees = null;
+            }
 
 			// Update the lead
-			await this.leadRepository.update(ref, updateLeadDto);
+			await this.leadRepository.update(ref, updatePayload);
 
-			// Get the updated lead for notification
-			const updatedLead = await this.leadRepository.findOne({
+			// Get the updated lead for notification and to identify new assignees
+			const updatedLeadWithRelations = await this.leadRepository.findOne({
 				where: { uid: ref, isDeleted: false },
-				relations: ['owner'],
+				relations: ['owner', 'assignees', 'organisation', 'branch'],
 			});
-
-			if (!updatedLead) {
+			
+			if (!updatedLeadWithRelations) {
+				this.logger.warn(`Lead not found after update for ref: ${ref}`);
 				return {
 					message: process.env.NOT_FOUND_MESSAGE,
 				};
+			}
+			
+			// Populate relations for consistent data, especially for assignees' full profiles
+			const populatedUpdatedLead = await this.populateLeadRelations(updatedLeadWithRelations);
+
+			// Identify newly assigned users and send emails
+			if (populatedUpdatedLead.assignees && populatedUpdatedLead.assignees.length > 0) {
+				const currentAssigneeIds = (populatedUpdatedLead.assignees as User[]).map((a) => a.uid);
+				const newAssignees = (populatedUpdatedLead.assignees as User[]).filter(
+					(assignee) => !originalAssigneeIds.includes(assignee.uid)
+				);
+
+				for (const assignee of newAssignees) {
+					if (assignee.email) {
+						const emailData: LeadAssignedToUserData = {
+							assigneeName: assignee.name || assignee.username,
+							leadId: populatedUpdatedLead.uid,
+							leadName: populatedUpdatedLead.name,
+							leadCreatorName: populatedUpdatedLead.owner?.name || populatedUpdatedLead.owner?.username || 'System',
+							leadDetails: populatedUpdatedLead.notes,
+							leadLink: `${this.configService.get<string>('DASHBOARD_URL')}/leads/${populatedUpdatedLead.uid}`,
+							name: assignee.name || assignee.username,
+						};
+						try {
+							await this.communicationService.sendEmail(EmailType.LEAD_ASSIGNED_TO_USER, [assignee.email], emailData);
+							this.logger.log(`Lead assignment email sent to NEWLY assigned ${assignee.email} for lead ${populatedUpdatedLead.uid}`);
+						} catch (emailError) {
+							this.logger.error(`Failed to send lead assignment email to ${assignee.email}: ${emailError.message}`, emailError.stack);
+						}
+					}
+				}
 			}
 
 			const response = {
@@ -385,7 +470,7 @@ export class LeadsService {
 				title: 'Lead Updated',
 				message: `A lead has been updated`,
 				status: NotificationStatus.UNREAD,
-				owner: updatedLead?.owner,
+				owner: populatedUpdatedLead?.owner,
 			};
 
 			const recipients = [
@@ -399,11 +484,11 @@ export class LeadsService {
 			this.eventEmitter.emit('send.notification', notification, recipients);
 
 			await this.rewardsService.awardXP({
-				owner: updatedLead?.owner?.uid,
+				owner: populatedUpdatedLead?.owner?.uid,
 				amount: XP_VALUES.LEAD,
 				action: XP_VALUES_TYPES.LEAD,
 				source: {
-					id: updatedLead?.owner?.uid.toString(),
+					id: populatedUpdatedLead?.owner?.uid.toString(),
 					type: XP_VALUES_TYPES.LEAD,
 					details: 'Lead reward',
 				},
@@ -411,6 +496,7 @@ export class LeadsService {
 
 			return response;
 		} catch (error) {
+			this.logger.error(`Error updating lead ${ref}: ${error.message}`, error.stack);
 			return {
 				message: error?.message,
 			};
