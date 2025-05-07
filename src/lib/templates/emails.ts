@@ -21,6 +21,7 @@ import {
 	LeadReminderData,
 	TaskOverdueMissedData,
 	LeadAssignedToUserData,
+	OrderReceivedClientData,
 } from '../types/email-templates.types';
 import { formatDate } from '../utils/date.utils';
 
@@ -3051,3 +3052,33 @@ export const LeadAssignedToUser = (data: LeadAssignedToUserData): string => {
     </div>
   `;
 };
+
+export const OrderReceivedClient = (data: OrderReceivedClientData): string => `
+    <div style="${BASE_STYLES.wrapper}">
+      <div style="${BASE_STYLES.container}">
+        <div style="${BASE_STYLES.header}">
+          <h1 style="margin: 16px 0 8px; font-size: 24px;">Order Request Received</h1>
+          <p style="margin: 0; opacity: 0.9;">Quotation ID: ${data.quotationId}</p>
+        </div>
+
+        <div style="padding: 24px 20px;">
+          <div style="${BASE_STYLES.card}">
+            <h2 style="${BASE_STYLES.heading}">Dear ${data.name},</h2>
+            <p style="${BASE_STYLES.text}">
+              ${data.message}
+            </p>
+            <p style="${BASE_STYLES.text}">
+              We will review your request and get back to you with a full quotation soon.
+            </p>
+            <p style="${BASE_STYLES.text}">
+              Your Quotation ID is: <strong>${data.quotationId}</strong>. Please use this for any correspondence.
+            </p>
+          </div>
+        </div>
+
+        <div style="${BASE_STYLES.footer}">
+          <p style="margin: 0;">Thank you for your interest!</p>
+        </div>
+      </div>
+    </div>
+`;

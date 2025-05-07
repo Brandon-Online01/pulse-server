@@ -82,12 +82,14 @@ import {
 	TaskFlagEmailData,
 	TaskFeedbackEmailData,
 	TaskOverdueMissedData,
+	OrderReceivedClientData,
 } from '../lib/types/email-templates.types';
 import { 
 	TaskFlagCreated,
 	TaskFlagUpdated,
 	TaskFlagResolved,
 	TaskFeedbackAdded,
+	OrderReceivedClient,
 } from '../lib/templates/emails';
 
 @Injectable()
@@ -328,6 +330,11 @@ export class CommunicationService {
 				return {
 					subject: 'New Task Feedback Received',
 					body: TaskFeedbackAdded(data as TaskFeedbackEmailData),
+				};
+			case EmailType.ORDER_RECEIVED_CLIENT:
+				return {
+					subject: 'Your Order Request Has Been Received',
+					body: OrderReceivedClient(data as OrderReceivedClientData),
 				};
 			default:
 				throw new NotFoundException(`Unknown email template type: ${type}`);

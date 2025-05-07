@@ -60,6 +60,9 @@ export class Quotation {
 	@ManyToOne(() => User, { nullable: true })
 	reseller: User;
 
+	@Column({ nullable: true })
+	promoCode: string;
+
 	@Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
 	resellerCommission: number;
 

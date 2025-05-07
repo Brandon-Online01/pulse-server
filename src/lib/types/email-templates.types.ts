@@ -1,7 +1,6 @@
 import { EmailType } from '../enums/email.enums';
 import { TaskStatus, TaskPriority, TaskFlagStatus, TaskFlagItemStatus } from '../enums/task.enums';
 import { SubTaskStatus } from '../enums/status.enums';
-import { LeadStatus } from '../enums/lead.enums';
 
 export interface BaseEmailData {
 	name: string;
@@ -338,6 +337,11 @@ export interface LeadAssignedToUserData extends BaseEmailData {
 	leadLink: string;
 }
 
+export interface OrderReceivedClientData extends BaseEmailData {
+	quotationId: string;
+	message: string;
+}
+
 export interface EmailDataMap {
 	[EmailType.SIGNUP]: SignupEmailData;
 	[EmailType.VERIFICATION]: VerificationEmailData;
@@ -385,6 +389,7 @@ export interface EmailDataMap {
 	[EmailType.TASK_FLAG_UPDATED]: TaskFlagEmailData;
 	[EmailType.TASK_FLAG_RESOLVED]: TaskFlagEmailData;
 	[EmailType.TASK_FEEDBACK_ADDED]: TaskFeedbackEmailData;
+	[EmailType.ORDER_RECEIVED_CLIENT]: OrderReceivedClientData;
 }
 
 export type EmailTemplateData<T extends EmailType> = T extends keyof EmailDataMap ? EmailDataMap[T] : never;

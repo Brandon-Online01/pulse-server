@@ -19,6 +19,7 @@ import { ShopGateway } from './shop.gateway';
 import { PaginatedResponse } from '../lib/interfaces/product.interfaces';
 import { ProductsService } from '../products/products.service';
 import { OrganisationService } from '../organisation/organisation.service';
+import { QuotationInternalData } from '../lib/types/email-templates.types';
 
 @Injectable()
 export class ShopService {
@@ -333,6 +334,7 @@ export class ShopService {
 				updatedAt: new Date(),
 				reviewToken: reviewToken,
 				reviewUrl: reviewUrl,
+				promoCode: quotationData?.promoCode,
 				// Store currency code with the quotation
 				currency: orgCurrency.code,
 				quotationItems: quotationData?.items?.map((item) => {
@@ -370,6 +372,8 @@ export class ShopService {
 
 			const savedQuotation = await this.quotationRepository.save(newQuotation);
 
+			console.log('savedQuotation with promo code', savedQuotation);
+
 			// Update analytics for each product
 			for (const item of quotationData.items) {
 				const product = products.flat().find((p) => p.uid === item.uid);
@@ -389,14 +393,15 @@ export class ShopService {
 			// Emit WebSocket event for new quotation
 			this.shopGateway.emitNewQuotation(savedQuotation?.quotationNumber);
 
-			const baseConfig = {
+			const baseConfig: QuotationInternalData = {
 				name: clientName,
 				quotationId: savedQuotation?.quotationNumber,
 				validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days validity
 				total: Number(savedQuotation?.totalAmount),
-				currency: orgCurrency.code, // Use organization's currency
-				currencySymbol: orgCurrency.symbol, // Add currency symbol
+				currency: orgCurrency.code, // Use organization's currency code
 				reviewUrl: savedQuotation.reviewUrl,
+				customerType: clientData?.client?.type || 'standard', // Assuming client type exists, add a fallback
+				priority: 'high', // Add default priority for internal notification
 				quotationItems: quotationData?.items?.map((item) => {
 					const product = products.flat().find((p) => p.uid === item.uid);
 					return {
