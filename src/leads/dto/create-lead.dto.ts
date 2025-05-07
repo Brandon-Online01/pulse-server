@@ -107,4 +107,19 @@ export class CreateLeadDto {
 		required: false,
 	})
 	assignees?: { uid: number }[];
+
+	@IsOptional()
+	@IsObject()
+	@ApiProperty({
+		description: 'Changes to the lead',
+		example: {
+			status: 'PENDING',
+			reason: 'Client Approval',
+			description: 'Met with client on Tuesday, confirmed final details.',
+			createdAt: '2024-01-01',
+			updatedAt: '2024-01-01',
+			approvedBy: { uid: 1 },
+		},
+	})
+	changeHistory?: JSON;
 }

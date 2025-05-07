@@ -15,6 +15,16 @@ import { LeadCategory, LeadStatus } from '../../lib/enums/lead.enums';
 import { Organisation } from 'src/organisation/entities/organisation.entity';
 import { Interaction } from 'src/interactions/entities/interaction.entity';
 
+// Define the structure for status history entries
+export interface LeadStatusHistoryEntry {
+	timestamp: Date;
+	oldStatus?: LeadStatus; // Status before the change
+	newStatus: LeadStatus; // Status after the change
+	reason?: string; // Reason for the change
+	description?: string; // Optional description for the change
+	userId?: number; // User who made the change (optional)
+}
+
 @Entity('leads')
 export class Lead {
 	@PrimaryGeneratedColumn()
@@ -85,7 +95,10 @@ export class Lead {
 
 	@ManyToOne(() => Client, (client) => client?.leads)
 	client: Client;
-	
+
 	@OneToMany(() => Interaction, (interaction) => interaction.lead)
 	interactions: Interaction[];
+
+	@Column({ type: 'json', nullable: true })
+	changeHistory: LeadStatusHistoryEntry[];
 }

@@ -21,6 +21,8 @@ import { CommunicationService } from '../communication/communication.service';
 import { ConfigService } from '@nestjs/config';
 import { EmailType } from '../lib/enums/email.enums';
 import { LeadAssignedToUserData } from '../lib/types/email-templates.types';
+import { Interaction } from 'src/interactions/entities/interaction.entity';
+import { LeadStatusHistoryEntry } from './entities/lead.entity';
 
 @Injectable()
 export class LeadsService {
@@ -361,140 +363,108 @@ export class LeadsService {
 		updateLeadDto: UpdateLeadDto,
 		orgId?: number,
 		branchId?: number,
+		userId?: number, // Optionally pass userId performing the update
 	): Promise<{ message: string }> {
 		try {
 			if (!orgId) {
 				throw new BadRequestException('Organization ID is required');
 			}
 
-			const whereClause: any = {
-				uid: ref,
-				isDeleted: false,
-				organisation: { uid: orgId },
-			};
-
-			if (branchId) {
-				whereClause.branch = { uid: branchId };
-			}
-
-			// Get lead before update to compare assignees
-			const leadBeforeUpdate = await this.leadRepository.findOne({
-				where: whereClause,
-				relations: ['assignees', 'owner', 'organisation', 'branch'],
+			const lead = await this.leadRepository.findOne({
+				where: { uid: ref, organisation: { uid: orgId }, branch: { uid: branchId } },
+				relations: ['owner', 'organisation', 'branch'], // Load relations if needed
 			});
 
-			if (!leadBeforeUpdate) {
-				return {
-					message: process.env.NOT_FOUND_MESSAGE,
-				};
+			if (!lead) {
+				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
-			const originalAssigneeIds = (leadBeforeUpdate.assignees as User[])?.map((a) => a.uid) || [];
 
-			// Prepare payload for update. TypeORM handles { uid: X } for relations.
-			const updatePayload: any = {};
-			if (updateLeadDto.name !== undefined) updatePayload.name = updateLeadDto.name;
-			if (updateLeadDto.companyName !== undefined) updatePayload.companyName = updateLeadDto.companyName;
-			if (updateLeadDto.email !== undefined) updatePayload.email = updateLeadDto.email;
-			if (updateLeadDto.phone !== undefined) updatePayload.phone = updateLeadDto.phone;
-			if (updateLeadDto.notes !== undefined) updatePayload.notes = updateLeadDto.notes;
-			if (updateLeadDto.image !== undefined) updatePayload.image = updateLeadDto.image;
-			if (updateLeadDto.latitude !== undefined) updatePayload.latitude = updateLeadDto.latitude;
-			if (updateLeadDto.longitude !== undefined) updatePayload.longitude = updateLeadDto.longitude;
-			if (updateLeadDto.status !== undefined) updatePayload.status = updateLeadDto.status;
-			// isDeleted is handled by remove/restore methods
+			const oldStatus = lead.status;
+			// Ensure changeHistory is treated as an array of LeadStatusHistoryEntry
+			const changeHistoryArray: LeadStatusHistoryEntry[] = Array.isArray(lead.changeHistory) ? lead.changeHistory : [];
+			const dataToSave: Partial<Lead> = {};
 
-			if (updateLeadDto.owner?.uid !== undefined) updatePayload.owner = { uid: updateLeadDto.owner.uid };
-			if (updateLeadDto.branch?.uid !== undefined) updatePayload.branch = { uid: updateLeadDto.branch.uid };
-			// Organisation is not part of UpdateLeadDto, it's fixed by orgId parameter in whereClause for operations.
-
-			if (updateLeadDto.assignees) { // If assignees array is provided (even if empty)
-				updatePayload.assignees = updateLeadDto.assignees.map((assignee) => ({ uid: assignee.uid }));
-			} else if (updateLeadDto.hasOwnProperty('assignees') && updateLeadDto.assignees === null) {
-                // Explicitly set to null if DTO provides null (to clear assignees)
-                updatePayload.assignees = null;
-            }
-
-			// Update the lead
-			await this.leadRepository.update(ref, updatePayload);
-
-			// Get the updated lead for notification and to identify new assignees
-			const updatedLeadWithRelations = await this.leadRepository.findOne({
-				where: { uid: ref, isDeleted: false },
-				relations: ['owner', 'assignees', 'organisation', 'branch'],
-			});
-			
-			if (!updatedLeadWithRelations) {
-				this.logger.warn(`Lead not found after update for ref: ${ref}`);
-				return {
-					message: process.env.NOT_FOUND_MESSAGE,
-				};
+			// Build the data to save, excluding reason/description from UpdateLeadDto that are specific to status change
+			for (const key in updateLeadDto) {
+				if (key !== 'statusChangeReason' && key !== 'statusChangeDescription') {
+					dataToSave[key] = updateLeadDto[key];
+				}
 			}
-			
-			// Populate relations for consistent data, especially for assignees' full profiles
-			const populatedUpdatedLead = await this.populateLeadRelations(updatedLeadWithRelations);
 
-			// Identify newly assigned users and send emails
-			if (populatedUpdatedLead.assignees && populatedUpdatedLead.assignees.length > 0) {
-				const currentAssigneeIds = (populatedUpdatedLead.assignees as User[]).map((a) => a.uid);
-				const newAssignees = (populatedUpdatedLead.assignees as User[]).filter(
-					(assignee) => !originalAssigneeIds.includes(assignee.uid)
-				);
+			// If status is being updated, add a history entry
+			if (updateLeadDto.status && updateLeadDto.status !== oldStatus) {
+				const newHistoryEntry: LeadStatusHistoryEntry = {
+					timestamp: new Date(),
+					oldStatus: oldStatus,
+					newStatus: updateLeadDto.status,
+					reason: updateLeadDto.statusChangeReason,       // Get reason from DTO
+					description: updateLeadDto.statusChangeDescription,  // Get description from DTO
+					userId: userId,       // User who made the change
+				};
+				changeHistoryArray.push(newHistoryEntry);
+				dataToSave.changeHistory = changeHistoryArray;
+			}
 
-				for (const assignee of newAssignees) {
-					if (assignee.email) {
-						const emailData: LeadAssignedToUserData = {
-							assigneeName: assignee.name || assignee.username,
-							leadId: populatedUpdatedLead.uid,
-							leadName: populatedUpdatedLead.name,
-							leadCreatorName: populatedUpdatedLead.owner?.name || populatedUpdatedLead.owner?.username || 'System',
-							leadDetails: populatedUpdatedLead.notes,
-							leadLink: `${this.configService.get<string>('DASHBOARD_URL')}/leads/${populatedUpdatedLead.uid}`,
-							name: assignee.name || assignee.username,
-						};
-						try {
-							await this.communicationService.sendEmail(EmailType.LEAD_ASSIGNED_TO_USER, [assignee.email], emailData);
-							this.logger.log(`Lead assignment email sent to NEWLY assigned ${assignee.email} for lead ${populatedUpdatedLead.uid}`);
-						} catch (emailError) {
-							this.logger.error(`Failed to send lead assignment email to ${assignee.email}: ${emailError.message}`, emailError.stack);
+			// Handle assignees update specifically
+			if (updateLeadDto.assignees) {
+				dataToSave.assignees = updateLeadDto.assignees.map(a => ({ uid: a.uid }));
+			} else if (updateLeadDto.hasOwnProperty('assignees')) {
+				// If assignees key exists but is empty/null, clear it
+				dataToSave.assignees = [];
+			}
+
+			await this.leadRepository.update(ref, dataToSave);
+
+			// Emit notification if status changed to CONVERTED
+			if (updateLeadDto.status === LeadStatus.CONVERTED && oldStatus !== LeadStatus.CONVERTED) {
+				const populatedLead = await this.populateLeadRelations(lead);
+				const notification = {
+					type: NotificationType.USER,
+					title: 'Lead Converted',
+					message: `Lead ${populatedLead.name || '#' + ref} has been converted to a client!`,
+					status: NotificationStatus.UNREAD,
+					owner: populatedLead?.owner,
+				};
+
+				const recipients = [
+					AccessLevel.ADMIN,
+					AccessLevel.MANAGER,
+					AccessLevel.OWNER,
+					AccessLevel.SUPERVISOR,
+					AccessLevel.USER,
+				];
+
+				this.eventEmitter.emit('send.notification', notification, recipients);
+			}
+
+			// Handle lead assignment email if assignees changed
+			if (updateLeadDto.assignees) {
+				const populatedLead = await this.populateLeadRelations({ ...lead, ...dataToSave });
+				
+				if (populatedLead.assignees && populatedLead.assignees.length > 0) {
+					for (const assignee of populatedLead.assignees as User[]) {
+						if (assignee.email) {
+							const emailData: LeadAssignedToUserData = {
+								assigneeName: assignee.name || assignee.username,
+								leadId: populatedLead.uid,
+								leadName: populatedLead.name,
+								leadCreatorName: populatedLead.owner?.name || populatedLead.owner?.username || 'System',
+								leadDetails: populatedLead.notes,
+								leadLink: `${this.configService.get<string>('DASHBOARD_URL')}/leads/${populatedLead.uid}`,
+								name: assignee.name || assignee.username,
+							};
+							try {
+								await this.communicationService.sendEmail(EmailType.LEAD_ASSIGNED_TO_USER, [assignee.email], emailData);
+								this.logger.log(`Lead assignment update email sent to ${assignee.email} for lead ${populatedLead.uid}`);
+							} catch (emailError) {
+								this.logger.error(`Failed to send lead assignment update email to ${assignee.email}: ${emailError.message}`, emailError.stack);
+							}
 						}
 					}
 				}
 			}
 
-			const response = {
-				message: process.env.SUCCESS_MESSAGE,
-			};
-
-			const notification = {
-				type: NotificationType.USER,
-				title: 'Lead Updated',
-				message: `A lead has been updated`,
-				status: NotificationStatus.UNREAD,
-				owner: populatedUpdatedLead?.owner,
-			};
-
-			const recipients = [
-				AccessLevel.ADMIN,
-				AccessLevel.MANAGER,
-				AccessLevel.OWNER,
-				AccessLevel.SUPERVISOR,
-				AccessLevel.USER,
-			];
-
-			this.eventEmitter.emit('send.notification', notification, recipients);
-
-			await this.rewardsService.awardXP({
-				owner: populatedUpdatedLead?.owner?.uid,
-				amount: XP_VALUES.LEAD,
-				action: XP_VALUES_TYPES.LEAD,
-				source: {
-					id: populatedUpdatedLead?.owner?.uid.toString(),
-					type: XP_VALUES_TYPES.LEAD,
-					details: 'Lead reward',
-				},
-			});
-
-			return response;
+			return { message: process.env.SUCCESS_MESSAGE };
 		} catch (error) {
 			this.logger.error(`Error updating lead ${ref}: ${error.message}`, error.stack);
 			return {
