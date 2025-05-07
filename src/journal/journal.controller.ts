@@ -20,7 +20,7 @@ export class JournalController {
   constructor(private readonly journalService: JournalService) { }
 
   @Post()
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT)
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.USER, AccessLevel.OWNER, AccessLevel.TECHNICIAN)
   @ApiOperation({ 
     summary: 'Create a new journal entry',
     description: 'Creates a new journal entry with the provided data. Requires ADMIN, MANAGER, or SUPPORT role.'
@@ -43,7 +43,7 @@ export class JournalController {
   }
 
   @Get()
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT)
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.USER, AccessLevel.OWNER, AccessLevel.TECHNICIAN)
   @ApiOperation({ 
     summary: 'Get all journal entries',
     description: 'Retrieves all journal entries. Requires ADMIN, MANAGER, or SUPPORT role.'
@@ -98,7 +98,7 @@ export class JournalController {
   }
 
   @Get(':ref')
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT)
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.USER, AccessLevel.OWNER, AccessLevel.TECHNICIAN)
   @ApiOperation({ 
     summary: 'Get a journal entry by reference code',
     description: 'Retrieves a specific journal entry by its reference code. Requires ADMIN, MANAGER, or SUPPORT role.'
@@ -222,7 +222,7 @@ export class JournalController {
   }
 
   @Patch(':ref')
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT)
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.USER, AccessLevel.OWNER, AccessLevel.TECHNICIAN)
   @ApiOperation({ 
     summary: 'Update a journal entry by reference code',
     description: 'Updates a specific journal entry by its reference code. Requires ADMIN, MANAGER, or SUPPORT role.'
@@ -252,7 +252,7 @@ export class JournalController {
   }
 
   @Patch('restore/:ref')
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT)
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.USER, AccessLevel.OWNER, AccessLevel.TECHNICIAN)
   @ApiOperation({ 
     summary: 'Restore a journal entry by reference code',
     description: 'Restores a previously deleted journal entry. Requires ADMIN, MANAGER, or SUPPORT role.'
@@ -280,7 +280,7 @@ export class JournalController {
   }
 
   @Delete(':ref')
-  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT)
+  @Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.SUPPORT, AccessLevel.USER, AccessLevel.OWNER, AccessLevel.TECHNICIAN, AccessLevel.DEVELOPER)
   @ApiOperation({ 
     summary: 'Delete a journal entry by reference code',
     description: 'Performs a soft delete on a journal entry. Requires ADMIN, MANAGER, or SUPPORT role.'

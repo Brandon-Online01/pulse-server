@@ -12,7 +12,7 @@ import { Quotation } from '../../shop/entities/quotation.entity';
 import { TaskStatus, TaskPriority, TaskType, TaskFlagStatus } from '../../lib/enums/task.enums';
 import { LeadStatus, LeadCategory } from '../../lib/enums/lead.enums';
 import { AttendanceStatus } from '../../lib/enums/attendance.enums';
-import { startOfDay, endOfDay, format, differenceInMinutes, subHours, subDays } from 'date-fns';
+import { startOfDay, endOfDay, format, differenceInMinutes, subHours, subDays, differenceInYears } from 'date-fns';
 import { ReportParamsDto } from '../dto/report-params.dto';
 import { Branch } from '../../branch/entities/branch.entity';
 import { Organisation } from '../../organisation/entities/organisation.entity';
@@ -25,6 +25,8 @@ import { Claim } from '../../claims/entities/claim.entity';
 import { ClaimStatus, ClaimCategory } from '../../lib/enums/finance.enums';
 import { TaskFlag } from '../../tasks/entities/task-flag.entity';
 import { TaskFlagItem } from '../../tasks/entities/task-flag-item.entity';
+import { UserProfile } from '../../user/entities/user.profile.entity';
+import { License } from '../../licensing/entities/license.entity';
 
 @Injectable()
 export class LiveOverviewReportGenerator {
@@ -61,6 +63,10 @@ export class LiveOverviewReportGenerator {
 		private taskFlagRepository: Repository<TaskFlag>,
 		@InjectRepository(TaskFlagItem)
 		private taskFlagItemRepository: Repository<TaskFlagItem>,
+		@InjectRepository(UserProfile)
+		private userProfileRepository: Repository<UserProfile>,
+		@InjectRepository(License)
+		private licenseRepository: Repository<License>,
 	) {}
 
 	async generate(params: ReportParamsDto): Promise<Record<string, any>> {
@@ -82,6 +88,8 @@ export class LiveOverviewReportGenerator {
 				claimsMetrics,
 				journalMetrics,
 				taskFlagMetrics,
+				licenseInfo,
+				checkInSummary, // Added check-in summary
 			] = await Promise.all([
 				this.collectLiveWorkforceMetrics(organisationId, branchId),
 				this.collectLiveTaskMetrics(organisationId, branchId),
@@ -94,6 +102,8 @@ export class LiveOverviewReportGenerator {
 				this.collectClaimsMetrics(organisationId, branchId),
 				this.collectJournalMetrics(organisationId, branchId),
 				this.collectTaskFlagMetrics(organisationId, branchId),
+				this.getLicenseInformation(organisationId), // Added license info fetching
+				this.collectCheckInSummaryMetrics(organisationId, branchId), // Added check-in summary fetching
 			]);
 
 			return {
@@ -114,6 +124,7 @@ export class LiveOverviewReportGenerator {
 					generatedAt: new Date(),
 					name: 'Live Organization Overview',
 				},
+				licenseInfo: licenseInfo, // Added license info
 				summary: {
 					totalEmployees: workforceMetrics.totalEmployees,
 					activeEmployees: workforceMetrics.activeCount,
@@ -131,6 +142,7 @@ export class LiveOverviewReportGenerator {
 					pendingClaims: claimsMetrics.pendingClaims,
 					totalTaskFlags: taskFlagMetrics.totalFlags,
 					openTaskFlags: taskFlagMetrics.openFlags,
+					totalCheckInsToday: checkInSummary.totalCheckInsToday, // Added check-in summary
 				},
 				metrics: {
 					workforce: workforceMetrics,
@@ -146,6 +158,7 @@ export class LiveOverviewReportGenerator {
 					products: productMetrics,
 					claims: claimsMetrics,
 					journals: journalMetrics,
+					checkIns: checkInSummary, // Added check-in summary
 				},
 			};
 		} catch (error) {
@@ -163,9 +176,54 @@ export class LiveOverviewReportGenerator {
 			const orgFilter = { organisation: { uid: organisationId } };
 			const branchFilter = branchId ? { branch: { uid: branchId } } : {};
 
-			// Get total employees
-			const totalEmployees = await this.userRepository.count({
+			// Get all users with their profiles
+			const users = await this.userRepository.find({
 				where: { ...orgFilter, ...branchFilter },
+				relations: ['userProfile'], // Eagerly load profile
+			});
+
+			const totalEmployees = users.length;
+
+			// Workforce Demographics
+			const demographics = {
+				genderDistribution: {},
+				ethnicityDistribution: {},
+				maritalStatusDistribution: {},
+				bodyTypeDistribution: {},
+				smokingHabitsDistribution: {},
+				ageDistribution: {},
+			};
+
+			users.forEach(user => {
+				const profile = user.userProfile;
+				if (profile) {
+					// Gender
+					const gender = profile.gender || 'Unknown';
+					demographics.genderDistribution[gender] = (demographics.genderDistribution[gender] || 0) + 1;
+					// Ethnicity
+					const ethnicity = profile.ethnicity || 'Unknown';
+					demographics.ethnicityDistribution[ethnicity] = (demographics.ethnicityDistribution[ethnicity] || 0) + 1;
+					// Marital Status
+					const maritalStatus = profile.maritalStatus || 'Unknown';
+					demographics.maritalStatusDistribution[maritalStatus] = (demographics.maritalStatusDistribution[maritalStatus] || 0) + 1;
+					// Body Type
+					const bodyType = profile.bodyType || 'Unknown';
+					demographics.bodyTypeDistribution[bodyType] = (demographics.bodyTypeDistribution[bodyType] || 0) + 1;
+					// Smoking Habits
+					const smokingHabits = profile.smokingHabits || 'Unknown';
+					demographics.smokingHabitsDistribution[smokingHabits] = (demographics.smokingHabitsDistribution[smokingHabits] || 0) + 1;
+					// Age (use currentAge if available, else calculate from dob)
+					let age = profile.currentAge;
+					if (!age && profile.dateOfBirth) {
+						age = differenceInYears(today, new Date(profile.dateOfBirth));
+					}
+					if (age) {
+						const ageRange = this.getAgeRange(age);
+						demographics.ageDistribution[ageRange] = (demographics.ageDistribution[ageRange] || 0) + 1;
+					} else {
+						demographics.ageDistribution['Unknown'] = (demographics.ageDistribution['Unknown'] || 0) + 1;
+					}
+				}
 			});
 
 			// Get all employees who have records today (including those who have checked out)
@@ -312,6 +370,7 @@ export class LiveOverviewReportGenerator {
 						? Math.round((differenceInMinutes(new Date(), new Date(employee.checkIn)) / 60) * 10) / 10
 						: 0,
 				})),
+				demographics, // Include demographics
 			};
 		} catch (error) {
 			this.logger.error(`Error collecting workforce metrics: ${error.message}`, error.stack);
@@ -326,8 +385,27 @@ export class LiveOverviewReportGenerator {
 				hourlyData: [],
 				employeesWithAttendanceToday: [],
 				activeEmployees: [],
+				demographics: {
+					genderDistribution: {},
+					ethnicityDistribution: {},
+					maritalStatusDistribution: {},
+					bodyTypeDistribution: {},
+					smokingHabitsDistribution: {},
+					ageDistribution: {},
+				},
 			};
 		}
+	}
+
+	// Helper to categorize age
+	private getAgeRange(age: number): string {
+		if (age < 18) return 'Under 18';
+		if (age >= 18 && age <= 25) return '18-25';
+		if (age >= 26 && age <= 35) return '26-35';
+		if (age >= 36 && age <= 45) return '36-45';
+		if (age >= 46 && age <= 55) return '46-55';
+		if (age > 55) return 'Over 55';
+		return 'Unknown';
 	}
 
 	private parseBreakTime(breakTime: string): number {
@@ -3568,6 +3646,100 @@ export class LiveOverviewReportGenerator {
 				topFlagCreators: [],
 				recentFlags: [],
 			};
+		}
+	}
+
+	/**
+	 * Collect summary metrics from CheckIn entities
+	 */
+	private async collectCheckInSummaryMetrics(organisationId: number, branchId?: number): Promise<Record<string, any>> {
+		try {
+			const today = new Date();
+			const startOfToday = startOfDay(today);
+
+			// Create base filters
+			const orgFilter = { organisation: { uid: organisationId } };
+			const branchFilter = branchId ? { branch: { uid: branchId } } : {};
+
+			// Get all check-ins for today
+			const checkIns = await this.checkInRepository.find({
+				where: {
+					...orgFilter,
+					...branchFilter,
+					checkInTime: MoreThanOrEqual(startOfToday),
+				},
+				relations: ['client'], // Include client to identify check-in type
+			});
+
+			const totalCheckInsToday = checkIns.length;
+			const clientCheckInsToday = checkIns.filter(ci => ci.client).length;
+			const staffCheckInsToday = totalCheckInsToday - clientCheckInsToday; // Assuming non-client check-ins are staff
+
+			// Count check-ins by purpose (if the field exists and is used)
+			const checkInsByPurpose: Record<string, number> = {};
+			checkIns.forEach(checkIn => {
+				const purpose = (checkIn as any).purpose || 'Unknown'; // Assuming 'purpose' exists
+				checkInsByPurpose[purpose] = (checkInsByPurpose[purpose] || 0) + 1;
+			});
+
+			// Placeholder for average duration - requires check-out time logic which might not be standard for CheckIn entity
+			const averageCheckInDurationMinutes = 0;
+
+			return {
+				totalCheckInsToday,
+				clientCheckInsToday,
+				staffCheckInsToday,
+				checkInsByPurpose,
+				averageCheckInDurationMinutes,
+			};
+
+		} catch (error) {
+			this.logger.error(`Error collecting check-in summary metrics: ${error.message}`, error.stack);
+			return {
+				totalCheckInsToday: 0,
+				clientCheckInsToday: 0,
+				staffCheckInsToday: 0,
+				checkInsByPurpose: {},
+				averageCheckInDurationMinutes: 0,
+			};
+		}
+	}
+
+	/**
+	 * Fetches license information for the given organization
+	 */
+	private async getLicenseInformation(organisationId: number): Promise<Record<string, any> | null> {
+		try {
+			const license = await this.licenseRepository.findOne({
+				where: { organisation: { uid: organisationId } },
+			});
+
+			if (!license) {
+				this.logger.warn(`No license found for organisation ${organisationId}`);
+				return null; // Or return default/trial license info
+			}
+
+			return {
+				licenseKey: license.licenseKey,
+				type: license.type,
+				plan: license.plan,
+				status: license.status,
+				billingCycle: license.billingCycle,
+				validUntil: license.validUntil.toISOString(),
+				lastValidated: license.lastValidated?.toISOString(),
+				maxUsers: license.maxUsers,
+				maxBranches: license.maxBranches,
+				storageLimitMB: license.storageLimit,
+				apiCallLimit: license.apiCallLimit,
+				integrationLimit: license.integrationLimit,
+				price: license.price,
+				hasPendingPayments: license.hasPendingPayments,
+				features: license.features,
+			};
+
+		} catch (error) {
+			this.logger.error(`Error fetching license information for organisation ${organisationId}: ${error.message}`, error.stack);
+			return null; // Return null on error
 		}
 	}
 }

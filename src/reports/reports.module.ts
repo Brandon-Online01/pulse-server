@@ -46,6 +46,9 @@ import { TrackingModule } from '../tracking/tracking.module';
 import { Tracking } from 'src/tracking/entities/tracking.entity';
 import { Competitor } from '../competitors/entities/competitor.entity';
 import { MapDataReportGenerator } from './generators/map-data-report.generator';
+import { UserProfile } from 'src/user/entities/user.profile.entity';
+import { UserEmployeementProfile } from 'src/user/entities/user.employeement.profile.entity';
+import { License } from 'src/licensing/entities/license.entity';
 
 @Module({
 	imports: [
@@ -71,6 +74,8 @@ import { MapDataReportGenerator } from './generators/map-data-report.generator';
 			Organisation,
 			Branch,
 			User,
+			UserProfile,
+			UserEmployeementProfile,	
 			Report,
 			Attendance,
 			Claim,
@@ -92,6 +97,7 @@ import { MapDataReportGenerator } from './generators/map-data-report.generator';
 			TaskFlagItem,
 			Tracking,
 			Competitor,
+			License,
 		]),
 		UserModule,
 		CheckInsModule,
