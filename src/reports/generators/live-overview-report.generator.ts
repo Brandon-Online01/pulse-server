@@ -143,6 +143,11 @@ export class LiveOverviewReportGenerator {
 					totalTaskFlags: taskFlagMetrics.totalFlags,
 					openTaskFlags: taskFlagMetrics.openFlags,
 					totalCheckInsToday: checkInSummary.totalCheckInsToday, // Added check-in summary
+					// Add new workforce average metrics
+					averageShiftDurationHours: workforceMetrics.averageShiftDurationHours,
+					averageCheckInTime: workforceMetrics.averageCheckInTime,
+					averageCheckOutTime: workforceMetrics.averageCheckOutTime,
+					averageBreakDurationMinutes: workforceMetrics.averageBreakDurationMinutes,
 				},
 				metrics: {
 					workforce: workforceMetrics,
