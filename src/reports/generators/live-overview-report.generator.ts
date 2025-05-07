@@ -326,6 +326,56 @@ export class LiveOverviewReportGenerator {
 			// Get hourly breakdown of check-ins
 			const hourlyData = await this.getHourlyWorkforceData(organisationId, branchId, startOfToday);
 
+			// Calculate additional attendance metrics
+			const totalAttendanceRecordsToday = allTodayAttendance.length;
+			const completedShiftsToday = completedShifts.length;
+
+			let totalShiftDurationMinutes = 0;
+			let totalCheckInMinutes = 0;
+			let totalCheckOutMinutes = 0;
+			let totalShiftBreakMinutes = 0;
+
+			allTodayAttendance.forEach(shift => {
+				if (shift.checkIn) {
+					const checkInDate = new Date(shift.checkIn);
+					totalCheckInMinutes += checkInDate.getHours() * 60 + checkInDate.getMinutes();
+				}
+			});
+
+			completedShifts.forEach(shift => {
+				if (shift.checkIn && shift.checkOut) {
+					const checkInDate = new Date(shift.checkIn);
+					const checkOutDate = new Date(shift.checkOut);
+					totalShiftDurationMinutes += differenceInMinutes(checkOutDate, checkInDate);
+					totalCheckOutMinutes += checkOutDate.getHours() * 60 + checkOutDate.getMinutes();
+					// Use the previously calculated totalBreakMinutes logic per shift if needed, or parse totalBreakTime
+					const breakMinutes = this.parseBreakTime(shift.totalBreakTime || '0h 0m');
+					totalShiftBreakMinutes += breakMinutes;
+				}
+			});
+
+			const averageShiftDurationHours = completedShiftsToday > 0
+				? Math.round((totalShiftDurationMinutes / completedShiftsToday / 60) * 10) / 10
+				: 0;
+
+			const averageCheckInMinutes = totalAttendanceRecordsToday > 0
+				? Math.round(totalCheckInMinutes / totalAttendanceRecordsToday)
+				: 0;
+			const averageCheckInTime = totalAttendanceRecordsToday > 0
+				? `${String(Math.floor(averageCheckInMinutes / 60)).padStart(2, '0')}:${String(averageCheckInMinutes % 60).padStart(2, '0')}`
+				: null;
+
+			const averageCheckOutMinutes = completedShiftsToday > 0
+				? Math.round(totalCheckOutMinutes / completedShiftsToday)
+				: 0;
+			const averageCheckOutTime = completedShiftsToday > 0
+				? `${String(Math.floor(averageCheckOutMinutes / 60)).padStart(2, '0')}:${String(averageCheckOutMinutes % 60).padStart(2, '0')}`
+				: null;
+
+			const averageBreakDurationMinutes = completedShiftsToday > 0
+				? Math.round(totalShiftBreakMinutes / completedShiftsToday)
+				: 0;
+
 			// Get all employees with attendance records today
 			const employeesWithAttendanceToday = allTodayAttendance
 				.filter(
@@ -371,6 +421,13 @@ export class LiveOverviewReportGenerator {
 						: 0,
 				})),
 				demographics, // Include demographics
+				// Add new attendance metrics
+				totalAttendanceRecordsToday,
+				completedShiftsToday,
+				averageShiftDurationHours,
+				averageCheckInTime,
+				averageCheckOutTime,
+				averageBreakDurationMinutes,
 			};
 		} catch (error) {
 			this.logger.error(`Error collecting workforce metrics: ${error.message}`, error.stack);
@@ -393,6 +450,13 @@ export class LiveOverviewReportGenerator {
 					smokingHabitsDistribution: {},
 					ageDistribution: {},
 				},
+				// Add default values for new metrics in catch block
+				totalAttendanceRecordsToday: 0,
+				completedShiftsToday: 0,
+				averageShiftDurationHours: 0,
+				averageCheckInTime: null,
+				averageCheckOutTime: null,
+				averageBreakDurationMinutes: 0,
 			};
 		}
 	}
