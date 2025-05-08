@@ -385,8 +385,6 @@ export class ShopService {
 			if (fullQuotation) {
 				const pdfUrl = await this.generateQuotationPDF(fullQuotation);
 
-				console.log('generated PDF file', pdfUrl);
-
 				// If PDF was generated successfully, update the quotation record
 				if (pdfUrl) {
 					await this.quotationRepository.update(savedQuotation.uid, { pdfURL: pdfUrl });
