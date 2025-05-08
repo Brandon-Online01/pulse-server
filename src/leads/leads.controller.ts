@@ -335,7 +335,8 @@ export class LeadsController {
 	update(@Param('ref') ref: number, @Body() updateLeadDto: UpdateLeadDto, @Req() req: AuthenticatedRequest) {
 		const orgId = req.user?.organisationRef;
 		const branchId = req.user?.branch?.uid;
-		return this.leadsService.update(ref, updateLeadDto, Number(orgId), branchId);
+		const userId = req.user?.uid;
+		return this.leadsService.update(ref, updateLeadDto, Number(orgId), branchId, userId);
 	}
 
 	@Patch(':ref/restore')

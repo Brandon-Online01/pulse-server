@@ -21,7 +21,6 @@ import { CommunicationService } from '../communication/communication.service';
 import { ConfigService } from '@nestjs/config';
 import { EmailType } from '../lib/enums/email.enums';
 import { LeadAssignedToUserData } from '../lib/types/email-templates.types';
-import { Interaction } from 'src/interactions/entities/interaction.entity';
 import { LeadStatusHistoryEntry } from './entities/lead.entity';
 
 @Injectable()
@@ -226,16 +225,11 @@ export class LeadsService {
 
 			// Populate leads with full assignee details
 			const populatedLeads = await Promise.all(leads.map((lead) => this.populateLeadRelations(lead)));
-			
-			// Enhance change history with user details for each lead
-			const leadsWithEnhancedHistory = await Promise.all(
-				populatedLeads.map(lead => this.populateChangeHistoryUserDetails(lead))
-			);
 
 			const stats = this.calculateStats(leads);
 
 			return {
-				data: leadsWithEnhancedHistory,
+				data: populatedLeads,
 				meta: {
 					total,
 					page,
@@ -293,9 +287,6 @@ export class LeadsService {
 
 			// Populate the lead with full assignee details
 			const populatedLead = await this.populateLeadRelations(lead);
-			
-			// Enhance change history with user details
-			const leadWithEnhancedHistory = await this.populateChangeHistoryUserDetails(populatedLead);
 
 			const allLeads = await this.leadRepository.find({
 				where: {
@@ -306,7 +297,7 @@ export class LeadsService {
 			const stats = this.calculateStats(allLeads);
 
 			const response = {
-				lead: leadWithEnhancedHistory,
+				lead: populatedLead,
 				message: process.env.SUCCESS_MESSAGE,
 				stats,
 			};
@@ -354,17 +345,12 @@ export class LeadsService {
 
 			// Populate all leads with full assignee details
 			const populatedLeads = await Promise.all(leads.map((lead) => this.populateLeadRelations(lead)));
-			
-			// Enhance change history with user details for each lead
-			const leadsWithEnhancedHistory = await Promise.all(
-				populatedLeads.map(lead => this.populateChangeHistoryUserDetails(lead))
-			);
 
 			const stats = this.calculateStats(leads);
 
 			const response = {
 				message: process.env.SUCCESS_MESSAGE,
-				leads: leadsWithEnhancedHistory,
+				leads: populatedLeads,
 				stats,
 			};
 
@@ -425,6 +411,8 @@ export class LeadsService {
 					description: updateLeadDto.statusChangeDescription,
 					userId: userId, // User who made the change
 				};
+
+				console.log(newHistoryEntry, 'this is what must be saved with the user');
 
 				changeHistoryArray.push(newHistoryEntry);
 				dataToSave.changeHistory = changeHistoryArray;
@@ -1007,61 +995,41 @@ export class LeadsService {
 			lead.assignees = assigneeProfiles;
 		}
 
+		// Populate change history with user details
+		await this.populateLeadChangeHistory(lead);
+
 		return lead;
 	}
 
 	/**
-	 * Enhances change history entries with user details
+	 * Populates the user details in the changeHistory array of a lead
 	 */
-	private async populateChangeHistoryUserDetails(lead: Lead): Promise<Lead> {
-		// Skip if no change history
-		if (!lead.changeHistory || lead.changeHistory.length === 0) {
-			return lead;
-		}
-
-		// Collect all unique userIds from the change history
-		const userIds = lead.changeHistory
-			.filter(entry => entry.userId)
-			.map(entry => entry.userId);
-
-		// If no userIds found, return the lead as is
-		if (userIds.length === 0) {
-			return lead;
-		}
-
-		// Remove duplicates
-		const uniqueUserIds = [...new Set(userIds)];
-
-		// Fetch user details for all userIds at once
-		const users = await this.userRepository.find({
-			where: { uid: In(uniqueUserIds) },
-			select: ['uid', 'name', 'surname', 'email', 'photoURL']
-		});
-
-		// Create a map for quick lookup
-		const userMap = new Map();
-		users.forEach(user => {
-			userMap.set(user.uid, user);
-		});
-
-		// Enhance each history entry with user details
-		lead.changeHistory = lead.changeHistory.map(entry => {
-			if (entry.userId && userMap.has(entry.userId)) {
-				const user = userMap.get(entry.userId);
-				return {
+	private async populateLeadChangeHistory(lead: Lead): Promise<Lead> {
+		if (lead.changeHistory?.length > 0) {
+			// Extract all userIds from change history
+			const userIds = lead.changeHistory
+				.filter(entry => entry.userId)
+				.map(entry => typeof entry.userId === 'string' ? parseInt(entry.userId) : entry.userId);
+			
+			if (userIds.length > 0) {
+				// Find all user details in one query
+				const users = await this.userRepository.find({
+					where: { uid: In(userIds) },
+					select: ['uid', 'username', 'name', 'surname', 'email', 'phone', 'photoURL', 'accessLevel', 'status'],
+				});
+				
+				// Create a map for quick lookup
+				const userMap = new Map(users.map(user => [user.uid.toString(), user]));
+				
+				// Update the changeHistory entries with user details
+				lead.changeHistory = lead.changeHistory.map(entry => ({
 					...entry,
-					userDetails: {
-						uid: user.uid,
-						name: user.name,
-						surname: user.surname,
-						email: user.email,
-						photoURL: user.photoURL
-					}
-				};
+					user: entry.userId ? userMap.get(entry.userId.toString()) || null : null,
+				}));
 			}
-			return entry;
-		});
-
+		}
 		return lead;
 	}
 }
+
+
