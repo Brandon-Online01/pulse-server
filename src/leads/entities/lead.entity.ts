@@ -23,6 +23,13 @@ export interface LeadStatusHistoryEntry {
 	reason?: string; // Reason for the change
 	description?: string; // Optional description for the change
 	userId?: number; // User who made the change (optional)
+	userDetails?: { // Full user details (optional)
+		uid: number;
+		name: string;
+		surname: string;
+		email: string;
+		photoURL?: string;
+	};
 }
 
 @Entity('leads')
