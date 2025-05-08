@@ -1,154 +1,35 @@
 // Use CommonJS require for PDFKit
 const PDFDocument = require('pdfkit');
 import { QuotationTemplateData } from '../interfaces/pdf-templates.interface';
+import * as fs from 'fs'; // For reading logo file
 
-/**
- * Generate a quotation PDF using PDFKit
- * @param doc PDFKit document instance
- * @param data Quotation data to populate the template
- */
-export const generateQuotationPDF = (doc: any, data: QuotationTemplateData): void => {
-	// Set some basic document properties
-	doc.info.Title = `Quotation #${data.quotationId}`;
-	doc.info.Author = 'Loro';
+// --- Styling Constants ---
+const PAGE_MARGIN = 25; // Reduced from 50
+const BOX_PADDING = 5; // Consistent 5px padding as requested
+const FONT_REGULAR = 'Helvetica';
+const FONT_BOLD = 'Helvetica-Bold';
+const FONT_SIZE_XLARGE_TITLE = 20;
+const FONT_SIZE_LARGE_TITLE = 16;
+const FONT_SIZE_MEDIUM_TITLE = 14;
+const FONT_SIZE_NORMAL = 10;
+const FONT_SIZE_SMALL = 8;
+const COLOR_TEXT_HEADER = '#333333';
+const COLOR_TEXT_NORMAL = '#555555';
+const COLOR_TEXT_LIGHT = '#777777';
+const COLOR_LINE = '#CCCCCC';
+const COLOR_TABLE_HEADER_BG = '#EEEEEE';
 
-	// Add company information at the top
-	doc.fontSize(24).font('Helvetica-Bold').text('QUOTATION', { align: 'center' });
-	doc.moveDown();
-
-	// Add quotation details
-	doc.fontSize(12).font('Helvetica-Bold').text('Quotation #:', 50, 150);
-	doc.fontSize(12).font('Helvetica').text(data.quotationId, 150, 150);
-
-	doc.fontSize(12).font('Helvetica-Bold').text('Date:', 50, 175);
-	doc.fontSize(12).font('Helvetica').text(formatDate(data.date), 150, 175);
-
-	doc.fontSize(12).font('Helvetica-Bold').text('Valid Until:', 50, 200);
-	doc.fontSize(12).font('Helvetica').text(formatDate(data.validUntil), 150, 200);
-
-	// Add client information
-	doc.fontSize(16).font('Helvetica-Bold').text('Client Information', 50, 250);
-	doc.fontSize(12).font('Helvetica').text(data.client.name, 50, 275);
-	doc.fontSize(12)
-		.font('Helvetica')
-		.text(data.client.email || '', 50, 295);
-	doc.fontSize(12)
-		.font('Helvetica')
-		.text(data.client.phone || '', 50, 315);
-	doc.fontSize(12)
-		.font('Helvetica')
-		.text(data.client.address || '', 50, 335);
-
-	// Add items table
-	addItemsTable(doc, data);
-
-	// Add totals
-	const yPos = doc.y + 20;
-	doc.fontSize(12).font('Helvetica-Bold').text('Subtotal:', 400, yPos);
-	doc.fontSize(12)
-		.font('Helvetica')
-		.text(formatCurrency(data.subtotal, data.currency), 480, yPos, { align: 'right' });
-
-	doc.fontSize(12)
-		.font('Helvetica-Bold')
-		.text('Tax:', 400, yPos + 25);
-	doc.fontSize(12)
-		.font('Helvetica')
-		.text(formatCurrency(data.tax, data.currency), 480, yPos + 25, { align: 'right' });
-
-	doc.fontSize(12)
-		.font('Helvetica-Bold')
-		.text('Total:', 400, yPos + 50);
-	doc.fontSize(12)
-		.font('Helvetica-Bold')
-		.text(formatCurrency(data.total, data.currency), 480, yPos + 50, { align: 'right' });
-
-	// Add terms and conditions
-	doc.moveDown(4);
-	doc.fontSize(14).font('Helvetica-Bold').text('Terms and Conditions', { underline: true });
-	doc.fontSize(10)
-		.font('Helvetica')
-		.text(data.terms || 'Standard terms and conditions apply.');
-
-	// Add footer with page number
-	const pageCount = doc.bufferedPageRange().count;
-	for (let i = 0; i < pageCount; i++) {
-		doc.switchToPage(i);
-		doc.fontSize(10)
-			.font('Helvetica')
-			.text(`Page ${i + 1} of ${pageCount}`, 50, doc.page.height - 50, { align: 'center' });
-	}
-};
-
-/**
- * Add items table to the PDF
- */
-function addItemsTable(doc: any, data: QuotationTemplateData): void {
-	// Set the y position for the table
-	const startY = 380;
-	let currentY = startY;
-
-	// Table headers
-	doc.fontSize(12).font('Helvetica-Bold');
-	doc.text('Item', 50, currentY);
-	doc.text('Description', 150, currentY);
-	doc.text('Qty', 350, currentY);
-	doc.text('Unit Price', 400, currentY);
-	doc.text('Total', 480, currentY);
-
-	currentY += 20;
-
-	// Draw header underline
-	doc.moveTo(50, currentY).lineTo(550, currentY).stroke();
-	currentY += 10;
-
-	// Table rows
-	doc.fontSize(10).font('Helvetica');
-
-	data.items.forEach((item, index) => {
-		// Check if we need a new page
-		if (currentY > doc.page.height - 150) {
-			doc.addPage();
-			currentY = 50;
-
-			// Add header for the new page
-			doc.fontSize(12).font('Helvetica-Bold');
-			doc.text('Item', 50, currentY);
-			doc.text('Description', 150, currentY);
-			doc.text('Qty', 350, currentY);
-			doc.text('Unit Price', 400, currentY);
-			doc.text('Total', 480, currentY);
-
-			currentY += 20;
-			doc.moveTo(50, currentY).lineTo(550, currentY).stroke();
-			currentY += 10;
-			doc.fontSize(10).font('Helvetica');
-		}
-
-		doc.text((index + 1).toString(), 50, currentY);
-		doc.text(item.description, 150, currentY);
-		doc.text(item.quantity.toString(), 350, currentY);
-		doc.text(formatCurrency(item.unitPrice, data.currency), 400, currentY);
-		doc.text(formatCurrency(item.quantity * item.unitPrice, data.currency), 480, currentY, { align: 'right' });
-
-		currentY += 20;
-	});
-
-	// Draw bottom line
-	doc.moveTo(50, currentY).lineTo(550, currentY).stroke();
-
-	// Update the doc's Y position
-	doc.y = currentY + 10;
-}
+// --- Helper Functions ---
 
 /**
  * Format a date to a standard format
  */
 function formatDate(date: Date | string): string {
 	const d = new Date(date);
-	return d.toLocaleDateString('en-US', {
+	return d.toLocaleDateString('en-ZA', {
+		// Using en-ZA for DD/MM/YYYY, adjust as needed
 		year: 'numeric',
-		month: 'long',
+		month: 'short',
 		day: 'numeric',
 	});
 }
@@ -157,8 +38,540 @@ function formatDate(date: Date | string): string {
  * Format a currency value
  */
 function formatCurrency(amount: number, currency: string): string {
-	return new Intl.NumberFormat('en-US', {
+	return new Intl.NumberFormat('en-ZA', {
+		// Using en-ZA, adjust as needed
 		style: 'currency',
-		currency: currency || 'USD',
+		currency: currency || 'ZAR', // Default to ZAR if not provided
 	}).format(amount);
 }
+
+/**
+ * Draws a titled box with content
+ * @param doc PDFKit document
+ * @param x X position
+ * @param y Y position
+ * @param width Width of the box
+ * @param height Height of the box (if 0, height will be calculated from content)
+ * @param title Title for the box (optional)
+ * @param contentCallback Callback to draw content inside the box
+ * @returns The y position after drawing the box and content
+ */
+function drawBoxWithTitle(
+	doc: any,
+	x: number,
+	y: number,
+	width: number,
+	height: number, // if 0, height will be calculated based on content
+	title: string | null,
+	contentCallback: (currentX: number, currentY: number) => number, // returns new Y
+): number {
+	const initialY = y;
+	const internalContentX = x + BOX_PADDING; // Consistent internal padding
+	let internalContentY = y + BOX_PADDING; // Consistent internal padding
+
+	if (title) {
+		doc.fontSize(FONT_SIZE_MEDIUM_TITLE).font(FONT_BOLD).fillColor(COLOR_TEXT_HEADER);
+		doc.text(title, internalContentX, internalContentY);
+		internalContentY += FONT_SIZE_MEDIUM_TITLE + BOX_PADDING;
+	}
+
+	const contentEndY = contentCallback(internalContentX, internalContentY);
+
+	// Calculate final height based on content or use provided fixed height
+	const actualHeight = height > 0 ? height : contentEndY - initialY + BOX_PADDING;
+
+	// Draw the box border
+	doc.rect(x, initialY, width, actualHeight).strokeColor(COLOR_LINE).stroke();
+	return initialY + actualHeight;
+}
+
+/**
+ * Add items table to the PDF
+ */
+function addItemsTable(doc: any, data: QuotationTemplateData, startY: number): number {
+	let currentY = startY;
+	const tableStartX = PAGE_MARGIN;
+	const tableWidth = doc.page.width - 2 * PAGE_MARGIN;
+
+	const colWidths = {
+		itemCode: 60,
+		description: tableWidth - 60 - 80 - 80 - 80 - 20, // Adjusted for new columns, ensure it fits
+		quantity: 80,
+		unitPrice: 80,
+		total: 80,
+	};
+
+	// Table headers
+	doc.fillColor(COLOR_TEXT_HEADER).fontSize(FONT_SIZE_NORMAL).font(FONT_BOLD);
+	let currentX = tableStartX;
+
+	// Background for header
+	doc.rect(tableStartX, currentY, tableWidth, FONT_SIZE_NORMAL + BOX_PADDING).fill(COLOR_TABLE_HEADER_BG);
+	doc.fillColor(COLOR_TEXT_HEADER); // Reset fill color for text
+
+	doc.text('Item Code', currentX + BOX_PADDING / 2, currentY + BOX_PADDING / 2);
+	currentX += colWidths.itemCode;
+	doc.text('Product Name', currentX + BOX_PADDING / 2, currentY + BOX_PADDING / 2);
+	currentX += colWidths.description;
+	doc.text('Quantity', currentX + BOX_PADDING / 2, currentY + BOX_PADDING / 2, {
+		width: colWidths.quantity - BOX_PADDING,
+		align: 'right',
+	});
+	currentX += colWidths.quantity;
+	doc.text('Unit Price', currentX + BOX_PADDING / 2, currentY + BOX_PADDING / 2, {
+		width: colWidths.unitPrice - BOX_PADDING,
+		align: 'right',
+	});
+	currentX += colWidths.unitPrice;
+	doc.text('Total', currentX + BOX_PADDING / 2, currentY + BOX_PADDING / 2, {
+		width: colWidths.total - BOX_PADDING,
+		align: 'right',
+	});
+
+	currentY += FONT_SIZE_NORMAL + BOX_PADDING + BOX_PADDING / 2;
+
+	// Table rows
+	doc.font(FONT_REGULAR).fillColor(COLOR_TEXT_NORMAL);
+
+	data.items.forEach((item) => {
+		const itemRowHeight = Math.max(
+			FONT_SIZE_NORMAL + BOX_PADDING,
+			doc.heightOfString(item.description, { width: colWidths.description - BOX_PADDING }) + BOX_PADDING,
+		);
+
+		if (currentY + itemRowHeight > doc.page.height - PAGE_MARGIN - 50) {
+			// Check for page break (50 for footer)
+			doc.addPage();
+			currentY = PAGE_MARGIN;
+			// Redraw header on new page
+			doc.fillColor(COLOR_TEXT_HEADER).fontSize(FONT_SIZE_NORMAL).font(FONT_BOLD);
+			currentX = tableStartX;
+			doc.rect(tableStartX, currentY, tableWidth, FONT_SIZE_NORMAL + BOX_PADDING).fill(COLOR_TABLE_HEADER_BG);
+			doc.fillColor(COLOR_TEXT_HEADER);
+			doc.text('Item Code', currentX + BOX_PADDING / 2, currentY + BOX_PADDING / 2);
+			currentX += colWidths.itemCode;
+			doc.text('Product Name', currentX + BOX_PADDING / 2, currentY + BOX_PADDING / 2);
+			currentX += colWidths.description;
+			doc.text('Quantity', currentX + BOX_PADDING / 2, currentY + BOX_PADDING / 2, {
+				width: colWidths.quantity - BOX_PADDING,
+				align: 'right',
+			});
+			currentX += colWidths.quantity;
+			doc.text('Unit Price', currentX + BOX_PADDING / 2, currentY + BOX_PADDING / 2, {
+				width: colWidths.unitPrice - BOX_PADDING,
+				align: 'right',
+			});
+			currentX += colWidths.unitPrice;
+			doc.text('Total', currentX + BOX_PADDING / 2, currentY + BOX_PADDING / 2, {
+				width: colWidths.total - BOX_PADDING,
+				align: 'right',
+			});
+			currentY += FONT_SIZE_NORMAL + BOX_PADDING + BOX_PADDING / 2;
+			doc.font(FONT_REGULAR).fillColor(COLOR_TEXT_NORMAL);
+		}
+
+		currentX = tableStartX;
+		doc.text(item.itemCode || '-', currentX + BOX_PADDING / 2, currentY + BOX_PADDING / 2, {
+			width: colWidths.itemCode - BOX_PADDING,
+		});
+		currentX += colWidths.itemCode;
+		doc.text(item.description, currentX + BOX_PADDING / 2, currentY + BOX_PADDING / 2, {
+			width: colWidths.description - BOX_PADDING,
+		});
+		currentX += colWidths.description;
+		doc.text(item.quantity.toString(), currentX + BOX_PADDING / 2, currentY + BOX_PADDING / 2, {
+			width: colWidths.quantity - BOX_PADDING,
+			align: 'right',
+		});
+		currentX += colWidths.quantity;
+		doc.text(
+			formatCurrency(item.unitPrice, data.currency),
+			currentX + BOX_PADDING / 2,
+			currentY + BOX_PADDING / 2,
+			{ width: colWidths.unitPrice - BOX_PADDING, align: 'right' },
+		);
+		currentX += colWidths.unitPrice;
+		doc.text(
+			formatCurrency(item.quantity * item.unitPrice, data.currency),
+			currentX + BOX_PADDING / 2,
+			currentY + BOX_PADDING / 2,
+			{ width: colWidths.total - BOX_PADDING, align: 'right' },
+		);
+
+		currentY += itemRowHeight;
+		doc.moveTo(tableStartX, currentY)
+			.lineTo(tableStartX + tableWidth, currentY)
+			.strokeColor(COLOR_LINE)
+			.stroke(); // Horizontal line after each item
+	});
+
+	return currentY + BOX_PADDING;
+}
+
+/**
+ * Generate a quotation PDF using PDFKit
+ * @param doc PDFKit document instance
+ * @param data Quotation data to populate the template
+ */
+export const generateQuotationPDF = (doc: any, data: QuotationTemplateData): void => {
+	// Set document properties
+	doc.info.Title = `Quotation #${data.quotationId}`;
+	doc.info.Author = data.companyDetails.name || 'Loro';
+	doc.info.Creator = data.companyDetails.name || 'Loro';
+
+	// Calculate available width for content (full page width - 2 * margin)
+	const availableWidth = doc.page.width - 2 * PAGE_MARGIN;
+	// For two columns, divide available width by 2 and subtract inter-box padding
+	const interBoxPadding = BOX_PADDING * 2; // Space between the two main columns of boxes
+	const columnWidth = (availableWidth - interBoxPadding) / 2;
+
+	let currentY = PAGE_MARGIN;
+
+	// --- Header: Title and Logo ---
+	doc.fontSize(FONT_SIZE_XLARGE_TITLE).font(FONT_BOLD).fillColor(COLOR_TEXT_HEADER);
+	doc.text('QUOTATION', PAGE_MARGIN, currentY);
+
+	if (data.companyDetails.logoPath) {
+		try {
+			// Check if file exists before trying to use it
+			if (fs.existsSync(data.companyDetails.logoPath)) {
+				const logoWidth = 100; // Adjust as needed
+				doc.image(data.companyDetails.logoPath, doc.page.width - PAGE_MARGIN - logoWidth, currentY, {
+					fit: [logoWidth, 50], // Adjust height fit as needed
+					align: 'right',
+				});
+			} else {
+				console.warn(`Logo file not found: ${data.companyDetails.logoPath}`);
+			}
+		} catch (err) {
+			console.error('Error embedding logo:', err);
+		}
+	}
+	currentY += Math.max(FONT_SIZE_XLARGE_TITLE, 50) + BOX_PADDING; // Reduced from BOX_PADDING * 2
+
+	// --- Top Row: Company Details and Document Details ---
+	const companyDetailsBoxX = PAGE_MARGIN;
+	const documentDetailsBoxX = PAGE_MARGIN + columnWidth + interBoxPadding;
+
+	// Measure height for company details box to determine fixed height for the row
+	// We'll calculate the needed heights first, then use the maximum for both boxes
+	let companyDetailsHeight = 0;
+	let documentDetailsHeight = 0;
+
+	// First pass to calculate heights
+	const companyDetailsContentHeightCb = (cx, cy) => {
+		let localY = cy;
+		doc.fontSize(FONT_SIZE_NORMAL).font(FONT_BOLD).fillColor(COLOR_TEXT_HEADER);
+		doc.text(data.companyDetails.name, cx, localY, { width: columnWidth - BOX_PADDING * 2 });
+		localY += FONT_SIZE_NORMAL + 2;
+		doc.font(FONT_REGULAR).fillColor(COLOR_TEXT_NORMAL);
+		if (data.companyDetails.addressLines) {
+			data.companyDetails.addressLines.forEach((line) => {
+				doc.text(line, cx, localY, { width: columnWidth - BOX_PADDING * 2 });
+				localY += FONT_SIZE_NORMAL + 2;
+			});
+		}
+		if (data.companyDetails.phone) {
+			doc.text(`Tel: ${data.companyDetails.phone}`, cx, localY, { width: columnWidth - BOX_PADDING * 2 });
+			localY += FONT_SIZE_NORMAL + 2;
+		}
+		if (data.companyDetails.email) {
+			doc.text(`Email: ${data.companyDetails.email}`, cx, localY, { width: columnWidth - BOX_PADDING * 2 });
+			localY += FONT_SIZE_NORMAL + 2;
+		}
+		if (data.companyDetails.website) {
+			doc.text(`Web: ${data.companyDetails.website}`, cx, localY, { width: columnWidth - BOX_PADDING * 2 });
+			localY += FONT_SIZE_NORMAL + 2;
+		}
+		if (data.companyDetails.vatNumber) {
+			doc.text(`VAT Reg: ${data.companyDetails.vatNumber}`, cx, localY, { width: columnWidth - BOX_PADDING * 2 });
+			localY += FONT_SIZE_NORMAL + 2;
+		}
+		return localY;
+	};
+
+	const documentDetailsContentHeightCb = (cx, cy) => {
+		let localY = cy;
+		doc.fillColor(COLOR_TEXT_NORMAL).fontSize(FONT_SIZE_NORMAL);
+
+		doc.font(FONT_BOLD).text('Quotation #:', cx, localY, { continued: true });
+		doc.font(FONT_REGULAR).text(` ${data.quotationId}`, { continued: false });
+		localY += FONT_SIZE_NORMAL + 2;
+
+		doc.font(FONT_BOLD).text('Date:', cx, localY, { continued: true });
+		doc.font(FONT_REGULAR).text(` ${formatDate(data.date)}`, { continued: false });
+		localY += FONT_SIZE_NORMAL + 2;
+
+		doc.font(FONT_BOLD).text('Valid Until:', cx, localY, { continued: true });
+		doc.font(FONT_REGULAR).text(` ${formatDate(data.validUntil)}`, { continued: false });
+		localY += FONT_SIZE_NORMAL + 2;
+
+		// Add Sales Rep or Page Number here if needed from data
+		return localY;
+	};
+
+	// Calculate heights without drawing
+	const companyContentEndY = companyDetailsContentHeightCb(
+		companyDetailsBoxX + BOX_PADDING,
+		currentY + BOX_PADDING + FONT_SIZE_MEDIUM_TITLE + BOX_PADDING,
+	);
+	companyDetailsHeight = companyContentEndY - currentY + BOX_PADDING;
+
+	const documentContentEndY = documentDetailsContentHeightCb(
+		documentDetailsBoxX + BOX_PADDING,
+		currentY + BOX_PADDING + FONT_SIZE_MEDIUM_TITLE + BOX_PADDING,
+	);
+	documentDetailsHeight = documentContentEndY - currentY + BOX_PADDING;
+
+	// Use maximum height for both boxes to ensure they're the same size
+	const topRowHeight = Math.max(companyDetailsHeight, documentDetailsHeight);
+
+	// Now draw the boxes with fixed height
+	drawBoxWithTitle(doc, companyDetailsBoxX, currentY, columnWidth, topRowHeight, 'Company Details', (cx, cy) => {
+		return companyDetailsContentHeightCb(cx, cy);
+	});
+
+	drawBoxWithTitle(doc, documentDetailsBoxX, currentY, columnWidth, topRowHeight, 'Document Details', (cx, cy) => {
+		return documentDetailsContentHeightCb(cx, cy);
+	});
+
+	currentY += topRowHeight + BOX_PADDING * 2; // Increased spacing between box rows
+
+	// --- Middle Row: Customer Info and Deliver To ---
+	const customerInfoBoxX = PAGE_MARGIN;
+	const deliverToBoxX = PAGE_MARGIN + columnWidth + interBoxPadding;
+
+	// Similar approach for customer info and deliver to boxes
+	let customerInfoHeight = 0;
+	let deliverToHeight = 0;
+
+	// First pass to calculate heights
+	const customerInfoContentHeightCb = (cx, cy) => {
+		let localY = cy;
+		doc.fontSize(FONT_SIZE_NORMAL).font(FONT_BOLD).fillColor(COLOR_TEXT_HEADER);
+		doc.text(data.client.name, cx, localY, { width: columnWidth - BOX_PADDING * 2 });
+		localY += FONT_SIZE_NORMAL + 2;
+		doc.font(FONT_REGULAR).fillColor(COLOR_TEXT_NORMAL);
+		if (data.client.address) {
+			const addressText = data.client.address;
+			const addressHeight = doc.heightOfString(addressText, { width: columnWidth - BOX_PADDING * 2 });
+			doc.text(addressText, cx, localY, { width: columnWidth - BOX_PADDING * 2 });
+			localY += addressHeight + 2;
+		}
+		if (data.client.phone) {
+			doc.text(`Tel: ${data.client.phone}`, cx, localY, { width: columnWidth - BOX_PADDING * 2 });
+			localY += FONT_SIZE_NORMAL + 2;
+		}
+		if (data.client.email) {
+			doc.text(`Email: ${data.client.email}`, cx, localY, { width: columnWidth - BOX_PADDING * 2 });
+			localY += FONT_SIZE_NORMAL + 2;
+		}
+		return localY;
+	};
+
+	const deliverToContentHeightCb = (cx, cy) => {
+		let localY = cy;
+		doc.fontSize(FONT_SIZE_NORMAL).font(FONT_REGULAR).fillColor(COLOR_TEXT_NORMAL);
+		if (data.client.deliveryAddress) {
+			const deliveryText = data.client.deliveryAddress;
+			const deliveryHeight = doc.heightOfString(deliveryText, { width: columnWidth - BOX_PADDING * 2 });
+			doc.text(deliveryText, cx, localY, { width: columnWidth - BOX_PADDING * 2 });
+			localY += deliveryHeight + 2;
+		} else if (data.client.address) {
+			const addressText = data.client.address || 'Same as Customer Address';
+			const addressHeight = doc.heightOfString(addressText, { width: columnWidth - BOX_PADDING * 2 });
+			doc.text(addressText, cx, localY, { width: columnWidth - BOX_PADDING * 2 });
+			localY += addressHeight + 2;
+		} else {
+			doc.text('Same as Customer Address', cx, localY, { width: columnWidth - BOX_PADDING * 2 });
+			localY += FONT_SIZE_NORMAL + 2;
+		}
+		return localY;
+	};
+
+	// Calculate heights without drawing
+	const customerContentEndY = customerInfoContentHeightCb(
+		customerInfoBoxX + BOX_PADDING,
+		currentY + BOX_PADDING + FONT_SIZE_MEDIUM_TITLE + BOX_PADDING,
+	);
+	customerInfoHeight = customerContentEndY - currentY + BOX_PADDING;
+
+	const deliverContentEndY = deliverToContentHeightCb(
+		deliverToBoxX + BOX_PADDING,
+		currentY + BOX_PADDING + FONT_SIZE_MEDIUM_TITLE + BOX_PADDING,
+	);
+	deliverToHeight = deliverContentEndY - currentY + BOX_PADDING;
+
+	// Use maximum height for both boxes to ensure they're the same size
+	const middleRowHeight = Math.max(customerInfoHeight, deliverToHeight);
+
+	// Now draw the boxes with fixed height
+	drawBoxWithTitle(
+		doc,
+		customerInfoBoxX,
+		currentY,
+		columnWidth,
+		middleRowHeight,
+		'Customer Information',
+		(cx, cy) => {
+			return customerInfoContentHeightCb(cx, cy);
+		},
+	);
+
+	drawBoxWithTitle(doc, deliverToBoxX, currentY, columnWidth, middleRowHeight, 'Deliver To', (cx, cy) => {
+		return deliverToContentHeightCb(cx, cy);
+	});
+
+	currentY += middleRowHeight + BOX_PADDING * 2; // Increased spacing between box rows
+
+	// --- Items Table ---
+	currentY = addItemsTable(doc, data, currentY) + BOX_PADDING * 2;
+
+	// --- Bottom Section: Banking Details and Totals ---
+	const bankingDetailsBoxX = PAGE_MARGIN;
+	// Totals box should align with the right column
+	const totalsBoxX = PAGE_MARGIN + columnWidth + interBoxPadding;
+
+	// Similar approach for banking details and totals boxes
+	let bankingDetailsHeight = 0;
+	let totalsHeight = 0;
+
+	// First pass to calculate heights
+	const bankingDetailsContentHeightCb = (cx, cy) => {
+		let localY = cy;
+		doc.fontSize(FONT_SIZE_NORMAL).font(FONT_REGULAR).fillColor(COLOR_TEXT_NORMAL);
+		if (data.bankingDetails) {
+			doc.font(FONT_BOLD).text('Bank:', cx, localY, { continued: true, width: columnWidth - BOX_PADDING * 2 });
+			doc.font(FONT_REGULAR).text(` ${data.bankingDetails.bankName || ''}`, {
+				continued: false,
+				width: columnWidth - BOX_PADDING * 2,
+			});
+			localY += FONT_SIZE_NORMAL + 2;
+
+			doc.font(FONT_BOLD).text('Account Holder:', cx, localY, {
+				continued: true,
+				width: columnWidth - BOX_PADDING * 2,
+			});
+			doc.font(FONT_REGULAR).text(` ${data.bankingDetails.accountHolder || data.companyDetails.name}`, {
+				continued: false,
+				width: columnWidth - BOX_PADDING * 2,
+			});
+			localY += FONT_SIZE_NORMAL + 2;
+
+			doc.font(FONT_BOLD).text('Account Number:', cx, localY, {
+				continued: true,
+				width: columnWidth - BOX_PADDING * 2,
+			});
+			doc.font(FONT_REGULAR).text(` ${data.bankingDetails.accountNumber || ''}`, {
+				continued: false,
+				width: columnWidth - BOX_PADDING * 2,
+			});
+			localY += FONT_SIZE_NORMAL + 2;
+
+			if (data.bankingDetails.branchCode) {
+				doc.font(FONT_BOLD).text('Branch Code:', cx, localY, {
+					continued: true,
+					width: columnWidth - BOX_PADDING * 2,
+				});
+				doc.font(FONT_REGULAR).text(` ${data.bankingDetails.branchCode}`, {
+					continued: false,
+					width: columnWidth - BOX_PADDING * 2,
+				});
+				localY += FONT_SIZE_NORMAL + 2;
+			}
+
+			if (data.bankingDetails.swiftCode) {
+				doc.font(FONT_BOLD).text('SWIFT Code:', cx, localY, {
+					continued: true,
+					width: columnWidth - BOX_PADDING * 2,
+				});
+				doc.font(FONT_REGULAR).text(` ${data.bankingDetails.swiftCode}`, {
+					continued: false,
+					width: columnWidth - BOX_PADDING * 2,
+				});
+				localY += FONT_SIZE_NORMAL + 2;
+			}
+
+			doc.font(FONT_BOLD).text('Reference:', cx, localY, {
+				continued: true,
+				width: columnWidth - BOX_PADDING * 2,
+			});
+			doc.font(FONT_REGULAR).text(` ${data.bankingDetails.paymentReferencePrefix || 'Q'}${data.quotationId}`, {
+				continued: false,
+				width: columnWidth - BOX_PADDING * 2,
+			});
+			localY += FONT_SIZE_NORMAL + 2;
+		} else {
+			doc.text('Banking details not provided.', cx, localY, { width: columnWidth - BOX_PADDING * 2 });
+			localY += FONT_SIZE_NORMAL + 2;
+		}
+		return localY;
+	};
+
+	const totalsContentHeightCb = (cx, cy) => {
+		let localY = cy;
+		const fieldIndent = cx + BOX_PADDING;
+		const valueIndent = cx + columnWidth - BOX_PADDING * 2 - 100;
+
+		doc.fontSize(FONT_SIZE_NORMAL).font(FONT_REGULAR).fillColor(COLOR_TEXT_NORMAL);
+		doc.text('Subtotal:', fieldIndent, localY, { width: columnWidth - BOX_PADDING * 4 - 100 });
+		doc.text(formatCurrency(data.subtotal, data.currency), valueIndent, localY, { width: 100, align: 'right' });
+		localY += FONT_SIZE_NORMAL + 4;
+
+		doc.text('Tax:', fieldIndent, localY, { width: columnWidth - BOX_PADDING * 4 - 100 });
+		doc.text(formatCurrency(data.tax, data.currency), valueIndent, localY, { width: 100, align: 'right' });
+		localY += FONT_SIZE_NORMAL + 4;
+
+		doc.font(FONT_BOLD).fontSize(FONT_SIZE_MEDIUM_TITLE).fillColor(COLOR_TEXT_HEADER);
+		doc.text('Total:', fieldIndent, localY, { width: columnWidth - BOX_PADDING * 4 - 100 });
+		doc.text(formatCurrency(data.total, data.currency), valueIndent, localY, { width: 100, align: 'right' });
+		localY += FONT_SIZE_MEDIUM_TITLE + 4;
+		return localY;
+	};
+
+	// Calculate heights without drawing
+	const bankingContentEndY = bankingDetailsContentHeightCb(
+		bankingDetailsBoxX + BOX_PADDING,
+		currentY + BOX_PADDING + FONT_SIZE_MEDIUM_TITLE + BOX_PADDING,
+	);
+	bankingDetailsHeight = bankingContentEndY - currentY + BOX_PADDING;
+
+	const totalsContentEndY = totalsContentHeightCb(totalsBoxX + BOX_PADDING, currentY + BOX_PADDING);
+	totalsHeight = totalsContentEndY - currentY + BOX_PADDING;
+
+	// Use maximum height for both boxes to ensure they're the same size
+	const bottomRowHeight = Math.max(bankingDetailsHeight, totalsHeight);
+
+	// Now draw the boxes with fixed height
+	drawBoxWithTitle(doc, bankingDetailsBoxX, currentY, columnWidth, bottomRowHeight, 'Banking Details', (cx, cy) => {
+		return bankingDetailsContentHeightCb(cx, cy);
+	});
+
+	drawBoxWithTitle(doc, totalsBoxX, currentY, columnWidth, bottomRowHeight, null, (cx, cy) => {
+		return totalsContentHeightCb(cx, cy);
+	});
+
+	currentY += bottomRowHeight + BOX_PADDING;
+
+	// --- Terms and Conditions ---
+	if (data.terms) {
+		doc.fontSize(FONT_SIZE_MEDIUM_TITLE).font(FONT_BOLD).fillColor(COLOR_TEXT_HEADER);
+		doc.text('Terms and Conditions', PAGE_MARGIN, currentY, { underline: true });
+		currentY += FONT_SIZE_MEDIUM_TITLE + BOX_PADDING / 2;
+		doc.fontSize(FONT_SIZE_SMALL).font(FONT_REGULAR).fillColor(COLOR_TEXT_LIGHT);
+		doc.text(data.terms, PAGE_MARGIN, currentY, { width: doc.page.width - 2 * PAGE_MARGIN });
+	}
+
+	// --- Footer with page number (applied to all pages) ---
+	const range = doc.bufferedPageRange(); // Note: cant get actual page count until end, but good for template
+	for (let i = range.start; i < range.start + range.count; i++) {
+		doc.switchToPage(i);
+		doc.fontSize(FONT_SIZE_SMALL).font(FONT_REGULAR).fillColor(COLOR_TEXT_LIGHT);
+		doc.text(
+			`Page ${i + 1 - range.start} of ${range.count}`,
+			PAGE_MARGIN,
+			doc.page.height - PAGE_MARGIN + BOX_PADDING, // Position slightly lower
+			{ align: 'center', width: doc.page.width - 2 * PAGE_MARGIN },
+		);
+	}
+};

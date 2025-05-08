@@ -385,6 +385,8 @@ export class ShopService {
 			if (fullQuotation) {
 				const pdfUrl = await this.generateQuotationPDF(fullQuotation);
 
+				console.log('generated PDF file', pdfUrl);
+
 				// If PDF was generated successfully, update the quotation record
 				if (pdfUrl) {
 					await this.quotationRepository.update(savedQuotation.uid, { pdfURL: pdfUrl });
@@ -1825,12 +1827,11 @@ export class ShopService {
 				? await this.getOrgCurrency(quotation.organisation.uid)
 				: { code: this.currencyCode || 'ZAR' };
 
-			// Format client address as a string
-			let clientAddress = '';
+			// Format client billing address as a string
+			let clientBillingAddress = '';
 			if (quotation.client.address) {
 				const addressObj = quotation.client.address as any;
 				if (typeof addressObj === 'object') {
-					// If address is an object, concatenate its fields
 					const parts = [
 						addressObj.street,
 						addressObj.suburb,
@@ -1839,15 +1840,47 @@ export class ShopService {
 						addressObj.country,
 						addressObj.postalCode,
 					].filter(Boolean);
-					clientAddress = parts.join(', ');
+					clientBillingAddress = parts.join(', ');
 				} else if (typeof addressObj === 'string') {
-					// If address is already a string, use it directly
-					clientAddress = addressObj;
+					clientBillingAddress = addressObj;
 				}
+			}
+
+			// Placeholder for client delivery address - to be confirmed if Client entity supports it
+			const clientDeliveryAddress: string | undefined = undefined;
+			// TODO: If Client entity has a separate deliveryAddress field,
+			// process it here similarly to clientBillingAddress and assign to clientDeliveryAddress.
+			// For example:
+			// if (quotation.client.actualDeliveryAddressFieldName) {
+			//   const daObj = quotation.client.actualDeliveryAddressFieldName as any;
+			//   ...
+			//   clientDeliveryAddress = formatted_delivery_address_string;
+			// }
+
+			// Prepare company address lines
+			let companyAddressLines: string[] = [];
+			if (quotation.organisation?.address) {
+				const orgAddr = quotation.organisation.address;
+				companyAddressLines = [
+					orgAddr.street,
+					orgAddr.suburb,
+					`${orgAddr.city}, ${orgAddr.postalCode}`.trim(),
+					orgAddr.state,
+					orgAddr.country,
+				].filter(Boolean); // Filter out any null or empty strings
 			}
 
 			// Prepare the data for the PDF template
 			const pdfData: QuotationTemplateData = {
+				companyDetails: {
+					name: quotation.organisation?.name || 'Loro',
+					addressLines: companyAddressLines,
+					phone: quotation.organisation?.phone,
+					email: quotation.organisation?.email,
+					website: quotation.organisation?.website,
+					logoPath: quotation.organisation?.logo,
+					// vatNumber: quotation.organisation?.vatNumber, // Add if vatNumber exists on organisation entity
+				},
 				quotationId: quotation.quotationNumber,
 				date: quotation.quotationDate,
 				validUntil: quotation.validUntil || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
@@ -1855,9 +1888,11 @@ export class ShopService {
 					name: quotation.client.name,
 					email: quotation.client.email,
 					phone: quotation.client.phone,
-					address: clientAddress,
+					address: clientBillingAddress, // Use the formatted billing address
+					deliveryAddress: clientDeliveryAddress, // Pass the (currently undefined) delivery address
 				},
 				items: quotation.quotationItems.map((item) => ({
+					itemCode: item.product?.productRef || item.product?.sku || undefined, // Use productRef, fallback to SKU
 					description: item.product.name,
 					quantity: item.quantity,
 					unitPrice: Number(item.totalPrice) / item.quantity, // Calculate unit price from total and quantity
@@ -1868,8 +1903,6 @@ export class ShopService {
 				currency: orgCurrency.code,
 				terms: 'Payment due within 30 days. Please contact us for any questions or concerns.',
 			};
-
-			console.log('pdfData', pdfData);
 
 			// Generate the PDF
 			const result = await this.pdfGenerationService.create({
