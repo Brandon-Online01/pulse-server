@@ -79,7 +79,7 @@ export class ImporterService implements OnModuleInit {
 	}
 
 	// Main synchronization method that runs in the correct order
-	@Cron(CronExpression.EVERY_HOUR) // Run every 60 minutes (1 hour)
+	@Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT) // Run every day at midnight
 	async synchronizeAll() {
 		try {
 			if (!this.connection) {

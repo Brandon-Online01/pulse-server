@@ -113,12 +113,12 @@ export class CreateLeadDto {
 	@ApiProperty({
 		description: 'Changes to the lead',
 		example: {
-			status: 'PENDING',
+			timestamp: Date,
+			oldStatus: 'PENDING',
+			newStatus: 'APPROVED',
 			reason: 'Client Approval',
 			description: 'Met with client on Tuesday, confirmed final details.',
-			createdAt: '2024-01-01',
-			updatedAt: '2024-01-01',
-			approvedBy: { uid: 1 },
+			userId: 1,
 		},
 	})
 	changeHistory?: JSON;

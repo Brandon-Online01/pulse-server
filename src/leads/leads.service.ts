@@ -90,10 +90,19 @@ export class LeadsService {
 							name: assignee.name || assignee.username,
 						};
 						try {
-							await this.communicationService.sendEmail(EmailType.LEAD_ASSIGNED_TO_USER, [assignee.email], emailData);
-							this.logger.log(`Lead assignment email sent to ${assignee.email} for lead ${populatedLead.uid}`);
+							await this.communicationService.sendEmail(
+								EmailType.LEAD_ASSIGNED_TO_USER,
+								[assignee.email],
+								emailData,
+							);
+							this.logger.log(
+								`Lead assignment email sent to ${assignee.email} for lead ${populatedLead.uid}`,
+							);
 						} catch (emailError) {
-							this.logger.error(`Failed to send lead assignment email to ${assignee.email}: ${emailError.message}`, emailError.stack);
+							this.logger.error(
+								`Failed to send lead assignment email to ${assignee.email}: ${emailError.message}`,
+								emailError.stack,
+							);
 						}
 					}
 				}
@@ -214,9 +223,9 @@ export class LeadsService {
 			if (!leads) {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
-			
+
 			// Populate leads with full assignee details
-			const populatedLeads = await Promise.all(leads.map(lead => this.populateLeadRelations(lead)));
+			const populatedLeads = await Promise.all(leads.map((lead) => this.populateLeadRelations(lead)));
 
 			const stats = this.calculateStats(leads);
 
@@ -336,7 +345,7 @@ export class LeadsService {
 			}
 
 			// Populate all leads with full assignee details
-			const populatedLeads = await Promise.all(leads.map(lead => this.populateLeadRelations(lead)));
+			const populatedLeads = await Promise.all(leads.map((lead) => this.populateLeadRelations(lead)));
 
 			const stats = this.calculateStats(leads);
 
@@ -381,7 +390,9 @@ export class LeadsService {
 
 			const oldStatus = lead.status;
 			// Ensure changeHistory is treated as an array of LeadStatusHistoryEntry
-			const changeHistoryArray: LeadStatusHistoryEntry[] = Array.isArray(lead.changeHistory) ? lead.changeHistory : [];
+			const changeHistoryArray: LeadStatusHistoryEntry[] = Array.isArray(lead.changeHistory)
+				? lead.changeHistory
+				: [];
 			const dataToSave: Partial<Lead> = {};
 
 			// Build the data to save, excluding reason/description from UpdateLeadDto that are specific to status change
@@ -397,17 +408,18 @@ export class LeadsService {
 					timestamp: new Date(),
 					oldStatus: oldStatus,
 					newStatus: updateLeadDto.status,
-					reason: updateLeadDto.statusChangeReason,       // Get reason from DTO
-					description: updateLeadDto.statusChangeDescription,  // Get description from DTO
-					userId: userId,       // User who made the change
+					reason: updateLeadDto.statusChangeReason,
+					description: updateLeadDto.statusChangeDescription,
+					userId: userId, // User who made the change
 				};
+
 				changeHistoryArray.push(newHistoryEntry);
 				dataToSave.changeHistory = changeHistoryArray;
 			}
 
 			// Handle assignees update specifically
 			if (updateLeadDto.assignees) {
-				dataToSave.assignees = updateLeadDto.assignees.map(a => ({ uid: a.uid }));
+				dataToSave.assignees = updateLeadDto.assignees.map((a) => ({ uid: a.uid }));
 			} else if (updateLeadDto.hasOwnProperty('assignees')) {
 				// If assignees key exists but is empty/null, clear it
 				dataToSave.assignees = [];
@@ -440,7 +452,7 @@ export class LeadsService {
 			// Handle lead assignment email if assignees changed
 			if (updateLeadDto.assignees) {
 				const populatedLead = await this.populateLeadRelations({ ...lead, ...dataToSave });
-				
+
 				if (populatedLead.assignees && populatedLead.assignees.length > 0) {
 					for (const assignee of populatedLead.assignees as User[]) {
 						if (assignee.email) {
@@ -450,14 +462,25 @@ export class LeadsService {
 								leadName: populatedLead.name,
 								leadCreatorName: populatedLead.owner?.name || populatedLead.owner?.username || 'System',
 								leadDetails: populatedLead.notes,
-								leadLink: `${this.configService.get<string>('DASHBOARD_URL')}/leads/${populatedLead.uid}`,
+								leadLink: `${this.configService.get<string>('DASHBOARD_URL')}/leads/${
+									populatedLead.uid
+								}`,
 								name: assignee.name || assignee.username,
 							};
 							try {
-								await this.communicationService.sendEmail(EmailType.LEAD_ASSIGNED_TO_USER, [assignee.email], emailData);
-								this.logger.log(`Lead assignment update email sent to ${assignee.email} for lead ${populatedLead.uid}`);
+								await this.communicationService.sendEmail(
+									EmailType.LEAD_ASSIGNED_TO_USER,
+									[assignee.email],
+									emailData,
+								);
+								this.logger.log(
+									`Lead assignment update email sent to ${assignee.email} for lead ${populatedLead.uid}`,
+								);
 							} catch (emailError) {
-								this.logger.error(`Failed to send lead assignment update email to ${assignee.email}: ${emailError.message}`, emailError.stack);
+								this.logger.error(
+									`Failed to send lead assignment update email to ${assignee.email}: ${emailError.message}`,
+									emailError.stack,
+								);
 							}
 						}
 					}
@@ -970,7 +993,7 @@ export class LeadsService {
 			});
 			lead.assignees = assigneeProfiles;
 		}
-		
+
 		return lead;
 	}
 }
