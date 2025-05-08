@@ -86,6 +86,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { LibModule } from './lib/lib.module';
 import { InteractionsModule } from './interactions/interactions.module';
 import { Interaction } from './interactions/entities/interaction.entity';
+import { PdfGenerationModule } from './pdf-generation/pdf-generation.module';
 
 @Module({
 	imports: [
@@ -195,6 +196,7 @@ import { Interaction } from './interactions/entities/interaction.entity';
 		CompetitorsModule,
 		ReportsModule,
 		ScheduleModule.forRoot(),
+		PdfGenerationModule,
 	],
 	controllers: [],
 	providers: [

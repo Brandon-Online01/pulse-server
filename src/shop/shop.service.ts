@@ -20,6 +20,8 @@ import { PaginatedResponse } from '../lib/interfaces/product.interfaces';
 import { ProductsService } from '../products/products.service';
 import { OrganisationService } from '../organisation/organisation.service';
 import { QuotationInternalData } from '../lib/types/email-templates.types';
+import { PdfGenerationService } from '../pdf-generation/pdf-generation.service';
+import { QuotationTemplateData } from '../pdf-generation/interfaces/pdf-templates.interface';
 
 @Injectable()
 export class ShopService {
@@ -42,6 +44,7 @@ export class ShopService {
 		private readonly shopGateway: ShopGateway,
 		private readonly productsService: ProductsService,
 		private readonly organisationService: OrganisationService,
+		private readonly pdfGenerationService: PdfGenerationService,
 	) {
 		this.currencyLocale = this.configService.get<string>('CURRENCY_LOCALE') || 'en-ZA';
 		this.currencyCode = this.configService.get<string>('CURRENCY_CODE') || 'ZAR';
@@ -372,7 +375,21 @@ export class ShopService {
 
 			const savedQuotation = await this.quotationRepository.save(newQuotation);
 
-			console.log('savedQuotation with promo code', savedQuotation);
+			// Generate PDF for the quotation
+			// First get the full quotation with all relations for PDF generation
+			const fullQuotation = await this.quotationRepository.findOne({
+				where: { uid: savedQuotation.uid },
+				relations: ['client', 'quotationItems', 'quotationItems.product', 'organisation', 'branch'],
+			});
+
+			if (fullQuotation) {
+				const pdfUrl = await this.generateQuotationPDF(fullQuotation);
+
+				// If PDF was generated successfully, update the quotation record
+				if (pdfUrl) {
+					await this.quotationRepository.update(savedQuotation.uid, { pdfURL: pdfUrl });
+				}
+			}
 
 			// Update analytics for each product
 			for (const item of quotationData.items) {
@@ -1731,6 +1748,17 @@ export class ShopService {
 				};
 			}
 
+			// If the quotation doesn't have a PDF URL, generate one now
+			if (!updatedQuotation.pdfURL) {
+				const pdfUrl = await this.generateQuotationPDF(updatedQuotation);
+
+				// If PDF was generated successfully, update the quotation record
+				if (pdfUrl) {
+					await this.quotationRepository.update(quotationId, { pdfURL: pdfUrl });
+					updatedQuotation.pdfURL = pdfUrl;
+				}
+			}
+
 			// Prepare email data
 			const emailData = {
 				name: updatedQuotation.client.name || updatedQuotation.client.email.split('@')[0],
@@ -1748,6 +1776,8 @@ export class ShopService {
 					},
 					totalPrice: Number(item.totalPrice),
 				})),
+				// Add the PDF URL to the email data
+				pdfURL: updatedQuotation.pdfURL,
 			};
 
 			// Now send the full quotation to the client
@@ -1778,6 +1808,84 @@ export class ShopService {
 				success: false,
 				message: 'An error occurred while sending the quotation to client.',
 			};
+		}
+	}
+
+	/**
+	 * Generate a PDF for the quotation and store the URL
+	 */
+	private async generateQuotationPDF(quotation: Quotation): Promise<string | null> {
+		try {
+			if (!quotation || !quotation.quotationItems || !quotation.client) {
+				throw new Error('Invalid quotation data for PDF generation');
+			}
+
+			// Get org currency
+			const orgCurrency = quotation.organisation?.uid
+				? await this.getOrgCurrency(quotation.organisation.uid)
+				: { code: this.currencyCode || 'ZAR' };
+
+			// Format client address as a string
+			let clientAddress = '';
+			if (quotation.client.address) {
+				const addressObj = quotation.client.address as any;
+				if (typeof addressObj === 'object') {
+					// If address is an object, concatenate its fields
+					const parts = [
+						addressObj.street,
+						addressObj.suburb,
+						addressObj.city,
+						addressObj.state,
+						addressObj.country,
+						addressObj.postalCode,
+					].filter(Boolean);
+					clientAddress = parts.join(', ');
+				} else if (typeof addressObj === 'string') {
+					// If address is already a string, use it directly
+					clientAddress = addressObj;
+				}
+			}
+
+			// Prepare the data for the PDF template
+			const pdfData: QuotationTemplateData = {
+				quotationId: quotation.quotationNumber,
+				date: quotation.quotationDate,
+				validUntil: quotation.validUntil || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+				client: {
+					name: quotation.client.name,
+					email: quotation.client.email,
+					phone: quotation.client.phone,
+					address: clientAddress,
+				},
+				items: quotation.quotationItems.map((item) => ({
+					description: item.product.name,
+					quantity: item.quantity,
+					unitPrice: Number(item.totalPrice) / item.quantity, // Calculate unit price from total and quantity
+				})),
+				subtotal: Number(quotation.totalAmount) * 0.85, // Assuming 15% tax rate
+				tax: Number(quotation.totalAmount) * 0.15,
+				total: Number(quotation.totalAmount),
+				currency: orgCurrency.code,
+				terms: 'Payment due within 30 days. Please contact us for any questions or concerns.',
+			};
+
+			console.log('pdfData', pdfData);
+
+			// Generate the PDF
+			const result = await this.pdfGenerationService.create({
+				template: 'quotation',
+				data: pdfData,
+			});
+
+			if (!result.success) {
+				throw new Error('Failed to generate PDF');
+			}
+
+			// Return the URL
+			return result.url;
+		} catch (error) {
+			this.logger.error(`Error generating quotation PDF: ${error.message}`, error.stack);
+			return null;
 		}
 	}
 }

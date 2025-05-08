@@ -81,6 +81,9 @@ export class Quotation {
 	@Column({ nullable: true })
 	reviewUrl: string;
 
+	@Column({ nullable: true })
+	pdfURL: string;
+
 	// Currency information
 	@Column({ nullable: true, length: 6, default: 'ZAR' })
 	currency: string;
