@@ -4,33 +4,31 @@ import { FeatureGuard } from '../guards/feature.guard';
 import { RequireFeature } from './require-feature.decorator';
 
 type ModuleName =
-    | 'assets'
-    | 'claims'
-    | 'clients'
-    | 'communication'
-    | 'competitors'
-    | 'docs'
-    | 'journal'
-    | 'leads'
-    | 'licensing'
-    | 'news'
-    | 'notifications'
-    | 'organisation'
-    | 'products'
-    | 'reports'
-    | 'resellers'
-    | 'rewards'
-    | 'shop'
-    | 'tasks'
-    | 'tracking';
+	| 'assets'
+	| 'claims'
+	| 'clients'
+	| 'communication'
+	| 'competitors'
+	| 'docs'
+	| 'journal'
+	| 'leads'
+	| 'leave'
+	| 'licensing'
+	| 'news'
+	| 'notifications'
+	| 'organisation'
+	| 'products'
+	| 'reports'
+	| 'resellers'
+	| 'rewards'
+	| 'shop'
+	| 'tasks'
+	| 'tracking';
 
 /**
  * Decorator to protect routes with enterprise-only access
  * @param module The module name to protect (e.g., 'assets', 'claims', etc.)
  */
 export function EnterpriseOnly(module: ModuleName) {
-    return applyDecorators(
-        UseGuards(AuthGuard, FeatureGuard),
-        RequireFeature(`${module}.access` as const)
-    );
-} 
+	return applyDecorators(UseGuards(AuthGuard, FeatureGuard), RequireFeature(`${module}.access` as const));
+}

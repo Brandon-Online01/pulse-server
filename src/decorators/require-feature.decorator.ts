@@ -11,6 +11,7 @@ type ModuleFeature =
     | `docs.${string}`
     | `journal.${string}`
     | `leads.${string}`
+    | `leave.${string}`
     | `licensing.${string}`
     | `news.${string}`
     | `notifications.${string}`
