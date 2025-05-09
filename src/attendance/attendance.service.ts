@@ -1,5 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { IsNull, MoreThanOrEqual, Not, Repository, LessThanOrEqual } from 'typeorm';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { IsNull, MoreThanOrEqual, Not, Repository, LessThanOrEqual, Between } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Attendance } from './entities/attendance.entity';
 import { AttendanceStatus } from '../lib/enums/attendance.enums';
@@ -7,7 +7,7 @@ import { CreateCheckInDto } from './dto/create-attendance-check-in.dto';
 import { CreateCheckOutDto } from './dto/create-attendance-check-out.dto';
 import { CreateBreakDto } from './dto/create-attendance-break.dto';
 import { isToday } from 'date-fns';
-import { differenceInMinutes, differenceInMilliseconds, startOfMonth, endOfMonth } from 'date-fns';
+import { differenceInMinutes, differenceInMilliseconds, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import { UserService } from '../user/user.service';
 import { RewardsService } from '../rewards/rewards.service';
 import { XP_VALUES_TYPES } from '../lib/constants/constants';
@@ -15,7 +15,9 @@ import { XP_VALUES } from '../lib/constants/constants';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ReportType, ReportFormat, ReportTimeframe } from '../lib/enums/report.enums';
 import { BreakDetail } from './interfaces/break-detail.interface';
-import { Logger } from '@nestjs/common';
+import { User } from '../user/entities/user.entity';
+import { Column, Entity, PrimaryGeneratedColumn, ManyToOne } from 'typeorm';
+import { AttendanceMetrics } from './entities/attendance-metrics.entity';
 
 @Injectable()
 export class AttendanceService {
@@ -24,6 +26,8 @@ export class AttendanceService {
 	constructor(
 		@InjectRepository(Attendance)
 		private attendanceRepository: Repository<Attendance>,
+		@InjectRepository(AttendanceMetrics)
+		private attendanceMetricsRepository: Repository<AttendanceMetrics>,
 		private userService: UserService,
 		private rewardsService: RewardsService,
 		private readonly eventEmitter: EventEmitter2,
@@ -51,6 +55,10 @@ export class AttendanceService {
 					details: 'Check-in reward',
 				},
 			});
+
+			if (checkIn) {
+				await this.updateMetricsOnCheckIn(checkIn);
+			}
 
 			return response;
 		} catch (error) {
@@ -126,6 +134,10 @@ export class AttendanceService {
 				this.eventEmitter.emit('daily-report', {
 					userId: checkOutDto.owner.uid,
 				});
+
+				if (updatedShift) {
+					await this.updateMetricsOnCheckOut(updatedShift);
+				}
 
 				return response;
 			}
@@ -832,6 +844,298 @@ export class AttendanceService {
 				message: error?.message || 'Error retrieving daily stats',
 				dailyWorkTime: 0,
 				dailyBreakTime: 0,
+			};
+		}
+	}
+
+	// ======================================================
+	// ATTENDANCE METRICS FUNCTIONALITY
+	// ======================================================
+
+	/**
+	 * Find attendance metrics by user ID
+	 */
+	async findMetricsByUser(userId: number): Promise<AttendanceMetrics> {
+		return this.attendanceMetricsRepository.findOne({
+			where: { user: { uid: userId } },
+			relations: ['user']
+		});
+	}
+
+	/**
+	 * Get existing metrics for a user or create new ones
+	 */
+	async getOrCreateMetrics(user: User): Promise<AttendanceMetrics> {
+		let metrics = await this.findMetricsByUser(user.uid);
+		
+		if (!metrics) {
+			metrics = this.attendanceMetricsRepository.create({
+				user: user,
+				totalHours: 0,
+				totalDays: 0,
+				totalShifts: 0
+			});
+			await this.attendanceMetricsRepository.save(metrics);
+		}
+		
+		return metrics;
+	}
+
+	/**
+	 * Update metrics when a user checks in
+	 */
+	async updateMetricsOnCheckIn(attendance: any): Promise<void> {
+		try {
+			// Handle different object shapes that might come from checkIn method
+			const owner = attendance.owner?.uid 
+				? await this.userService.findOne(attendance.owner.uid)
+				: attendance.owner;
+				
+			if (!owner) {
+				this.logger.error('Cannot update metrics: Owner not found');
+				return;
+			}
+			
+			const userObj = owner.user || owner;
+			const metrics = await this.getOrCreateMetrics(userObj);
+			
+			// Update first attendance if not set or this is earlier
+			if (!metrics.firstAttendance || attendance.checkIn < metrics.firstAttendance) {
+				metrics.firstAttendance = attendance.checkIn;
+			}
+			
+			// Always update latest attendance
+			metrics.latestAttendance = attendance.checkIn;
+			
+			// Increment total shifts
+			metrics.totalShifts += 1;
+			
+			await this.attendanceMetricsRepository.save(metrics);
+			
+		} catch (error) {
+			this.logger.error(`Error updating metrics on check in: ${error.message}`);
+		}
+	}
+
+	/**
+	 * Update metrics when a user checks out
+	 */
+	async updateMetricsOnCheckOut(attendance: any): Promise<void> {
+		try {
+			// Handle different object shapes that might come from checkOut method
+			const owner = attendance.owner?.uid 
+				? await this.userService.findOne(attendance.owner.uid)
+				: attendance.owner;
+				
+			if (!owner) {
+				this.logger.error('Cannot update metrics: Owner not found');
+				return;
+			}
+			
+			const userObj = owner.user || owner;
+			const metrics = await this.getOrCreateMetrics(userObj);
+			
+			// Calculate hours worked for this shift
+			if (attendance.checkIn && attendance.checkOut) {
+				const minutes = differenceInMinutes(
+					new Date(attendance.checkOut), 
+					new Date(attendance.checkIn)
+				);
+				const hours = minutes / 60;
+				
+				// Update total hours
+				metrics.totalHours += hours;
+				
+				// Update total days (using a Set to count unique days)
+				const checkInDate = new Date(attendance.checkIn).toDateString();
+				const daysWorkedSet = new Set<string>();
+				
+				for (let i = 0; i < metrics.totalDays; i++) {
+					daysWorkedSet.add(`day-${i}`); // Placeholder for existing days
+				}
+				daysWorkedSet.add(checkInDate);
+				metrics.totalDays = daysWorkedSet.size;
+				
+				// Update average hours per day
+				metrics.averageHoursPerDay = metrics.totalDays > 0 
+					? metrics.totalHours / metrics.totalDays 
+					: 0;
+				
+				// Update break metrics if any breaks taken
+				if (attendance.breakDetails && attendance.breakDetails.length > 0) {
+					metrics.totalBreakCount += attendance.breakCount || 0;
+					
+					// Add break time to total break hours
+					if (attendance.totalBreakTime) {
+						// Parse break time from format like "1h 30m"
+						const breakTimeMatch = attendance.totalBreakTime.match(/(\d+)h\s*(\d+)m/);
+						if (breakTimeMatch) {
+							const breakHours = parseInt(breakTimeMatch[1]) + parseInt(breakTimeMatch[2]) / 60;
+							metrics.totalBreakHours += breakHours;
+						}
+					}
+				}
+				
+				await this.attendanceMetricsRepository.save(metrics);
+			}
+		} catch (error) {
+			this.logger.error(`Error updating metrics on check out: ${error.message}`);
+		}
+	}
+
+	/**
+	 * Find all attendance metrics with pagination
+	 */
+	async findAllMetrics(options: { skip?: number; take?: number } = {}): Promise<{ data: AttendanceMetrics[]; count: number }> {
+		const [data, count] = await this.attendanceMetricsRepository.findAndCount({
+			relations: ['user'],
+			skip: options.skip || 0,
+			take: options.take || 10
+		});
+		
+		return { data, count };
+	}
+
+	/**
+	 * Calculate and return the total metrics for all users
+	 */
+	async getGlobalMetrics(): Promise<any> {
+		try {
+			const allMetrics = await this.attendanceMetricsRepository.find();
+			
+			const result = {
+				totalUsers: allMetrics.length,
+				totalHours: 0,
+				totalShifts: 0,
+				totalBreaks: 0,
+				averageHoursPerUser: 0,
+			};
+			
+			allMetrics.forEach(metric => {
+				result.totalHours += Number(metric.totalHours) || 0;
+				result.totalShifts += metric.totalShifts || 0;
+				result.totalBreaks += metric.totalBreakCount || 0;
+			});
+			
+			result.averageHoursPerUser = result.totalUsers > 0 
+				? result.totalHours / result.totalUsers 
+				: 0;
+				
+			return {
+				metrics: result,
+				message: 'Success'
+			};
+		} catch (error) {
+			this.logger.error(`Error getting global metrics: ${error.message}`);
+			return {
+				metrics: null,
+				message: error.message
+			};
+		}
+	}
+
+	/**
+	 * Recalculate metrics for a specific user
+	 * Useful for data repair or initialization
+	 */
+	async recalculateMetricsForUser(userId: number): Promise<any> {
+		try {
+			const user = await this.userService.findOne(userId);
+			if (!user) {
+				return { success: false, message: 'User not found' };
+			}
+			
+			// Get all attendance records for this user
+			const attendanceRecords = await this.attendanceRepository.find({
+				where: { owner: { uid: userId } },
+				order: { checkIn: 'ASC' }
+			});
+			
+			if (!attendanceRecords.length) {
+				return { success: false, message: 'No attendance records found' };
+			}
+			
+			// Create or get metrics record
+			let metrics = await this.findMetricsByUser(userId);
+			if (!metrics) {
+				metrics = this.attendanceMetricsRepository.create({
+					user: user.user,
+					totalHours: 0,
+					totalDays: 0,
+					totalShifts: 0,
+					totalBreakCount: 0,
+					totalBreakHours: 0
+				});
+			} else {
+				// Reset metrics to recalculate
+				metrics.totalHours = 0;
+				metrics.totalDays = 0;
+				metrics.totalShifts = 0;
+				metrics.totalBreakCount = 0;
+				metrics.totalBreakHours = 0;
+				metrics.averageHoursPerDay = 0;
+			}
+			
+			// Set first and latest attendance
+			metrics.firstAttendance = attendanceRecords[0].checkIn;
+			metrics.latestAttendance = attendanceRecords[attendanceRecords.length - 1].checkIn;
+			
+			// Count unique days
+			const uniqueDays = new Set<string>();
+			
+			// Process each attendance record
+			attendanceRecords.forEach(record => {
+				// Count completed shifts
+				if (record.status === AttendanceStatus.COMPLETED) {
+					metrics.totalShifts += 1;
+					
+					// Calculate hours if check in and check out are present
+					if (record.checkIn && record.checkOut) {
+						const minutes = differenceInMinutes(
+							new Date(record.checkOut), 
+							new Date(record.checkIn)
+						);
+						metrics.totalHours += minutes / 60;
+						
+						// Add to unique days
+						uniqueDays.add(new Date(record.checkIn).toDateString());
+					}
+					
+					// Process breaks
+					if (record.breakDetails && record.breakDetails.length > 0) {
+						metrics.totalBreakCount += record.breakCount || 0;
+						
+						// Parse break time
+						if (record.totalBreakTime) {
+							const breakTimeMatch = record.totalBreakTime.match(/(\d+)h\s*(\d+)m/);
+							if (breakTimeMatch) {
+								const breakHours = parseInt(breakTimeMatch[1]) + parseInt(breakTimeMatch[2]) / 60;
+								metrics.totalBreakHours += breakHours;
+							}
+						}
+					}
+				}
+			});
+			
+			// Update days count and calculate average
+			metrics.totalDays = uniqueDays.size;
+			metrics.averageHoursPerDay = metrics.totalDays > 0 
+				? metrics.totalHours / metrics.totalDays 
+				: 0;
+				
+			// Save the updated metrics
+			await this.attendanceMetricsRepository.save(metrics);
+			
+			return {
+				success: true,
+				metrics,
+				message: 'Metrics recalculated successfully'
+			};
+		} catch (error) {
+			this.logger.error(`Error recalculating metrics: ${error.message}`);
+			return {
+				success: false,
+				message: error.message
 			};
 		}
 	}

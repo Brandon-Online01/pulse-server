@@ -3,6 +3,7 @@ import { AttendanceService } from './attendance.service';
 import { AttendanceController } from './attendance.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Attendance } from './entities/attendance.entity';
+import { AttendanceMetrics } from './entities/attendance-metrics.entity';
 import { UserModule } from '../user/user.module';
 import { RewardsModule } from '../rewards/rewards.module';
 import { LicensingModule } from '../licensing/licensing.module';
@@ -10,7 +11,7 @@ import { LicensingModule } from '../licensing/licensing.module';
 @Module({
   imports: [
     LicensingModule,
-    TypeOrmModule.forFeature([Attendance]),
+    TypeOrmModule.forFeature([Attendance, AttendanceMetrics]),
     UserModule,
     RewardsModule
   ],

@@ -49,6 +49,7 @@ import { MapDataReportGenerator } from './generators/map-data-report.generator';
 import { UserProfile } from 'src/user/entities/user.profile.entity';
 import { UserEmployeementProfile } from 'src/user/entities/user.employeement.profile.entity';
 import { License } from 'src/licensing/entities/license.entity';
+import { AttendanceMetrics } from 'src/attendance/entities/attendance-metrics.entity';
 
 @Module({
 	imports: [
@@ -78,6 +79,7 @@ import { License } from 'src/licensing/entities/license.entity';
 			UserEmployeementProfile,	
 			Report,
 			Attendance,
+			AttendanceMetrics, 
 			Claim,
 			Lead,
 			Journal,
@@ -98,6 +100,7 @@ import { License } from 'src/licensing/entities/license.entity';
 			Tracking,
 			Competitor,
 			License,
+
 		]),
 		UserModule,
 		CheckInsModule,
