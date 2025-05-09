@@ -374,8 +374,6 @@ export class LeadsService {
 		userId?: number, // Optionally pass userId performing the update
 	): Promise<{ message: string }> {
 		try {
-			console.log(updateLeadDto, 'this is the updated lead');
-
 			if (!orgId) {
 				throw new BadRequestException('Organization ID is required');
 			}
@@ -414,8 +412,6 @@ export class LeadsService {
 					nextStep: updateLeadDto.nextStep,
 					userId: userId, // User who made the change
 				};
-
-				console.log(newHistoryEntry, 'this is what must be saved with the user');
 
 				changeHistoryArray.push(newHistoryEntry);
 				dataToSave.changeHistory = changeHistoryArray;
