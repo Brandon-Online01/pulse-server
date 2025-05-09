@@ -87,6 +87,7 @@ import { LibModule } from './lib/lib.module';
 import { InteractionsModule } from './interactions/interactions.module';
 import { Interaction } from './interactions/entities/interaction.entity';
 import { PdfGenerationModule } from './pdf-generation/pdf-generation.module';
+import { LeaveModule } from './leave/leave.module';
 
 @Module({
 	imports: [
@@ -197,6 +198,7 @@ import { PdfGenerationModule } from './pdf-generation/pdf-generation.module';
 		ReportsModule,
 		ScheduleModule.forRoot(),
 		PdfGenerationModule,
+		LeaveModule,
 	],
 	controllers: [],
 	providers: [

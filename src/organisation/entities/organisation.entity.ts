@@ -22,6 +22,7 @@ import { OrganisationSettings } from './organisation-settings.entity';
 import { OrganisationAppearance } from './organisation-appearance.entity';
 import { OrganisationHours } from './organisation-hours.entity';
 import { Order } from 'src/shop/entities/order.entity';
+import { Leave } from 'src/leave/entities/leave.entity';
 
 @Entity('organisation')
 export class Organisation {
@@ -69,13 +70,13 @@ export class Organisation {
 	ref: string;
 
 	// Settings Relations
-	@OneToOne(() => OrganisationSettings, settings => settings.organisation)
+	@OneToOne(() => OrganisationSettings, (settings) => settings.organisation)
 	settings: OrganisationSettings;
 
-	@OneToOne(() => OrganisationAppearance, appearance => appearance.organisation)
+	@OneToOne(() => OrganisationAppearance, (appearance) => appearance.organisation)
 	appearance: OrganisationAppearance;
 
-	@OneToMany(() => OrganisationHours, hours => hours.organisation)
+	@OneToMany(() => OrganisationHours, (hours) => hours.organisation)
 	hours: OrganisationHours[];
 
 	// Other Relations
@@ -122,7 +123,7 @@ export class Organisation {
 	quotations: Quotation[];
 
 	@OneToMany(() => Order, (order) => order?.organisation, { nullable: true })
-	orders: Order[]; 
+	orders: Order[];
 
 	@OneToMany(() => Task, (task) => task?.organisation, { nullable: true })
 	tasks: Task[];

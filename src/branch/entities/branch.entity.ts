@@ -22,6 +22,7 @@ import { Notification } from 'src/notifications/entities/notification.entity';
 import { CommunicationLog } from 'src/communication/entities/communication-log.entity';
 import { Route } from 'src/tasks/entities/route.entity';
 import { Order } from 'src/shop/entities/order.entity';
+import { Leave } from 'src/leave/entities/leave.entity';
 
 @Entity('branch')
 export class Branch {
