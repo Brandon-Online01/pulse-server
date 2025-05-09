@@ -374,6 +374,8 @@ export class LeadsService {
 		userId?: number, // Optionally pass userId performing the update
 	): Promise<{ message: string }> {
 		try {
+			console.log(updateLeadDto, 'this is the updated lead');
+
 			if (!orgId) {
 				throw new BadRequestException('Organization ID is required');
 			}
@@ -396,7 +398,7 @@ export class LeadsService {
 
 			// Build the data to save, excluding reason/description from UpdateLeadDto that are specific to status change
 			for (const key in updateLeadDto) {
-				if (key !== 'statusChangeReason' && key !== 'statusChangeDescription') {
+				if (key !== 'statusChangeReason' && key !== 'statusChangeDescription' && key !== 'nextStep') {
 					dataToSave[key] = updateLeadDto[key];
 				}
 			}
@@ -409,6 +411,7 @@ export class LeadsService {
 					newStatus: updateLeadDto.status,
 					reason: updateLeadDto.statusChangeReason,
 					description: updateLeadDto.statusChangeDescription,
+					nextStep: updateLeadDto.nextStep,
 					userId: userId, // User who made the change
 				};
 
@@ -1008,21 +1011,31 @@ export class LeadsService {
 		if (lead.changeHistory?.length > 0) {
 			// Extract all userIds from change history
 			const userIds = lead.changeHistory
-				.filter(entry => entry.userId)
-				.map(entry => typeof entry.userId === 'string' ? parseInt(entry.userId) : entry.userId);
-			
+				.filter((entry) => entry.userId)
+				.map((entry) => (typeof entry.userId === 'string' ? parseInt(entry.userId) : entry.userId));
+
 			if (userIds.length > 0) {
 				// Find all user details in one query
 				const users = await this.userRepository.find({
 					where: { uid: In(userIds) },
-					select: ['uid', 'username', 'name', 'surname', 'email', 'phone', 'photoURL', 'accessLevel', 'status'],
+					select: [
+						'uid',
+						'username',
+						'name',
+						'surname',
+						'email',
+						'phone',
+						'photoURL',
+						'accessLevel',
+						'status',
+					],
 				});
-				
+
 				// Create a map for quick lookup
-				const userMap = new Map(users.map(user => [user.uid.toString(), user]));
-				
+				const userMap = new Map(users.map((user) => [user.uid.toString(), user]));
+
 				// Update the changeHistory entries with user details
-				lead.changeHistory = lead.changeHistory.map(entry => ({
+				lead.changeHistory = lead.changeHistory.map((entry) => ({
 					...entry,
 					user: entry.userId ? userMap.get(entry.userId.toString()) || null : null,
 				}));
@@ -1031,5 +1044,3 @@ export class LeadsService {
 		return lead;
 	}
 }
-
-

@@ -14,7 +14,14 @@ export class OrganisationSettings {
 			number: string;
 		};
 		website: string;
-		address: string;
+		address: {
+			street: string;
+			suburb?: string;
+			city: string;
+			state: string;
+			country: string;
+			postalCode: string;
+		};
 	};
 
 	@Column({ type: 'json', nullable: true })

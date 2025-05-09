@@ -135,4 +135,7 @@ export class Branch {
 
 	@OneToMany(() => CommunicationLog, (communicationLog) => communicationLog?.branch, { nullable: true })
 	communicationLogs: CommunicationLog[];
+
+	@OneToMany(() => Leave, (leave) => leave?.branch, { nullable: true })
+	leaves: Leave[];
 }

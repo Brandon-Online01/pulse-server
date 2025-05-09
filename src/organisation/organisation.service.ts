@@ -131,6 +131,7 @@ export class OrganisationService {
 					'clients',
 					'users',
 					'resellers',
+					'leaves',
 				],
 			});
 

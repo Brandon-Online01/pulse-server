@@ -94,10 +94,10 @@ export class Leave {
 	@ManyToOne(() => Branch, { nullable: true, onDelete: 'SET NULL' })
 	branch?: Branch;
 
-	@Column({ type: 'timestamp with time zone', nullable: true })
+	@Column({ type: 'timestamp', nullable: true })
 	approvedAt?: Date;
 
-	@Column({ type: 'timestamp with time zone', nullable: true })
+	@Column({ type: 'timestamp', nullable: true })
 	rejectedAt?: Date;
 
 	@Column({ type: 'text', nullable: true })
@@ -106,7 +106,7 @@ export class Leave {
 	@Column({ type: 'boolean', default: false })
 	isPublicHoliday: boolean;
 
-	@Column({ type: 'timestamp with time zone', nullable: true })
+	@Column({ type: 'timestamp', nullable: true })
 	cancelledAt?: Date;
 
 	@Column({ type: 'text', nullable: true })
@@ -127,12 +127,12 @@ export class Leave {
 	@Column({ type: 'simple-array', nullable: true })
 	tags?: string[];
 
-	@CreateDateColumn({ type: 'timestamp with time zone' })
+	@CreateDateColumn({ type: 'timestamp' })
 	createdAt: Date;
 
-	@UpdateDateColumn({ type: 'timestamp with time zone' })
+	@UpdateDateColumn({ type: 'timestamp' })
 	updatedAt: Date;
 
-	@DeleteDateColumn({ type: 'timestamp with time zone', nullable: true })
+	@DeleteDateColumn({ type: 'timestamp', nullable: true })
 	deletedAt?: Date;
 }

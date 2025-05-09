@@ -110,7 +110,7 @@ export class BranchService {
 			// If not in cache, fetch from database
 			const branch = await this.branchRepository.findOne({
 				where: { ref, isDeleted: false },
-				relations: ['news', 'docs', 'assets', 'organisation', 'trackings', 'banners', 'routes', 'users'],
+				relations: ['news', 'docs', 'assets', 'organisation', 'trackings', 'banners', 'routes', 'users', 'leaves'],
 			});
 
 			if (!branch) {

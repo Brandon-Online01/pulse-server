@@ -88,6 +88,7 @@ import { InteractionsModule } from './interactions/interactions.module';
 import { Interaction } from './interactions/entities/interaction.entity';
 import { PdfGenerationModule } from './pdf-generation/pdf-generation.module';
 import { LeaveModule } from './leave/leave.module';
+import { Leave } from './leave/entities/leave.entity';
 
 @Module({
 	imports: [
@@ -160,6 +161,7 @@ import { LeaveModule } from './leave/leave.module';
 				OrderItem,
 				Report,
 				Interaction,
+				Leave, 
 			],
 			synchronize: true,
 			retryAttempts: 100,

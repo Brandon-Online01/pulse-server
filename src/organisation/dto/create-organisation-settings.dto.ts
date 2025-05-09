@@ -38,11 +38,25 @@ export class ContactDto {
 	@ApiProperty({ 
 		description: 'Physical address of the organization',
 		required: false,
-		example: '123 Innovation Drive, Suite 400, San Francisco, CA 94107'
+		example: {
+			street: '123 Innovation Drive, Suite 400',
+			suburb: 'Tech District',
+			city: 'San Francisco',
+			state: 'CA',
+			country: 'US',
+			postalCode: '94107'
+		}
 	})
-	@IsString()
+	@IsObject()
 	@IsOptional()
-	address?: string;
+	address?: {
+		street: string;
+		suburb?: string;
+		city: string;
+		state: string;
+		country: string;
+		postalCode: string;
+	};
 }
 
 export class RegionalDto {
@@ -285,7 +299,14 @@ export class CreateOrganisationSettingsDto {
 				number: '5551234567',
 			},
 			website: 'https://www.acmecorp.com',
-			address: '123 Innovation Drive, Suite 400, San Francisco, CA 94107',
+			address: {
+				street: '123 Innovation Drive, Suite 400',
+				suburb: 'Tech District',
+				city: 'San Francisco',
+				state: 'CA',
+				country: 'US',
+				postalCode: '94107'
+			},
 		},
 	})
 	@IsObject()

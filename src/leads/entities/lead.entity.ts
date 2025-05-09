@@ -22,6 +22,7 @@ export interface LeadStatusHistoryEntry {
 	newStatus: LeadStatus; // Status after the change
 	reason?: string; // Reason for the change
 	description?: string; // Optional description for the change
+	nextStep?: string; // Next step for the lead
 	userId?: number; // User who made the change (optional)
 	user?: User; // Populated user details (name, surname, email, etc.)
 }

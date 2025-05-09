@@ -136,4 +136,7 @@ export class Organisation {
 
 	@OneToMany(() => CommunicationLog, (communicationLog) => communicationLog?.organisation, { nullable: true })
 	communicationLogs: CommunicationLog[];
+
+	@OneToMany(() => Leave, (leave) => leave?.organisation, { nullable: true })
+	leaves: Leave[];
 }

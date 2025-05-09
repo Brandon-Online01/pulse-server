@@ -11,12 +11,13 @@ import { CheckIn } from '../../check-ins/entities/check-in.entity';
 import { TaskStatus, TaskPriority } from '../../lib/enums/task.enums';
 import { LeadStatus } from '../../lib/enums/lead.enums';
 import { AttendanceStatus } from '../../lib/enums/attendance.enums';
-import { startOfDay, endOfDay, format, differenceInMinutes } from 'date-fns';
+import { startOfDay, endOfDay, format, differenceInMinutes, subDays } from 'date-fns';
 import { AttendanceService } from '../../attendance/attendance.service';
 import { ReportParamsDto } from '../dto/report-params.dto';
 import { Quotation } from '../../shop/entities/quotation.entity';
 import { TrackingService } from '../../tracking/tracking.service';
 import { Tracking } from '../../tracking/entities/tracking.entity';
+import { Claim } from '../../claims/entities/claim.entity';
 
 @Injectable()
 export class UserDailyReportGenerator {
@@ -39,9 +40,22 @@ export class UserDailyReportGenerator {
 		private checkInRepository: Repository<CheckIn>,
 		@InjectRepository(Quotation)
 		private quotationRepository: Repository<Quotation>,
+		@InjectRepository(Claim)
+		private claimRepository: Repository<Claim>,
 		private attendanceService: AttendanceService,
 		private trackingService: TrackingService,
 	) {}
+
+	private calculateGrowth(current: number, previous: number): string {
+		if (previous === 0) {
+			return current > 0 ? '100%' : '0%'; // Or 'N/A' if preferred for 0 to non-zero
+		}
+		if (current === 0 && previous === 0) {
+			return '0%';
+		}
+		const growth = ((current - previous) / previous) * 100;
+		return `${Math.round(growth * 10) / 10}%`;
+	}
 
 	async generate(params: ReportParamsDto): Promise<Record<string, any>> {
 		const { userId, dateRange } = params.filters || {};
@@ -62,7 +76,12 @@ export class UserDailyReportGenerator {
 			endDate = endOfDay(new Date());
 		}
 
+		// Dates for previous period (for growth calculation)
+		const previousStartDate = startOfDay(subDays(startDate, 1));
+		const previousEndDate = endOfDay(subDays(startDate, 1));
+
 		this.logger.log(`Generating daily report for user ${userId} from ${startDate} to ${endDate}`);
+		this.logger.log(`Previous period for growth: ${previousStartDate} to ${previousEndDate}`);
 
 		try {
 			// Get user data
@@ -83,6 +102,9 @@ export class UserDailyReportGenerator {
 				clientInteractions,
 				locationData,
 				quotationData,
+				claimData,
+				previousQuotationData,
+				previousClientData,
 			] = await Promise.all([
 				this.collectAttendanceData(userId, startDate, endDate),
 				this.collectTaskMetrics(userId, startDate, endDate),
@@ -91,6 +113,9 @@ export class UserDailyReportGenerator {
 				this.collectClientData(userId, startDate, endDate),
 				this.collectLocationData(userId, startDate, endDate),
 				this.collectQuotationData(userId, startDate, endDate),
+				this.collectClaimData(userId, startDate, endDate),
+				this.collectQuotationData(userId, previousStartDate, previousEndDate),
+				this.collectClientData(userId, previousStartDate, previousEndDate),
 			]);
 
 			// Format the date for display
@@ -114,6 +139,7 @@ export class UserDailyReportGenerator {
 					totalEntries: journalEntries.count,
 					totalQuotations: quotationData.totalQuotations,
 					totalRevenue: quotationData.totalRevenueFormatted,
+					totalClaims: claimData.count,
 				},
 				details: {
 					attendance: attendanceData,
@@ -123,6 +149,7 @@ export class UserDailyReportGenerator {
 					clients: clientInteractions,
 					location: locationData,
 					quotations: quotationData,
+					claims: claimData,
 				},
 				// Format data specifically for email template
 				emailData: {
@@ -141,12 +168,12 @@ export class UserDailyReportGenerator {
 						totalQuotations: quotationData.totalQuotations,
 						totalRevenue: quotationData.totalRevenueFormatted,
 						newCustomers: clientInteractions.newClients,
-						quotationGrowth: '0%', // To be implemented
-						revenueGrowth: '0%', // To be implemented
-						customerGrowth: '0%', // To be implemented
+						quotationGrowth: this.calculateGrowth(quotationData.totalQuotations, previousQuotationData.totalQuotations),
+						revenueGrowth: this.calculateGrowth(quotationData.totalRevenue, previousQuotationData.totalRevenue),
+						customerGrowth: this.calculateGrowth(clientInteractions.newClients, previousClientData.newClients),
 						userSpecific: {
 							todayLeads: leadMetrics.newLeadsCount,
-							todayClaims: 0, // Placeholder, implement if needed
+							todayClaims: claimData.count,
 							todayTasks: taskMetrics.completedCount,
 							todayQuotations: quotationData.totalQuotations,
 							hoursWorked: Math.round((attendanceData.totalWorkMinutes / 60) * 10) / 10,
@@ -167,7 +194,7 @@ export class UserDailyReportGenerator {
 
 	private async collectAttendanceData(userId: number, startDate: Date, endDate: Date) {
 		// Get daily stats from attendance service
-		const dailyStats = await this.attendanceService.getDailyStats(userId);
+		const dailyStats = await this.attendanceService.getDailyStats(userId, format(startDate, 'yyyy-MM-dd'));
 
 		// Get all attendance records for the day
 		const attendanceRecords = await this.attendanceRepository.find({
@@ -492,73 +519,123 @@ export class UserDailyReportGenerator {
 		};
 	}
 
+	private async collectClaimData(userId: number, startDate: Date, endDate: Date) {
+		try {
+			const claims = await this.claimRepository.find({
+				where: {
+					// Assuming 'owner' or 'createdBy' relates to the user
+					// and 'createdAt' or a specific 'claimDate' field exists
+					owner: { uid: userId }, // Adjust field name as per your Claim entity
+					createdAt: Between(startDate, endDate), // Or relevant date field for the claim
+				},
+				order: { createdAt: 'DESC' }, // Or relevant date field
+			});
+
+			const claimsList = claims.map((claim) => ({
+				id: claim.uid,
+				title: claim.uid || 'Untitled Claim', // Temporary: using uid as title placeholder
+				description: this.truncateText('', 100), // Temporary: empty description placeholder
+				status: claim.status,
+				createdAt: format(new Date(claim.createdAt), 'HH:mm:ss'),
+				// Add other relevant claim fields
+			}));
+
+			return {
+				count: claims.length,
+				claims: claimsList,
+				hasClaims: claims.length > 0,
+			};
+		} catch (error) {
+			this.logger.error(`Error collecting claim data for user ${userId}: ${error.message}`, error.stack);
+			return {
+				count: 0,
+				claims: [],
+				hasClaims: false,
+			};
+		}
+	}
+
 	private async collectLocationData(userId: number, startDate: Date, endDate: Date) {
 		try {
 			// Use TrackingService to get real tracking data
+			// Assuming trackingService.getDailyTracking now returns a more detailed object
+			// including locationAnalysis with timeSpent and averageTimePerLocation
 			const trackingResult = await this.trackingService.getDailyTracking(userId, startDate);
 
-			if (!trackingResult || !trackingResult.data || !trackingResult.data.trackingPoints?.length) {
-				this.logger.warn(`No tracking data found for user ${userId} between ${startDate} and ${endDate}`);
-				// Return a default empty structure if no tracking data is found
-				return {
-					locations: [],
-					totalDistance: '0.0',
-					totalLocations: 0,
-					trackingData: {
-						totalDistance: '0.0 km',
-						locations: [],
-						averageTimePerLocation: '~',
-					},
-				};
+			if (!trackingResult || !trackingResult.data) {
+				this.logger.warn(`No tracking data structure found for user ${userId} on ${format(startDate, 'yyyy-MM-dd')}`);
+				return this.defaultLocationData();
 			}
+			
+			const { trackingPoints, totalDistance, locationAnalysis } = trackingResult.data;
 
-			const trackingPoints: Tracking[] = trackingResult.data.trackingPoints;
-			// Use the distance calculated by TrackingService (assuming it returns distance in km)
-			const totalDistanceKm = parseFloat(trackingResult.data.totalDistance) || 0;
+
+			if (!trackingPoints || !trackingPoints.length) {
+				this.logger.warn(`No tracking points found for user ${userId} on ${format(startDate, 'yyyy-MM-dd')}`);
+				return this.defaultLocationData(totalDistance);
+			}
+			
+			const totalDistanceKm = parseFloat(totalDistance) || 0;
 
 			// Format location data from tracking points
-			const locations = trackingPoints.map((point) => ({
-				type: 'tracking-point', // Indicate the source of the location
+			const formattedTrackingPoints = trackingPoints.map((point) => ({
+				type: 'tracking-point',
 				timestamp: point.timestamp
 					? format(new Date(point.timestamp), 'HH:mm:ss')
 					: format(new Date(point.createdAt), 'HH:mm:ss'),
 				latitude: point.latitude,
 				longitude: point.longitude,
-				address: point.address || `${point.latitude}, ${point.longitude}`, // Use geocoded address if available
+				address: point.address || `${point.latitude}, ${point.longitude}`,
 				accuracy: point.accuracy,
 				speed: point.speed,
 			}));
+			
+			let emailTrackingLocations = [];
+			let averageTimePerLocationFormatted = '~';
 
-			// Format for the tracking data structure used in email templates
-			const trackingData = {
+			if (locationAnalysis && locationAnalysis.locationsVisited) {
+				emailTrackingLocations = locationAnalysis.locationsVisited.map(loc => ({
+					address: loc.address || `${loc.latitude}, ${loc.longitude}`,
+					timeSpent: loc.timeSpentFormatted || this.formatDuration(loc.timeSpentMinutes || 0), // Assuming timeSpentMinutes is available
+				}));
+				averageTimePerLocationFormatted = locationAnalysis.averageTimePerLocationFormatted || 
+				                                 this.formatDuration(locationAnalysis.averageTimePerLocationMinutes || 0); // Assuming averageTimePerLocationMinutes
+			} else {
+				// Fallback if detailed locationAnalysis is not available
+				emailTrackingLocations = formattedTrackingPoints.map(p => ({ address: p.address, timeSpent: '~'})).slice(0, 5); // Show some points if no analysis
+			}
+
+
+			const trackingDataForEmail = {
 				totalDistance: `${totalDistanceKm.toFixed(1)} km`,
-				locations: locations.map((loc) => ({
-					address: loc.address,
-					timeSpent: '~', // TODO: Use locationAnalysis from trackingService if needed
-				})),
-				averageTimePerLocation: '~', // TODO: Use locationAnalysis from trackingService if needed
+				locations: emailTrackingLocations,
+				averageTimePerLocation: averageTimePerLocationFormatted,
 			};
 
 			return {
-				locations,
+				locations: formattedTrackingPoints, // Raw points for detailed view
 				totalDistance: totalDistanceKm.toFixed(1),
-				totalLocations: locations.length,
-				trackingData,
+				totalLocations: formattedTrackingPoints.length,
+				trackingData: trackingDataForEmail, // Analyzed/formatted data for email
 			};
 		} catch (error) {
 			this.logger.error(`Error collecting location data for user ${userId}: ${error.message}`, error.stack);
-			// Return default structure on error to avoid breaking the report
-			return {
-				locations: [],
-				totalDistance: '0.0',
-				totalLocations: 0,
-				trackingData: {
-					totalDistance: '0.0 km',
-					locations: [],
-					averageTimePerLocation: '~',
-				},
-			};
+			return this.defaultLocationData();
 		}
+	}
+
+	private defaultLocationData(totalDistanceStr?: string) {
+		const totalDistanceKm = parseFloat(totalDistanceStr || '0') || 0;
+		return {
+			locations: [],
+			totalDistance: totalDistanceKm.toFixed(1),
+			totalLocations: 0,
+			trackingData: {
+				totalDistance: `${totalDistanceKm.toFixed(1)} km`,
+				locations: [],
+				averageTimePerLocation: '~',
+			},
+		};
 	}
 
 	private formatDuration(minutes: number): string {
