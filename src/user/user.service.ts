@@ -13,6 +13,9 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ConfigService } from '@nestjs/config';
+import { CreateUserTargetDto } from './dto/create-user-target.dto';
+import { UpdateUserTargetDto } from './dto/update-user-target.dto';
+import { UserTarget } from './entities/user-target.entity';
 
 @Injectable()
 export class UserService {
@@ -148,6 +151,7 @@ export class UserService {
 				.createQueryBuilder('user')
 				.leftJoinAndSelect('user.branch', 'branch')
 				.leftJoinAndSelect('user.organisation', 'organisation')
+				.leftJoinAndSelect('user.userTarget', 'userTarget')
 				.where('user.isDeleted = :isDeleted', { isDeleted: false });
 
 			// Apply organization filter if provided
@@ -261,7 +265,7 @@ export class UserService {
 
 			const user = await this.userRepository.findOne({
 				where: whereConditions,
-				relations: ['organisation', 'branch', 'profile', 'employmentProfile'],
+				relations: ['organisation', 'branch', 'profile', 'employmentProfile', 'userTargets'],
 			});
 
 			if (!user) {
@@ -710,5 +714,172 @@ export class UserService {
 			password: hashedPassword,
 			updatedAt: new Date(),
 		});
+	}
+
+	/**
+	 * Get user targets for a specific user
+	 */
+	async getUserTarget(userId: number): Promise<{ userTarget: UserTarget | null; message: string }> {
+		try {
+			const cacheKey = this.getCacheKey(`target_${userId}`);
+			const cachedTarget = await this.cacheManager.get(cacheKey);
+
+			if (cachedTarget) {
+				return {
+					userTarget: cachedTarget as UserTarget,
+					message: process.env.SUCCESS_MESSAGE,
+				};
+			}
+
+			const user = await this.userRepository.findOne({
+				where: { uid: userId, isDeleted: false },
+				relations: ['userTarget']
+			});
+
+			if (!user) {
+				throw new NotFoundException(`User with ID ${userId} not found`);
+			}
+
+			if (!user.userTarget) {
+				return {
+					userTarget: null,
+					message: "No targets set for this user",
+				};
+			}
+
+			await this.cacheManager.set(cacheKey, user.userTarget, this.CACHE_TTL);
+
+			return {
+				userTarget: user.userTarget,
+				message: process.env.SUCCESS_MESSAGE,
+			};
+		} catch (error) {
+			return {
+				userTarget: null,
+				message: error?.message || 'Failed to get user target',
+			};
+		}
+	}
+
+	/**
+	 * Set targets for a user
+	 */
+	async setUserTarget(userId: number, createUserTargetDto: CreateUserTargetDto): Promise<{ message: string }> {
+		try {
+			const user = await this.userRepository.findOne({ 
+				where: { uid: userId, isDeleted: false },
+				relations: ['userTarget']
+			});
+
+			if (!user) {
+				throw new NotFoundException(`User with ID ${userId} not found`);
+			}
+
+			// If user already has targets, update them
+			if (user.userTarget) {
+				await this.updateUserTarget(userId, createUserTargetDto);
+				return {
+					message: 'User targets updated successfully',
+				};
+			}
+
+			// Create a new user target
+			const userTarget = new UserTarget();
+			
+			// Map DTO properties to entity
+			Object.assign(userTarget, createUserTargetDto);
+
+			// Save the user target and update the user
+			user.userTarget = userTarget;
+			await this.userRepository.save(user);
+
+			// Invalidate the cache
+			await this.invalidateUserCache(user);
+			await this.cacheManager.del(this.getCacheKey(`target_${userId}`));
+
+			return {
+				message: 'User targets set successfully',
+			};
+		} catch (error) {
+			return {
+				message: error?.message || 'Failed to set user target',
+			};
+		}
+	}
+
+	/**
+	 * Update targets for a user
+	 */
+	async updateUserTarget(userId: number, updateUserTargetDto: UpdateUserTargetDto): Promise<{ message: string }> {
+		try {
+			const user = await this.userRepository.findOne({ 
+				where: { uid: userId, isDeleted: false },
+				relations: ['userTarget']
+			});
+
+			if (!user) {
+				throw new NotFoundException(`User with ID ${userId} not found`);
+			}
+
+			if (!user.userTarget) {
+				throw new NotFoundException(`No targets found for user with ID ${userId}`);
+			}
+
+			// Update the user target properties
+			Object.assign(user.userTarget, updateUserTargetDto);
+			
+			// Save the updated user (cascade will update the target)
+			await this.userRepository.save(user);
+
+			// Invalidate the cache
+			await this.invalidateUserCache(user);
+			await this.cacheManager.del(this.getCacheKey(`target_${userId}`));
+
+			return {
+				message: 'User targets updated successfully',
+			};
+		} catch (error) {
+			return {
+				message: error?.message || 'Failed to update user target',
+			};
+		}
+	}
+
+	/**
+	 * Delete targets for a user
+	 */
+	async deleteUserTarget(userId: number): Promise<{ message: string }> {
+		try {
+			const user = await this.userRepository.findOne({ 
+				where: { uid: userId, isDeleted: false },
+				relations: ['userTarget']
+			});
+
+			if (!user) {
+				throw new NotFoundException(`User with ID ${userId} not found`);
+			}
+
+			if (!user.userTarget) {
+				return {
+					message: 'No targets exist for this user',
+				};
+			}
+
+			// Set the target to null
+			user.userTarget = null;
+			await this.userRepository.save(user);
+
+			// Invalidate the cache
+			await this.invalidateUserCache(user);
+			await this.cacheManager.del(this.getCacheKey(`target_${userId}`));
+
+			return {
+				message: 'User targets deleted successfully',
+			};
+		} catch (error) {
+			return {
+				message: error?.message || 'Failed to delete user target',
+			};
+		}
 	}
 }

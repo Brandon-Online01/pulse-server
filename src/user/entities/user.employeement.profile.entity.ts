@@ -22,7 +22,7 @@ export class UserEmployeementProfile {
     branchref: string;
 
     @Column({ nullable: true })
-    department: string; F
+    department: string; 
 
     @Column({ nullable: true })
     position: string;

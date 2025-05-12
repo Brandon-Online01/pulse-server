@@ -89,6 +89,7 @@ import { Interaction } from './interactions/entities/interaction.entity';
 import { PdfGenerationModule } from './pdf-generation/pdf-generation.module';
 import { LeaveModule } from './leave/leave.module';
 import { Leave } from './leave/entities/leave.entity';
+import { UserTarget } from './user/entities/user-target.entity';
 
 @Module({
 	imports: [
@@ -110,6 +111,7 @@ import { Leave } from './leave/entities/leave.entity';
 			database: process.env.DATABASE_NAME,
 			entities: [
 				User,
+				UserTarget, 
 				UserProfile,
 				UserEmployeementProfile,
 				Attendance,

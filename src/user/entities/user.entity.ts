@@ -32,6 +32,7 @@ import { Journal } from 'src/journal/entities/journal.entity';
 import { Route } from 'src/tasks/entities/route.entity';
 import { TaskFlag } from '../../tasks/entities/task-flag.entity';
 import { Leave } from 'src/leave/entities/leave.entity';
+import { UserTarget } from './user-target.entity';
 
 @Entity('users')
 export class User {
@@ -144,6 +145,10 @@ export class User {
 
 	@OneToOne(() => UserRewards, (userRewards) => userRewards?.owner, { nullable: true })
 	rewards: UserRewards;
+
+	@OneToOne(() => UserTarget, (userTarget) => userTarget.user, { nullable: true, cascade: true })
+	@JoinColumn()
+	userTarget: UserTarget;
 
 	@OneToMany(() => Journal, (journal) => journal.owner)
 	journals: Journal[];

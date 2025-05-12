@@ -198,7 +198,7 @@ Required environment variables:
 						## Code Examples
 						
 						### JavaScript/TypeScript
-						\`\`\`typescript
+						\`\`\`
 						import { io } from "socket.io-client";
 						
 						const socket = io("wss://api.loro.co.za", {
@@ -206,20 +206,20 @@ Required environment variables:
 						});
 						
 						// Handle connection
-						socket.on("connect", () => {
+						socket.on("connect", function() {
 							console.log("Connected to WebSocket");
 						});
 						
 						// Listen for events
-						socket.on("locationUpdate", (data) => {
+						socket.on("locationUpdate", function(data) {
 							console.log("Location update:", data);
 						});
 						
-						socket.on("taskAssigned", (data) => {
+						socket.on("taskAssigned", function(data) {
 							console.log("New task:", data);
 						});
 						
-						socket.on("error", (error) => {
+						socket.on("error", function(error) {
 							console.error("WebSocket error:", error);
 						});
 						\`\`\`
