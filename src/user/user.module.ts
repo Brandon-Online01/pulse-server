@@ -10,6 +10,10 @@ import { BranchModule } from '../branch/branch.module';
 import { UserTarget } from './entities/user-target.entity';
 import { LicensingModule } from '../licensing/licensing.module';
 import { RewardsModule } from '../rewards/rewards.module';
+import { CheckIn } from 'src/check-ins/entities/check-in.entity';
+import { Quotation } from '../shop/entities/quotation.entity';
+import { Client } from 'src/clients/entities/client.entity';
+import { Lead } from 'src/leads/entities/lead.entity';
 
 @Module({
 	imports: [
@@ -17,12 +21,16 @@ import { RewardsModule } from '../rewards/rewards.module';
 			User,
 			UserProfile,
 			UserEmployeementProfile,
+			Quotation,
+			Lead,
+			Client,
+			CheckIn,
 			UserTarget,
 		]),
 		OrganisationModule,
 		BranchModule,
 		LicensingModule,
-		RewardsModule
+		RewardsModule,
 	],
 	controllers: [UserController],
 	providers: [UserService],

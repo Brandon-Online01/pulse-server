@@ -11,11 +11,17 @@ import { PaginatedResponse } from '../lib/interfaces/product.interfaces';
 import { AccessLevel } from '../lib/enums/user.enums';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
-import { EventEmitter2 } from '@nestjs/event-emitter';
+import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { ConfigService } from '@nestjs/config';
 import { CreateUserTargetDto } from './dto/create-user-target.dto';
 import { UpdateUserTargetDto } from './dto/update-user-target.dto';
 import { UserTarget } from './entities/user-target.entity';
+import { Quotation } from '../shop/entities/quotation.entity';
+import { OrderStatus } from '../lib/enums/status.enums';
+import { Lead } from '../leads/entities/lead.entity';
+import { Client } from '../clients/entities/client.entity';
+import { CheckIn } from '../check-ins/entities/check-in.entity';
+import { Between } from 'typeorm';
 
 @Injectable()
 export class UserService {
@@ -25,6 +31,14 @@ export class UserService {
 	constructor(
 		@InjectRepository(User)
 		private userRepository: Repository<User>,
+		@InjectRepository(Quotation)
+		private quotationRepository: Repository<Quotation>,
+		@InjectRepository(Lead)
+		private leadRepository: Repository<Lead>,
+		@InjectRepository(Client)
+		private clientRepository: Repository<Client>,
+		@InjectRepository(CheckIn)
+		private checkInRepository: Repository<CheckIn>,
 		@Inject(CACHE_MANAGER)
 		private cacheManager: Cache,
 		private readonly eventEmitter: EventEmitter2,
@@ -880,6 +894,103 @@ export class UserService {
 			return {
 				message: error?.message || 'Failed to delete user target',
 			};
+		}
+	}
+
+	/**
+	 * Calculates the user's target progress based on related entities.
+	 * Triggered by 'user.target.update.required' event.
+	 * Currently calculates currentSalesAmount, currentNewLeads, currentNewClients, and currentCheckIns.
+	 */
+	@OnEvent('user.target.update.required')
+	async calculateUserTargets(payload: { userId: number }): Promise<void> {
+		const { userId } = payload;
+		console.log(`Calculating targets for user ${userId}...`);
+
+		try {
+			const user = await this.userRepository.findOne({
+				where: { uid: userId, isDeleted: false },
+				relations: ['userTarget'],
+			});
+
+			if (!user) {
+				console.error(`calculateUserTargets: User with ID ${userId} not found.`);
+				return;
+			}
+
+			if (!user.userTarget) {
+				console.log(`calculateUserTargets: No targets set for user ${userId}. Skipping calculation.`);
+				return;
+			}
+
+			const { userTarget } = user;
+
+			if (!userTarget.periodStartDate || !userTarget.periodEndDate) {
+				console.log(`calculateUserTargets: Target period dates not set for user ${userId}. Skipping calculation.`);
+				return;
+			}
+
+			// --- Calculate currentSalesAmount ---
+			const salesData = await this.quotationRepository
+				.createQueryBuilder('quotation')
+				.select('SUM(quotation.totalAmount)', 'totalSales')
+				.where('quotation.placedBy = :userId', { userId })
+				.andWhere('quotation.status = :status', { status: OrderStatus.COMPLETED })
+				.andWhere('quotation.createdAt BETWEEN :startDate AND :endDate', {
+					startDate: userTarget.periodStartDate,
+					endDate: userTarget.periodEndDate,
+				})
+				.getRawOne();
+
+			userTarget.currentSalesAmount = parseFloat(salesData?.totalSales) || 0;
+
+			// --- Calculate currentNewLeads ---
+			const leadsCount = await this.leadRepository.count({
+				where: {
+					owner: { uid: userId },
+					createdAt: Between(userTarget.periodStartDate, userTarget.periodEndDate),
+				},
+			});
+			userTarget.currentNewLeads = leadsCount;
+
+			// --- Calculate currentNewClients ---
+			const clientsCount = await this.clientRepository.count({
+				where: {
+					assignedSalesRep: { uid: userId },
+					createdAt: Between(userTarget.periodStartDate, userTarget.periodEndDate),
+				},
+			});
+			userTarget.currentNewClients = clientsCount;
+
+			// --- Calculate currentCheckIns ---
+			const checkInsCount = await this.checkInRepository.count({
+				where: {
+					owner: { uid: userId },
+					checkInTime: Between(userTarget.periodStartDate, userTarget.periodEndDate),
+				},
+			});
+			userTarget.currentCheckIns = checkInsCount;
+
+			// --- TODO: Add calculations for currentHoursWorked, currentCalls ---
+			
+			console.log(
+				`User ${userId} calculated targets: ` +
+				`Sales=${userTarget.currentSalesAmount}, ` +
+				`Leads=${userTarget.currentNewLeads}, ` +
+				`Clients=${userTarget.currentNewClients}, ` +
+				`CheckIns=${userTarget.currentCheckIns}`
+			);
+
+			// Save the updated target (via user cascade)
+			await this.userRepository.save(user);
+			console.log(`User ${userId} targets updated and saved.`);
+
+			// Invalidate the specific target cache
+			await this.cacheManager.del(this.getCacheKey(`target_${userId}`));
+			console.log(`Cache invalidated for user ${userId} target.`);
+
+		} catch (error) {
+			console.error(`Error calculating targets for user ${userId}:`, error);
 		}
 	}
 }
