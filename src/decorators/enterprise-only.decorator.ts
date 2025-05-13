@@ -23,7 +23,8 @@ type ModuleName =
 	| 'rewards'
 	| 'shop'
 	| 'tasks'
-	| 'tracking';
+	| 'tracking'
+	| 'warnings';
 
 /**
  * Decorator to protect routes with enterprise-only access

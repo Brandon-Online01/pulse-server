@@ -342,6 +342,52 @@ export interface OrderReceivedClientData extends BaseEmailData {
 	message: string;
 }
 
+export interface WarningIssuedEmailData {
+	userName: string;
+	userEmail: string;
+	warningId: number;
+	reason: string;
+	severity: string;
+	issuedAt: string;
+	expiresAt: string;
+	issuedBy: {
+		name: string;
+		email: string;
+	};
+	dashboardLink: string;
+}
+
+export interface WarningUpdatedEmailData {
+	userName: string;
+	userEmail: string;
+	warningId: number;
+	reason: string;
+	severity: string;
+	issuedAt: string;
+	expiresAt: string;
+	updatedFields: string[];
+	issuedBy: {
+		name: string;
+		email: string;
+	};
+	dashboardLink: string;
+}
+
+export interface WarningExpiredEmailData {
+	userName: string;
+	userEmail: string;
+	warningId: number;
+	reason: string;
+	severity: string;
+	issuedAt: string;
+	expiresAt: string;
+	issuedBy: {
+		name: string;
+		email: string;
+	};
+	dashboardLink: string;
+}
+
 export interface EmailDataMap {
 	[EmailType.SIGNUP]: SignupEmailData;
 	[EmailType.VERIFICATION]: VerificationEmailData;
@@ -390,6 +436,9 @@ export interface EmailDataMap {
 	[EmailType.TASK_FLAG_RESOLVED]: TaskFlagEmailData;
 	[EmailType.TASK_FEEDBACK_ADDED]: TaskFeedbackEmailData;
 	[EmailType.ORDER_RECEIVED_CLIENT]: OrderReceivedClientData;
+	[EmailType.WARNING_ISSUED]: WarningIssuedEmailData;
+	[EmailType.WARNING_UPDATED]: WarningUpdatedEmailData;
+	[EmailType.WARNING_EXPIRED]: WarningExpiredEmailData;
 }
 
 export type EmailTemplateData<T extends EmailType> = T extends keyof EmailDataMap ? EmailDataMap[T] : never;

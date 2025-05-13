@@ -5,7 +5,8 @@ export enum NotificationType {
     USER = 'user',
     SYSTEM = 'system',
     SHOPPING = 'shopping',
-    TASK_REMINDER = 'TASK_REMINDER'
+    TASK_REMINDER = 'TASK_REMINDER',
+    WARNING = 'warning'
 }
 
 export enum NotificationStatus {

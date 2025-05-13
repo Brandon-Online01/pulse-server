@@ -22,7 +22,8 @@ type ModuleFeature =
     | `rewards.${string}`
     | `shop.${string}`
     | `tasks.${string}`
-    | `tracking.${string}`;
+    | `tracking.${string}`
+    | `warnings.${string}`;
 
 /**
  * Decorator to require specific features for accessing a route

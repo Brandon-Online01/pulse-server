@@ -90,6 +90,9 @@ import { PdfGenerationModule } from './pdf-generation/pdf-generation.module';
 import { LeaveModule } from './leave/leave.module';
 import { Leave } from './leave/entities/leave.entity';
 import { UserTarget } from './user/entities/user-target.entity';
+import { WarningsModule } from './warnings/warnings.module';
+import { PayslipsModule } from './payslips/payslips.module';
+import { TimetableModule } from './timetable/timetable.module';
 
 @Module({
 	imports: [
@@ -97,8 +100,8 @@ import { UserTarget } from './user/entities/user-target.entity';
 			isGlobal: true,
 		}),
 		CacheModule.register({
-			ttl: +process.env.CACHE_EXPIRATION_TIME || 300,
-			max: +process.env.CACHE_MAX_ITEMS || 200,
+			ttl: parseInt(process.env.CACHE_EXPIRATION_TIME || '300', 10) * 1000,
+			max: parseInt(process.env.CACHE_MAX_ITEMS || '200', 10) || 200, // Ensure valid positive integer
 			isGlobal: true,
 		}),
 		EventEmitterModule.forRoot(),
@@ -203,6 +206,9 @@ import { UserTarget } from './user/entities/user-target.entity';
 		ScheduleModule.forRoot(),
 		PdfGenerationModule,
 		LeaveModule,
+		WarningsModule,
+		PayslipsModule,
+		TimetableModule,
 	],
 	controllers: [],
 	providers: [

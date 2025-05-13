@@ -57,4 +57,8 @@ export enum EmailType {
     // Client authentication related emails
     CLIENT_PASSWORD_RESET = 'client_password_reset',
     CLIENT_PASSWORD_CHANGED = 'client_password_changed',
+    // Warning related emails
+    WARNING_ISSUED = 'warning_issued',
+    WARNING_UPDATED = 'warning_updated',
+    WARNING_EXPIRED = 'warning_expired',
 } 
