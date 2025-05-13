@@ -93,6 +93,7 @@ import { UserTarget } from './user/entities/user-target.entity';
 import { WarningsModule } from './warnings/warnings.module';
 import { PayslipsModule } from './payslips/payslips.module';
 import { TimetableModule } from './timetable/timetable.module';
+import { Warning } from './warnings/entities/warning.entity';
 
 @Module({
 	imports: [
@@ -114,7 +115,7 @@ import { TimetableModule } from './timetable/timetable.module';
 			database: process.env.DATABASE_NAME,
 			entities: [
 				User,
-				UserTarget, 
+				UserTarget,
 				UserProfile,
 				UserEmployeementProfile,
 				Attendance,
@@ -166,7 +167,8 @@ import { TimetableModule } from './timetable/timetable.module';
 				OrderItem,
 				Report,
 				Interaction,
-				Leave, 
+				Leave,
+				Warning,
 			],
 			synchronize: true,
 			retryAttempts: 100,

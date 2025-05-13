@@ -33,6 +33,7 @@ import { Route } from 'src/tasks/entities/route.entity';
 import { TaskFlag } from '../../tasks/entities/task-flag.entity';
 import { Leave } from 'src/leave/entities/leave.entity';
 import { UserTarget } from './user-target.entity';
+import { Warning } from 'src/warnings/entities/warning.entity';
 
 @Entity('users')
 export class User {
@@ -164,4 +165,10 @@ export class User {
 
 	@OneToMany(() => TaskFlag, (taskFlag) => taskFlag.createdBy)
 	taskFlags: TaskFlag[];
+
+	@OneToMany(() => Warning, (warning) => warning.owner)
+	warnings: Warning[];
+
+	@OneToMany(() => Warning, (warning) => warning.issuedBy)
+	issuedWarnings: Warning[];
 }
