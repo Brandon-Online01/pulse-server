@@ -94,6 +94,7 @@ import { WarningsModule } from './warnings/warnings.module';
 import { PayslipsModule } from './payslips/payslips.module';
 import { TimetableModule } from './timetable/timetable.module';
 import { Warning } from './warnings/entities/warning.entity';
+import { AttendanceMetrics } from './attendance/entities/attendance-metrics.entity';
 
 @Module({
 	imports: [
@@ -119,6 +120,7 @@ import { Warning } from './warnings/entities/warning.entity';
 				UserProfile,
 				UserEmployeementProfile,
 				Attendance,
+				AttendanceMetrics,
 				Claim,
 				Doc,
 				Lead,
