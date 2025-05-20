@@ -8,7 +8,6 @@ import {
 	IsNotEmpty,
 	IsNumber,
 	IsBoolean,
-	Min,
 	ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -17,14 +16,6 @@ import { RecurrencePatternDto } from './recurrence-pattern.dto';
 import { ApprovalPathDto } from './approval-path.dto';
 
 export class CreateLeaveDto {
-	@ApiProperty({
-		description: 'User ID of the leave owner',
-		example: 1,
-	})
-	@IsNumber()
-	@IsNotEmpty()
-	ownerUid: number;
-
 	@ApiProperty({
 		description: 'Type of leave',
 		enum: LeaveType,
@@ -53,48 +44,12 @@ export class CreateLeaveDto {
 	endDate: Date;
 
 	@ApiProperty({
-		description: 'Duration of the leave in days',
-		example: 2,
+		description: 'Duration of the leave',
+		example: 1,
 	})
 	@IsNumber()
-	@Min(0.5)
 	@IsNotEmpty()
 	duration: number;
-
-	@ApiPropertyOptional({
-		description: 'Is the leave recurring. If true, recurrencePattern should be provided.',
-		example: false,
-	})
-	@IsBoolean()
-	@IsOptional()
-	isRecurring?: boolean;
-
-	@ApiPropertyOptional({
-		description: 'Pattern for recurring leave. Required if isRecurring is true.',
-		type: RecurrencePatternDto,
-	})
-	@ValidateNested()
-	@Type(() => RecurrencePatternDto)
-	@IsOptional()
-	recurrencePattern?: RecurrencePatternDto;
-
-	@ApiPropertyOptional({
-		description: 'Approval path for the leave. Defines who needs to approve.',
-		type: ApprovalPathDto,
-	})
-	@ValidateNested()
-	@Type(() => ApprovalPathDto)
-	@IsOptional()
-	approvalPath?: ApprovalPathDto;
-
-	@ApiProperty({
-		description: 'Does the leave require multiple approvals through the approval path.',
-		example: false,
-	})
-	@IsBoolean()
-	// @IsNotEmpty() // Making it optional, service can default it if not provided
-	@IsOptional()
-	requiresMultipleApprovals?: boolean;
 
 	@ApiPropertyOptional({
 		description: 'Motivation or reason for the leave',
@@ -131,37 +86,21 @@ export class CreateLeaveDto {
 	@IsOptional()
 	attachments?: string[];
 
-	@ApiPropertyOptional({
-		description: 'Organisation ID',
-		example: 1,
-	})
-	@IsNumber()
-	@IsOptional()
-	organisationId?: number;
-
-	@ApiPropertyOptional({
-		description: 'Branch ID',
-		example: 1,
-	})
-	@IsNumber()
-	@IsOptional()
-	branchId?: number;
-
-	@ApiPropertyOptional({
+	@ApiProperty({
 		description: 'Is the leave a public holiday',
 		example: false,
 	})
 	@IsBoolean()
-	@IsOptional()
-	isPublicHoliday?: boolean;
+	@IsNotEmpty()
+	isPublicHoliday: boolean;
 
-	@ApiPropertyOptional({
+	@ApiProperty({
 		description: 'Is the leave paid',
 		example: true,
 	})
 	@IsBoolean()
-	@IsOptional()
-	isPaid?: boolean;
+	@IsNotEmpty()
+	isPaid: boolean;
 
 	@ApiPropertyOptional({
 		description: 'Paid amount if the leave is paid',

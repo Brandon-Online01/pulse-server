@@ -8,8 +8,6 @@ import {
 	ManyToOne,
 	CreateDateColumn,
 	UpdateDateColumn,
-	JoinColumn,
-	Index,
 	DeleteDateColumn,
 } from 'typeorm';
 import { LeaveType, LeaveStatus, HalfDayPeriod } from '../../lib/enums/leave.enums';
@@ -36,28 +34,6 @@ export class Leave {
 
 	@Column({ type: 'float' })
 	duration: number;
-
-	// For better tracking of leave periods
-	@Column({ type: 'boolean', default: false })
-	isRecurring: boolean;
-
-	@Column({ type: 'simple-json', nullable: true })
-	recurrencePattern?: {
-		frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
-		interval: number;
-		endDate?: Date;
-		exceptions?: Date[];
-	};
-
-	@Column({ type: 'simple-json', nullable: true })
-	approvalPath?: {
-		approvers: User[];
-		currentApprover: number;
-		isApproved: boolean;
-	};
-
-	@Column({ type: 'boolean', default: false })
-	requiresMultipleApprovals: boolean;
 
 	@Column({ type: 'text', nullable: true })
 	motivation?: string;
@@ -117,12 +93,6 @@ export class Leave {
 
 	@Column({ type: 'float', nullable: true })
 	paidAmount?: number;
-
-	@ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
-	delegatedTo?: User;
-
-	@Column({ type: 'boolean', default: false })
-	isDelegated: boolean;
 
 	@Column({ type: 'simple-array', nullable: true })
 	tags?: string[];

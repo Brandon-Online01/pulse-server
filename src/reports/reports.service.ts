@@ -1,4 +1,4 @@
-import { Injectable, Inject, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateReportDto } from './dto/create-report.dto';
 import { UpdateReportDto } from './dto/update-report.dto';
@@ -22,7 +22,6 @@ import { MapDataReportGenerator } from './generators/map-data-report.generator';
 
 @Injectable()
 export class ReportsService implements OnModuleInit {
-	private readonly logger = new Logger(ReportsService.name);
 	private readonly CACHE_PREFIX = 'reports:';
 	private readonly LIVE_OVERVIEW_CACHE_TTL = 120; // 2 minutes
 	private readonly CACHE_TTL: number;
@@ -47,37 +46,30 @@ export class ReportsService implements OnModuleInit {
 		this.CACHE_TTL = this.configService.get<number>('CACHE_EXPIRATION_TIME') || 300;
 	}
 
-	onModuleInit() {
-		this.logger.log('Reports service initialized');
-	}
+	onModuleInit() {}
 
 	// Run every day at 18:00 (6:00 PM)
 	@Cron('0 0 18 * * *')
 	async generateEndOfDayReports() {
 		try {
-			this.logger.log('Starting automated end-of-day report generation');
-			
 			// Find users with active attendance records (who haven't checked out yet)
 			const queryBuilder = this.userRepository
 				.createQueryBuilder('user')
 				.innerJoinAndSelect('user.organisation', 'organisation')
 				.innerJoin(
-					'attendance', 
-					'attendance', 
+					'attendance',
+					'attendance',
 					'attendance.ownerUid = user.uid AND (attendance.status = :statusPresent OR attendance.status = :statusBreak) AND attendance.checkOut IS NULL',
-					{ statusPresent: 'present', statusBreak: 'on break' }
+					{ statusPresent: 'present', statusBreak: 'on break' },
 				)
 				.where('user.email IS NOT NULL');
-				
+
 			const usersWithActiveShifts = await queryBuilder.getMany();
-			
-			this.logger.log(`Found ${usersWithActiveShifts.length} users with active shifts for daily reports`);
-			
+
 			if (usersWithActiveShifts.length === 0) {
-				this.logger.log('No users with active shifts found, skipping report generation');
 				return;
 			}
-			
+
 			// Generate reports only for users with active shifts
 			const results = await Promise.allSettled(
 				usersWithActiveShifts.map(async (user) => {
@@ -85,11 +77,11 @@ export class ReportsService implements OnModuleInit {
 						if (!user.organisation) {
 							return { userId: user.uid, success: false, reason: 'No organisation found' };
 						}
-						
+
 						// Check if report already generated today for this user
 						const today = new Date();
 						today.setHours(0, 0, 0, 0);
-						
+
 						const existingReport = await this.reportRepository.findOne({
 							where: {
 								owner: { uid: user.uid },
@@ -97,41 +89,35 @@ export class ReportsService implements OnModuleInit {
 								generatedAt: MoreThanOrEqual(today),
 							},
 						});
-						
+
 						if (existingReport) {
-							return { 
-								userId: user.uid, 
-								success: false, 
+							return {
+								userId: user.uid,
+								success: false,
 								reason: 'Report already generated today',
 							};
 						}
-						
+
 						const params: ReportParamsDto = {
 							type: ReportType.USER_DAILY,
 							organisationId: user.organisation.uid,
 							filters: { userId: user.uid },
 						};
-						
+
 						await this.generateUserDailyReport(params);
-						this.logger.log(`Successfully generated end-of-day report for user ${user.uid} with active shift`);
+
 						return { userId: user.uid, success: true };
 					} catch (error) {
-						return { 
-							userId: user.uid, 
-							success: false, 
+						return {
+							userId: user.uid,
+							success: false,
 							reason: error.message,
 						};
 					}
 				}),
 			);
-			
-			// Log results
-			const successful = results.filter((r) => r.status === 'fulfilled' && r.value.success).length;
-			const failed = results.length - successful;
-			
-			this.logger.log(`End-of-day reports completed: ${successful} successful, ${failed} failed`);
 		} catch (error) {
-			this.logger.error(`Error during scheduled report generation: ${error.message}`, error.stack);
+			return null;
 		}
 	}
 
@@ -178,12 +164,10 @@ export class ReportsService implements OnModuleInit {
 	async handleDailyReport(payload: { userId: number }) {
 		try {
 			if (!payload || !payload.userId) {
-				this.logger.error('Invalid payload for daily report event');
 				return;
 			}
 
 			const { userId } = payload;
-			this.logger.log(`Handling daily report event for user ${userId}`);
 
 			// Get user to find their organization
 			const user = await this.userRepository.findOne({
@@ -192,7 +176,6 @@ export class ReportsService implements OnModuleInit {
 			});
 
 			if (!user || !user.organisation) {
-				this.logger.error(`User ${userId} not found or has no organization`);
 				return;
 			}
 
@@ -208,10 +191,8 @@ export class ReportsService implements OnModuleInit {
 
 			// Generate and save the report
 			await this.generateUserDailyReport(params);
-
-			this.logger.log(`Successfully generated daily report for user ${userId}`);
 		} catch (error) {
-			this.logger.error(`Error handling daily report event: ${error.message}`, error.stack);
+			return null;
 		}
 	}
 
@@ -252,12 +233,9 @@ export class ReportsService implements OnModuleInit {
 
 			// Send email directly to ensure delivery
 			await this.sendUserDailyReportEmail(user.uid, reportData.emailData).catch((error) => {
-				this.logger.error(`Failed to send email directly: ${error.message}`, error.stack);
 				// Update report with error info
 				newReport.notes = `Email delivery attempted directly: ${error.message}`;
-				this.reportRepository
-					.save(newReport)
-					.catch((err) => this.logger.error(`Failed to update report with notes: ${err.message}`));
+				this.reportRepository.save(newReport);
 			});
 
 			// Also emit event as a backup mechanism
@@ -268,30 +246,26 @@ export class ReportsService implements OnModuleInit {
 				emailData: reportData.emailData,
 			});
 
-			this.logger.log(`Daily report generated and email sending initiated for user ${userId}`);
-
 			return savedReport;
 		} catch (error) {
-			this.logger.error(`Error generating user daily report: ${error.message}`, error.stack);
-			throw error;
+			return null;
 		}
 	}
 
 	async generateReport(params: ReportParamsDto, currentUser: any): Promise<Record<string, any>> {
 		// Determine appropriate cache TTL based on report type
 		const cacheTtl = params.type === ReportType.LIVE_OVERVIEW ? this.LIVE_OVERVIEW_CACHE_TTL : this.CACHE_TTL;
-		
+
 		// Check if this is a forced fresh request (for live overview)
 		const forceFresh = params.type === ReportType.LIVE_OVERVIEW && params.filters?.forceFresh === true;
-		
+
 		// Check cache first (skip if forceFresh is true)
 		const cacheKey = this.getCacheKey(params);
-		
+
 		if (!forceFresh) {
 			const cachedReport = await this.cacheManager.get<Record<string, any>>(cacheKey);
-			
+
 			if (cachedReport) {
-				this.logger.log(`Serving ${params.type} report from cache for org ${params.organisationId}`);
 				return {
 					...cachedReport,
 					fromCache: true,
@@ -299,13 +273,6 @@ export class ReportsService implements OnModuleInit {
 					currentTime: new Date().toISOString(),
 				};
 			}
-		}
-
-		// Log cache miss or forced refresh
-		if (forceFresh) {
-			this.logger.log(`Force refreshing ${params.type} report for org ${params.organisationId}`);
-		} else {
-			this.logger.log(`Cache miss for ${params.type} report for org ${params.organisationId}`);
 		}
 
 		// Generate report data based on type
@@ -361,15 +328,11 @@ export class ReportsService implements OnModuleInit {
 	@OnEvent('report.generated')
 	async handleReportGenerated(payload: { reportType: ReportType; reportId: number; userId: number; emailData: any }) {
 		try {
-			this.logger.log(
-				`Handling report generated event for report ${payload.reportId}, type ${payload.reportType}`,
-			);
-
 			if (payload.reportType === ReportType.USER_DAILY) {
 				await this.sendUserDailyReportEmail(payload.userId, payload.emailData);
 			}
 		} catch (error) {
-			this.logger.error(`Error handling report generated event: ${error.message}`, error.stack);
+			return null;
 		}
 	}
 
@@ -382,13 +345,11 @@ export class ReportsService implements OnModuleInit {
 			});
 
 			if (!user || !user.email) {
-				this.logger.error(`Cannot send email for user ${userId}: user not found or has no email`);
 				return;
 			}
 
 			// Ensure emailData has the correct format
 			if (!emailData || !emailData.name || !emailData.date || !emailData.metrics) {
-				this.logger.error(`Invalid email data format for user ${userId}`);
 				throw new Error('Invalid email data format');
 			}
 
@@ -418,25 +379,14 @@ export class ReportsService implements OnModuleInit {
 				};
 			}
 
-			// Log email preparation
-			this.logger.log(`Preparing daily report email for user ${userId} (${user.email})`);
-
 			// Use a direct cast to any to work around typing issues
 			const emailService = this.communicationService as any;
 			try {
-				const result = await emailService.sendEmail(EmailType.USER_DAILY_REPORT, [user.email], emailData);
-
-				if (result && result.success) {
-					this.logger.log(`Daily report email sent successfully to user ${userId} (${user.email})`);
-				} else {
-					this.logger.warn(`Email service returned non-success result for user ${userId}`);
-				}
+				await emailService.sendEmail(EmailType.USER_DAILY_REPORT, [user.email], emailData);
 			} catch (emailError) {
-				// Catch and log email service specific errors without throwing
-				this.logger.error(`Email service error for user ${userId}: ${emailError.message}`, emailError.stack);
+				return null;
 			}
 		} catch (error) {
-			this.logger.error(`Error sending daily report email: ${error.message}`, error.stack);
 			// Record the error in the report record
 			try {
 				const report = await this.reportRepository.findOne({
@@ -449,7 +399,7 @@ export class ReportsService implements OnModuleInit {
 					await this.reportRepository.save(report);
 				}
 			} catch (dbError) {
-				this.logger.error(`Failed to update report record: ${dbError.message}`);
+				return null;
 			}
 		}
 	}
@@ -462,33 +412,31 @@ export class ReportsService implements OnModuleInit {
 	 */
 	async clearOrganizationReportCache(organisationId: number, reportType?: ReportType): Promise<number> {
 		try {
-			const cacheKeyPattern = reportType 
-				? `${this.CACHE_PREFIX}${reportType}_org${organisationId}*` 
+			const cacheKeyPattern = reportType
+				? `${this.CACHE_PREFIX}${reportType}_org${organisationId}*`
 				: `${this.CACHE_PREFIX}*_org${organisationId}*`;
-				
+
 			// For redis-based cache this would use a scan/delete pattern
 			// For the built-in cache we can only delete specific keys
 			// Since we don't know what cache implementation is being used, we'll log this
-			this.logger.log(`Clearing organization cache with pattern: ${cacheKeyPattern}`);
-			
+
 			// For now, we'll specifically clear the live overview cache
 			if (!reportType || reportType === ReportType.LIVE_OVERVIEW) {
 				const liveOverviewKey = `${this.CACHE_PREFIX}${ReportType.LIVE_OVERVIEW}_org${organisationId}`;
 				await this.cacheManager.del(liveOverviewKey);
-				
+
 				// If branch ID was specified, clear those too
 				const branchIds = await this.getBranchIdsForOrganization(organisationId);
 				for (const branchId of branchIds) {
 					const branchKey = `${this.CACHE_PREFIX}${ReportType.LIVE_OVERVIEW}_org${organisationId}_branch${branchId}`;
 					await this.cacheManager.del(branchKey);
 				}
-				
+
 				return 1 + branchIds.length;
 			}
-			
+
 			return 0;
 		} catch (error) {
-			this.logger.error(`Error clearing organization cache: ${error.message}`, error.stack);
 			return 0;
 		}
 	}
@@ -507,10 +455,9 @@ export class ReportsService implements OnModuleInit {
 				.where('r.organisationUid = :organisationId', { organisationId })
 				.andWhere('r.branchUid IS NOT NULL')
 				.getRawMany();
-				
-			return branches.map(b => b.branchId);
+
+			return branches.map((b) => b.branchId);
 		} catch (error) {
-			this.logger.error(`Error getting branch IDs: ${error.message}`, error.stack);
 			return [];
 		}
 	}
@@ -522,7 +469,6 @@ export class ReportsService implements OnModuleInit {
 	async handleTaskChange(payload: { organisationId: number; branchId?: number }) {
 		if (!payload || !payload.organisationId) return;
 		await this.clearOrganizationReportCache(payload.organisationId, ReportType.LIVE_OVERVIEW);
-		this.logger.log(`Cleared live overview cache due to task change in org ${payload.organisationId}`);
 	}
 
 	@OnEvent('lead.created')
@@ -531,7 +477,6 @@ export class ReportsService implements OnModuleInit {
 	async handleLeadChange(payload: { organisationId: number; branchId?: number }) {
 		if (!payload || !payload.organisationId) return;
 		await this.clearOrganizationReportCache(payload.organisationId, ReportType.LIVE_OVERVIEW);
-		this.logger.log(`Cleared live overview cache due to lead change in org ${payload.organisationId}`);
 	}
 
 	@OnEvent('quotation.created')
@@ -540,7 +485,6 @@ export class ReportsService implements OnModuleInit {
 	async handleQuotationChange(payload: { organisationId: number; branchId?: number }) {
 		if (!payload || !payload.organisationId) return;
 		await this.clearOrganizationReportCache(payload.organisationId, ReportType.LIVE_OVERVIEW);
-		this.logger.log(`Cleared live overview cache due to quotation change in org ${payload.organisationId}`);
 	}
 
 	/* ---------------------------------------------------------

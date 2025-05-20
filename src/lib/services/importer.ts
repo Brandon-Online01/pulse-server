@@ -44,42 +44,38 @@ export class ImporterService implements OnModuleInit {
 	) {}
 
 	async onModuleInit() {
-		try {
-			// Get org and branch IDs from env file
-			const orgId = this.configService.get<number>('BIT_DATABASE_ORG_ID') || 2;
-			const branchId = this.configService.get<number>('BIT_DATABASE_BRANCH_ID') || 2;
-
-			// Get organisation and branch references
-			this.organisation = await this.organisationRepository.findOne({ where: { uid: orgId } });
-			this.branch = await this.branchRepository.findOne({ where: { uid: branchId } });
-
-			if (!this.organisation || !this.branch) {
-				this.logger.error(
-					`Organisation ${orgId} or Branch ${branchId} not found. ImporterService initialization failed.`,
-				);
-				return;
-			}
-
-			// Establish connection to the MySQL database using environment variables
-			this.connection = await createConnection({
-				name: 'bitConnection', // Unique name for this connection
-				type: 'mysql',
-				host: this.configService.get<string>('BIT_DATABASE_HOST'),
-				port: this.configService.get<number>('BIT_DATABASE_PORT'),
-				username: this.configService.get<string>('BIT_DATABASE_USER'),
-				password: this.configService.get<string>('BIT_DATABASE_PASSWORD'),
-				database: this.configService.get<string>('BIT_DATABASE_NAME'),
-				synchronize: false, // Don't auto-create tables in external DB
-			});
-
-			this.logger.log(`ImporterService initialized for Organisation ID: ${orgId}, Branch ID: ${branchId}`);
-		} catch (error) {
-			this.logger.error(`Failed to initialize ImporterService: ${error.message}`, error.stack);
-		}
+		// try {
+		// 	// Get org and branch IDs from env file
+		// 	const orgId = this.configService.get<number>('BIT_DATABASE_ORG_ID') || 2;
+		// 	const branchId = this.configService.get<number>('BIT_DATABASE_BRANCH_ID') || 2;
+		// 	// Get organisation and branch references
+		// 	this.organisation = await this.organisationRepository.findOne({ where: { uid: orgId } });
+		// 	this.branch = await this.branchRepository.findOne({ where: { uid: branchId } });
+		// 	if (!this.organisation || !this.branch) {
+		// 		this.logger.error(
+		// 			`Organisation ${orgId} or Branch ${branchId} not found. ImporterService initialization failed.`,
+		// 		);
+		// 		return;
+		// 	}
+		// 	// Establish connection to the MySQL database using environment variables
+		// 	this.connection = await createConnection({
+		// 		name: 'bitConnection', // Unique name for this connection
+		// 		type: 'mysql',
+		// 		host: this.configService.get<string>('BIT_DATABASE_HOST'),
+		// 		port: this.configService.get<number>('BIT_DATABASE_PORT'),
+		// 		username: this.configService.get<string>('BIT_DATABASE_USER'),
+		// 		password: this.configService.get<string>('BIT_DATABASE_PASSWORD'),
+		// 		database: this.configService.get<string>('BIT_DATABASE_NAME'),
+		// 		synchronize: false, // Don't auto-create tables in external DB
+		// 	});
+		// 	this.logger.log(`ImporterService initialized for Organisation ID: ${orgId}, Branch ID: ${branchId}`);
+		// } catch (error) {
+		// 	this.logger.error(`Failed to initialize ImporterService: ${error.message}`, error.stack);
+		// }
 	}
 
 	// Main synchronization method that runs in the correct order
-	@Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT) // Run every day at midnight
+	// @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT) // Run every day at midnight
 	async synchronizeAll() {
 		try {
 			if (!this.connection) {
@@ -99,7 +95,7 @@ export class ImporterService implements OnModuleInit {
 			// Set a minimum interval between synchronizations (10 seconds)
 			const now = new Date();
 			const timeDiff = now.getTime() - this.lastSyncTime.getTime();
-			if (timeDiff < 10000) {
+			if (timeDiff < 1000000) {
 				this.logger.log('Last sync was less than 10 seconds ago, skipping this cycle');
 				this.isSynchronizing = false;
 				return; // Don't run if less than 10 seconds since last sync

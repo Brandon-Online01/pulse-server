@@ -63,14 +63,42 @@ export class LeaveService {
 		}
 	}
 
-	async create(createLeaveDto: CreateLeaveDto, orgId?: number, branchId?: number): Promise<{ message: string }> {
+	async create(
+		createLeaveDto: CreateLeaveDto,
+		orgId?: number,
+		branchId?: number,
+		userId?: number,
+	): Promise<{ message: string }> {
 		try {
 			// Find the owner user
-			const owner = await this.userRepository.findOne({ where: { uid: createLeaveDto.ownerUid } });
+			if (!userId) {
+				throw new BadRequestException('User ID is required to create a leave request');
+			}
+			const owner = await this.userRepository.findOne({ where: { uid: userId } });
 
 			if (!owner) {
-				throw new NotFoundException(`User with ID ${createLeaveDto.ownerUid} not found`);
+				throw new NotFoundException(`User with ID ${userId} not found`);
 			}
+
+			// Format dates to YYYY-MM-DD string
+			const formatDate = (date: Date | string): string | undefined => {
+				if (!date) return undefined;
+				const d = new Date(date);
+				// Check if the date is valid after parsing
+				if (isNaN(d.getTime())) {
+					// Optionally throw an error or return undefined/original value
+					// For now, returning undefined to let DB handle potential nulls if column allows
+					// Or, if dates are mandatory, throw new BadRequestException(`Invalid date format: ${date}`);
+					return undefined;
+				}
+				const year = d.getFullYear();
+				const month = `0${d.getMonth() + 1}`.slice(-2);
+				const day = `0${d.getDate()}`.slice(-2);
+				return `${year}-${month}-${day}`;
+			};
+
+			const formattedStartDate = formatDate(createLeaveDto.startDate);
+			const formattedEndDate = formatDate(createLeaveDto.endDate);
 
 			// Calculate duration from start and end dates if not provided
 			if (!createLeaveDto.duration) {
@@ -101,6 +129,8 @@ export class LeaveService {
 			// Create new leave entity
 			const leave = this.leaveRepository.create({
 				...createLeaveDto,
+				startDate: formattedStartDate as any, // TypeORM expects Date, but we provide string for 'date' type
+				endDate: formattedEndDate as any, // TypeORM expects Date, but we provide string for 'date' type
 				owner,
 				status: LeaveStatus.PENDING,
 				// Set organization and branch if provided
@@ -122,6 +152,7 @@ export class LeaveService {
 
 			return { message: 'Leave request created successfully' };
 		} catch (error) {
+			console.log(error);
 			if (error instanceof NotFoundException) {
 				throw error;
 			}
@@ -142,6 +173,7 @@ export class LeaveService {
 		limit: number = Number(process.env.DEFAULT_PAGE_LIMIT),
 		orgId?: number,
 		branchId?: number,
+		userId?: number,
 	): Promise<PaginatedResponse<Leave>> {
 		try {
 			// Building the where clause
@@ -164,11 +196,6 @@ export class LeaveService {
 			// Add leave type filter
 			if (filters?.leaveType) {
 				where.leaveType = filters.leaveType;
-			}
-
-			// Add owner filter
-			if (filters?.ownerUid) {
-				where.owner = { uid: filters.ownerUid };
 			}
 
 			// Add approval status filter
@@ -195,7 +222,7 @@ export class LeaveService {
 				where,
 				skip,
 				take: limit,
-				relations: ['owner', 'organisation', 'branch', 'approvedBy', 'delegatedTo'],
+				relations: ['owner', 'organisation', 'branch', 'approvedBy'],
 				order: {
 					createdAt: 'DESC',
 				},
@@ -219,7 +246,12 @@ export class LeaveService {
 		}
 	}
 
-	async findOne(ref: number, orgId?: number, branchId?: number): Promise<{ message: string; leave: Leave | null }> {
+	async findOne(
+		ref: number,
+		orgId?: number,
+		branchId?: number,
+		userId?: number,
+	): Promise<{ message: string; leave: Leave | null }> {
 		try {
 			// Build query conditions
 			const where: any = { uid: ref };
@@ -247,7 +279,7 @@ export class LeaveService {
 			// If not cached, query the database
 			const leave = await this.leaveRepository.findOne({
 				where,
-				relations: ['owner', 'organisation', 'branch', 'approvedBy', 'delegatedTo'],
+				relations: ['owner', 'organisation', 'branch', 'approvedBy'],
 			});
 
 			if (!leave) {
@@ -269,7 +301,12 @@ export class LeaveService {
 		}
 	}
 
-	async leavesByUser(ref: number, orgId?: number, branchId?: number): Promise<{ message: string; leaves: Leave[] }> {
+	async leavesByUser(
+		ref: number,
+		orgId?: number,
+		branchId?: number,
+		userId?: number,
+	): Promise<{ message: string; leaves: Leave[] }> {
 		try {
 			// Build query conditions
 			const where: any = { owner: { uid: ref } };
@@ -286,7 +323,7 @@ export class LeaveService {
 			// Query leaves for the user
 			const leaves = await this.leaveRepository.find({
 				where,
-				relations: ['owner', 'organisation', 'branch', 'approvedBy', 'delegatedTo'],
+				relations: ['owner', 'organisation', 'branch', 'approvedBy'],
 				order: {
 					startDate: 'DESC',
 				},
@@ -306,10 +343,11 @@ export class LeaveService {
 		updateLeaveDto: UpdateLeaveDto,
 		orgId?: number,
 		branchId?: number,
+		userId?: number,
 	): Promise<{ message: string }> {
 		try {
 			// Find the leave first
-			const { leave } = await this.findOne(ref, orgId, branchId);
+			const { leave } = await this.findOne(ref, orgId, branchId, userId);
 
 			if (!leave) {
 				throw new NotFoundException('Leave request not found');
@@ -350,10 +388,6 @@ export class LeaveService {
 			// Update the leave
 			await this.leaveRepository.update(ref, {
 				...updateLeaveDto,
-				// If owner is changing, find the user
-				...(updateLeaveDto.ownerUid && {
-					owner: await this.userRepository.findOneOrFail({ where: { uid: updateLeaveDto.ownerUid } }),
-				}),
 			});
 
 			// Clear cache
@@ -373,10 +407,11 @@ export class LeaveService {
 		approverUid: number,
 		orgId?: number,
 		branchId?: number,
+		userId?: number,
 	): Promise<{ message: string }> {
 		try {
 			// Find the leave first
-			const { leave } = await this.findOne(ref, orgId, branchId);
+			const { leave } = await this.findOne(ref, orgId, branchId, userId);
 
 			if (!leave) {
 				throw new NotFoundException('Leave request not found');
@@ -396,39 +431,12 @@ export class LeaveService {
 				throw new NotFoundException(`Approver with ID ${approverUid} not found`);
 			}
 
-			// Check if multiple approvals are required and handle approval path
-			if (leave.requiresMultipleApprovals && leave.approvalPath) {
-				// Clone the current approval path
-				const approvalPath = { ...leave.approvalPath };
-
-				// Increase current approver
-				approvalPath.currentApprover += 1;
-
-				// If all approvers have approved, mark as approved
-				if (approvalPath.currentApprover >= approvalPath.approvers.length) {
-					approvalPath.isApproved = true;
-
-					// Update the leave
-					await this.leaveRepository.update(ref, {
-						status: LeaveStatus.APPROVED,
-						approvedBy: approver,
-						approvedAt: new Date(),
-						approvalPath,
-					});
-				} else {
-					// Update just the approval path
-					await this.leaveRepository.update(ref, {
-						approvalPath,
-					});
-				}
-			} else {
-				// Simple approval, no multi-stage required
-				await this.leaveRepository.update(ref, {
-					status: LeaveStatus.APPROVED,
-					approvedBy: approver,
-					approvedAt: new Date(),
-				});
-			}
+			// Update the leave
+			await this.leaveRepository.update(ref, {
+				status: LeaveStatus.APPROVED,
+				approvedBy: approver,
+				approvedAt: new Date(),
+			});
 
 			// Emit leave approved event for notifications
 			this.eventEmitter.emit('leave.approved', {
@@ -453,10 +461,11 @@ export class LeaveService {
 		rejectionReason: string,
 		orgId?: number,
 		branchId?: number,
+		userId?: number,
 	): Promise<{ message: string }> {
 		try {
 			// Find the leave first
-			const { leave } = await this.findOne(ref, orgId, branchId);
+			const { leave } = await this.findOne(ref, orgId, branchId, userId);
 
 			if (!leave) {
 				throw new NotFoundException('Leave request not found');
@@ -502,13 +511,13 @@ export class LeaveService {
 	async cancelLeave(
 		ref: number,
 		cancellationReason: string,
-		userUid: number,
+		userId: number,
 		orgId?: number,
 		branchId?: number,
 	): Promise<{ message: string }> {
 		try {
 			// Find the leave first
-			const { leave } = await this.findOne(ref, orgId, branchId);
+			const { leave } = await this.findOne(ref, orgId, branchId, userId);
 
 			if (!leave) {
 				throw new NotFoundException('Leave request not found');
@@ -528,7 +537,7 @@ export class LeaveService {
 
 			// Check if the user canceling is the owner or has admin privileges
 			// This check would be more robust in a real application
-			const isOwner = leave.owner?.uid === userUid;
+			const isOwner = leave.owner?.uid === userId;
 			// We're assuming here that non-owners are authorized through the controller's @Roles decorator
 
 			// Determine which cancellation status to use
@@ -545,7 +554,7 @@ export class LeaveService {
 			this.eventEmitter.emit('leave.canceled', {
 				leave,
 				cancellationReason,
-				canceledBy: userUid,
+				canceledBy: userId,
 			});
 
 			// Clear cache
@@ -560,10 +569,10 @@ export class LeaveService {
 		}
 	}
 
-	async remove(ref: number, orgId?: number, branchId?: number): Promise<{ message: string }> {
+	async remove(ref: number, orgId?: number, branchId?: number, userId?: number): Promise<{ message: string }> {
 		try {
 			// Find the leave first
-			const { leave } = await this.findOne(ref, orgId, branchId);
+			const { leave } = await this.findOne(ref, orgId, branchId, userId);
 
 			if (!leave) {
 				throw new NotFoundException('Leave request not found');

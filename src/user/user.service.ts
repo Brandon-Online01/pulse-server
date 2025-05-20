@@ -363,7 +363,7 @@ export class UserService {
 		try {
 			const user = await this.userRepository.findOne({
 				where: [{ uid: searchParameter, isDeleted: false }],
-				relations: ['branch', 'rewards'],
+				relations: ['branch', 'rewards', 'userTarget'],
 			});
 
 			if (!user) {
@@ -747,7 +747,7 @@ export class UserService {
 
 			const user = await this.userRepository.findOne({
 				where: { uid: userId, isDeleted: false },
-				relations: ['userTarget']
+				relations: ['userTarget'],
 			});
 
 			if (!user) {
@@ -757,7 +757,7 @@ export class UserService {
 			if (!user.userTarget) {
 				return {
 					userTarget: null,
-					message: "No targets set for this user",
+					message: 'No targets set for this user',
 				};
 			}
 
@@ -780,9 +780,9 @@ export class UserService {
 	 */
 	async setUserTarget(userId: number, createUserTargetDto: CreateUserTargetDto): Promise<{ message: string }> {
 		try {
-			const user = await this.userRepository.findOne({ 
+			const user = await this.userRepository.findOne({
 				where: { uid: userId, isDeleted: false },
-				relations: ['userTarget']
+				relations: ['userTarget'],
 			});
 
 			if (!user) {
@@ -792,6 +792,7 @@ export class UserService {
 			// If user already has targets, update them
 			if (user.userTarget) {
 				await this.updateUserTarget(userId, createUserTargetDto);
+
 				return {
 					message: 'User targets updated successfully',
 				};
@@ -799,7 +800,7 @@ export class UserService {
 
 			// Create a new user target
 			const userTarget = new UserTarget();
-			
+
 			// Map DTO properties to entity
 			Object.assign(userTarget, createUserTargetDto);
 
@@ -826,9 +827,9 @@ export class UserService {
 	 */
 	async updateUserTarget(userId: number, updateUserTargetDto: UpdateUserTargetDto): Promise<{ message: string }> {
 		try {
-			const user = await this.userRepository.findOne({ 
+			const user = await this.userRepository.findOne({
 				where: { uid: userId, isDeleted: false },
-				relations: ['userTarget']
+				relations: ['userTarget'],
 			});
 
 			if (!user) {
@@ -839,9 +840,16 @@ export class UserService {
 				throw new NotFoundException(`No targets found for user with ID ${userId}`);
 			}
 
+			const updatedUserTarget = {
+				...user.userTarget,
+				...updateUserTargetDto,
+				periodStartDate: new Date(updateUserTargetDto.periodStartDate),
+				periodEndDate: new Date(updateUserTargetDto.periodEndDate),
+			};
+
 			// Update the user target properties
-			Object.assign(user.userTarget, updateUserTargetDto);
-			
+			Object.assign(user.userTarget, updatedUserTarget);
+
 			// Save the updated user (cascade will update the target)
 			await this.userRepository.save(user);
 
@@ -864,9 +872,9 @@ export class UserService {
 	 */
 	async deleteUserTarget(userId: number): Promise<{ message: string }> {
 		try {
-			const user = await this.userRepository.findOne({ 
+			const user = await this.userRepository.findOne({
 				where: { uid: userId, isDeleted: false },
-				relations: ['userTarget']
+				relations: ['userTarget'],
 			});
 
 			if (!user) {
@@ -905,7 +913,6 @@ export class UserService {
 	@OnEvent('user.target.update.required')
 	async calculateUserTargets(payload: { userId: number }): Promise<void> {
 		const { userId } = payload;
-		console.log(`Calculating targets for user ${userId}...`);
 
 		try {
 			const user = await this.userRepository.findOne({
@@ -914,35 +921,28 @@ export class UserService {
 			});
 
 			if (!user) {
-				console.error(`calculateUserTargets: User with ID ${userId} not found.`);
 				return;
 			}
 
 			if (!user.userTarget) {
-				console.log(`calculateUserTargets: No targets set for user ${userId}. Skipping calculation.`);
 				return;
 			}
 
 			const { userTarget } = user;
 
 			if (!userTarget.periodStartDate || !userTarget.periodEndDate) {
-				console.log(`calculateUserTargets: Target period dates not set for user ${userId}. Skipping calculation.`);
 				return;
 			}
 
 			// --- Calculate currentSalesAmount ---
-			const salesData = await this.quotationRepository
-				.createQueryBuilder('quotation')
-				.select('SUM(quotation.totalAmount)', 'totalSales')
-				.where('quotation.placedBy = :userId', { userId })
-				.andWhere('quotation.status = :status', { status: OrderStatus.COMPLETED })
-				.andWhere('quotation.createdAt BETWEEN :startDate AND :endDate', {
-					startDate: userTarget.periodStartDate,
-					endDate: userTarget.periodEndDate,
-				})
-				.getRawOne();
-
-			userTarget.currentSalesAmount = parseFloat(salesData?.totalSales) || 0;
+			const quotations = await this.quotationRepository.find({
+				where: {
+					placedBy: { uid: userId },
+					status: OrderStatus.COMPLETED,
+					createdAt: Between(userTarget.periodStartDate, userTarget.periodEndDate),
+				},
+			});
+			userTarget.currentSalesAmount = quotations.reduce((sum, q) => sum + (q.totalAmount || 0), 0);
 
 			// --- Calculate currentNewLeads ---
 			const leadsCount = await this.leadRepository.count({
@@ -972,25 +972,14 @@ export class UserService {
 			userTarget.currentCheckIns = checkInsCount;
 
 			// --- TODO: Add calculations for currentHoursWorked, currentCalls ---
-			
-			console.log(
-				`User ${userId} calculated targets: ` +
-				`Sales=${userTarget.currentSalesAmount}, ` +
-				`Leads=${userTarget.currentNewLeads}, ` +
-				`Clients=${userTarget.currentNewClients}, ` +
-				`CheckIns=${userTarget.currentCheckIns}`
-			);
 
 			// Save the updated target (via user cascade)
 			await this.userRepository.save(user);
-			console.log(`User ${userId} targets updated and saved.`);
 
 			// Invalidate the specific target cache
 			await this.cacheManager.del(this.getCacheKey(`target_${userId}`));
-			console.log(`Cache invalidated for user ${userId} target.`);
-
 		} catch (error) {
-			console.error(`Error calculating targets for user ${userId}:`, error);
+			return null;
 		}
 	}
 }

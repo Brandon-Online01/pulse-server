@@ -4,7 +4,7 @@ import { Entity, Column, PrimaryGeneratedColumn, OneToOne, CreateDateColumn, Upd
 @Entity('user_targets')
 export class UserTarget {
 	@PrimaryGeneratedColumn()
-	id: number;
+	uid: number;
 
 	@Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
 	targetSalesAmount: number;

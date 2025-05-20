@@ -16,6 +16,8 @@ export const ENTERPRISE_ONLY_FEATURES = {
     'journal.access': true,
     // Leads
     'leads.access': true,
+    // Leave
+    'leave.access': true,
     // Licensing
     'licensing.access': true,
     // News

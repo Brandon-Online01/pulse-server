@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, Request, Req } from '@nestjs/common';
 import { LeaveService } from './leave.service';
 import { CreateLeaveDto } from './dto/create-leave.dto';
 import { UpdateLeaveDto } from './dto/update-leave.dto';
@@ -62,11 +62,12 @@ export class LeaveController {
 			},
 		},
 	})
-	create(@Body() createLeaveDto: CreateLeaveDto, @Request() req: any) {
+	create(@Body() createLeaveDto: CreateLeaveDto, @Req() req: any) {
 		const orgId = req.user?.org?.uid || req.user?.organisation?.uid || req.organization?.ref;
 		const branchId = req.user?.branch?.uid || req.branch?.uid;
+		const userId = req.user?.uid;
 
-		return this.leaveService.create(createLeaveDto, orgId, branchId);
+		return this.leaveService.create(createLeaveDto, orgId, branchId, userId);
 	}
 
 	@Get()
@@ -139,10 +140,11 @@ export class LeaveController {
 		@Query('isApproved') isApproved?: string,
 		@Query('page') page?: string,
 		@Query('limit') limit?: string,
-		@Request() req?: any,
+		@Req() req?: any,
 	) {
 		const orgId = req.user?.org?.uid || req.user?.organisation?.uid || req.organization?.ref;
 		const branchId = req.user?.branch?.uid || req.branch?.uid;
+		const userId = req.user?.uid;
 
 		// Parse the filters
 		const filters: any = {};
@@ -159,6 +161,7 @@ export class LeaveController {
 			limit ? parseInt(limit, 10) : Number(process.env.DEFAULT_PAGE_LIMIT),
 			orgId,
 			branchId,
+			userId,
 		);
 	}
 
@@ -207,11 +210,12 @@ export class LeaveController {
 			},
 		},
 	})
-	findOne(@Param('ref') ref: number, @Request() req?: any) {
+	findOne(@Param('ref') ref: number, @Req() req?: any) {
 		const orgId = req.user?.org?.uid || req.user?.organisation?.uid || req.organization?.ref;
 		const branchId = req.user?.branch?.uid || req.branch?.uid;
+		const userId = req.user?.uid;
 
-		return this.leaveService.findOne(ref, orgId, branchId);
+		return this.leaveService.findOne(ref, orgId, branchId, userId);
 	}
 
 	@Get('user/:ref')
@@ -252,11 +256,12 @@ export class LeaveController {
 			},
 		},
 	})
-	leavesByUser(@Param('ref') ref: number, @Request() req?: any) {
+	leavesByUser(@Param('ref') ref: number, @Req() req?: any) {
 		const orgId = req.user?.org?.uid || req.user?.organisation?.uid || req.organization?.ref;
 		const branchId = req.user?.branch?.uid || req.branch?.uid;
+		const userId = req.user?.uid;
 
-		return this.leaveService.leavesByUser(ref, orgId, branchId);
+		return this.leaveService.leavesByUser(ref, orgId, branchId, userId);
 	}
 
 	@Patch(':ref')
@@ -302,11 +307,12 @@ export class LeaveController {
 			},
 		},
 	})
-	update(@Param('ref') ref: number, @Body() updateLeaveDto: UpdateLeaveDto, @Request() req?: any) {
+	update(@Param('ref') ref: number, @Body() updateLeaveDto: UpdateLeaveDto, @Req() req?: any) {
 		const orgId = req.user?.org?.uid || req.user?.organisation?.uid || req.organization?.ref;
 		const branchId = req.user?.branch?.uid || req.branch?.uid;
+		const userId = req.user?.uid;
 
-		return this.leaveService.update(ref, updateLeaveDto, orgId, branchId);
+		return this.leaveService.update(ref, updateLeaveDto, orgId, branchId, userId);
 	}
 
 	@Patch(':ref/approve')
@@ -334,12 +340,13 @@ export class LeaveController {
 			},
 		},
 	})
-	approve(@Param('ref') ref: number, @Request() req?: any) {
+	approve(@Param('ref') ref: number, @Req() req?: any) {
 		const orgId = req.user?.org?.uid || req.user?.organisation?.uid || req.organization?.ref;
 		const branchId = req.user?.branch?.uid || req.branch?.uid;
+		const userId = req.user?.uid;
 		const approverUid = req.user?.uid;
 
-		return this.leaveService.approveLeave(ref, approverUid, orgId, branchId);
+		return this.leaveService.approveLeave(ref, approverUid, orgId, branchId, userId);
 	}
 
 	@Patch(':ref/reject')
@@ -376,11 +383,12 @@ export class LeaveController {
 			},
 		},
 	})
-	reject(@Param('ref') ref: number, @Body() body: { rejectionReason: string }, @Request() req?: any) {
+	reject(@Param('ref') ref: number, @Body() body: { rejectionReason: string }, @Req() req?: any) {
 		const orgId = req.user?.org?.uid || req.user?.organisation?.uid || req.organization?.ref;
 		const branchId = req.user?.branch?.uid || req.branch?.uid;
+		const userId = req.user?.uid;
 
-		return this.leaveService.rejectLeave(ref, body.rejectionReason, orgId, branchId);
+		return this.leaveService.rejectLeave(ref, body.rejectionReason, orgId, branchId, userId);
 	}
 
 	@Patch(':ref/cancel')
@@ -425,12 +433,12 @@ export class LeaveController {
 			},
 		},
 	})
-	cancel(@Param('ref') ref: number, @Body() body: { cancellationReason: string }, @Request() req?: any) {
+	cancel(@Param('ref') ref: number, @Body() body: { cancellationReason: string }, @Req() req?: any) {
 		const orgId = req.user?.org?.uid || req.user?.organisation?.uid || req.organization?.ref;
 		const branchId = req.user?.branch?.uid || req.branch?.uid;
-		const userUid = req.user?.uid;
+		const userId = req.user?.uid;
 
-		return this.leaveService.cancelLeave(ref, body.cancellationReason, userUid, orgId, branchId);
+		return this.leaveService.cancelLeave(ref, body.cancellationReason, userId, orgId, branchId);
 	}
 
 	@Delete(':ref')
@@ -458,10 +466,11 @@ export class LeaveController {
 			},
 		},
 	})
-	remove(@Param('ref') ref: number, @Request() req?: any) {
+	remove(@Param('ref') ref: number, @Req() req?: any) {
 		const orgId = req.user?.org?.uid || req.user?.organisation?.uid || req.organization?.ref;
 		const branchId = req.user?.branch?.uid || req.branch?.uid;
+		const userId = req.user?.uid;
 
-		return this.leaveService.remove(ref, orgId, branchId);
+		return this.leaveService.remove(ref, orgId, branchId, userId);
 	}
 }

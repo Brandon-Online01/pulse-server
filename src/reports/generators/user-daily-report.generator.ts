@@ -80,9 +80,6 @@ export class UserDailyReportGenerator {
 		const previousStartDate = startOfDay(subDays(startDate, 1));
 		const previousEndDate = endOfDay(subDays(startDate, 1));
 
-		this.logger.log(`Generating daily report for user ${userId} from ${startDate} to ${endDate}`);
-		this.logger.log(`Previous period for growth: ${previousStartDate} to ${previousEndDate}`);
-
 		try {
 			// Get user data
 			const user = await this.userRepository.findOne({
@@ -168,9 +165,18 @@ export class UserDailyReportGenerator {
 						totalQuotations: quotationData.totalQuotations,
 						totalRevenue: quotationData.totalRevenueFormatted,
 						newCustomers: clientInteractions.newClients,
-						quotationGrowth: this.calculateGrowth(quotationData.totalQuotations, previousQuotationData.totalQuotations),
-						revenueGrowth: this.calculateGrowth(quotationData.totalRevenue, previousQuotationData.totalRevenue),
-						customerGrowth: this.calculateGrowth(clientInteractions.newClients, previousClientData.newClients),
+						quotationGrowth: this.calculateGrowth(
+							quotationData.totalQuotations,
+							previousQuotationData.totalQuotations,
+						),
+						revenueGrowth: this.calculateGrowth(
+							quotationData.totalRevenue,
+							previousQuotationData.totalRevenue,
+						),
+						customerGrowth: this.calculateGrowth(
+							clientInteractions.newClients,
+							previousClientData.newClients,
+						),
 						userSpecific: {
 							todayLeads: leadMetrics.newLeadsCount,
 							todayClaims: claimData.count,
@@ -183,11 +189,8 @@ export class UserDailyReportGenerator {
 				},
 			};
 
-			console.log(response);
-
 			return response;
 		} catch (error) {
-			this.logger.error(`Error generating user daily report: ${error.message}`, error.stack);
 			throw new Error(`Failed to generate daily report: ${error.message}`);
 		}
 	}
@@ -563,18 +566,16 @@ export class UserDailyReportGenerator {
 			const trackingResult = await this.trackingService.getDailyTracking(userId, startDate);
 
 			if (!trackingResult || !trackingResult.data) {
-				this.logger.warn(`No tracking data structure found for user ${userId} on ${format(startDate, 'yyyy-MM-dd')}`);
 				return this.defaultLocationData();
 			}
-			
-			const { trackingPoints, totalDistance, locationAnalysis } = trackingResult.data;
 
+			const { trackingPoints, totalDistance, locationAnalysis } = trackingResult.data;
 
 			if (!trackingPoints || !trackingPoints.length) {
 				this.logger.warn(`No tracking points found for user ${userId} on ${format(startDate, 'yyyy-MM-dd')}`);
 				return this.defaultLocationData(totalDistance);
 			}
-			
+
 			const totalDistanceKm = parseFloat(totalDistance) || 0;
 
 			// Format location data from tracking points
@@ -589,22 +590,24 @@ export class UserDailyReportGenerator {
 				accuracy: point.accuracy,
 				speed: point.speed,
 			}));
-			
+
 			let emailTrackingLocations = [];
 			let averageTimePerLocationFormatted = '~';
 
 			if (locationAnalysis && locationAnalysis.locationsVisited) {
-				emailTrackingLocations = locationAnalysis.locationsVisited.map(loc => ({
+				emailTrackingLocations = locationAnalysis.locationsVisited.map((loc) => ({
 					address: loc.address || `${loc.latitude}, ${loc.longitude}`,
 					timeSpent: loc.timeSpentFormatted || this.formatDuration(loc.timeSpentMinutes || 0), // Assuming timeSpentMinutes is available
 				}));
-				averageTimePerLocationFormatted = locationAnalysis.averageTimePerLocationFormatted || 
-				                                 this.formatDuration(locationAnalysis.averageTimePerLocationMinutes || 0); // Assuming averageTimePerLocationMinutes
+				averageTimePerLocationFormatted =
+					locationAnalysis.averageTimePerLocationFormatted ||
+					this.formatDuration(locationAnalysis.averageTimePerLocationMinutes || 0); // Assuming averageTimePerLocationMinutes
 			} else {
 				// Fallback if detailed locationAnalysis is not available
-				emailTrackingLocations = formattedTrackingPoints.map(p => ({ address: p.address, timeSpent: '~'})).slice(0, 5); // Show some points if no analysis
+				emailTrackingLocations = formattedTrackingPoints
+					.map((p) => ({ address: p.address, timeSpent: '~' }))
+					.slice(0, 5); // Show some points if no analysis
 			}
-
 
 			const trackingDataForEmail = {
 				totalDistance: `${totalDistanceKm.toFixed(1)} km`,

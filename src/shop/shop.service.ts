@@ -375,6 +375,11 @@ export class ShopService {
 
 			const savedQuotation = await this.quotationRepository.save(newQuotation);
 
+			// Trigger recalculation of user targets for the owner after a new quotation (checkout)
+			if (quotationData?.owner?.uid && this.eventEmitter) {
+				this.eventEmitter.emit('user.target.update.required', { userId: quotationData.owner.uid });
+			}
+
 			// Generate PDF for the quotation
 			// First get the full quotation with all relations for PDF generation
 			const fullQuotation = await this.quotationRepository.findOne({
