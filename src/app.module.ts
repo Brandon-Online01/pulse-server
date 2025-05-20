@@ -95,6 +95,7 @@ import { PayslipsModule } from './payslips/payslips.module';
 import { TimetableModule } from './timetable/timetable.module';
 import { Warning } from './warnings/entities/warning.entity';
 import { AttendanceMetrics } from './attendance/entities/attendance-metrics.entity';
+import { LeaveStatus } from './leave/entities/leave.status.entity';
 
 @Module({
 	imports: [
@@ -170,6 +171,7 @@ import { AttendanceMetrics } from './attendance/entities/attendance-metrics.enti
 				Report,
 				Interaction,
 				Leave,
+				LeaveStatus, 
 				Warning,
 			],
 			synchronize: true,

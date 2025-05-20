@@ -716,6 +716,10 @@ export class TasksService {
 		orgId?: number,
 		branchId?: number,
 	): Promise<{ message: string }> {
+		if (typeof ref !== 'number' || isNaN(ref)) {
+			throw new BadRequestException('Invalid task reference for update.');
+		}
+
 		try {
 			if (!orgId) {
 				throw new BadRequestException('Organization ID is required');

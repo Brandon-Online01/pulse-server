@@ -1,5 +1,5 @@
 import { User } from '../../user/entities/user.entity';
-import { Column, Entity, PrimaryGeneratedColumn, OneToOne } from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn, OneToOne, JoinColumn } from 'typeorm';
 
 @Entity('attendance_metrics')
 export class AttendanceMetrics {
@@ -37,5 +37,6 @@ export class AttendanceMetrics {
 	updatedAt: Date;
 
 	@OneToOne(() => User)
+	@JoinColumn()
 	user: User;
 }

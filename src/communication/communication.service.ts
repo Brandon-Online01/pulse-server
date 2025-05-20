@@ -12,11 +12,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CommunicationLog } from './entities/communication-log.entity';
 // Core email templates
-import { 
-	Signup, 
-	Verification, 
-	PasswordReset, 
-	PasswordChanged, 
+import {
+	Signup,
+	Verification,
+	PasswordReset,
+	PasswordChanged,
 	DailyReport,
 	NewTask,
 	TaskUpdated,
@@ -41,38 +41,27 @@ import {
 	LicenseActivated,
 } from '../lib/templates/emails';
 // Task related templates
-import {
-	TaskReminderAssignee,
-	TaskReminderCreator,
-	TaskOverdueMissed,
-} from '../lib/templates/emails';
+import { TaskReminderAssignee, TaskReminderCreator, TaskOverdueMissed } from '../lib/templates/emails';
 // User related templates
-import {
-	NewUserAdminNotification,
-} from '../lib/templates/emails';
+import { NewUserAdminNotification } from '../lib/templates/emails';
 // Lead related templates
-import {
-	LeadConvertedClient,
-	LeadConvertedCreator,
-	LeadReminder,
-	LeadAssignedToUser,
-} from '../lib/templates/emails';
+import { LeadConvertedClient, LeadConvertedCreator, LeadReminder, LeadAssignedToUser } from '../lib/templates/emails';
 // Email data types
-import { 
-	DailyReportData, 
-	InvoiceData, 
-	PasswordChangedData, 
-	PasswordResetData, 
-	VerificationEmailData, 
-	SignupEmailData, 
-	EmailTemplateData, 
+import {
+	DailyReportData,
+	InvoiceData,
+	PasswordChangedData,
+	PasswordResetData,
+	VerificationEmailData,
+	SignupEmailData,
+	EmailTemplateData,
 	LicenseEmailData,
-	LicenseLimitData, 
-	QuotationInternalData, 
-	QuotationResellerData, 
+	LicenseLimitData,
+	QuotationInternalData,
+	QuotationResellerData,
 	QuotationData,
-	NewUserAdminNotificationData, 
-	TaskReminderData, 
+	NewUserAdminNotificationData,
+	TaskReminderData,
 	TaskCompletedEmailData,
 	LeadConvertedClientData,
 	LeadConvertedCreatorData,
@@ -84,7 +73,7 @@ import {
 	TaskOverdueMissedData,
 	OrderReceivedClientData,
 } from '../lib/types/email-templates.types';
-import { 
+import {
 	TaskFlagCreated,
 	TaskFlagUpdated,
 	TaskFlagResolved,
@@ -101,7 +90,7 @@ export class CommunicationService {
 		private readonly notificationsService: NotificationsService,
 		private readonly userService: UserService,
 		@InjectRepository(CommunicationLog)
-		private communicationLogRepository: Repository<CommunicationLog>
+		private communicationLogRepository: Repository<CommunicationLog>,
 	) {
 		this.emailService = nodemailer.createTransport({
 			host: this.configService.get<string>('SMTP_HOST'),
@@ -118,11 +107,7 @@ export class CommunicationService {
 	}
 
 	@OnEvent('send.email')
-	async sendEmail<T extends EmailType>(
-		emailType: T,
-		recipientsEmails: string[],
-		data: EmailTemplateData<T>
-	) {
+	async sendEmail<T extends EmailType>(emailType: T, recipientsEmails: string[], data: EmailTemplateData<T>) {
 		try {
 			if (!recipientsEmails) {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
@@ -152,14 +137,19 @@ export class CommunicationService {
 
 			return result;
 		} catch (error) {
+			const smtpHost = this.configService.get<string>('SMTP_HOST');
+			const smtpUser = this.configService.get<string>('SMTP_USER');
+			const smtpFrom = this.configService.get<string>('SMTP_FROM');
+			console.error('Email service error:', error.message, {
+				SMTP_HOST: smtpHost,
+				SMTP_USER: smtpUser,
+				SMTP_FROM: smtpFrom,
+			});
 			throw error;
 		}
 	}
 
-	private getEmailTemplate<T extends EmailType>(
-		type: T,
-		data: EmailTemplateData<T>
-	): EmailTemplate {
+	private getEmailTemplate<T extends EmailType>(type: T, data: EmailTemplateData<T>): EmailTemplate {
 		switch (type) {
 			case EmailType.SIGNUP:
 				return {
@@ -348,15 +338,12 @@ export class CommunicationService {
 
 			const notifications = users.users.map((user: User) => ({
 				...notification,
-				owner: user
+				owner: user,
 			}));
 
-			await Promise.all(
-				notifications.map(notif => this.notificationsService.create(notif))
-			);
+			await Promise.all(notifications.map((notif) => this.notificationsService.create(notif)));
 		} catch (error) {
 			throw error;
 		}
 	}
-
-} 
+}
