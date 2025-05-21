@@ -9,14 +9,9 @@ import { RewardsModule } from '../rewards/rewards.module';
 import { LicensingModule } from '../licensing/licensing.module';
 
 @Module({
-  imports: [
-    LicensingModule,
-    TypeOrmModule.forFeature([Attendance, AttendanceMetrics]),
-    UserModule,
-    RewardsModule
-  ],
-  controllers: [AttendanceController],
-  providers: [AttendanceService],
-  exports: [AttendanceService]
+	imports: [LicensingModule, TypeOrmModule.forFeature([Attendance, AttendanceMetrics]), UserModule, RewardsModule],
+	controllers: [AttendanceController],
+	providers: [AttendanceService],
+	exports: [AttendanceService],
 })
-export class AttendanceModule { }
+export class AttendanceModule {}

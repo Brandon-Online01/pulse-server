@@ -194,26 +194,25 @@ export class LicenseUsageService {
 
         buffer.forEach(call => {
             // Update counters
-            metadata.endpoints[call.endpoint] = (metadata.endpoints[call.endpoint] || 0) + 1;
-            metadata.methods[call.method] = (metadata.methods[call.method] || 0) + 1;
-            metadata.statusCodes[call.statusCode] = (metadata.statusCodes[call.statusCode] || 0) + 1;
+            const endpointKey = call.endpoint || 'unknown';
+            const methodKey = call.method || 'unknown';
+            const statusCodeKey = call.statusCode || 'unknown';
+            metadata.endpoints[endpointKey] = (metadata.endpoints[endpointKey] || 0) + 1;
+            metadata.methods[methodKey] = (metadata.methods[methodKey] || 0) + 1;
+            metadata.statusCodes[statusCodeKey] = (metadata.statusCodes[statusCodeKey] || 0) + 1;
 
             // Performance metrics
-            totalDuration += call.duration;
-            durations.push(call.duration);
-            metadata.performance.maxResponseTime = Math.max(metadata.performance.maxResponseTime, call.duration);
-            metadata.performance.minResponseTime = Math.min(metadata.performance.minResponseTime, call.duration);
+            totalDuration += call.duration || 0;
+            durations.push(call.duration || 0);
+            metadata.performance.maxResponseTime = Math.max(metadata.performance.maxResponseTime, call.duration || 0);
+            metadata.performance.minResponseTime = Math.min(metadata.performance.minResponseTime, call.duration || Number.MAX_VALUE);
 
-            if (call.statusCode >= 400) errorCount++;
+            if ((call.statusCode || 0) >= 400) errorCount++;
 
-            // Client information
+            // Client information (just use raw userAgent string)
             if (call.userAgent) {
-                metadata.clients.browsers[call.userAgent.browser] =
-                    (metadata.clients.browsers[call.userAgent.browser] || 0) + 1;
-                metadata.clients.os[call.userAgent.os] =
-                    (metadata.clients.os[call.userAgent.os] || 0) + 1;
-                metadata.clients.devices[call.userAgent.device] =
-                    (metadata.clients.devices[call.userAgent.device] || 0) + 1;
+                const agentKey = call.userAgent || 'unknown';
+                metadata.clients.browsers[agentKey] = (metadata.clients.browsers[agentKey] || 0) + 1;
             }
 
             if (call.geoLocation?.country) {
@@ -223,9 +222,11 @@ export class LicenseUsageService {
 
             // Time distribution
             const date = new Date(call.timestamp);
-            metadata.timeDistribution.hourly[date.getHours()]++;
-            metadata.timeDistribution.daily[date.getDay()]++;
-            metadata.timeDistribution.monthly[date.getMonth()]++;
+            if (!isNaN(date.getTime())) {
+                metadata.timeDistribution.hourly[date.getHours()]++;
+                metadata.timeDistribution.daily[date.getDay()]++;
+                metadata.timeDistribution.monthly[date.getMonth()]++;
+            }
         });
 
         // Calculate final performance metrics
@@ -242,19 +243,19 @@ export class LicenseUsageService {
 
     private getLimitForMetric(license: License, metricType: MetricType): number {
         if (!license) return 0;
-
         try {
             switch (metricType) {
                 case MetricType.USERS:
-                    return license.maxUsers || 0;
+                    return license.maxUsers || 10;
                 case MetricType.BRANCHES:
-                    return license.maxBranches || 0;
+                    return license.maxBranches || 10;
                 case MetricType.STORAGE:
-                    return license.storageLimit || 0;
+                    return license.storageLimit || 10;
                 case MetricType.API_CALLS:
-                    return license.apiCallLimit || 0;
+                    // Use a default if missing/invalid
+                    return (license.apiCallLimit && license.apiCallLimit > 0) ? license.apiCallLimit : 10000;
                 case MetricType.INTEGRATIONS:
-                    return license.integrationLimit || 0;
+                    return license.integrationLimit || 10;
                 default:
                     this.logger.warn(`Unknown metric type: ${metricType}`);
                     return 0;

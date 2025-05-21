@@ -38,13 +38,21 @@ export class LicenseUsageInterceptor implements NestInterceptor {
 				return next.handle();
 			}
 
+			const endpoint = request.originalUrl || request.path || 'unknown';
+			const response = context.switchToHttp().getResponse();
+			const statusCode = response.statusCode || 200;
+			const userAgent = request.headers['user-agent'] || 'unknown';
+
 			return next.handle().pipe(
 				tap(async () => {
 					try {
 						// Track API call usage
 						await this.licenseUsageService.trackUsage(license, MetricType.API_CALLS, 1, {
-							path,
+							endpoint,
 							method,
+							statusCode,
+							userAgent,
+							ip: request.ip,
 							duration: Date.now() - startTime,
 							timestamp: new Date().toISOString(),
 							userId: user.uid,

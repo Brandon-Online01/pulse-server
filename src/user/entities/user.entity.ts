@@ -31,7 +31,6 @@ import {
 import { Journal } from 'src/journal/entities/journal.entity';
 import { Route } from 'src/tasks/entities/route.entity';
 import { TaskFlag } from '../../tasks/entities/task-flag.entity';
-import { Leave } from 'src/leave/entities/leave.entity';
 import { UserTarget } from './user-target.entity';
 import { Warning } from 'src/warnings/entities/warning.entity';
 

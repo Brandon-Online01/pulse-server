@@ -279,7 +279,7 @@ export class UserService {
 
 			const user = await this.userRepository.findOne({
 				where: whereConditions,
-				relations: ['organisation', 'branch', 'profile', 'employmentProfile', 'userTargets'],
+				relations: ['organisation', 'branch', 'userProfile', 'userEmployeementProfile', 'userTarget'],
 			});
 
 			if (!user) {

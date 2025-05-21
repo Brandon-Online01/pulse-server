@@ -28,37 +28,6 @@ export class ReportsController {
 
 	constructor(private readonly reportsService: ReportsService) {}
 
-	// Add helper function to add random offset to coordinates
-	private addRandomOffset(coord: number): number {
-		// Add a larger random offset (±0.04 which is roughly 4-5 kilometers)
-		return coord + (Math.random() - 0.5) * 0.08;
-	}
-
-	// Track all used coordinates to prevent duplicates
-	private usedCoordinates: Set<string> = new Set();
-
-	// Generate unique coordinates
-	private getUniqueCoordinates(baseCoords: number[]): number[] {
-		let lat = this.addRandomOffset(baseCoords[0]);
-		let lng = this.addRandomOffset(baseCoords[1]);
-		let coordKey = `${lat.toFixed(6)},${lng.toFixed(6)}`;
-
-		// If coordinates are already used, regenerate with larger offsets until unique
-		let attempts = 0;
-		while (this.usedCoordinates.has(coordKey) && attempts < 10) {
-			// Increase the offset range as we make more attempts
-			const offsetMultiplier = 1 + attempts * 1.5;
-			lat = baseCoords[0] + (Math.random() - 0.5) * 0.08 * offsetMultiplier;
-			lng = baseCoords[1] + (Math.random() - 0.5) * 0.08 * offsetMultiplier;
-			coordKey = `${lat.toFixed(6)},${lng.toFixed(6)}`;
-			attempts++;
-		}
-
-		// Store the unique coordinates
-		this.usedCoordinates.add(coordKey);
-		return [lat, lng];
-	}
-
 	// Unified endpoint for all report types
 	@Post(':type/generate')
 	@Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.USER, AccessLevel.OWNER)
