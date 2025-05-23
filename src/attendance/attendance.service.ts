@@ -12,9 +12,8 @@ import { UserService } from '../user/user.service';
 import { RewardsService } from '../rewards/rewards.service';
 import { XP_VALUES_TYPES } from '../lib/constants/constants';
 import { XP_VALUES } from '../lib/constants/constants';
-import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { BreakDetail } from './interfaces/break-detail.interface';
-import { AttendanceMetrics } from './entities/attendance-metrics.entity';
 
 @Injectable()
 export class AttendanceService {
@@ -23,12 +22,14 @@ export class AttendanceService {
 	constructor(
 		@InjectRepository(Attendance)
 		private attendanceRepository: Repository<Attendance>,
-		@InjectRepository(AttendanceMetrics)
-		private attendanceMetricsRepository: Repository<AttendanceMetrics>,
 		private userService: UserService,
 		private rewardsService: RewardsService,
 		private readonly eventEmitter: EventEmitter2,
 	) {}
+
+	// ======================================================
+	// ATTENDANCE METRICS FUNCTIONALITY
+	// ======================================================
 
 	public async checkIn(checkInDto: CreateCheckInDto): Promise<{ message: string }> {
 		try {
@@ -260,6 +261,10 @@ export class AttendanceService {
 			return response;
 		}
 	}
+
+	// ======================================================
+	// ATTENDANCE REPORTS
+	// ======================================================
 
 	public async checkInsByUser(ref: number): Promise<{ message: string; checkIns: Attendance[] }> {
 		try {
@@ -834,127 +839,6 @@ export class AttendanceService {
 				dailyWorkTime: 0,
 				dailyBreakTime: 0,
 			};
-		}
-	}
-
-	// ======================================================
-	// ATTENDANCE METRICS FUNCTIONALITY
-	// ======================================================
-
-	@OnEvent('user.metrics.update.required')
-	async updateUserMetrics(reference: number): Promise<void> {
-		try {
-			// Fetch all attendance records for the user
-			const attendanceRecords = await this.attendanceRepository.find({
-				where: { owner: { uid: reference } },
-			});
-
-			// Try to find an existing metrics record for the user
-			let metrics = await this.attendanceMetricsRepository.findOne({
-				where: { user: { uid: reference } },
-				relations: ['user'],
-			});
-
-			// If no attendance records, ensure a metrics record exists (avoid duplicates)
-			if (!attendanceRecords || attendanceRecords.length === 0) {
-				if (!metrics) {
-					const user = await this.userService.findOne(reference);
-					metrics = this.attendanceMetricsRepository.create({
-						user: user.user,
-						totalHours: 0,
-						totalDays: 0,
-						firstAttendance: null,
-						latestAttendance: null,
-						totalShifts: 0,
-						averageHoursPerDay: 0,
-						totalBreakCount: 0,
-						totalBreakHours: 0,
-					});
-					await this.attendanceMetricsRepository.save(metrics);
-				}
-				return;
-			}
-
-			// Calculate metrics
-			let totalHours = 0;
-			let totalBreakCount = 0;
-			let totalBreakHours = 0;
-			let totalShifts = 0;
-			const daysSet = new Set<string>();
-			let firstAttendance: Date = null;
-			let latestAttendance: Date = null;
-
-			for (const record of attendanceRecords) {
-				// Only count completed shifts for hours and break time
-				if (record.status === AttendanceStatus.COMPLETED && record.checkIn && record.checkOut) {
-					// Parse duration (format: "Xh Ym")
-					if (record.duration) {
-						const [hours, minutes] = record.duration.split(' ');
-						const hoursValue = parseFloat(hours.replace('h', ''));
-						const minutesValue = parseFloat(minutes.replace('m', '')) / 60;
-						totalHours += hoursValue + minutesValue;
-					} else {
-						// Fallback: calculate from checkIn/checkOut
-						const diffMs = new Date(record.checkOut).getTime() - new Date(record.checkIn).getTime();
-						totalHours += diffMs / (1000 * 60 * 60);
-					}
-					totalShifts += 1;
-
-					// Track unique days
-					const dayStr = new Date(record.checkIn).toISOString().slice(0, 10);
-					daysSet.add(dayStr);
-
-					// Track first/latest attendance
-					if (!firstAttendance || new Date(record.checkIn) < firstAttendance) {
-						firstAttendance = new Date(record.checkIn);
-					}
-					if (!latestAttendance || new Date(record.checkOut) > latestAttendance) {
-						latestAttendance = new Date(record.checkOut);
-					}
-
-					// Break count and hours
-					if (record.breakDetails && Array.isArray(record.breakDetails)) {
-						totalBreakCount += record.breakDetails.length;
-						for (const breakEntry of record.breakDetails) {
-							if (breakEntry.startTime && breakEntry.endTime) {
-								const breakMs = new Date(breakEntry.endTime).getTime() - new Date(breakEntry.startTime).getTime();
-								totalBreakHours += breakMs / (1000 * 60 * 60);
-							}
-						}
-					} else if (record.totalBreakTime) {
-						// Fallback: parseBreakTime returns minutes
-						const breakMinutes = this.parseBreakTime(record.totalBreakTime);
-						totalBreakHours += breakMinutes / 60;
-					}
-				}
-			}
-
-			const totalDays = daysSet.size;
-			const averageHoursPerDay = totalDays > 0 ? totalHours / totalDays : 0;
-
-			// Upsert metrics
-			const user = metrics?.user || (await this.userService.findOne(reference)).user;
-			const metricsData = {
-				user,
-				totalHours: Math.round(totalHours * 100) / 100,
-				totalDays,
-				firstAttendance,
-				latestAttendance,
-				totalShifts,
-				averageHoursPerDay: Math.round(averageHoursPerDay * 100) / 100,
-				totalBreakCount,
-				totalBreakHours: Math.round(totalBreakHours * 100) / 100,
-			};
-
-			if (metrics) {
-				Object.assign(metrics, metricsData);
-				await this.attendanceMetricsRepository.save(metrics);
-			} else {
-				const newMetrics = this.attendanceMetricsRepository.create(metricsData);
-				await this.attendanceMetricsRepository.save(newMetrics);
-			}
-		} catch (error) {
-			return error;
 		}
 	}
 }

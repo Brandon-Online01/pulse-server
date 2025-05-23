@@ -113,7 +113,7 @@ export class CreateLeadDto {
 	@ApiProperty({
 		description: 'Changes to the lead',
 		example: {
-			timestamp: Date,
+			timestamp: '2023-05-15T10:30:00Z',
 			oldStatus: 'PENDING',
 			newStatus: 'APPROVED',
 			reason: 'Client Approval',

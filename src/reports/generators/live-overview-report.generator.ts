@@ -12,7 +12,7 @@ import { Quotation } from '../../shop/entities/quotation.entity';
 import { TaskStatus, TaskPriority, TaskType, TaskFlagStatus } from '../../lib/enums/task.enums';
 import { LeadStatus, LeadCategory } from '../../lib/enums/lead.enums';
 import { AttendanceStatus } from '../../lib/enums/attendance.enums';
-import { startOfDay, endOfDay, format, differenceInMinutes, subHours, subDays, differenceInYears } from 'date-fns';
+import { startOfDay, endOfDay, format, differenceInMinutes, subDays, differenceInYears } from 'date-fns';
 import { ReportParamsDto } from '../dto/report-params.dto';
 import { Branch } from '../../branch/entities/branch.entity';
 import { Organisation } from '../../organisation/entities/organisation.entity';
@@ -199,7 +199,7 @@ export class LiveOverviewReportGenerator {
 				ageDistribution: {},
 			};
 
-			users.forEach(user => {
+			users.forEach((user) => {
 				const profile = user.userProfile;
 				if (profile) {
 					// Gender
@@ -207,16 +207,20 @@ export class LiveOverviewReportGenerator {
 					demographics.genderDistribution[gender] = (demographics.genderDistribution[gender] || 0) + 1;
 					// Ethnicity
 					const ethnicity = profile.ethnicity || 'Unknown';
-					demographics.ethnicityDistribution[ethnicity] = (demographics.ethnicityDistribution[ethnicity] || 0) + 1;
+					demographics.ethnicityDistribution[ethnicity] =
+						(demographics.ethnicityDistribution[ethnicity] || 0) + 1;
 					// Marital Status
 					const maritalStatus = profile.maritalStatus || 'Unknown';
-					demographics.maritalStatusDistribution[maritalStatus] = (demographics.maritalStatusDistribution[maritalStatus] || 0) + 1;
+					demographics.maritalStatusDistribution[maritalStatus] =
+						(demographics.maritalStatusDistribution[maritalStatus] || 0) + 1;
 					// Body Type
 					const bodyType = profile.bodyType || 'Unknown';
-					demographics.bodyTypeDistribution[bodyType] = (demographics.bodyTypeDistribution[bodyType] || 0) + 1;
+					demographics.bodyTypeDistribution[bodyType] =
+						(demographics.bodyTypeDistribution[bodyType] || 0) + 1;
 					// Smoking Habits
 					const smokingHabits = profile.smokingHabits || 'Unknown';
-					demographics.smokingHabitsDistribution[smokingHabits] = (demographics.smokingHabitsDistribution[smokingHabits] || 0) + 1;
+					demographics.smokingHabitsDistribution[smokingHabits] =
+						(demographics.smokingHabitsDistribution[smokingHabits] || 0) + 1;
 					// Age (use currentAge if available, else calculate from dob)
 					let age = profile.currentAge;
 					if (!age && profile.dateOfBirth) {
@@ -340,14 +344,14 @@ export class LiveOverviewReportGenerator {
 			let totalCheckOutMinutes = 0;
 			let totalShiftBreakMinutes = 0;
 
-			allTodayAttendance.forEach(shift => {
+			allTodayAttendance.forEach((shift) => {
 				if (shift.checkIn) {
 					const checkInDate = new Date(shift.checkIn);
 					totalCheckInMinutes += checkInDate.getHours() * 60 + checkInDate.getMinutes();
 				}
 			});
 
-			completedShifts.forEach(shift => {
+			completedShifts.forEach((shift) => {
 				if (shift.checkIn && shift.checkOut) {
 					const checkInDate = new Date(shift.checkIn);
 					const checkOutDate = new Date(shift.checkOut);
@@ -359,27 +363,31 @@ export class LiveOverviewReportGenerator {
 				}
 			});
 
-			const averageShiftDurationHours = completedShiftsToday > 0
-				? Math.round((totalShiftDurationMinutes / completedShiftsToday / 60) * 10) / 10
-				: 0;
+			const averageShiftDurationHours =
+				completedShiftsToday > 0
+					? Math.round((totalShiftDurationMinutes / completedShiftsToday / 60) * 10) / 10
+					: 0;
 
-			const averageCheckInMinutes = totalAttendanceRecordsToday > 0
-				? Math.round(totalCheckInMinutes / totalAttendanceRecordsToday)
-				: 0;
-			const averageCheckInTime = totalAttendanceRecordsToday > 0
-				? `${String(Math.floor(averageCheckInMinutes / 60)).padStart(2, '0')}:${String(averageCheckInMinutes % 60).padStart(2, '0')}`
-				: null;
+			const averageCheckInMinutes =
+				totalAttendanceRecordsToday > 0 ? Math.round(totalCheckInMinutes / totalAttendanceRecordsToday) : 0;
+			const averageCheckInTime =
+				totalAttendanceRecordsToday > 0
+					? `${String(Math.floor(averageCheckInMinutes / 60)).padStart(2, '0')}:${String(
+							averageCheckInMinutes % 60,
+					  ).padStart(2, '0')}`
+					: null;
 
-			const averageCheckOutMinutes = completedShiftsToday > 0
-				? Math.round(totalCheckOutMinutes / completedShiftsToday)
-				: 0;
-			const averageCheckOutTime = completedShiftsToday > 0
-				? `${String(Math.floor(averageCheckOutMinutes / 60)).padStart(2, '0')}:${String(averageCheckOutMinutes % 60).padStart(2, '0')}`
-				: null;
+			const averageCheckOutMinutes =
+				completedShiftsToday > 0 ? Math.round(totalCheckOutMinutes / completedShiftsToday) : 0;
+			const averageCheckOutTime =
+				completedShiftsToday > 0
+					? `${String(Math.floor(averageCheckOutMinutes / 60)).padStart(2, '0')}:${String(
+							averageCheckOutMinutes % 60,
+					  ).padStart(2, '0')}`
+					: null;
 
-			const averageBreakDurationMinutes = completedShiftsToday > 0
-				? Math.round(totalShiftBreakMinutes / completedShiftsToday)
-				: 0;
+			const averageBreakDurationMinutes =
+				completedShiftsToday > 0 ? Math.round(totalShiftBreakMinutes / completedShiftsToday) : 0;
 
 			// Get all employees with attendance records today
 			const employeesWithAttendanceToday = allTodayAttendance
@@ -953,17 +961,17 @@ export class LiveOverviewReportGenerator {
 		// Get user details for all assignees
 		const assigneeIds = Array.from(userCompletionMap.keys());
 		let userDetails: User[] = [];
-		
+
 		if (assigneeIds.length > 0) {
 			userDetails = await this.userRepository.find({
 				where: { uid: In(assigneeIds) },
 				select: ['uid', 'name', 'photoURL'],
 			});
 		}
-		
+
 		// Create a map for quick lookup of user details
 		const userMap = new Map<number, User>();
-		userDetails.forEach(user => {
+		userDetails.forEach((user) => {
 			userMap.set(user.uid, user);
 		});
 
@@ -1161,12 +1169,12 @@ export class LiveOverviewReportGenerator {
 		try {
 			// Initialize result with all lead categories
 			const result: Record<string, number> = {
-				'Uncategorized': 0,
+				Uncategorized: 0,
 				'Walk-in': 0,
-				'Referral': 0,
-				'Website': 0,
-				'Phone': 0,
-				'Email': 0,
+				Referral: 0,
+				Website: 0,
+				Phone: 0,
+				Email: 0,
 				'Social Media': 0,
 			};
 
@@ -1189,11 +1197,11 @@ export class LiveOverviewReportGenerator {
 					...orgFilter,
 					...branchFilter,
 				},
-				select: ['category']
+				select: ['category'],
 			});
 
 			// Count leads by category
-			leads.forEach(lead => {
+			leads.forEach((lead) => {
 				const displayCategory = categoryDisplayMap[lead.category] || 'Uncategorized';
 				result[displayCategory] = (result[displayCategory] || 0) + 1;
 			});
@@ -1256,7 +1264,9 @@ export class LiveOverviewReportGenerator {
 		organisationId: number,
 		branchId?: number,
 		startDate = startOfDay(new Date()),
-	): Promise<Array<{ userId: number; userName: string; userPhotoURL: string; leadCount: number; conversionRate: number }>> {
+	): Promise<
+		Array<{ userId: number; userName: string; userPhotoURL: string; leadCount: number; conversionRate: number }>
+	> {
 		// Create base filters
 		const orgFilter = { organisation: { uid: organisationId } };
 		const branchFilter = branchId ? { branch: { uid: branchId } } : {};
@@ -2029,7 +2039,9 @@ export class LiveOverviewReportGenerator {
 		organisationId: number,
 		branchId?: number,
 		startDate = startOfDay(new Date()),
-	): Promise<Array<{ userId: number; userName: string; userPhotoURL: string; interactions: number; uniqueClients: number }>> {
+	): Promise<
+		Array<{ userId: number; userName: string; userPhotoURL: string; interactions: number; uniqueClients: number }>
+	> {
 		// Create base filters
 		const orgFilter = { organisation: { uid: organisationId } };
 		const branchFilter = branchId ? { branch: { uid: branchId } } : {};
@@ -2677,19 +2689,19 @@ export class LiveOverviewReportGenerator {
 			});
 
 			// Get user details for all assignees
-			const assigneeIds = Object.keys(assigneeMap).map(id => parseInt(id, 10));
+			const assigneeIds = Object.keys(assigneeMap).map((id) => parseInt(id, 10));
 			let userDetails: User[] = [];
-			
+
 			if (assigneeIds.length > 0) {
 				userDetails = await this.userRepository.find({
 					where: { uid: In(assigneeIds) },
 					select: ['uid', 'name', 'photoURL'],
 				});
 			}
-			
+
 			// Create a map for quick lookup of user details
 			const userMap = new Map<number, User>();
-			userDetails.forEach(user => {
+			userDetails.forEach((user) => {
 				userMap.set(user.uid, user);
 			});
 
@@ -2711,7 +2723,7 @@ export class LiveOverviewReportGenerator {
 						assignee.highPriorityTasks > 0
 							? Math.round((assignee.highPriorityCompleted / assignee.highPriorityTasks) * 100)
 							: 0;
-							
+
 					// Get user details from our map
 					const userDetail = userMap.get(assignee.assigneeId);
 
@@ -2761,7 +2773,7 @@ export class LiveOverviewReportGenerator {
 					where: {
 						...orgFilter,
 						...branchFilter,
-						assignees: Raw(value => `JSON_CONTAINS(${value}, '{"uid": ${user.uid}}')`),
+						assignees: Raw((value) => `JSON_CONTAINS(${value}, '{"uid": ${user.uid}}')`),
 						status: Not(In([TaskStatus.COMPLETED, TaskStatus.CANCELLED])),
 					},
 				});
@@ -2770,7 +2782,7 @@ export class LiveOverviewReportGenerator {
 					where: {
 						...orgFilter,
 						...branchFilter,
-						assignees: Raw(value => `JSON_CONTAINS(${value}, '{"uid": ${user.uid}}')`),
+						assignees: Raw((value) => `JSON_CONTAINS(${value}, '{"uid": ${user.uid}}')`),
 						status: TaskStatus.PENDING,
 					},
 				});
@@ -2779,7 +2791,7 @@ export class LiveOverviewReportGenerator {
 					where: {
 						...orgFilter,
 						...branchFilter,
-						assignees: Raw(value => `JSON_CONTAINS(${value}, '{"uid": ${user.uid}}')`),
+						assignees: Raw((value) => `JSON_CONTAINS(${value}, '{"uid": ${user.uid}}')`),
 						status: TaskStatus.IN_PROGRESS,
 					},
 				});
@@ -2788,7 +2800,7 @@ export class LiveOverviewReportGenerator {
 					where: {
 						...orgFilter,
 						...branchFilter,
-						assignees: Raw(value => `JSON_CONTAINS(${value}, '{"uid": ${user.uid}}')`),
+						assignees: Raw((value) => `JSON_CONTAINS(${value}, '{"uid": ${user.uid}}')`),
 						status: TaskStatus.OVERDUE,
 					},
 				});
@@ -2797,7 +2809,7 @@ export class LiveOverviewReportGenerator {
 					where: {
 						...orgFilter,
 						...branchFilter,
-						assignees: Raw(value => `JSON_CONTAINS(${value}, '{"uid": ${user.uid}}')`),
+						assignees: Raw((value) => `JSON_CONTAINS(${value}, '{"uid": ${user.uid}}')`),
 						status: Not(In([TaskStatus.COMPLETED, TaskStatus.CANCELLED])),
 						priority: In([TaskPriority.HIGH, TaskPriority.URGENT]),
 					},
@@ -3300,11 +3312,11 @@ export class LiveOverviewReportGenerator {
 		try {
 			const today = new Date();
 			const startOfToday = startOfDay(today);
-			
+
 			// Create base filters
 			const orgFilter = { organisation: { uid: organisationId } };
 			const branchFilter = branchId ? { branch: { uid: branchId } } : {};
-			
+
 			// Get all claims
 			const claims = await this.claimRepository.find({
 				where: {
@@ -3317,58 +3329,56 @@ export class LiveOverviewReportGenerator {
 					createdAt: 'DESC',
 				},
 			});
-			
+
 			// Claims created today
-			const claimsToday = claims.filter(claim => 
-				claim.createdAt && new Date(claim.createdAt) >= startOfToday
-			);
-			
+			const claimsToday = claims.filter((claim) => claim.createdAt && new Date(claim.createdAt) >= startOfToday);
+
 			// Group claims by status
 			const statusCounts = {};
-			
+
 			// Initialize with all statuses
-			Object.values(ClaimStatus).forEach(status => {
+			Object.values(ClaimStatus).forEach((status) => {
 				statusCounts[status] = 0;
 			});
-			
+
 			// Count claims by status
-			claims.forEach(claim => {
+			claims.forEach((claim) => {
 				if (claim.status) {
 					statusCounts[claim.status] = (statusCounts[claim.status] || 0) + 1;
 				}
 			});
-			
+
 			// Group claims by category
 			const categoryCounts = {};
-			
+
 			// Initialize with all categories
-			Object.values(ClaimCategory).forEach(category => {
+			Object.values(ClaimCategory).forEach((category) => {
 				categoryCounts[category] = 0;
 			});
-			
+
 			// Count claims by category
-			claims.forEach(claim => {
+			claims.forEach((claim) => {
 				if (claim.category) {
 					categoryCounts[claim.category] = (categoryCounts[claim.category] || 0) + 1;
 				}
 			});
-			
+
 			// Calculate total claim value
 			const totalClaimValue = claims.reduce((total, claim) => {
 				const amount = typeof claim.amount === 'string' ? parseFloat(claim.amount) : claim.amount;
 				return total + (isNaN(amount) ? 0 : amount);
 			}, 0);
-			
+
 			// Format the total claim value with currency
 			const totalClaimValueFormatted = new Intl.NumberFormat('en-ZA', {
 				style: 'currency',
 				currency: 'ZAR',
 			}).format(totalClaimValue);
-			
+
 			// Get top claim creators
 			const claimsByUser = new Map();
-			
-			claims.forEach(claim => {
+
+			claims.forEach((claim) => {
 				if (claim.owner) {
 					const userId = claim.owner.uid;
 					const currentData = claimsByUser.get(userId) || {
@@ -3376,15 +3386,15 @@ export class LiveOverviewReportGenerator {
 						count: 0,
 						value: 0,
 					};
-					
+
 					currentData.count++;
 					const amount = typeof claim.amount === 'string' ? parseFloat(claim.amount) : claim.amount;
 					currentData.value += isNaN(amount) ? 0 : amount;
-					
+
 					claimsByUser.set(userId, currentData);
 				}
 			});
-			
+
 			const topClaimCreators = Array.from(claimsByUser.entries())
 				.map(([userId, data]) => ({
 					userId,
@@ -3398,7 +3408,7 @@ export class LiveOverviewReportGenerator {
 				}))
 				.sort((a, b) => b.claimCount - a.claimCount)
 				.slice(0, 5);
-			
+
 			return {
 				totalClaims: claims.length,
 				claimsToday: claimsToday.length,
@@ -3411,10 +3421,10 @@ export class LiveOverviewReportGenerator {
 				statusDistribution: statusCounts,
 				categoryDistribution: categoryCounts,
 				topClaimCreators,
-				recentClaims: claims.slice(0, 10).map(claim => ({
+				recentClaims: claims.slice(0, 10).map((claim) => ({
 					uid: claim.uid,
 					amount: claim.amount,
-					comments: claim.comments, 
+					comments: claim.comments,
 					status: claim.status,
 					category: claim.category,
 					createdAt: claim.createdAt,
@@ -3445,11 +3455,11 @@ export class LiveOverviewReportGenerator {
 		try {
 			const today = new Date();
 			const startOfToday = startOfDay(today);
-			
+
 			// Create base filters
 			const orgFilter = { organisation: { uid: organisationId } };
 			const branchFilter = branchId ? { branch: { uid: branchId } } : {};
-			
+
 			// Get all journals
 			const journals = await this.journalRepository.find({
 				where: {
@@ -3462,53 +3472,53 @@ export class LiveOverviewReportGenerator {
 					createdAt: 'DESC',
 				},
 			});
-			
+
 			// Journals created today
-			const journalsToday = journals.filter(journal => 
-				journal.createdAt && new Date(journal.createdAt) >= startOfToday
+			const journalsToday = journals.filter(
+				(journal) => journal.createdAt && new Date(journal.createdAt) >= startOfToday,
 			);
-			
+
 			// Group journals by status
 			const statusCounts = {};
-			
+
 			// Count journal by status
-			journals.forEach(journal => {
+			journals.forEach((journal) => {
 				if (journal.status) {
 					statusCounts[journal.status] = (statusCounts[journal.status] || 0) + 1;
 				}
 			});
-			
+
 			// Calculate recent journals activity
 			const last30DaysJournals = journals.filter(
-				journal => journal.createdAt && new Date(journal.createdAt) >= subDays(today, 30)
+				(journal) => journal.createdAt && new Date(journal.createdAt) >= subDays(today, 30),
 			);
-			
+
 			// Group by days
 			const journalsByDay = {};
-			
-			last30DaysJournals.forEach(journal => {
+
+			last30DaysJournals.forEach((journal) => {
 				if (journal.createdAt) {
 					const day = format(new Date(journal.createdAt), 'yyyy-MM-dd');
 					journalsByDay[day] = (journalsByDay[day] || 0) + 1;
 				}
 			});
-			
+
 			// Get top journal creators
 			const journalsByUser = new Map();
-			
-			journals.forEach(journal => {
+
+			journals.forEach((journal) => {
 				if (journal.owner) {
 					const userId = journal.owner.uid;
 					const currentData = journalsByUser.get(userId) || {
 						name: journal.owner.name,
 						count: 0,
 					};
-					
+
 					currentData.count++;
 					journalsByUser.set(userId, currentData);
 				}
 			});
-			
+
 			const topJournalCreators = Array.from(journalsByUser.entries())
 				.map(([userId, data]) => ({
 					userId,
@@ -3517,18 +3527,21 @@ export class LiveOverviewReportGenerator {
 				}))
 				.sort((a, b) => b.journalCount - a.journalCount)
 				.slice(0, 5);
-			
+
 			return {
 				totalJournals: journals.length,
 				journalsToday: journalsToday.length,
 				statusDistribution: statusCounts,
 				dailyActivity: journalsByDay,
 				topCreators: topJournalCreators,
-				recentJournals: journals.slice(0, 10).map(journal => ({
+				recentJournals: journals.slice(0, 10).map((journal) => ({
 					uid: journal.uid,
 					clientRef: journal.clientRef,
-					comments: journal.comments ? (journal.comments.length > 100 ? 
-						journal.comments.substring(0, 100) + '...' : journal.comments) : '',
+					comments: journal.comments
+						? journal.comments.length > 100
+							? journal.comments.substring(0, 100) + '...'
+							: journal.comments
+						: '',
 					status: journal.status,
 					createdAt: journal.createdAt,
 					ownerName: journal.owner?.name,
@@ -3546,17 +3559,17 @@ export class LiveOverviewReportGenerator {
 			};
 		}
 	}
-	
+
 	// New method to collect task flag metrics
 	private async collectTaskFlagMetrics(organisationId: number, branchId?: number): Promise<Record<string, any>> {
 		try {
 			const today = new Date();
 			const startOfToday = startOfDay(today);
-			
+
 			// Create base filters
 			const orgFilter = { organisation: { uid: organisationId } };
 			const branchFilter = branchId ? { branch: { uid: branchId } } : {};
-			
+
 			// Get tasks for this organization/branch
 			const tasks = await this.taskRepository.find({
 				where: {
@@ -3566,7 +3579,7 @@ export class LiveOverviewReportGenerator {
 				},
 				relations: ['flags', 'flags.createdBy', 'flags.items'],
 			});
-			
+
 			// Extract all flags from tasks
 			const allFlags = tasks.reduce((flags, task) => {
 				if (task.flags && task.flags.length > 0) {
@@ -3574,77 +3587,72 @@ export class LiveOverviewReportGenerator {
 				}
 				return flags;
 			}, []);
-			
+
 			// Flags created today
-			const flagsToday = allFlags.filter(flag => 
-				flag.createdAt && new Date(flag.createdAt) >= startOfToday
-			);
-			
+			const flagsToday = allFlags.filter((flag) => flag.createdAt && new Date(flag.createdAt) >= startOfToday);
+
 			// Group flags by status
 			const statusCounts = {};
-			
+
 			// Initialize with all statuses
-			Object.values(TaskFlagStatus).forEach(status => {
+			Object.values(TaskFlagStatus).forEach((status) => {
 				statusCounts[status] = 0;
 			});
-			
+
 			// Count flags by status
-			allFlags.forEach(flag => {
+			allFlags.forEach((flag) => {
 				if (flag.status) {
 					statusCounts[flag.status] = (statusCounts[flag.status] || 0) + 1;
 				}
 			});
-			
+
 			// Calculate resolution times for resolved flags
-			const resolvedFlags = allFlags.filter(flag => 
-				flag.status === TaskFlagStatus.RESOLVED || flag.status === TaskFlagStatus.CLOSED
+			const resolvedFlags = allFlags.filter(
+				(flag) => flag.status === TaskFlagStatus.RESOLVED || flag.status === TaskFlagStatus.CLOSED,
 			);
-			
+
 			let totalResolutionMinutes = 0;
 			let resolutionTimeCount = 0;
-			
-			resolvedFlags.forEach(flag => {
+
+			resolvedFlags.forEach((flag) => {
 				if (flag.createdAt && flag.updatedAt) {
-					const resolutionMinutes = differenceInMinutes(
-						new Date(flag.updatedAt),
-						new Date(flag.createdAt)
-					);
-					
+					const resolutionMinutes = differenceInMinutes(new Date(flag.updatedAt), new Date(flag.createdAt));
+
 					if (resolutionMinutes > 0) {
 						totalResolutionMinutes += resolutionMinutes;
 						resolutionTimeCount++;
 					}
 				}
 			});
-			
+
 			// Calculate average resolution time in hours
-			const averageResolutionHours = resolutionTimeCount > 0 ? 
-				Math.round((totalResolutionMinutes / resolutionTimeCount) / 60 * 10) / 10 : 0;
-			
+			const averageResolutionHours =
+				resolutionTimeCount > 0 ? Math.round((totalResolutionMinutes / resolutionTimeCount / 60) * 10) / 10 : 0;
+
 			// Find tasks with most flags
 			const taskFlagCounts = new Map();
-			
-			tasks.forEach(task => {
+
+			tasks.forEach((task) => {
 				if (task.flags && task.flags.length > 0) {
 					taskFlagCounts.set(task.uid, {
 						taskId: task.uid,
 						taskTitle: task.title,
 						flagCount: task.flags.length,
-						openFlagCount: task.flags.filter(f => 
-							f.status === TaskFlagStatus.OPEN || f.status === TaskFlagStatus.IN_PROGRESS
+						openFlagCount: task.flags.filter(
+							(f) => f.status === TaskFlagStatus.OPEN || f.status === TaskFlagStatus.IN_PROGRESS,
 						).length,
 					});
 				}
 			});
-			
+
 			const mostFlaggedTasks = Array.from(taskFlagCounts.values())
 				.sort((a, b) => b.flagCount - a.flagCount)
 				.slice(0, 5);
-			
+
 			// Get top flag creators
 			const flagsByUser = new Map();
-			
-			allFlags.forEach(flag => {
+
+			allFlags.forEach((flag) => {
 				if (flag.createdBy) {
 					const userId = flag.createdBy.uid;
 					const currentData = flagsByUser.get(userId) || {
@@ -3652,17 +3660,17 @@ export class LiveOverviewReportGenerator {
 						count: 0,
 						resolvedCount: 0,
 					};
-					
+
 					currentData.count++;
-					
+
 					if (flag.status === TaskFlagStatus.RESOLVED || flag.status === TaskFlagStatus.CLOSED) {
 						currentData.resolvedCount++;
 					}
-					
+
 					flagsByUser.set(userId, currentData);
 				}
 			});
-			
+
 			const topFlagCreators = Array.from(flagsByUser.entries())
 				.map(([userId, data]) => ({
 					userId,
@@ -3673,7 +3681,7 @@ export class LiveOverviewReportGenerator {
 				}))
 				.sort((a, b) => b.flagCount - a.flagCount)
 				.slice(0, 5);
-			
+
 			return {
 				totalFlags: allFlags.length,
 				flagsToday: flagsToday.length,
@@ -3688,11 +3696,14 @@ export class LiveOverviewReportGenerator {
 				recentFlags: allFlags
 					.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 					.slice(0, 10)
-					.map(flag => ({
+					.map((flag) => ({
 						uid: flag.uid,
 						title: flag.title,
-						description: flag.description ? (flag.description.length > 100 ? 
-							flag.description.substring(0, 100) + '...' : flag.description) : '',
+						description: flag.description
+							? flag.description.length > 100
+								? flag.description.substring(0, 100) + '...'
+								: flag.description
+							: '',
 						status: flag.status,
 						createdAt: flag.createdAt,
 						creatorName: flag.createdBy?.name,
@@ -3721,7 +3732,10 @@ export class LiveOverviewReportGenerator {
 	/**
 	 * Collect summary metrics from CheckIn entities
 	 */
-	private async collectCheckInSummaryMetrics(organisationId: number, branchId?: number): Promise<Record<string, any>> {
+	private async collectCheckInSummaryMetrics(
+		organisationId: number,
+		branchId?: number,
+	): Promise<Record<string, any>> {
 		try {
 			const today = new Date();
 			const startOfToday = startOfDay(today);
@@ -3741,12 +3755,12 @@ export class LiveOverviewReportGenerator {
 			});
 
 			const totalCheckInsToday = checkIns.length;
-			const clientCheckInsToday = checkIns.filter(ci => ci.client).length;
+			const clientCheckInsToday = checkIns.filter((ci) => ci.client).length;
 			const staffCheckInsToday = totalCheckInsToday - clientCheckInsToday; // Assuming non-client check-ins are staff
 
 			// Count check-ins by purpose (if the field exists and is used)
 			const checkInsByPurpose: Record<string, number> = {};
-			checkIns.forEach(checkIn => {
+			checkIns.forEach((checkIn) => {
 				const purpose = (checkIn as any).purpose || 'Unknown'; // Assuming 'purpose' exists
 				checkInsByPurpose[purpose] = (checkInsByPurpose[purpose] || 0) + 1;
 			});
@@ -3761,7 +3775,6 @@ export class LiveOverviewReportGenerator {
 				checkInsByPurpose,
 				averageCheckInDurationMinutes,
 			};
-
 		} catch (error) {
 			this.logger.error(`Error collecting check-in summary metrics: ${error.message}`, error.stack);
 			return {
@@ -3805,9 +3818,11 @@ export class LiveOverviewReportGenerator {
 				hasPendingPayments: license.hasPendingPayments,
 				features: license.features,
 			};
-
 		} catch (error) {
-			this.logger.error(`Error fetching license information for organisation ${organisationId}: ${error.message}`, error.stack);
+			this.logger.error(
+				`Error fetching license information for organisation ${organisationId}: ${error.message}`,
+				error.stack,
+			);
 			return null; // Return null on error
 		}
 	}

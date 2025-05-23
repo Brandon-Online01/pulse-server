@@ -170,4 +170,16 @@ export class User {
 
 	@OneToMany(() => Warning, (warning) => warning.issuedBy)
 	issuedWarnings: Warning[];
+
+	@Column({ nullable: true })
+	expoPushToken: string;
+
+	@Column({ nullable: true })
+	deviceId: string;
+
+	@Column({ nullable: true })
+	platform: string; // 'ios' | 'android'
+
+	@Column({ type: 'timestamp', nullable: true })
+	pushTokenUpdatedAt: Date;
 }

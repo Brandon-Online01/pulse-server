@@ -30,6 +30,9 @@ import { TaskFlagStatus, TaskFlagItemStatus } from '../lib/enums/task.enums';
 import { OrganisationSettings } from '../organisation/entities/organisation-settings.entity';
 import { Organisation } from '../organisation/entities/organisation.entity';
 import { Branch } from '../branch/entities/branch.entity';
+import { NotificationsService } from '../notifications/notifications.service';
+import { UnifiedNotificationService } from '../lib/services/unified-notification.service';
+import { NotificationEvent, NotificationPriority } from '../lib/types/unified-notification.types';
 
 @Injectable()
 export class TasksService {
@@ -56,6 +59,8 @@ export class TasksService {
 		private taskFlagItemRepository: Repository<TaskFlagItem>,
 		@InjectRepository(OrganisationSettings)
 		private readonly organisationSettingsRepository: Repository<OrganisationSettings>,
+		private readonly notificationsService: NotificationsService,
+		private readonly unifiedNotificationService: UnifiedNotificationService,
 	) {
 		this.CACHE_TTL = this.configService.get<number>('CACHE_EXPIRATION_TIME') || 30;
 	}
@@ -437,6 +442,58 @@ export class TasksService {
 				await this.subtaskRepository.save(subtasks);
 			}
 
+			// Send push notifications to assignees
+			if (savedTask?.assignees?.length > 0 && savedTask?.creator) {
+				try {
+					console.log('Sending task assignment notifications (email + push)');
+
+					const assigneeIds = savedTask.assignees.map((assignee) => assignee.uid);
+					const creatorName =
+						`${savedTask.creator.name || ''} ${savedTask.creator.surname || ''}`.trim() ||
+						savedTask.creator.username ||
+						'System';
+
+					console.log('assigneeIds', assigneeIds);
+					console.log('creatorName', creatorName);
+
+					// Use unified notification service for both email and push
+					await this.unifiedNotificationService.sendTemplatedNotification(
+						NotificationEvent.TASK_ASSIGNED,
+						assigneeIds,
+						{
+							taskId: savedTask.uid,
+							taskTitle: savedTask.title,
+							assignedBy: creatorName,
+							taskDescription: savedTask.description,
+							taskPriority: savedTask.priority,
+							taskDeadline: savedTask.deadline?.toISOString(),
+							taskType: savedTask.taskType,
+						},
+						{
+							sendEmail: true,
+							emailTemplate: EmailType.NEW_TASK,
+							emailData: {
+								name: 'Team Member',
+								taskId: savedTask.uid.toString(),
+								title: savedTask.title,
+								description: savedTask.description,
+								deadline: savedTask.deadline?.toISOString(),
+								priority: savedTask.priority,
+								taskType: savedTask.taskType,
+								status: savedTask.status,
+								assignedBy: creatorName,
+								clients: []
+							}
+						}
+					);
+
+					console.log('✅ Task assignment notifications sent successfully');
+				} catch (notificationError) {
+					// Log error but don't fail task creation
+					console.error('Failed to send task assignment notifications:', notificationError.message);
+				}
+			}
+
 			// Check if this is a repeating task
 			if (task.repetitionType !== RepetitionType.NONE && task.repetitionDeadline && task.deadline) {
 				await this.createRepeatingTasks(savedTask, createTaskDto);
@@ -737,12 +794,15 @@ export class TasksService {
 
 			const task = await this.taskRepository.findOne({
 				where: whereClause,
-				relations: ['organisation', 'branch', 'creator'],
+				relations: ['organisation', 'branch', 'creator', 'assignees'],
 			});
 
 			if (!task) {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
+
+			// Track original assignees for comparison
+			const originalAssigneeIds = task.assignees?.map((assignee) => assignee.uid) || [];
 
 			// Check if task is being marked as completed
 			const isCompletingTask =
@@ -760,6 +820,55 @@ export class TasksService {
 
 			// Update the task with the new data
 			await this.taskRepository.update(ref, updateTaskDto);
+
+			// Send push notifications to new assignees if assignees were updated
+			if (updateTaskDto.assignees?.length > 0 && task.creator) {
+				try {
+					const newAssigneeIds = updateTaskDto.assignees.map((assignee) => assignee.uid);
+					const addedAssigneeIds = newAssigneeIds.filter((id) => !originalAssigneeIds.includes(id));
+
+					if (addedAssigneeIds.length > 0) {
+						const creatorName =
+							`${task.creator.name || ''} ${task.creator.surname || ''}`.trim() ||
+							task.creator.username ||
+							'System';
+
+						// Use unified notification service for both email and push
+						await this.unifiedNotificationService.sendTemplatedNotification(
+							NotificationEvent.TASK_ASSIGNED,
+							addedAssigneeIds,
+							{
+								taskId: task.uid,
+								taskTitle: task.title,
+								assignedBy: creatorName,
+								taskDescription: task.description,
+								taskPriority: task.priority,
+								taskDeadline: task.deadline?.toISOString(),
+								taskType: task.taskType,
+							},
+							{
+								sendEmail: true,
+								emailTemplate: EmailType.TASK_UPDATED,
+								emailData: {
+									name: 'Team Member',
+									taskId: task.uid.toString(),
+									title: task.title,
+									description: task.description,
+									deadline: task.deadline?.toISOString(),
+									priority: task.priority,
+									taskType: task.taskType,
+									status: task.status,
+									assignedBy: creatorName,
+									clients: []
+								}
+							}
+						);
+					}
+				} catch (notificationError) {
+					// Log error but don't fail task update
+					console.error('Failed to send task assignment notifications:', notificationError.message);
+				}
+			}
 
 			// If subtasks were provided, handle them
 			if (subtasks && subtasks.length > 0) {
@@ -1065,6 +1174,38 @@ export class TasksService {
 
 			// Send notifications if task is completed
 			if (progress === 100) {
+				// Send push notifications to creator and assignees for task completion
+				try {
+					const creatorId = task.creator && task.creator[0] ? task.creator[0].uid : null;
+					const assigneeIds = task.assignees?.map((assignee) => assignee.uid) || [];
+					const allRecipientIds = [creatorId, ...assigneeIds].filter(Boolean);
+
+					if (allRecipientIds.length > 0) {
+						// Find who completed the task - for now, we don't have user context, so we'll use "System"
+						const completedBy = 'Team Member'; // This could be enhanced to pass user context
+
+						// Use unified notification service for both email and push
+						await this.unifiedNotificationService.sendTemplatedNotification(
+							NotificationEvent.TASK_COMPLETED,
+							allRecipientIds,
+							{
+								taskId: task.uid,
+								taskTitle: task.title,
+								completedBy: completedBy,
+								taskDescription: task.description,
+								taskPriority: task.priority,
+								completionDate: task.completionDate?.toISOString() || now.toISOString(),
+							},
+							{
+								priority: NotificationPriority.NORMAL
+							}
+						);
+					}
+				} catch (notificationError) {
+					// Log error but don't fail task completion
+					console.error('Failed to send task completion notifications:', notificationError.message);
+				}
+
 				// Internal system notification for assignees and creator
 				const notification = {
 					type: NotificationType.USER,
@@ -1680,11 +1821,11 @@ export class TasksService {
 			// Create response object first
 			const response = {
 				flagId: savedFlag.uid,
-				message: 'Task flag created successfully'
+				message: 'Task flag created successfully',
 			};
 
 			// Send email notifications asynchronously
-			this.sendTaskFlagEmailNotification(task, taskFlag, savedFlag, user, savedItems).catch(error => {
+			this.sendTaskFlagEmailNotification(task, taskFlag, savedFlag, user, savedItems).catch((error) => {
 				console.error('Failed to send task flag email notification:', error.message);
 			});
 
@@ -1695,7 +1836,13 @@ export class TasksService {
 	}
 
 	// Helper method to send email notifications for task flags
-	private async sendTaskFlagEmailNotification(task: Task, taskFlag: TaskFlag, savedFlag: TaskFlag, user: User, savedItems: TaskFlagItem[]): Promise<void> {
+	private async sendTaskFlagEmailNotification(
+		task: Task,
+		taskFlag: TaskFlag,
+		savedFlag: TaskFlag,
+		user: User,
+		savedItems: TaskFlagItem[],
+	): Promise<void> {
 		try {
 			const recipients = new Set<string>();
 

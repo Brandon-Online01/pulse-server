@@ -86,6 +86,7 @@ Required environment variables:
 		.addTag('assets', 'Digital and physical asset tracking with location support')
 		.addTag('att', 'Employee attendance and time tracking with location validation')
 		.addTag('docs', 'Document management with Google Cloud Storage integration')
+		.addTag('pdf-generation', 'Dynamic PDF generation service for business documents and templates')
 		.addTag('shop', 'E-commerce with location-based delivery and territory restrictions')
 
 		// Business Operations
@@ -94,9 +95,12 @@ Required environment variables:
 		.addTag('leads', 'Sales lead tracking with location and territory management')
 		.addTag('claims', 'Insurance claims processing with document attachments')
 		.addTag('journal', 'Daily activity logging for management and audit trails')
+		.addTag('leave', 'Employee leave management with approval workflows and tracking')
+		.addTag('payslips', 'Payroll and payslip generation system for employee compensation')
 		.addTag('products', 'Product catalog with image storage and inventory tracking')
 		.addTag('quotation-conversion', 'Quotation conversion with image storage and inventory tracking')
 		.addTag('shop', 'E-commerce with location-based delivery and territory restrictions')
+		.addTag('warnings', 'Employee warning and disciplinary management system')
 
 		// Communication and Notifications
 		.addTag('communication', 'Real-time messaging system with WebSocket support')
@@ -169,61 +173,60 @@ Required environment variables:
 				get: {
 					tags: ['websockets'],
 					summary: 'WebSocket Connection',
-					description: `
-						# WebSocket Documentation
+					description: 
+						`# WebSocket Documentation
 						
-						## Connection Details
-						- URL: wss://api.loro.co.za
-						- Protocol: Socket.IO
-						
-						## Available Events
-						
-						### System Events
-						- \`connect\`: Connection established
-						- \`disconnect\`: Connection terminated
-						- \`error\`: Error occurred
-						
-						### Business Events
-						- \`locationUpdate\`: Real-time GPS position updates
-						- \`taskAssigned\`: New task assignments
-						- \`statusChange\`: Entity status changes
-						- \`newQuotation\`: New quotation created
-						
-						## Authentication
-						WebSocket connections require JWT authentication via query parameter:
-						\`\`\`
-						wss://api.loro.co.za?token=your_jwt_token
-						\`\`\`
-						
-						## Code Examples
-						
-						### JavaScript/TypeScript
-						\`\`\`
-						import { io } from "socket.io-client";
-						
-						const socket = io("wss://api.loro.co.za", {
-							query: { token: "your_jwt_token" }
-						});
-						
-						// Handle connection
-						socket.on("connect", function() {
-							console.log("Connected to WebSocket");
-						});
-						
-						// Listen for events
-						socket.on("locationUpdate", function(data) {
-							console.log("Location update:", data);
-						});
-						
-						socket.on("taskAssigned", function(data) {
-							console.log("New task:", data);
-						});
-						
-						socket.on("error", function(error) {
-							console.error("WebSocket error:", error);
-						});
-						\`\`\`
-					`,
+## Connection Details
+- URL: wss://api.loro.co.za
+- Protocol: Socket.IO
+
+## Available Events
+
+### System Events
+- connect: Connection established
+- disconnect: Connection terminated
+- error: Error occurred
+
+### Business Events
+- locationUpdate: Real-time GPS position updates
+- taskAssigned: New task assignments
+- statusChange: Entity status changes
+- newQuotation: New quotation created
+
+## Authentication
+WebSocket connections require JWT authentication via query parameter:
+` + '```' + `
+wss://api.loro.co.za?token=your_jwt_token
+` + '```' + `
+
+## Code Examples
+
+### JavaScript/TypeScript
+` + '```javascript' + `
+import { io } from "socket.io-client";
+
+const socket = io("wss://api.loro.co.za", {
+	query: { token: "your_jwt_token" }
+});
+
+// Handle connection
+socket.on("connect", function() {
+	console.log("Connected to WebSocket");
+});
+
+// Listen for events
+socket.on("locationUpdate", function(data) {
+	console.log("Location update:", data);
+});
+
+socket.on("taskAssigned", function(data) {
+	console.log("New task:", data);
+});
+
+socket.on("error", function(error) {
+	console.error("WebSocket error:", error);
+});
+` + '```',
 					responses: {
 						'101': {
 							description: 'WebSocket connection established',
@@ -256,3 +259,19 @@ Required environment variables:
 	await app.listen(process.env.PORT ?? 4400);
 }
 bootstrap();
+
+
+
+// read the @mobile 
+
+// then I have tested the notifications work and display the data as needed
+
+// now I need send the notifications from the server
+
+// how to trigger notifications for exmaple we have to start with the @tasks 
+
+// when a task is issues to a user there is an email send to the user or users assigned to the task -  what I need done is send the email to the user also send the user a notification
+
+// how to do that 
+
+// Plan no code as yet

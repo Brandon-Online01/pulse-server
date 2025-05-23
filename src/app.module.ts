@@ -13,7 +13,6 @@ import { UserEmployeementProfile } from './user/entities/user.employeement.profi
 import { AttendanceModule } from './attendance/attendance.module';
 import { Attendance } from './attendance/entities/attendance.entity';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
-import { RoleGuard } from './guards/role.guard';
 import { TrackingModule } from './tracking/tracking.module';
 import { DocsModule } from './docs/docs.module';
 import { ClaimsModule } from './claims/claims.module';
@@ -94,7 +93,7 @@ import { WarningsModule } from './warnings/warnings.module';
 import { PayslipsModule } from './payslips/payslips.module';
 import { TimetableModule } from './timetable/timetable.module';
 import { Warning } from './warnings/entities/warning.entity';
-import { AttendanceMetrics } from './attendance/entities/attendance-metrics.entity';
+import { RoleGuard } from './guards/role.guard';
 
 @Module({
 	imports: [
@@ -120,7 +119,6 @@ import { AttendanceMetrics } from './attendance/entities/attendance-metrics.enti
 				UserProfile,
 				UserEmployeementProfile,
 				Attendance,
-				AttendanceMetrics,
 				Claim,
 				Doc,
 				Lead,

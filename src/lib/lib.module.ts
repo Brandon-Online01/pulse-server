@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { GoogleMapsService } from './services/google-maps.service';
 import { ConfigModule } from '@nestjs/config';
-import { ImporterService } from './services/importer';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Product } from '../products/entities/product.entity';
 import { User } from '../user/entities/user.entity';
@@ -16,7 +15,7 @@ import { Branch } from '../branch/entities/branch.entity';
 		ConfigModule,
 		TypeOrmModule.forFeature([Product, User, Quotation, QuotationItem, Client, Organisation, Branch]),
 	],
-	providers: [GoogleMapsService, ImporterService],
-	exports: [GoogleMapsService, ImporterService],
+	providers: [GoogleMapsService],
+	exports: [GoogleMapsService],
 })
 export class LibModule {}

@@ -2,8 +2,6 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import * as nodemailer from 'nodemailer';
 import { ConfigService } from '@nestjs/config';
-import { NotificationsService } from '../notifications/notifications.service';
-import { CreateNotificationDto } from '../notifications/dto/create-notification.dto';
 import { EmailType } from '../lib/enums/email.enums';
 import { EmailTemplate } from '../lib/interfaces/email.interface';
 import { UserService } from '../user/user.service';
@@ -87,7 +85,6 @@ export class CommunicationService {
 
 	constructor(
 		private readonly configService: ConfigService,
-		private readonly notificationsService: NotificationsService,
 		private readonly userService: UserService,
 		@InjectRepository(CommunicationLog)
 		private communicationLogRepository: Repository<CommunicationLog>,
@@ -328,22 +325,6 @@ export class CommunicationService {
 				};
 			default:
 				throw new NotFoundException(`Unknown email template type: ${type}`);
-		}
-	}
-
-	@OnEvent('send.notification')
-	async sendNotification(notification: CreateNotificationDto, recipients: string[]) {
-		try {
-			const users = await this.userService.getUsersByRole(recipients);
-
-			const notifications = users.users.map((user: User) => ({
-				...notification,
-				owner: user,
-			}));
-
-			await Promise.all(notifications.map((notif) => this.notificationsService.create(notif)));
-		} catch (error) {
-			throw error;
 		}
 	}
 }

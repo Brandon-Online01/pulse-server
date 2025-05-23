@@ -22,6 +22,8 @@ import { ConfigService } from '@nestjs/config';
 import { EmailType } from '../lib/enums/email.enums';
 import { LeadAssignedToUserData } from '../lib/types/email-templates.types';
 import { LeadStatusHistoryEntry } from './entities/lead.entity';
+import { UnifiedNotificationService } from '../lib/services/unified-notification.service';
+import { NotificationEvent, NotificationPriority } from '../lib/types/unified-notification.types';
 
 @Injectable()
 export class LeadsService {
@@ -36,6 +38,7 @@ export class LeadsService {
 		private readonly rewardsService: RewardsService,
 		private readonly communicationService: CommunicationService,
 		private readonly configService: ConfigService,
+		private readonly unifiedNotificationService: UnifiedNotificationService,
 	) {}
 
 	async create(
@@ -77,6 +80,45 @@ export class LeadsService {
 
 			// Send email notification to assignees
 			if (populatedLead.assignees && populatedLead.assignees.length > 0) {
+				const assigneeIds = populatedLead.assignees.map((assignee: User) => assignee.uid);
+				const creatorName = populatedLead.owner?.name || populatedLead.owner?.username || 'System';
+
+				// Use unified notification service for both email and push notifications
+				try {
+					await this.unifiedNotificationService.sendTemplatedNotification(
+						NotificationEvent.LEAD_ASSIGNED,
+						assigneeIds,
+						{
+							leadId: populatedLead.uid,
+							leadName: populatedLead.name,
+							assignedBy: creatorName,
+							leadDetails: populatedLead.notes,
+							leadCreatorName: creatorName,
+						},
+						{
+							sendEmail: true,
+							emailTemplate: EmailType.LEAD_ASSIGNED_TO_USER,
+							emailData: {
+								name: 'Team Member', // This will be overridden per recipient
+								assigneeName: 'Team Member',
+								leadId: populatedLead.uid,
+								leadName: populatedLead.name,
+								leadCreatorName: creatorName,
+								leadDetails: populatedLead.notes,
+								leadLink: `${this.configService.get<string>('DASHBOARD_URL')}/leads/${populatedLead.uid}`,
+							}
+						}
+					);
+
+					this.logger.log(`Lead assignment notifications sent for lead ${populatedLead.uid}`);
+				} catch (notificationError) {
+					this.logger.error(
+						`Failed to send lead assignment notifications for lead ${populatedLead.uid}: ${notificationError.message}`,
+						notificationError.stack,
+					);
+				}
+
+				// Legacy email notification fallback (in case unified notification fails)
 				for (const assignee of populatedLead.assignees as User[]) {
 					if (assignee.email) {
 						const emailData: LeadAssignedToUserData = {
@@ -95,11 +137,11 @@ export class LeadsService {
 								emailData,
 							);
 							this.logger.log(
-								`Lead assignment email sent to ${assignee.email} for lead ${populatedLead.uid}`,
+								`Fallback lead assignment email sent to ${assignee.email} for lead ${populatedLead.uid}`,
 							);
 						} catch (emailError) {
 							this.logger.error(
-								`Failed to send lead assignment email to ${assignee.email}: ${emailError.message}`,
+								`Failed to send fallback lead assignment email to ${assignee.email}: ${emailError.message}`,
 								emailError.stack,
 							);
 						}
@@ -430,6 +472,36 @@ export class LeadsService {
 			// Emit notification if status changed to CONVERTED
 			if (updateLeadDto.status === LeadStatus.CONVERTED && oldStatus !== LeadStatus.CONVERTED) {
 				const populatedLead = await this.populateLeadRelations(lead);
+				
+				// Send unified notification for lead conversion
+				try {
+					const allUserIds = [
+						populatedLead.owner?.uid,
+						...(populatedLead.assignees?.map((assignee: User) => assignee.uid) || [])
+					].filter(Boolean);
+
+					if (allUserIds.length > 0) {
+						await this.unifiedNotificationService.sendTemplatedNotification(
+							NotificationEvent.LEAD_CONVERTED,
+							allUserIds,
+							{
+								leadId: populatedLead.uid,
+								leadName: populatedLead.name || `#${ref}`,
+								convertedBy: 'System', // Could be enhanced to track who converted it
+							},
+							{
+								priority: NotificationPriority.HIGH
+							}
+						);
+					}
+				} catch (notificationError) {
+					this.logger.error(
+						`Failed to send lead conversion notifications for lead ${ref}: ${notificationError.message}`,
+						notificationError.stack,
+					);
+				}
+
+				// Legacy system notification
 				const notification = {
 					type: NotificationType.USER,
 					title: 'Lead Converted',
@@ -454,6 +526,45 @@ export class LeadsService {
 				const populatedLead = await this.populateLeadRelations({ ...lead, ...dataToSave });
 
 				if (populatedLead.assignees && populatedLead.assignees.length > 0) {
+					const assigneeIds = populatedLead.assignees.map((assignee: User) => assignee.uid);
+					const creatorName = populatedLead.owner?.name || populatedLead.owner?.username || 'System';
+
+					// Use unified notification service for both email and push notifications
+					try {
+						await this.unifiedNotificationService.sendTemplatedNotification(
+							NotificationEvent.LEAD_UPDATED,
+							assigneeIds,
+							{
+								leadId: populatedLead.uid,
+								leadName: populatedLead.name,
+								updatedBy: creatorName,
+								leadDetails: populatedLead.notes,
+								leadCreatorName: creatorName,
+							},
+							{
+								sendEmail: true,
+								emailTemplate: EmailType.LEAD_ASSIGNED_TO_USER,
+								emailData: {
+									name: 'Team Member', // This will be overridden per recipient
+									assigneeName: 'Team Member',
+									leadId: populatedLead.uid,
+									leadName: populatedLead.name,
+									leadCreatorName: creatorName,
+									leadDetails: populatedLead.notes,
+									leadLink: `${this.configService.get<string>('DASHBOARD_URL')}/leads/${populatedLead.uid}`,
+								}
+							}
+						);
+
+						this.logger.log(`Lead assignment update notifications sent for lead ${populatedLead.uid}`);
+					} catch (notificationError) {
+						this.logger.error(
+							`Failed to send lead assignment update notifications for lead ${populatedLead.uid}: ${notificationError.message}`,
+							notificationError.stack,
+						);
+					}
+
+					// Legacy email notification fallback
 					for (const assignee of populatedLead.assignees as User[]) {
 						if (assignee.email) {
 							const emailData: LeadAssignedToUserData = {
@@ -474,11 +585,11 @@ export class LeadsService {
 									emailData,
 								);
 								this.logger.log(
-									`Lead assignment update email sent to ${assignee.email} for lead ${populatedLead.uid}`,
+									`Fallback lead assignment update email sent to ${assignee.email} for lead ${populatedLead.uid}`,
 								);
 							} catch (emailError) {
 								this.logger.error(
-									`Failed to send lead assignment update email to ${assignee.email}: ${emailError.message}`,
+									`Failed to send fallback lead assignment update email to ${assignee.email}: ${emailError.message}`,
 									emailError.stack,
 								);
 							}

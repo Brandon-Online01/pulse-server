@@ -8,13 +8,15 @@ import { LicensingModule } from 'src/licensing/licensing.module';
 import { LeadsReminderService } from './leads-reminder.service';
 import { User } from '../user/entities/user.entity';
 import { CommunicationModule } from '../communication/communication.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
     LicensingModule,
     TypeOrmModule.forFeature([Lead, User]),
     RewardsModule,
-    CommunicationModule
+    CommunicationModule,
+    NotificationsModule
   ],
   controllers: [LeadsController],
   providers: [LeadsService, LeadsReminderService],
