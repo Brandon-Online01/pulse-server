@@ -688,15 +688,24 @@ export class AttendanceService {
 		}
 	}
 
-	private parseBreakTime(breakTime: string): number {
-		try {
-			// Format: "Xh Ym"
-			const hours = parseInt(breakTime.split('h')[0].trim()) || 0;
-			const minutes = parseInt(breakTime.split('h')[1].split('m')[0].trim()) || 0;
-			return hours * 60 + minutes;
-		} catch (error) {
-			return 0;
+	private parseBreakTime(breakTimeString: string): number {
+		if (!breakTimeString) return 0;
+		
+		const parts = breakTimeString.split(':');
+		if (parts.length === 3) {
+			// Format: HH:MM:SS
+			const hours = parseInt(parts[0], 10) || 0;
+			const minutes = parseInt(parts[1], 10) || 0;
+			const seconds = parseInt(parts[2], 10) || 0;
+			return hours * 60 + minutes + Math.round(seconds / 60);
+		} else if (parts.length === 2) {
+			// Format: MM:SS
+			const minutes = parseInt(parts[0], 10) || 0;
+			const seconds = parseInt(parts[1], 10) || 0;
+			return minutes + Math.round(seconds / 60);
 		}
+		
+		return 0;
 	}
 
 	public async getDailyStats(
@@ -838,6 +847,374 @@ export class AttendanceService {
 				message: error?.message || 'Error retrieving daily stats',
 				dailyWorkTime: 0,
 				dailyBreakTime: 0,
+			};
+		}
+	}
+
+	// ======================================================
+	// ATTENDANCE METRICS ENDPOINTS
+	// ======================================================
+
+	/**
+	 * Get comprehensive attendance metrics for a specific user
+	 * @param userId - User ID to get metrics for
+	 * @returns Comprehensive attendance metrics including first/last attendance and time breakdowns
+	 */
+	public async getUserAttendanceMetrics(userId: number): Promise<{
+		message: string;
+		metrics: {
+			firstAttendance: {
+				date: string | null;
+				checkInTime: string | null;
+				daysAgo: number | null;
+			};
+			lastAttendance: {
+				date: string | null;
+				checkInTime: string | null;
+				checkOutTime: string | null;
+				daysAgo: number | null;
+			};
+			totalHours: {
+				allTime: number;
+				thisMonth: number;
+				thisWeek: number;
+				today: number;
+			};
+			totalShifts: {
+				allTime: number;
+				thisMonth: number;
+				thisWeek: number;
+				today: number;
+			};
+			averageHoursPerDay: number;
+			attendanceStreak: number;
+			breakAnalytics: {
+				totalBreakTime: {
+					allTime: number; // in minutes
+					thisMonth: number;
+					thisWeek: number;
+					today: number;
+				};
+				averageBreakDuration: number; // in minutes per shift
+				breakFrequency: number; // average breaks per shift
+				longestBreak: number; // in minutes
+				shortestBreak: number; // in minutes
+			};
+			timingPatterns: {
+				averageCheckInTime: string;
+				averageCheckOutTime: string;
+				punctualityScore: number; // percentage of on-time arrivals
+				overtimeFrequency: number; // percentage of shifts with overtime
+			};
+			productivityInsights: {
+				workEfficiencyScore: number; // percentage based on work vs break time
+				shiftCompletionRate: number; // percentage of completed shifts
+				lateArrivalsCount: number;
+				earlyDeparturesCount: number;
+			};
+		};
+	}> {
+		try {
+			// Get first ever attendance
+			const firstAttendance = await this.attendanceRepository.findOne({
+				where: { owner: { uid: userId } },
+				order: { checkIn: 'ASC' },
+			});
+
+			// Get last attendance
+			const lastAttendance = await this.attendanceRepository.findOne({
+				where: { owner: { uid: userId } },
+				order: { checkIn: 'DESC' },
+			});
+
+			// Calculate date ranges
+			const now = new Date();
+			const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+			const startOfWeek = new Date(now);
+			startOfWeek.setDate(now.getDate() - now.getDay()); // Start of current week (Sunday)
+			startOfWeek.setHours(0, 0, 0, 0);
+			const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+			// Get all attendance records for the user
+			const allAttendance = await this.attendanceRepository.find({
+				where: { owner: { uid: userId } },
+				order: { checkIn: 'ASC' },
+			});
+
+			// Calculate total hours for different periods
+			const todayAttendance = allAttendance.filter(
+				(record) => new Date(record.checkIn) >= startOfToday
+			);
+			const weekAttendance = allAttendance.filter(
+				(record) => new Date(record.checkIn) >= startOfWeek
+			);
+			const monthAttendance = allAttendance.filter(
+				(record) => new Date(record.checkIn) >= startOfMonth
+			);
+
+			// Helper function to calculate total hours from attendance records
+			const calculateTotalHours = (records: Attendance[]): number => {
+				return records.reduce((total, record) => {
+					if (record.checkIn && record.checkOut) {
+						const minutes = differenceInMinutes(new Date(record.checkOut), new Date(record.checkIn));
+						// Subtract break time if available
+						const breakMinutes = record.totalBreakTime ? this.parseBreakTime(record.totalBreakTime) : 0;
+						return total + (minutes - breakMinutes) / 60;
+					}
+					return total;
+				}, 0);
+			};
+
+			// Calculate hours for each period
+			const totalHoursAllTime = calculateTotalHours(allAttendance);
+			const totalHoursThisMonth = calculateTotalHours(monthAttendance);
+			const totalHoursThisWeek = calculateTotalHours(weekAttendance);
+			const totalHoursToday = calculateTotalHours(todayAttendance);
+
+			// Calculate average hours per day (based on days since first attendance)
+			const daysSinceFirst = firstAttendance 
+				? Math.max(1, Math.ceil(differenceInMinutes(now, new Date(firstAttendance.checkIn)) / (24 * 60)))
+				: 1;
+			const averageHoursPerDay = totalHoursAllTime / daysSinceFirst;
+
+			// Calculate attendance streak (consecutive days with attendance)
+			let attendanceStreak = 0;
+			const today = new Date();
+			today.setHours(0, 0, 0, 0);
+			
+			for (let i = 0; i < 30; i++) { // Check last 30 days
+				const checkDate = new Date(today);
+				checkDate.setDate(today.getDate() - i);
+				const nextDay = new Date(checkDate);
+				nextDay.setDate(checkDate.getDate() + 1);
+				
+				const hasAttendance = allAttendance.some(record => {
+					const recordDate = new Date(record.checkIn);
+					return recordDate >= checkDate && recordDate < nextDay;
+				});
+				
+				if (hasAttendance) {
+					attendanceStreak++;
+				} else if (i > 0) { // Don't break on today if no attendance yet
+					break;
+				}
+			}
+
+			// ===== BREAK ANALYTICS =====
+			const calculateBreakAnalytics = (records: Attendance[]) => {
+				let totalBreakMinutes = 0;
+				let totalBreaks = 0;
+				let breakDurations: number[] = [];
+
+				records.forEach(record => {
+					if (record.totalBreakTime) {
+						const breakMinutes = this.parseBreakTime(record.totalBreakTime);
+						totalBreakMinutes += breakMinutes;
+						breakDurations.push(breakMinutes);
+					}
+					if (record.breakCount) {
+						totalBreaks += record.breakCount;
+					}
+				});
+
+				return {
+					totalBreakMinutes,
+					totalBreaks,
+					breakDurations,
+				};
+			};
+
+			const allTimeBreaks = calculateBreakAnalytics(allAttendance);
+			const monthBreaks = calculateBreakAnalytics(monthAttendance);
+			const weekBreaks = calculateBreakAnalytics(weekAttendance);
+			const todayBreaks = calculateBreakAnalytics(todayAttendance);
+
+			const completedShifts = allAttendance.filter(record => record.checkOut);
+			const averageBreakDuration = completedShifts.length > 0 
+				? allTimeBreaks.totalBreakMinutes / completedShifts.length 
+				: 0;
+			const breakFrequency = completedShifts.length > 0 
+				? allTimeBreaks.totalBreaks / completedShifts.length 
+				: 0;
+			const longestBreak = allTimeBreaks.breakDurations.length > 0 
+				? Math.max(...allTimeBreaks.breakDurations) 
+				: 0;
+			const shortestBreak = allTimeBreaks.breakDurations.length > 0 
+				? Math.min(...allTimeBreaks.breakDurations) 
+				: 0;
+
+			// ===== TIMING PATTERNS =====
+			const calculateAverageTime = (times: Date[], isCheckOut = false): string => {
+				if (times.length === 0) return 'N/A';
+				
+				const totalMinutes = times.reduce((sum, time) => {
+					const hours = time.getHours();
+					const minutes = time.getMinutes();
+					return sum + (hours * 60) + minutes;
+				}, 0);
+				
+				const avgMinutes = Math.round(totalMinutes / times.length);
+				const avgHours = Math.floor(avgMinutes / 60);
+				const remainingMinutes = avgMinutes % 60;
+				
+				return `${avgHours.toString().padStart(2, '0')}:${remainingMinutes.toString().padStart(2, '0')}`;
+			};
+
+			const checkInTimes = allAttendance.map(record => new Date(record.checkIn));
+			const checkOutTimes = allAttendance
+				.filter(record => record.checkOut)
+				.map(record => new Date(record.checkOut!));
+
+			const averageCheckInTime = calculateAverageTime(checkInTimes);
+			const averageCheckOutTime = calculateAverageTime(checkOutTimes, true);
+
+			// Punctuality score (assuming 9:00 AM is standard start time)
+			const standardStartHour = 9;
+			const onTimeArrivals = allAttendance.filter(record => {
+				const checkInTime = new Date(record.checkIn);
+				return checkInTime.getHours() <= standardStartHour;
+			}).length;
+			const punctualityScore = allAttendance.length > 0 
+				? Math.round((onTimeArrivals / allAttendance.length) * 100) 
+				: 0;
+
+			// Overtime frequency (assuming 8-hour standard workday)
+			const standardWorkHours = 8;
+			const overtimeShifts = completedShifts.filter(record => {
+				if (!record.checkOut) return false;
+				const workMinutes = differenceInMinutes(new Date(record.checkOut), new Date(record.checkIn));
+				const breakMinutes = record.totalBreakTime ? this.parseBreakTime(record.totalBreakTime) : 0;
+				const actualWorkHours = (workMinutes - breakMinutes) / 60;
+				return actualWorkHours > standardWorkHours;
+			}).length;
+			const overtimeFrequency = completedShifts.length > 0 
+				? Math.round((overtimeShifts / completedShifts.length) * 100) 
+				: 0;
+
+			// ===== PRODUCTIVITY INSIGHTS =====
+			// Work efficiency score (work time vs total time including breaks)
+			const totalWorkMinutes = allAttendance.reduce((total, record) => {
+				if (record.checkIn && record.checkOut) {
+					return total + differenceInMinutes(new Date(record.checkOut), new Date(record.checkIn));
+				}
+				return total;
+			}, 0);
+			const workEfficiencyScore = totalWorkMinutes > 0 
+				? Math.round(((totalWorkMinutes - allTimeBreaks.totalBreakMinutes) / totalWorkMinutes) * 100) 
+				: 0;
+
+			// Shift completion rate
+			const totalShifts = allAttendance.length;
+			const shiftCompletionRate = totalShifts > 0 
+				? Math.round((completedShifts.length / totalShifts) * 100) 
+				: 0;
+
+			// Late arrivals count (after 9:15 AM)
+			const lateThresholdHour = 9;
+			const lateThresholdMinute = 15;
+			const lateArrivalsCount = allAttendance.filter(record => {
+				const checkInTime = new Date(record.checkIn);
+				const checkInMinutes = checkInTime.getHours() * 60 + checkInTime.getMinutes();
+				const lateThreshold = lateThresholdHour * 60 + lateThresholdMinute;
+				return checkInMinutes > lateThreshold;
+			}).length;
+
+			// Early departures count (before 5:00 PM)
+			const earlyDepartureHour = 17; // 5 PM
+			const earlyDeparturesCount = completedShifts.filter(record => {
+				if (!record.checkOut) return false;
+				const checkOutTime = new Date(record.checkOut);
+				return checkOutTime.getHours() < earlyDepartureHour;
+			}).length;
+
+			// Format response
+			const metrics = {
+				firstAttendance: {
+					date: firstAttendance ? new Date(firstAttendance.checkIn).toISOString().split('T')[0] : null,
+					checkInTime: firstAttendance ? new Date(firstAttendance.checkIn).toLocaleTimeString() : null,
+					daysAgo: firstAttendance ? Math.floor(differenceInMinutes(now, new Date(firstAttendance.checkIn)) / (24 * 60)) : null,
+				},
+				lastAttendance: {
+					date: lastAttendance ? new Date(lastAttendance.checkIn).toISOString().split('T')[0] : null,
+					checkInTime: lastAttendance ? new Date(lastAttendance.checkIn).toLocaleTimeString() : null,
+					checkOutTime: lastAttendance?.checkOut ? new Date(lastAttendance.checkOut).toLocaleTimeString() : null,
+					daysAgo: lastAttendance ? Math.floor(differenceInMinutes(now, new Date(lastAttendance.checkIn)) / (24 * 60)) : null,
+				},
+				totalHours: {
+					allTime: Math.round(totalHoursAllTime * 10) / 10,
+					thisMonth: Math.round(totalHoursThisMonth * 10) / 10,
+					thisWeek: Math.round(totalHoursThisWeek * 10) / 10,
+					today: Math.round(totalHoursToday * 10) / 10,
+				},
+				totalShifts: {
+					allTime: allAttendance.length,
+					thisMonth: monthAttendance.length,
+					thisWeek: weekAttendance.length,
+					today: todayAttendance.length,
+				},
+				averageHoursPerDay: Math.round(averageHoursPerDay * 10) / 10,
+				attendanceStreak,
+				breakAnalytics: {
+					totalBreakTime: {
+						allTime: allTimeBreaks.totalBreakMinutes,
+						thisMonth: monthBreaks.totalBreakMinutes,
+						thisWeek: weekBreaks.totalBreakMinutes,
+						today: todayBreaks.totalBreakMinutes,
+					},
+					averageBreakDuration: Math.round(averageBreakDuration),
+					breakFrequency: Math.round(breakFrequency * 10) / 10,
+					longestBreak,
+					shortestBreak,
+				},
+				timingPatterns: {
+					averageCheckInTime,
+					averageCheckOutTime,
+					punctualityScore,
+					overtimeFrequency,
+				},
+				productivityInsights: {
+					workEfficiencyScore,
+					shiftCompletionRate,
+					lateArrivalsCount,
+					earlyDeparturesCount,
+				},
+			};
+
+			return {
+				message: process.env.SUCCESS_MESSAGE || 'Success',
+				metrics,
+			};
+		} catch (error) {
+			this.logger.error('Error getting user attendance metrics:', error);
+			return {
+				message: error?.message || 'Error retrieving attendance metrics',
+				metrics: {
+					firstAttendance: { date: null, checkInTime: null, daysAgo: null },
+					lastAttendance: { date: null, checkInTime: null, checkOutTime: null, daysAgo: null },
+					totalHours: { allTime: 0, thisMonth: 0, thisWeek: 0, today: 0 },
+					totalShifts: { allTime: 0, thisMonth: 0, thisWeek: 0, today: 0 },
+					averageHoursPerDay: 0,
+					attendanceStreak: 0,
+					breakAnalytics: {
+						totalBreakTime: { allTime: 0, thisMonth: 0, thisWeek: 0, today: 0 },
+						averageBreakDuration: 0,
+						breakFrequency: 0,
+						longestBreak: 0,
+						shortestBreak: 0,
+					},
+					timingPatterns: {
+						averageCheckInTime: 'N/A',
+						averageCheckOutTime: 'N/A',
+						punctualityScore: 0,
+						overtimeFrequency: 0,
+					},
+					productivityInsights: {
+						workEfficiencyScore: 0,
+						shiftCompletionRate: 0,
+						lateArrivalsCount: 0,
+						earlyDeparturesCount: 0,
+					},
+				},
 			};
 		}
 	}

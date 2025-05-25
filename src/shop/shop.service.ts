@@ -178,9 +178,6 @@ export class ShopService {
 
 			return response;
 		} catch (error) {
-			// Log error but return empty categories instead of null
-			this.logger.warn(`Error fetching categories: ${error?.message}`);
-
 			const response = {
 				message: error?.message || 'Error fetching categories',
 				categories: [],

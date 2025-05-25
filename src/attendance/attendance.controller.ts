@@ -359,4 +359,84 @@ export class AttendanceController {
 	// ======================================================
 	// ATTENDANCE METRICS ENDPOINTS
 	// ======================================================
+
+	@Get('metrics/:uid')
+	@Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+		AccessLevel.HR,
+	)
+	@ApiOperation({
+		summary: 'Get user attendance metrics',
+		description: 'Retrieves comprehensive attendance metrics for a specific user including first/last attendance and time breakdowns',
+	})
+	@ApiParam({ name: 'uid', description: 'User ID', type: 'number' })
+	@ApiOkResponse({
+		description: 'Attendance metrics retrieved successfully',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', example: 'Success' },
+				metrics: {
+					type: 'object',
+					properties: {
+						firstAttendance: {
+							type: 'object',
+							properties: {
+								date: { type: 'string', example: '2024-01-15' },
+								checkInTime: { type: 'string', example: '08:30:00' },
+								daysAgo: { type: 'number', example: 45 },
+							},
+						},
+						lastAttendance: {
+							type: 'object',
+							properties: {
+								date: { type: 'string', example: '2024-03-01' },
+								checkInTime: { type: 'string', example: '09:00:00' },
+								checkOutTime: { type: 'string', example: '17:30:00' },
+								daysAgo: { type: 'number', example: 1 },
+							},
+						},
+						totalHours: {
+							type: 'object',
+							properties: {
+								allTime: { type: 'number', example: 320.5 },
+								thisMonth: { type: 'number', example: 160.0 },
+								thisWeek: { type: 'number', example: 40.0 },
+								today: { type: 'number', example: 8.0 },
+							},
+						},
+						totalShifts: {
+							type: 'object',
+							properties: {
+								allTime: { type: 'number', example: 45 },
+								thisMonth: { type: 'number', example: 20 },
+								thisWeek: { type: 'number', example: 5 },
+								today: { type: 'number', example: 1 },
+							},
+						},
+						averageHoursPerDay: { type: 'number', example: 7.1 },
+						attendanceStreak: { type: 'number', example: 5 },
+					},
+				},
+			},
+		},
+	})
+	@ApiNotFoundResponse({
+		description: 'User not found or no attendance data',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', example: 'No attendance data found for user' },
+			},
+		},
+	})
+	getUserAttendanceMetrics(@Param('uid') uid: number) {
+		return this.attendanceService.getUserAttendanceMetrics(uid);
+	}
 }
