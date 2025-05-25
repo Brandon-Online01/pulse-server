@@ -274,7 +274,6 @@ LORO supports complete white-label customization:
 		.addTag('claims', 'Insurance claims processing with document attachments')
 		.addTag('journal', 'Daily activity logging for management and audit trails')
 		.addTag('leave', 'Employee leave management with approval workflows and tracking')
-		.addTag('payslips', 'Payroll and payslip generation system for employee compensation')
 		.addTag('products', 'Product catalog with image storage and inventory tracking')
 		.addTag('quotation-conversion', 'Quotation conversion with image storage and inventory tracking')
 		.addTag('shop', 'E-commerce with location-based delivery and territory restrictions')
@@ -351,7 +350,7 @@ LORO supports complete white-label customization:
 				get: {
 					tags: ['websockets'],
 					summary: 'WebSocket Connection',
-					description: 
+					description:
 						`# WebSocket Documentation
 						
 ## Connection Details
@@ -373,14 +372,20 @@ LORO supports complete white-label customization:
 
 ## Authentication
 WebSocket connections require JWT authentication via query parameter:
-` + '```' + `
+` +
+						'```' +
+						`
 wss://api.loro.co.za?token=your_jwt_token
-` + '```' + `
+` +
+						'```' +
+						`
 
 ## Code Examples
 
 ### JavaScript/TypeScript
-` + '```javascript' + `
+` +
+						'```javascript' +
+						`
 import { io } from "socket.io-client";
 
 const socket = io("wss://api.loro.co.za", {
@@ -404,7 +409,8 @@ socket.on("taskAssigned", function(data) {
 socket.on("error", function(error) {
 	console.error("WebSocket error:", error);
 });
-` + '```',
+` +
+						'```',
 					responses: {
 						'101': {
 							description: 'WebSocket connection established',
@@ -438,18 +444,16 @@ socket.on("error", function(error) {
 }
 bootstrap();
 
-
-
-// read the @mobile 
+// read the @mobile
 
 // then I have tested the notifications work and display the data as needed
 
 // now I need send the notifications from the server
 
-// how to trigger notifications for exmaple we have to start with the @tasks 
+// how to trigger notifications for exmaple we have to start with the @tasks
 
 // when a task is issues to a user there is an email send to the user or users assigned to the task -  what I need done is send the email to the user also send the user a notification
 
-// how to do that 
+// how to do that
 
 // Plan no code as yet
