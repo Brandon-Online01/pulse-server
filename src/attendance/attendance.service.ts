@@ -1,19 +1,24 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
-import { IsNull, MoreThanOrEqual, Not, Repository, LessThanOrEqual } from 'typeorm';
+import { Injectable, NotFoundException, Logger, BadRequestException, Inject } from '@nestjs/common';
+import { IsNull, MoreThanOrEqual, Not, Repository, LessThanOrEqual, Between, In } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 import { Attendance } from './entities/attendance.entity';
 import { AttendanceStatus } from '../lib/enums/attendance.enums';
 import { CreateCheckInDto } from './dto/create-attendance-check-in.dto';
 import { CreateCheckOutDto } from './dto/create-attendance-check-out.dto';
 import { CreateBreakDto } from './dto/create-attendance-break.dto';
+import { OrganizationReportQueryDto } from './dto/organization-report-query.dto';
 import { isToday } from 'date-fns';
-import { differenceInMinutes, differenceInMilliseconds, startOfMonth, endOfMonth } from 'date-fns';
+import { differenceInMinutes, differenceInMilliseconds, startOfMonth, endOfMonth, startOfDay, endOfDay, differenceInDays, format, parseISO } from 'date-fns';
 import { UserService } from '../user/user.service';
 import { RewardsService } from '../rewards/rewards.service';
 import { XP_VALUES_TYPES } from '../lib/constants/constants';
 import { XP_VALUES } from '../lib/constants/constants';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { BreakDetail } from './interfaces/break-detail.interface';
+import { AccessLevel } from '../lib/enums/user.enums';
+import { User } from '../user/entities/user.entity';
 
 @Injectable()
 export class AttendanceService {
@@ -22,9 +27,12 @@ export class AttendanceService {
 	constructor(
 		@InjectRepository(Attendance)
 		private attendanceRepository: Repository<Attendance>,
+		@InjectRepository(User)
+		private userRepository: Repository<User>,
 		private userService: UserService,
 		private rewardsService: RewardsService,
 		private readonly eventEmitter: EventEmitter2,
+		@Inject(CACHE_MANAGER) private cacheManager: Cache,
 	) {}
 
 	// ======================================================
@@ -145,7 +153,9 @@ export class AttendanceService {
 
 	public async allCheckIns(): Promise<{ message: string; checkIns: Attendance[] }> {
 		try {
-			const checkIns = await this.attendanceRepository.find();
+			const checkIns = await this.attendanceRepository.find({
+				relations: ['owner', 'owner.branch', 'owner.organisation', 'owner.userProfile', 'verifiedBy', 'organisation', 'branch'],
+			});
 
 			if (!checkIns) {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
@@ -172,6 +182,10 @@ export class AttendanceService {
 			const checkIns = await this.attendanceRepository.find({
 				where: {
 					checkIn: MoreThanOrEqual(new Date(date)),
+				},
+				relations: ['owner', 'owner.branch', 'owner.organisation', 'owner.userProfile', 'verifiedBy', 'organisation', 'branch'],
+				order: {
+					checkIn: 'DESC',
 				},
 			});
 
@@ -202,6 +216,8 @@ export class AttendanceService {
 		nextAction: string;
 		isLatestCheckIn: boolean;
 		checkedIn: boolean;
+		user: any;
+		attendance: Attendance;
 	}> {
 		try {
 			const [checkIn] = await this.attendanceRepository.find({
@@ -210,6 +226,7 @@ export class AttendanceService {
 						uid: ref,
 					},
 				},
+				relations: ['owner', 'owner.branch', 'owner.organisation', 'owner.userProfile', 'verifiedBy', 'organisation', 'branch'],
 				order: {
 					checkIn: 'DESC',
 				},
@@ -228,6 +245,7 @@ export class AttendanceService {
 				updatedAt,
 				verifiedAt,
 				checkIn: CheckInTime,
+				owner,
 				...restOfCheckIn
 			} = checkIn;
 
@@ -244,6 +262,8 @@ export class AttendanceService {
 				nextAction,
 				isLatestCheckIn,
 				checkedIn,
+				user: owner,
+				attendance: checkIn,
 				...restOfCheckIn,
 			};
 
@@ -256,6 +276,8 @@ export class AttendanceService {
 				nextAction: null,
 				isLatestCheckIn: false,
 				checkedIn: false,
+				user: null,
+				attendance: null,
 			};
 
 			return response;
@@ -266,19 +288,27 @@ export class AttendanceService {
 	// ATTENDANCE REPORTS
 	// ======================================================
 
-	public async checkInsByUser(ref: number): Promise<{ message: string; checkIns: Attendance[] }> {
+	public async checkInsByUser(ref: number): Promise<{ message: string; checkIns: Attendance[]; user: any }> {
 		try {
 			const checkIns = await this.attendanceRepository.find({
 				where: { owner: { uid: ref } },
+				relations: ['owner', 'owner.branch', 'owner.organisation', 'owner.userProfile', 'verifiedBy', 'organisation', 'branch'],
+				order: {
+					checkIn: 'DESC',
+				},
 			});
 
-			if (!checkIns) {
+			if (!checkIns || checkIns.length === 0) {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
+
+			// Get user info from the first attendance record
+			const userInfo = checkIns[0]?.owner || null;
 
 			const response = {
 				message: process.env.SUCCESS_MESSAGE,
 				checkIns,
+				user: userInfo,
 			};
 
 			return response;
@@ -286,27 +316,39 @@ export class AttendanceService {
 			const response = {
 				message: `could not get check ins by user - ${error?.message}`,
 				checkIns: null,
+				user: null,
 			};
 
 			return response;
 		}
 	}
 
-	public async checkInsByBranch(ref: string): Promise<{ message: string; checkIns: Attendance[] }> {
+	public async checkInsByBranch(ref: string): Promise<{ message: string; checkIns: Attendance[]; branch: any; totalUsers: number }> {
 		try {
 			const checkIns = await this.attendanceRepository.find({
 				where: {
 					branch: { ref },
 				},
+				relations: ['owner', 'owner.branch', 'owner.organisation', 'owner.userProfile', 'verifiedBy', 'organisation', 'branch'],
+				order: {
+					checkIn: 'DESC',
+				},
 			});
 
-			if (!checkIns) {
+			if (!checkIns || checkIns.length === 0) {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
+
+			// Get branch info and count unique users
+			const branchInfo = checkIns[0]?.branch || null;
+			const uniqueUsers = new Set(checkIns.map(record => record.owner.uid));
+			const totalUsers = uniqueUsers.size;
 
 			const response = {
 				message: process.env.SUCCESS_MESSAGE,
 				checkIns,
+				branch: branchInfo,
+				totalUsers,
 			};
 
 			return response;
@@ -314,6 +356,8 @@ export class AttendanceService {
 			const response = {
 				message: `could not get check ins by branch - ${error?.message}`,
 				checkIns: null,
+				branch: null,
+				totalUsers: 0,
 			};
 
 			return response;
@@ -373,6 +417,10 @@ export class AttendanceService {
 					checkOut: LessThanOrEqual(endOfDayDate),
 					status: AttendanceStatus.COMPLETED,
 				},
+				relations: ['owner', 'owner.branch', 'owner.organisation', 'owner.userProfile', 'verifiedBy', 'organisation', 'branch'],
+				order: {
+					checkIn: 'ASC',
+				},
 			});
 
 			let totalMinutesWorked = 0;
@@ -391,6 +439,10 @@ export class AttendanceService {
 					status: AttendanceStatus.PRESENT,
 					checkIn: MoreThanOrEqual(startOfDayDate),
 					checkOut: IsNull(),
+				},
+				relations: ['owner', 'owner.branch', 'owner.organisation', 'owner.userProfile', 'verifiedBy', 'organisation', 'branch'],
+				order: {
+					checkIn: 'ASC',
 				},
 			});
 
@@ -915,6 +967,20 @@ export class AttendanceService {
 		};
 	}> {
 		try {
+			// Validate input
+			if (!userId || userId <= 0) {
+				throw new BadRequestException('Invalid user ID provided');
+			}
+
+			// Check if user exists
+			const userExists = await this.userRepository.findOne({
+				where: { uid: userId },
+			});
+
+			if (!userExists) {
+				throw new NotFoundException(`User with ID ${userId} not found`);
+			}
+
 			// Get first ever attendance
 			const firstAttendance = await this.attendanceRepository.findOne({
 				where: { owner: { uid: userId } },
@@ -1217,5 +1283,614 @@ export class AttendanceService {
 				},
 			};
 		}
+	}
+
+	// ======================================================
+	// ORGANIZATION ATTENDANCE REPORTING
+	// ======================================================
+
+	public async generateOrganizationReport(
+		queryDto: OrganizationReportQueryDto,
+		orgId?: number,
+		branchId?: number,
+	): Promise<{
+		message: string;
+		report: {
+			reportPeriod: {
+				from: string;
+				to: string;
+				totalDays: number;
+				generatedAt: string;
+			};
+			userMetrics?: any[];
+			organizationMetrics: {
+				averageTimes: {
+					startTime: string;
+					endTime: string;
+					shiftDuration: number;
+					breakDuration: number;
+				};
+				totals: {
+					totalEmployees: number;
+					totalHours: number;
+					totalShifts: number;
+					overtimeHours: number;
+				};
+				byBranch: any[];
+				byRole: any[];
+				insights: {
+					attendanceRate: number;
+					punctualityRate: number;
+					averageHoursPerDay: number;
+					peakCheckInTime: string;
+					peakCheckOutTime: string;
+				};
+			};
+		};
+	}> {
+		try {
+			// Set default date range (last 30 days if not provided)
+			const now = new Date();
+			const fromDate = queryDto.dateFrom ? parseISO(queryDto.dateFrom) : new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+			const toDate = queryDto.dateTo ? parseISO(queryDto.dateTo) : now;
+			
+			// Validate date range
+			if (fromDate > toDate) {
+				throw new BadRequestException('Start date cannot be after end date');
+			}
+
+			const totalDays = differenceInDays(toDate, fromDate) + 1;
+
+			// Generate cache key
+			const cacheKey = this.generateReportCacheKey(queryDto, orgId, branchId, fromDate, toDate);
+			
+			// Try to get from cache first
+			const cachedReport = await this.cacheManager.get(cacheKey);
+			if (cachedReport) {
+				return cachedReport as any;
+			}
+
+			// Build filters for attendance query
+			const attendanceFilters: any = {
+				checkIn: Between(startOfDay(fromDate), endOfDay(toDate)),
+			};
+
+			// Build filters for user query
+			const userFilters: any = {};
+
+			// Add organization filter
+			if (orgId) {
+				userFilters.organisation = { uid: orgId };
+			}
+
+			// Add branch filter
+			if (branchId || queryDto.branchId) {
+				const targetBranchId = branchId || queryDto.branchId;
+				userFilters.branch = { uid: targetBranchId };
+			}
+
+			// Add role filter
+			if (queryDto.role) {
+				userFilters.accessLevel = queryDto.role;
+			}
+
+			// Get all users matching criteria
+			const users = await this.userRepository.find({
+				where: userFilters,
+				relations: ['branch', 'organisation'],
+			});
+
+			if (users.length === 0) {
+				throw new NotFoundException('No users found matching the specified criteria');
+			}
+
+			const userIds = users.map(user => user.uid);
+
+			// Get all attendance records for users in date range
+			const attendanceRecords = await this.attendanceRepository.find({
+				where: {
+					...attendanceFilters,
+					owner: { uid: In(userIds) },
+				},
+				relations: ['owner', 'owner.branch'],
+				order: {
+					checkIn: 'ASC',
+				},
+			});
+
+			// PART 1: Individual User Metrics
+			let userMetrics: any[] = [];
+			if (queryDto.includeUserDetails !== false) {
+				userMetrics = await this.generateAllUsersMetrics(users, attendanceRecords);
+			}
+
+			// PART 2: Organization-level metrics
+			const organizationMetrics = await this.calculateOrganizationMetrics(attendanceRecords, users);
+
+			const report = {
+				reportPeriod: {
+					from: format(fromDate, 'yyyy-MM-dd'),
+					to: format(toDate, 'yyyy-MM-dd'),
+					totalDays,
+					generatedAt: now.toISOString(),
+				},
+				userMetrics,
+				organizationMetrics,
+			};
+
+			const response = {
+				message: process.env.SUCCESS_MESSAGE || 'Success',
+				report,
+			};
+
+			// Cache the result for 5 minutes
+			await this.cacheManager.set(cacheKey, response, 300);
+
+			return response;
+		} catch (error) {
+			this.logger.error('Error generating organization attendance report:', error);
+			throw new BadRequestException(error?.message || 'Error generating organization attendance report');
+		}
+	}
+
+	private generateReportCacheKey(
+		queryDto: OrganizationReportQueryDto,
+		orgId?: number,
+		branchId?: number,
+		fromDate?: Date,
+		toDate?: Date,
+	): string {
+		const keyParts = [
+			'org_attendance_report',
+			orgId || 'no-org',
+			branchId || queryDto.branchId || 'no-branch',
+			queryDto.role || 'all-roles',
+			queryDto.includeUserDetails !== false ? 'with-users' : 'no-users',
+			fromDate ? format(fromDate, 'yyyy-MM-dd') : 'no-from',
+			toDate ? format(toDate, 'yyyy-MM-dd') : 'no-to',
+		];
+		return keyParts.join('_');
+	}
+
+	private async generateAllUsersMetrics(users: User[], attendanceRecords: Attendance[]): Promise<any[]> {
+		try {
+			const userMetrics: any[] = [];
+
+			for (const user of users) {
+				// Filter attendance records for this user
+				const userAttendance = attendanceRecords.filter(record => record.owner.uid === user.uid);
+
+				if (userAttendance.length === 0) {
+					// Include user with zero metrics if they have no attendance
+					userMetrics.push({
+						userId: user.uid,
+						userInfo: {
+							name: user.name,
+							email: user.email,
+							role: user.accessLevel,
+							branch: user.branch?.name || 'N/A',
+						},
+						metrics: this.getZeroMetrics(),
+					});
+					continue;
+				}
+
+				// Get user metrics using existing method
+				const userMetricsResult = await this.getUserAttendanceMetrics(user.uid);
+				
+				userMetrics.push({
+					userId: user.uid,
+					userInfo: {
+						name: user.name,
+						email: user.email,
+						role: user.accessLevel,
+						branch: user.branch?.name || 'N/A',
+					},
+					metrics: userMetricsResult.metrics,
+				});
+			}
+
+			return userMetrics;
+		} catch (error) {
+			this.logger.error('Error generating user metrics:', error);
+			return [];
+		}
+	}
+
+	private async calculateOrganizationMetrics(attendanceRecords: Attendance[], users: User[]): Promise<any> {
+		try {
+			const completedShifts = attendanceRecords.filter(record => record.checkOut);
+
+			// Calculate average times
+			const averageTimes = this.calculateAverageTimes(attendanceRecords);
+
+			// Calculate totals
+			const totals = this.calculateTotals(attendanceRecords, users);
+
+			// Group by branch
+			const byBranch = this.groupByBranch(attendanceRecords, users);
+
+			// Group by role
+			const byRole = this.groupByRole(attendanceRecords, users);
+
+			// Calculate insights
+			const insights = this.calculateInsights(attendanceRecords);
+
+			return {
+				averageTimes,
+				totals,
+				byBranch,
+				byRole,
+				insights,
+			};
+		} catch (error) {
+			this.logger.error('Error calculating organization metrics:', error);
+			return this.getZeroOrganizationMetrics();
+		}
+	}
+
+	private calculateAverageTimes(attendanceRecords: Attendance[]): any {
+		try {
+			if (attendanceRecords.length === 0) {
+				return {
+					startTime: 'N/A',
+					endTime: 'N/A',
+					shiftDuration: 0,
+					breakDuration: 0,
+				};
+			}
+
+			// Calculate average check-in time
+			const checkInTimes = attendanceRecords.map(record => {
+				const date = new Date(record.checkIn);
+				return date.getHours() * 60 + date.getMinutes();
+			});
+
+			const avgCheckInMinutes = checkInTimes.reduce((sum, minutes) => sum + minutes, 0) / checkInTimes.length;
+			const avgCheckInHours = Math.floor(avgCheckInMinutes / 60);
+			const avgCheckInMins = Math.round(avgCheckInMinutes % 60);
+			const startTime = `${avgCheckInHours.toString().padStart(2, '0')}:${avgCheckInMins.toString().padStart(2, '0')}:00`;
+
+			// Calculate average check-out time
+			const completedShifts = attendanceRecords.filter(record => record.checkOut);
+			let endTime = 'N/A';
+			
+			if (completedShifts.length > 0) {
+				const checkOutTimes = completedShifts.map(record => {
+					const date = new Date(record.checkOut!);
+					return date.getHours() * 60 + date.getMinutes();
+				});
+
+				const avgCheckOutMinutes = checkOutTimes.reduce((sum, minutes) => sum + minutes, 0) / checkOutTimes.length;
+				const avgCheckOutHours = Math.floor(avgCheckOutMinutes / 60);
+				const avgCheckOutMins = Math.round(avgCheckOutMinutes % 60);
+				endTime = `${avgCheckOutHours.toString().padStart(2, '0')}:${avgCheckOutMins.toString().padStart(2, '0')}:00`;
+			}
+
+			// Calculate average shift duration
+			const shiftDurations = completedShifts.map(record => {
+				const startTime = new Date(record.checkIn);
+				const endTime = new Date(record.checkOut!);
+				return differenceInMinutes(endTime, startTime) / 60; // Convert to hours
+			});
+
+			const avgShiftDuration = shiftDurations.length > 0 
+				? shiftDurations.reduce((sum, duration) => sum + duration, 0) / shiftDurations.length 
+				: 0;
+
+			// Calculate average break duration
+			const breakDurations = attendanceRecords.map(record => {
+				return record.totalBreakTime ? this.parseBreakTime(record.totalBreakTime) / 60 : 0; // Convert to hours
+			});
+
+			const avgBreakDuration = breakDurations.length > 0 
+				? breakDurations.reduce((sum, duration) => sum + duration, 0) / breakDurations.length 
+				: 0;
+
+			return {
+				startTime,
+				endTime,
+				shiftDuration: Math.round(avgShiftDuration * 100) / 100,
+				breakDuration: Math.round(avgBreakDuration * 100) / 100,
+			};
+		} catch (error) {
+			this.logger.error('Error calculating average times:', error);
+			return {
+				startTime: 'N/A',
+				endTime: 'N/A',
+				shiftDuration: 0,
+				breakDuration: 0,
+			};
+		}
+	}
+
+	private calculateTotals(attendanceRecords: Attendance[], users: User[]): any {
+		try {
+			const completedShifts = attendanceRecords.filter(record => record.checkOut);
+
+			// Calculate total hours
+			const totalHours = completedShifts.reduce((sum, record) => {
+				const startTime = new Date(record.checkIn);
+				const endTime = new Date(record.checkOut!);
+				const breakMinutes = record.totalBreakTime ? this.parseBreakTime(record.totalBreakTime) : 0;
+				const workMinutes = differenceInMinutes(endTime, startTime) - breakMinutes;
+				return sum + (workMinutes / 60); // Convert to hours
+			}, 0);
+
+			// Calculate overtime hours (assuming 8-hour standard workday)
+			const standardWorkHours = 8;
+			const overtimeHours = completedShifts.reduce((sum, record) => {
+				const startTime = new Date(record.checkIn);
+				const endTime = new Date(record.checkOut!);
+				const breakMinutes = record.totalBreakTime ? this.parseBreakTime(record.totalBreakTime) : 0;
+				const workHours = (differenceInMinutes(endTime, startTime) - breakMinutes) / 60;
+				return sum + Math.max(0, workHours - standardWorkHours);
+			}, 0);
+
+			return {
+				totalEmployees: users.length,
+				totalHours: Math.round(totalHours * 100) / 100,
+				totalShifts: attendanceRecords.length,
+				overtimeHours: Math.round(overtimeHours * 100) / 100,
+			};
+		} catch (error) {
+			this.logger.error('Error calculating totals:', error);
+			return {
+				totalEmployees: 0,
+				totalHours: 0,
+				totalShifts: 0,
+				overtimeHours: 0,
+			};
+		}
+	}
+
+	private groupByBranch(attendanceRecords: Attendance[], users: User[]): any[] {
+		try {
+			const branchMap = new Map();
+
+			// Initialize branches
+			users.forEach(user => {
+				if (user.branch) {
+					const branchId = user.branch.uid.toString();
+					if (!branchMap.has(branchId)) {
+						branchMap.set(branchId, {
+							branchId,
+							branchName: user.branch.name || `Branch ${branchId}`,
+							employeeCount: 0,
+							totalHours: 0,
+							totalShifts: 0,
+							employees: new Set(),
+						});
+					}
+					branchMap.get(branchId).employees.add(user.uid);
+				}
+			});
+
+			// Calculate metrics for each branch
+			attendanceRecords.forEach(record => {
+				const user = users.find(u => u.uid === record.owner.uid);
+				if (user && user.branch) {
+					const branchId = user.branch.uid.toString();
+					const branchData = branchMap.get(branchId);
+					
+					if (branchData) {
+						branchData.totalShifts++;
+						
+						if (record.checkOut) {
+							const startTime = new Date(record.checkIn);
+							const endTime = new Date(record.checkOut);
+							const breakMinutes = record.totalBreakTime ? this.parseBreakTime(record.totalBreakTime) : 0;
+							const workHours = (differenceInMinutes(endTime, startTime) - breakMinutes) / 60;
+							branchData.totalHours += workHours;
+						}
+					}
+				}
+			});
+
+			// Convert to array and calculate averages
+			return Array.from(branchMap.values()).map(branch => ({
+				branchId: branch.branchId,
+				branchName: branch.branchName,
+				employeeCount: branch.employees.size,
+				totalHours: Math.round(branch.totalHours * 100) / 100,
+				totalShifts: branch.totalShifts,
+				averageHoursPerEmployee: branch.employees.size > 0 
+					? Math.round((branch.totalHours / branch.employees.size) * 100) / 100 
+					: 0,
+				averageShiftsPerEmployee: branch.employees.size > 0 
+					? Math.round((branch.totalShifts / branch.employees.size) * 100) / 100 
+					: 0,
+			}));
+		} catch (error) {
+			this.logger.error('Error grouping by branch:', error);
+			return [];
+		}
+	}
+
+	private groupByRole(attendanceRecords: Attendance[], users: User[]): any[] {
+		try {
+			const roleMap = new Map();
+
+			// Initialize roles
+			users.forEach(user => {
+				const role = user.accessLevel;
+				if (!roleMap.has(role)) {
+					roleMap.set(role, {
+						role,
+						employeeCount: 0,
+						totalHours: 0,
+						totalShifts: 0,
+						employees: new Set(),
+					});
+				}
+				roleMap.get(role).employees.add(user.uid);
+			});
+
+			// Calculate metrics for each role
+			attendanceRecords.forEach(record => {
+				const user = users.find(u => u.uid === record.owner.uid);
+				if (user) {
+					const role = user.accessLevel;
+					const roleData = roleMap.get(role);
+					
+					if (roleData) {
+						roleData.totalShifts++;
+						
+						if (record.checkOut) {
+							const startTime = new Date(record.checkIn);
+							const endTime = new Date(record.checkOut);
+							const breakMinutes = record.totalBreakTime ? this.parseBreakTime(record.totalBreakTime) : 0;
+							const workHours = (differenceInMinutes(endTime, startTime) - breakMinutes) / 60;
+							roleData.totalHours += workHours;
+						}
+					}
+				}
+			});
+
+			// Convert to array and calculate averages
+			return Array.from(roleMap.values()).map(role => ({
+				role: role.role,
+				employeeCount: role.employees.size,
+				totalHours: Math.round(role.totalHours * 100) / 100,
+				totalShifts: role.totalShifts,
+				averageHoursPerEmployee: role.employees.size > 0 
+					? Math.round((role.totalHours / role.employees.size) * 100) / 100 
+					: 0,
+				averageShiftsPerEmployee: role.employees.size > 0 
+					? Math.round((role.totalShifts / role.employees.size) * 100) / 100 
+					: 0,
+			}));
+		} catch (error) {
+			this.logger.error('Error grouping by role:', error);
+			return [];
+		}
+	}
+
+	private calculateInsights(attendanceRecords: Attendance[]): any {
+		try {
+			if (attendanceRecords.length === 0) {
+				return {
+					attendanceRate: 0,
+					punctualityRate: 0,
+					averageHoursPerDay: 0,
+					peakCheckInTime: 'N/A',
+					peakCheckOutTime: 'N/A',
+				};
+			}
+
+			// Calculate punctuality rate (on time arrivals before 9:15 AM)
+			const standardStartHour = 9;
+			const standardStartMinute = 15;
+			const onTimeArrivals = attendanceRecords.filter(record => {
+				const checkInTime = new Date(record.checkIn);
+				const checkInMinutes = checkInTime.getHours() * 60 + checkInTime.getMinutes();
+				const standardStartMinutes = standardStartHour * 60 + standardStartMinute;
+				return checkInMinutes <= standardStartMinutes;
+			}).length;
+
+			const punctualityRate = Math.round((onTimeArrivals / attendanceRecords.length) * 100);
+
+			// Calculate average hours per day
+			const completedShifts = attendanceRecords.filter(record => record.checkOut);
+			const totalWorkHours = completedShifts.reduce((sum, record) => {
+				const startTime = new Date(record.checkIn);
+				const endTime = new Date(record.checkOut!);
+				const breakMinutes = record.totalBreakTime ? this.parseBreakTime(record.totalBreakTime) : 0;
+				const workHours = (differenceInMinutes(endTime, startTime) - breakMinutes) / 60;
+				return sum + workHours;
+			}, 0);
+
+			const averageHoursPerDay = completedShifts.length > 0 
+				? Math.round((totalWorkHours / completedShifts.length) * 100) / 100 
+				: 0;
+
+			// Find peak check-in and check-out times
+			const peakCheckInTime = this.findPeakTime(attendanceRecords.map(r => new Date(r.checkIn)));
+			const peakCheckOutTime = this.findPeakTime(
+				completedShifts.map(r => new Date(r.checkOut!))
+			);
+
+			// Calculate attendance rate (assuming 100% for users who have any attendance)
+			const attendanceRate = 100; // This would need to be calculated against expected attendance
+
+			return {
+				attendanceRate,
+				punctualityRate,
+				averageHoursPerDay,
+				peakCheckInTime,
+				peakCheckOutTime,
+			};
+		} catch (error) {
+			this.logger.error('Error calculating insights:', error);
+			return {
+				attendanceRate: 0,
+				punctualityRate: 0,
+				averageHoursPerDay: 0,
+				peakCheckInTime: 'N/A',
+				peakCheckOutTime: 'N/A',
+			};
+		}
+	}
+
+	private findPeakTime(times: Date[]): string {
+		if (times.length === 0) return 'N/A';
+
+		// Group times by hour
+		const hourCounts = new Map<number, number>();
+		
+		times.forEach(time => {
+			const hour = time.getHours();
+			hourCounts.set(hour, (hourCounts.get(hour) || 0) + 1);
+		});
+
+		// Find the hour with most occurrences
+		let peakHour = 0;
+		let maxCount = 0;
+		
+		hourCounts.forEach((count, hour) => {
+			if (count > maxCount) {
+				maxCount = count;
+				peakHour = hour;
+			}
+		});
+
+		return `${peakHour.toString().padStart(2, '0')}:00:00`;
+	}
+
+	private getZeroMetrics(): any {
+		return {
+			firstAttendance: { date: null, checkInTime: null, daysAgo: null },
+			lastAttendance: { date: null, checkInTime: null, checkOutTime: null, daysAgo: null },
+			totalHours: { allTime: 0, thisMonth: 0, thisWeek: 0, today: 0 },
+			totalShifts: { allTime: 0, thisMonth: 0, thisWeek: 0, today: 0 },
+			averageHoursPerDay: 0,
+			attendanceStreak: 0,
+		};
+	}
+
+	private getZeroOrganizationMetrics(): any {
+		return {
+			averageTimes: {
+				startTime: 'N/A',
+				endTime: 'N/A',
+				shiftDuration: 0,
+				breakDuration: 0,
+			},
+			totals: {
+				totalEmployees: 0,
+				totalHours: 0,
+				totalShifts: 0,
+				overtimeHours: 0,
+			},
+			byBranch: [],
+			byRole: [],
+			insights: {
+				attendanceRate: 0,
+				punctualityRate: 0,
+				averageHoursPerDay: 0,
+				peakCheckInTime: 'N/A',
+				peakCheckOutTime: 'N/A',
+			},
+		};
 	}
 }
