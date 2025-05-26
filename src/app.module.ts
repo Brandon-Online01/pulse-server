@@ -93,6 +93,7 @@ import { WarningsModule } from './warnings/warnings.module';
 import { TimetableModule } from './timetable/timetable.module';
 import { Warning } from './warnings/entities/warning.entity';
 import { RoleGuard } from './guards/role.guard';
+import { ClientCommunicationSchedule } from './clients/entities/client-communication-schedule.entity';
 
 @Module({
 	imports: [
@@ -168,6 +169,7 @@ import { RoleGuard } from './guards/role.guard';
 				Interaction,
 				Leave,
 				Warning,
+				ClientCommunicationSchedule,
 			],
 			synchronize: true,
 			retryAttempts: 100,

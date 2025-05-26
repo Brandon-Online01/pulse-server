@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsEmail, IsPhoneNumber, IsOptional, IsString, IsNotEmpty, IsObject, ValidateNested, IsEnum, IsNumber, IsDate, IsArray, IsDecimal, Min, Max, IsInt, IsBoolean } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ClientContactPreference, PriceTier, AcquisitionChannel, ClientRiskLevel, PaymentMethod, GeofenceType } from '../../lib/enums/client.enums';
+import { CreateCommunicationScheduleDto } from './communication-schedule.dto';
 
 export class AddressDto {
     @IsString()
@@ -478,4 +479,15 @@ export class CreateClientDto {
         default: false
     })
     enableGeofence?: boolean;
+
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => CreateCommunicationScheduleDto)
+    @IsOptional()
+    @ApiProperty({
+        type: [CreateCommunicationScheduleDto],
+        description: 'Communication schedules to set up for this client',
+        required: false
+    })
+    communicationSchedules?: CreateCommunicationScheduleDto[];
 }

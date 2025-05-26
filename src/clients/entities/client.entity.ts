@@ -18,6 +18,7 @@ import {
 	GeofenceType,
 } from 'src/lib/enums/client.enums';
 import { ClientAuth } from './client.auth.entity';
+import { ClientCommunicationSchedule } from './client-communication-schedule.entity';
 
 @Entity('client')
 export class Client {
@@ -231,4 +232,8 @@ export class Client {
 	// Add the interactions relationship
 	@OneToMany(() => Interaction, (interaction) => interaction.client)
 	interactions: Interaction[];
+
+	// Communication schedules relationship
+	@OneToMany(() => ClientCommunicationSchedule, (schedule) => schedule.client)
+	communicationSchedules: ClientCommunicationSchedule[];
 }

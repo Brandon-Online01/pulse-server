@@ -33,6 +33,7 @@ import { Route } from 'src/tasks/entities/route.entity';
 import { TaskFlag } from '../../tasks/entities/task-flag.entity';
 import { UserTarget } from './user-target.entity';
 import { Warning } from 'src/warnings/entities/warning.entity';
+import { ClientCommunicationSchedule } from '../../clients/entities/client-communication-schedule.entity';
 
 @Entity('users')
 export class User {
@@ -182,4 +183,7 @@ export class User {
 
 	@Column({ type: 'timestamp', nullable: true })
 	pushTokenUpdatedAt: Date;
+
+	@OneToMany(() => ClientCommunicationSchedule, (schedule) => schedule.assignedTo, { nullable: true })
+	clientCommunicationSchedules: ClientCommunicationSchedule[];
 }

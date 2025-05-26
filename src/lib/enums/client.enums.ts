@@ -83,3 +83,32 @@ export enum GeofenceType {
     ALERT = 'alert',
     RESTRICTED = 'restricted',
 }
+
+export enum CommunicationFrequency {
+    DAILY = 'daily',
+    WEEKLY = 'weekly',
+    BIWEEKLY = 'biweekly',
+    MONTHLY = 'monthly',
+    QUARTERLY = 'quarterly',
+    SEMIANNUALLY = 'semiannually',
+    ANNUALLY = 'annually',
+    CUSTOM = 'custom',
+    NONE = 'none'
+}
+
+export enum CommunicationStatus {
+    PENDING = 'pending',
+    COMPLETED = 'completed',
+    MISSED = 'missed',
+    CANCELLED = 'cancelled',
+    RESCHEDULED = 'rescheduled'
+}
+
+export enum CommunicationType {
+    PHONE_CALL = 'phone_call',
+    EMAIL = 'email',
+    IN_PERSON_VISIT = 'in_person_visit',
+    VIDEO_CALL = 'video_call',
+    WHATSAPP = 'whatsapp',
+    SMS = 'sms'
+}

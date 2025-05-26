@@ -16,6 +16,7 @@ import { Organisation } from '../organisation/entities/organisation.entity';
 import { OrganisationSettings } from '../organisation/entities/organisation-settings.entity';
 import { EmailType } from '../lib/enums/email.enums';
 import { LeadConvertedClientData, LeadConvertedCreatorData } from '../lib/types/email-templates.types';
+import { ClientCommunicationScheduleService } from './services/client-communication-schedule.service';
 
 @Injectable()
 export class ClientsService {
@@ -33,6 +34,7 @@ export class ClientsService {
 		private cacheManager: Cache,
 		private readonly configService: ConfigService,
 		private readonly eventEmitter: EventEmitter2,
+		private readonly communicationScheduleService: ClientCommunicationScheduleService,
 	) {
 		this.CACHE_TTL = this.configService.get<number>('CACHE_EXPIRATION_TIME') || 30;
 	}

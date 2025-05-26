@@ -54,7 +54,7 @@ export class LicensingService {
 				storageLimit: 5120, // 5GB in MB
 				apiCallLimit: 10000,
 				integrationLimit: 2,
-				price: 99,
+				price: 49,
 				features: PLAN_FEATURES[SubscriptionPlan.STARTER],
 			},
 			[SubscriptionPlan.PROFESSIONAL]: {
@@ -63,7 +63,7 @@ export class LicensingService {
 				storageLimit: 20480, // 20GB in MB
 				apiCallLimit: 500000,
 				integrationLimit: 5,
-				price: 199,
+				price: 99,
 				features: PLAN_FEATURES[SubscriptionPlan.PROFESSIONAL],
 			},
 			[SubscriptionPlan.BUSINESS]: {

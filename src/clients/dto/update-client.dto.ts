@@ -25,6 +25,7 @@ import {
 	PaymentMethod,
 	GeofenceType,
 } from '../../lib/enums/client.enums';
+import { CreateCommunicationScheduleDto } from './communication-schedule.dto';
 
 /**
  * UpdateClientDto - Extends CreateClientDto to allow partial updates
@@ -434,4 +435,15 @@ export class UpdateClientDto extends PartialType(CreateClientDto) {
 		required: false,
 	})
 	gpsCoordinates?: string;
+
+	@IsArray()
+	@ValidateNested({ each: true })
+	@Type(() => CreateCommunicationScheduleDto)
+	@IsOptional()
+	@ApiProperty({
+		type: [CreateCommunicationScheduleDto],
+		description: 'Communication schedules to set up or update for this client',
+		required: false,
+	})
+	communicationSchedules?: CreateCommunicationScheduleDto[];
 }

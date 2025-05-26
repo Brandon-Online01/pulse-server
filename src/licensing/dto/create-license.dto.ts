@@ -196,8 +196,8 @@ export class CreateLicenseDto implements Partial<ILicenseMetrics> {
 		example: 99,
 		description: 'License price',
 		examples: {
-			starter: { value: 99, description: 'Starter plan monthly price' },
-			professional: { value: 199, description: 'Professional plan monthly price' },
+			starter: { value: 49, description: 'Starter plan monthly price' },
+			professional: { value: 99, description: 'Professional plan monthly price' },
 			business: { value: 499, description: 'Business plan monthly price' },
 			enterprise: { value: 999, description: 'Enterprise plan base price' },
 		},
