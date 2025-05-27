@@ -47,11 +47,11 @@ export class AuthService {
 		try {
 			const { username, password } = signInInput;
 
-			const authProfile = await this.userService.findOneForAuth(username);
+					const authProfile = await this.userService.findOneForAuth(username);
 
-			if (!authProfile?.user) {
-				throw new BadRequestException('Invalid credentials provided');
-			}
+		if (!authProfile?.user) {
+			throw new BadRequestException('Invalid credentials provided');
+		}
 
 			const { password: userPassword } = authProfile?.user;
 
@@ -66,8 +66,8 @@ export class AuthService {
 				};
 			}
 
-			const userWithoutPassword = this.excludePassword(authProfile.user);
-			const { uid, accessLevel, name, organisationRef, ...restOfUser } = userWithoutPassword;
+					const userWithoutPassword = this.excludePassword(authProfile.user);
+		const { uid, accessLevel, name, organisationRef, organisation, ...restOfUser } = userWithoutPassword;
 
 			// Check organization license if user belongs to an organization
 			if (organisationRef) {
@@ -82,37 +82,39 @@ export class AuthService {
 					);
 				}
 
-				// Add license info to profile data
-				const profileData: ProfileData = {
-					uid: uid.toString(),
-					accessLevel,
-					name,
-					organisationRef,
-					licenseInfo: {
-						licenseId: String(activeLicense?.uid),
-						plan: activeLicense?.plan,
-						status: activeLicense?.status,
-						features: activeLicense?.features,
-					},
-					...restOfUser,
-					branch: {
-						name: restOfUser?.branch?.name,
-						uid: restOfUser?.branch?.uid,
-					}
-				};
+							// Add license info to profile data
+			const profileData: ProfileData = {
+				uid: uid.toString(),
+				accessLevel,
+				name,
+				organisationRef,
+				platform: organisation?.platform || 'all',
+				licenseInfo: {
+					licenseId: String(activeLicense?.uid),
+					plan: activeLicense?.plan,
+					status: activeLicense?.status,
+					features: activeLicense?.features,
+				},
+				...restOfUser,
+				branch: {
+					name: restOfUser?.branch?.name,
+					uid: restOfUser?.branch?.uid,
+				}
+			};
 
 				const tokenRole = accessLevel?.toLowerCase();
 
-				// Include license info in token payload
-				const payload = {
-					uid: uid?.toString(),
-					role: tokenRole,
-					organisationRef,
-					licenseId: String(activeLicense?.uid),
-					licensePlan: activeLicense?.plan,
-					features: activeLicense?.features,
-					branch: restOfUser?.branch?.uid ? { uid: restOfUser?.branch.uid } : undefined
-				};
+							// Include license info in token payload
+			const payload = {
+				uid: uid?.toString(),
+				role: tokenRole,
+				organisationRef,
+				platform: organisation?.platform || 'all',
+				licenseId: String(activeLicense?.uid),
+				licensePlan: activeLicense?.plan,
+				features: activeLicense?.features,
+				branch: restOfUser?.branch?.uid ? { uid: restOfUser?.branch.uid } : undefined
+			};
 
 				const accessToken = await this.jwtService.signAsync(payload, { expiresIn: `8h` });
 				const refreshToken = await this.jwtService.signAsync(payload, { expiresIn: `7d` });
@@ -138,20 +140,22 @@ export class AuthService {
 				};
 			}
 
-			// For users without organization (like system admins)
-			const profileData: ProfileData = {
-				uid: uid.toString(),
-				accessLevel,
-				name,
-				...restOfUser,
-			};
+					// For users without organization (like system admins)
+		const profileData: ProfileData = {
+			uid: uid.toString(),
+			accessLevel,
+			name,
+			platform: 'all',
+			...restOfUser,
+		};
 
-			const tokenRole = accessLevel?.toLowerCase();
-			const payload = { 
-				uid: uid?.toString(), 
-				role: tokenRole,
-				branch: restOfUser?.branch?.uid ? { uid: restOfUser.branch.uid } : undefined 
-			};
+					const tokenRole = accessLevel?.toLowerCase();
+		const payload = { 
+			uid: uid?.toString(), 
+			role: tokenRole,
+			platform: 'all',
+			branch: restOfUser?.branch?.uid ? { uid: restOfUser.branch.uid } : undefined 
+		};
 
 			const accessToken = await this.jwtService.signAsync(payload, { expiresIn: `8h` });
 			const refreshToken = await this.jwtService.signAsync(payload, { expiresIn: `7d` });
@@ -439,11 +443,11 @@ export class AuthService {
 				throw new BadRequestException('Invalid refresh token');
 			}
 
-			const authProfile = await this.userService.findOneByUid(Number(payload?.uid));
+					const authProfile = await this.userService.findOneByUid(Number(payload?.uid));
 
-			if (!authProfile?.user) {
-				throw new BadRequestException('User not found');
-			}
+		if (!authProfile?.user) {
+			throw new BadRequestException('User not found');
+		}
 
 			// Check organization license if user belongs to an organization
 			if (authProfile.user.organisationRef) {
@@ -458,51 +462,57 @@ export class AuthService {
 					);
 				}
 
-				const newPayload = {
-					uid: payload?.uid,
-					role: authProfile?.user?.accessLevel?.toLowerCase(),
-					organisationRef: authProfile?.user?.organisationRef,
-					licenseId: String(activeLicense?.uid),
-					licensePlan: activeLicense?.plan,
-					features: activeLicense?.features,
-					branch: authProfile?.user?.branch?.uid ? { uid: authProfile?.user?.branch.uid } : undefined
-				};
+							const newPayload = {
+				uid: payload?.uid,
+				role: authProfile?.user?.accessLevel?.toLowerCase(),
+				organisationRef: authProfile?.user?.organisationRef,
+				platform: authProfile?.user?.organisation?.platform || 'all',
+				licenseId: String(activeLicense?.uid),
+				licensePlan: activeLicense?.plan,
+				features: activeLicense?.features,
+				branch: authProfile?.user?.branch?.uid ? { uid: authProfile?.user?.branch.uid } : undefined
+			};
 
 				const accessToken = await this.jwtService.signAsync(newPayload, {
 					expiresIn: `${process.env.JWT_ACCESS_EXPIRES_IN}`,
 				});
 
-				return {
-					accessToken,
-					profileData: {
-						...authProfile?.user,
-						licenseInfo: {
-							licenseId: String(activeLicense?.uid),
-							plan: activeLicense?.plan,
-							status: activeLicense?.status,
-							features: activeLicense?.features,
-						},
+							return {
+				accessToken,
+				profileData: {
+					...authProfile?.user,
+					platform: authProfile?.user?.organisation?.platform || 'all',
+					licenseInfo: {
+						licenseId: String(activeLicense?.uid),
+						plan: activeLicense?.plan,
+						status: activeLicense?.status,
+						features: activeLicense?.features,
 					},
-					message: 'Access token refreshed successfully',
-				};
+				},
+				message: 'Access token refreshed successfully',
+			};
 			}
 
-			// For users without organization
-			const newPayload = {
-				uid: payload.uid,
-				role: authProfile.user.accessLevel?.toLowerCase(),
-				branch: authProfile?.user?.branch?.uid ? { uid: authProfile?.user?.branch.uid } : undefined
-			};
+					// For users without organization
+		const newPayload = {
+			uid: payload.uid,
+			role: authProfile.user.accessLevel?.toLowerCase(),
+			platform: 'all',
+			branch: authProfile?.user?.branch?.uid ? { uid: authProfile?.user?.branch.uid } : undefined
+		};
 
 			const accessToken = await this.jwtService.signAsync(newPayload, {
 				expiresIn: `${process.env.JWT_ACCESS_EXPIRES_IN}`,
 			});
 
-			return {
-				accessToken,
-				profileData: authProfile?.user,
-				message: 'Access token refreshed successfully',
-			};
+					return {
+			accessToken,
+			profileData: {
+				...authProfile?.user,
+				platform: 'all',
+			},
+			message: 'Access token refreshed successfully',
+		};
 		} catch (error) {
 			if (error?.name === 'TokenExpiredError') {
 				throw new HttpException('Refresh token has expired', HttpStatus.UNAUTHORIZED);

@@ -88,16 +88,17 @@ export class ClientAuthService {
 					'quotations.access': true,
 				};
 
-				const payload = {
-					uid: clientAuth.uid,
-					role: AccessLevel.CLIENT,
-					organisationRef,
-					licenseId: String(activeLicense?.uid),
-					licensePlan: activeLicense?.plan,
-					// Override with quotations-only permissions
-					features: clientPermissions,
-					branch: clientAuth.client?.branch?.uid ? { uid: clientAuth.client.branch.uid } : null,
-				};
+							const payload = {
+				uid: clientAuth.uid,
+				role: AccessLevel.CLIENT,
+				organisationRef,
+				platform: clientAuth.client?.organisation?.platform || 'all',
+				licenseId: String(activeLicense?.uid),
+				licensePlan: activeLicense?.plan,
+				// Override with quotations-only permissions
+				features: clientPermissions,
+				branch: clientAuth.client?.branch?.uid ? { uid: clientAuth.client.branch.uid } : null,
+			};
 
 				const accessToken = await this.jwtService.signAsync(payload, {
 					expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '8h',
@@ -137,6 +138,7 @@ export class ClientAuthService {
 			const payload = {
 				uid: clientAuth.uid,
 				role: AccessLevel.CLIENT,
+				platform: 'all',
 				features: clientPermissions,
 				branch: clientAuth.client?.branch?.uid ? { uid: clientAuth.client.branch.uid } : null,
 			};
@@ -344,15 +346,16 @@ export class ClientAuthService {
 					'quotations.access': true,
 				};
 
-				const newPayload = {
-					uid: clientAuth.uid,
-					role: AccessLevel.CLIENT,
-					organisationRef,
-					licenseId: String(activeLicense?.uid),
-					licensePlan: activeLicense?.plan,
-					features: clientPermissions,
-					branch: clientAuth.client?.branch?.uid ? { uid: clientAuth.client.branch.uid } : null,
-				};
+							const newPayload = {
+				uid: clientAuth.uid,
+				role: AccessLevel.CLIENT,
+				organisationRef,
+				platform: clientAuth.client?.organisation?.platform || 'all',
+				licenseId: String(activeLicense?.uid),
+				licensePlan: activeLicense?.plan,
+				features: clientPermissions,
+				branch: clientAuth.client?.branch?.uid ? { uid: clientAuth.client.branch.uid } : null,
+			};
 
 				const accessToken = await this.jwtService.signAsync(newPayload, {
 					expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '8h',
@@ -391,6 +394,7 @@ export class ClientAuthService {
 			const newPayload = {
 				uid: clientAuth.uid,
 				role: AccessLevel.CLIENT,
+				platform: 'all',
 				features: clientPermissions,
 				branch: clientAuth.client?.branch?.uid ? { uid: clientAuth.client.branch.uid } : null,
 			};

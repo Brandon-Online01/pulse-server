@@ -1,7 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsEmail, IsNotEmpty, IsOptional, IsString, IsUrl, ValidateNested } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsString, IsUrl, ValidateNested, IsEnum } from 'class-validator';
 import { AddressDto } from '../../clients/dto/create-client.dto';
+import { PlatformType } from '../../lib/enums/platform.enums';
 
 export class CreateOrganisationDto {
 	@IsNotEmpty()
@@ -60,4 +61,14 @@ export class CreateOrganisationDto {
 		description: 'URL to high-resolution organization logo (recommended: SVG or PNG with transparency)',
 	})
 	logo?: string;
+
+	@IsOptional()
+	@IsEnum(PlatformType)
+	@ApiProperty({
+		example: PlatformType.ALL,
+		description: 'Platform type for the organization (HR, SALES, CRM, or ALL)',
+		enum: PlatformType,
+		default: PlatformType.ALL,
+	})
+	platform?: PlatformType;
 }

@@ -1,4 +1,5 @@
 import { GeneralStatus } from '../../lib/enums/status.enums';
+import { PlatformType } from '../../lib/enums/platform.enums';
 import { Branch } from '../../branch/entities/branch.entity';
 import { Column, Entity, OneToMany, OneToOne, PrimaryGeneratedColumn, Index } from 'typeorm';
 import { Asset } from 'src/assets/entities/asset.entity';
@@ -74,6 +75,9 @@ export class Organisation {
 
 	@Column({ nullable: false, unique: true })
 	ref: string;
+
+	@Column({ type: 'enum', enum: PlatformType, default: PlatformType.ALL })
+	platform: PlatformType;
 
 	// Settings Relations
 	@OneToOne(() => OrganisationSettings, (settings) => settings.organisation)

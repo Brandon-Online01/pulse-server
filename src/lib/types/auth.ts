@@ -9,6 +9,7 @@ export interface ProfileData {
 	phone?: string;
 	photoURL?: string;
 	organisationRef?: string;
+	platform?: string;
 	licenseInfo?: {
 		licenseId: string;
 		plan: SubscriptionPlan;

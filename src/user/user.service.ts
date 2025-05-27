@@ -327,16 +327,16 @@ export class UserService {
 
 	async findOneForAuth(searchParameter: string): Promise<{ user: User | null; message: string }> {
 		try {
-			const user = await this.userRepository.findOne({
-				where: [
-					{
-						username: searchParameter,
-						isDeleted: false,
-						status: AccountStatus.ACTIVE,
-					},
-				],
-				relations: ['branch', 'rewards'],
-			});
+					const user = await this.userRepository.findOne({
+			where: [
+				{
+					username: searchParameter,
+					isDeleted: false,
+					status: AccountStatus.ACTIVE,
+				},
+			],
+			relations: ['branch', 'rewards', 'organisation'],
+		});
 
 			if (!user) {
 				return {
@@ -361,10 +361,10 @@ export class UserService {
 
 	async findOneByUid(searchParameter: number): Promise<{ user: Omit<User, 'password'> | null; message: string }> {
 		try {
-			const user = await this.userRepository.findOne({
-				where: [{ uid: searchParameter, isDeleted: false }],
-				relations: ['branch', 'rewards', 'userTarget'],
-			});
+					const user = await this.userRepository.findOne({
+			where: [{ uid: searchParameter, isDeleted: false }],
+			relations: ['branch', 'rewards', 'userTarget', 'organisation'],
+		});
 
 			if (!user) {
 				return {
