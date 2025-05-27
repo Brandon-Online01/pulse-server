@@ -1,9 +1,9 @@
-import { Injectable, NotFoundException, Inject, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject, BadRequestException, Logger } from '@nestjs/common';
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Client } from './entities/client.entity';
-import { Repository, DeepPartial, FindOptionsWhere, ILike } from 'typeorm';
+import { Repository, DeepPartial, FindOptionsWhere, ILike, MoreThanOrEqual, LessThanOrEqual, In } from 'typeorm';
 import { GeneralStatus } from '../lib/enums/status.enums';
 import { PaginatedResponse } from '../lib/interfaces/product.interfaces';
 import { Cache } from 'cache-manager';
@@ -17,11 +17,20 @@ import { OrganisationSettings } from '../organisation/entities/organisation-sett
 import { EmailType } from '../lib/enums/email.enums';
 import { LeadConvertedClientData, LeadConvertedCreatorData } from '../lib/types/email-templates.types';
 import { ClientCommunicationScheduleService } from './services/client-communication-schedule.service';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { User } from '../user/entities/user.entity';
+import { ClientCommunicationSchedule } from './entities/client-communication-schedule.entity';
+import { Task } from '../tasks/entities/task.entity';
+import { TasksService } from '../tasks/tasks.service';
+import { CommunicationFrequency, CommunicationType } from '../lib/enums/client.enums';
+import { TaskType, TaskPriority, RepetitionType, TaskStatus } from '../lib/enums/task.enums';
+import { addDays, addWeeks, addMonths, addYears, format, startOfDay, setHours, setMinutes, isWeekend } from 'date-fns';
 
 @Injectable()
 export class ClientsService {
 	private readonly CACHE_TTL: number;
 	private readonly CACHE_PREFIX = 'clients:';
+	private readonly logger = new Logger(ClientsService.name);
 
 	constructor(
 		@InjectRepository(Client)
@@ -30,11 +39,18 @@ export class ClientsService {
 		private organisationRepository: Repository<Organisation>,
 		@InjectRepository(OrganisationSettings)
 		private organisationSettingsRepository: Repository<OrganisationSettings>,
+		@InjectRepository(User)
+		private userRepository: Repository<User>,
+		@InjectRepository(ClientCommunicationSchedule)
+		private scheduleRepository: Repository<ClientCommunicationSchedule>,
+		@InjectRepository(Task)
+		private taskRepository: Repository<Task>,
 		@Inject(CACHE_MANAGER)
 		private cacheManager: Cache,
 		private readonly configService: ConfigService,
 		private readonly eventEmitter: EventEmitter2,
 		private readonly communicationScheduleService: ClientCommunicationScheduleService,
+		private readonly tasksService: TasksService,
 	) {
 		this.CACHE_TTL = this.configService.get<number>('CACHE_EXPIRATION_TIME') || 30;
 	}
@@ -46,7 +62,7 @@ export class ClientsService {
 	/**
 	 * Invalidates all cache entries related to a specific client.
 	 * This ensures that any changes to a client are immediately reflected in API responses.
-	 * 
+	 *
 	 * @param client - The client object whose cache needs to be invalidated
 	 */
 	private async invalidateClientCache(client: Client) {
@@ -110,7 +126,7 @@ export class ClientsService {
 	/**
 	 * Retrieves the organization settings for a given organization ID.
 	 * Used to get default values for client-related settings like geofence radius.
-	 * 
+	 *
 	 * @param orgId - The organization ID to get settings for
 	 * @returns The organization settings object or null if not found
 	 */
@@ -375,9 +391,9 @@ export class ClientsService {
 
 	/**
 	 * Updates a client with the provided data.
-	 * If the client status is changed to CONVERTED, sends notification emails to both the client and 
+	 * If the client status is changed to CONVERTED, sends notification emails to both the client and
 	 * the assigned sales representative.
-	 * 
+	 *
 	 * @param ref - The unique identifier of the client to update
 	 * @param updateClientDto - The data to update the client with
 	 * @param orgId - Optional organization ID to filter clients by organization
@@ -399,7 +415,9 @@ export class ClientsService {
 			}
 
 			// Check if status is being updated to "converted"
-			const isBeingConverted = updateClientDto.status === GeneralStatus.CONVERTED && existingClient.client.status !== GeneralStatus.CONVERTED;
+			const isBeingConverted =
+				updateClientDto.status === GeneralStatus.CONVERTED &&
+				existingClient.client.status !== GeneralStatus.CONVERTED;
 
 			// Transform the DTO data to match the entity structure
 			const clientDataToUpdate = {
@@ -504,7 +522,8 @@ export class ClientsService {
 				});
 
 				// Get dashboard link - use environment variable or construct from base URL
-				const dashboardBaseUrl = this.configService.get<string>('DASHBOARD_URL') || 'https://dashboard.yourapp.com';
+				const dashboardBaseUrl =
+					this.configService.get<string>('DASHBOARD_URL') || 'https://dashboard.yourapp.com';
 				const dashboardLink = `${dashboardBaseUrl}/clients/${updatedClient.uid}`;
 
 				// 1. Send email to the client
@@ -516,21 +535,28 @@ export class ClientsService {
 						conversionDate: formattedDate,
 						dashboardLink,
 						// Include sales rep info if available
-						...(updatedClient.assignedSalesRep ? {
-							accountManagerName: updatedClient.assignedSalesRep.name,
-							accountManagerEmail: updatedClient.assignedSalesRep.email,
-							accountManagerPhone: updatedClient.assignedSalesRep.phone,
-						} : {}),
+						...(updatedClient.assignedSalesRep
+							? {
+									accountManagerName: updatedClient.assignedSalesRep.name,
+									accountManagerEmail: updatedClient.assignedSalesRep.email,
+									accountManagerPhone: updatedClient.assignedSalesRep.phone,
+							  }
+							: {}),
 						// Some example next steps - customize as needed
 						nextSteps: [
 							'Complete your profile information',
 							'Schedule an onboarding call with your account manager',
-							'Explore available products and services'
-						]
+							'Explore available products and services',
+						],
 					};
 
 					// Emit event to send client email with type-safe enum
-					this.eventEmitter.emit('send.email', EmailType.LEAD_CONVERTED_CLIENT, [updatedClient.email], clientEmailData);
+					this.eventEmitter.emit(
+						'send.email',
+						EmailType.LEAD_CONVERTED_CLIENT,
+						[updatedClient.email],
+						clientEmailData,
+					);
 				}
 
 				// 2. Send email to the lead creator/sales rep
@@ -543,11 +569,16 @@ export class ClientsService {
 						clientEmail: updatedClient.email,
 						clientPhone: updatedClient.phone,
 						conversionDate: formattedDate,
-						dashboardLink
+						dashboardLink,
 					};
 
 					// Emit event to send creator email with type-safe enum
-					this.eventEmitter.emit('send.email', EmailType.LEAD_CONVERTED_CREATOR, [updatedClient.assignedSalesRep.email], creatorEmailData);
+					this.eventEmitter.emit(
+						'send.email',
+						EmailType.LEAD_CONVERTED_CREATOR,
+						[updatedClient.assignedSalesRep.email],
+						creatorEmailData,
+					);
 				}
 			}
 
@@ -829,5 +860,436 @@ export class ClientsService {
 		} catch (error) {
 			throw new BadRequestException(error?.message || 'Error fetching client check-ins');
 		}
+	}
+
+	/**
+	 * Cron job that runs daily at 2:00 AM to generate communication tasks 3 months ahead
+	 * for all active client communication schedules with assigned users.
+	 */
+	@Cron('0 2 * * *') // Daily at 2:00 AM
+	async generateCommunicationTasks(): Promise<void> {
+		this.logger.log('🚀 Starting automated communication task generation...');
+
+		try {
+			const startTime = Date.now();
+
+			// Calculate 3-month window: today to 3 months from now
+			const today = startOfDay(new Date());
+			const threeMonthsFromNow = addMonths(today, 3);
+
+			this.logger.log(`📅 Generating tasks from ${today.toISOString()} to ${threeMonthsFromNow.toISOString()}`);
+
+			// Get all active communication schedules with assigned users
+			const activeSchedules = await this.getActiveSchedulesWithUsers();
+			this.logger.log(`📋 Found ${activeSchedules.length} active communication schedules`);
+
+			if (activeSchedules.length === 0) {
+				this.logger.log('✅ No active schedules found, job completed');
+				return;
+			}
+
+			// Process each schedule to generate tasks
+			let totalTasksCreated = 0;
+			const userTasksMap = new Map<number, Array<{ task: any; schedule: ClientCommunicationSchedule }>>();
+
+			for (const schedule of activeSchedules) {
+				try {
+					const tasksCreated = await this.processScheduleForTaskGeneration(
+						schedule,
+						today,
+						threeMonthsFromNow,
+						userTasksMap,
+					);
+					totalTasksCreated += tasksCreated;
+				} catch (error) {
+					this.logger.error(`❌ Error processing schedule ${schedule.uid}: ${error.message}`);
+				}
+			}
+
+			// Send email notifications to users with newly created tasks
+			await this.sendTaskCreationNotifications(userTasksMap);
+
+			const duration = Date.now() - startTime;
+			this.logger.log(`✅ Communication task generation completed in ${duration}ms`);
+			this.logger.log(`📊 Summary: ${totalTasksCreated} tasks created for ${userTasksMap.size} users`);
+		} catch (error) {
+			this.logger.error(`💥 Fatal error in communication task generation: ${error.message}`, error.stack);
+		}
+	}
+
+	/**
+	 * Get all active communication schedules with assigned users
+	 */
+	private async getActiveSchedulesWithUsers(): Promise<ClientCommunicationSchedule[]> {
+		return await this.scheduleRepository.find({
+			where: {
+				isActive: true,
+				isDeleted: false,
+				assignedTo: { isDeleted: false }, // Only schedules with active assigned users
+			},
+			relations: ['client', 'assignedTo', 'organisation', 'branch'],
+			order: { nextScheduledDate: 'ASC' },
+		});
+	}
+
+	/**
+	 * Process a single schedule to generate tasks for the 3-month window
+	 */
+	private async processScheduleForTaskGeneration(
+		schedule: ClientCommunicationSchedule,
+		startDate: Date,
+		endDate: Date,
+		userTasksMap: Map<number, Array<{ task: any; schedule: ClientCommunicationSchedule }>>,
+	): Promise<number> {
+		if (!schedule.assignedTo?.uid) {
+			this.logger.warn(`⚠️ Schedule ${schedule.uid} has no assigned user, skipping`);
+			return 0;
+		}
+
+		// Calculate all task dates needed for this schedule within the window
+		const taskDates = this.calculateTaskDatesForSchedule(schedule, startDate, endDate);
+
+		if (taskDates.length === 0) {
+			return 0;
+		}
+
+		// Check for existing tasks to prevent duplicates
+		const existingTaskDates = await this.getExistingTaskDates(schedule, taskDates);
+		const newTaskDates = taskDates.filter(
+			(date) => !existingTaskDates.some((existingDate) => existingDate.getTime() === date.getTime()),
+		);
+
+		if (newTaskDates.length === 0) {
+			this.logger.debug(`⏭️ All tasks already exist for schedule ${schedule.uid}`);
+			return 0;
+		}
+
+		// Create tasks for the new dates
+		let tasksCreated = 0;
+		for (const taskDate of newTaskDates) {
+			try {
+				const task = await this.createTaskForSchedule(schedule, taskDate);
+				if (task) {
+					tasksCreated++;
+
+					// Add to user tasks map for email notifications
+					if (!userTasksMap.has(schedule.assignedTo.uid)) {
+						userTasksMap.set(schedule.assignedTo.uid, []);
+					}
+					userTasksMap.get(schedule.assignedTo.uid).push({ task, schedule });
+				}
+			} catch (error) {
+				this.logger.error(
+					`❌ Failed to create task for schedule ${schedule.uid} on ${taskDate.toISOString()}: ${
+						error.message
+					}`,
+				);
+			}
+		}
+
+		this.logger.debug(
+			`✅ Created ${tasksCreated} tasks for schedule ${schedule.uid} (${schedule.client.name} - ${schedule.communicationType})`,
+		);
+		return tasksCreated;
+	}
+
+	/**
+	 * Calculate all task dates needed for a schedule within the given window
+	 */
+	private calculateTaskDatesForSchedule(
+		schedule: ClientCommunicationSchedule,
+		startDate: Date,
+		endDate: Date,
+	): Date[] {
+		const dates: Date[] = [];
+		let currentDate = schedule.nextScheduledDate ? new Date(schedule.nextScheduledDate) : startDate;
+
+		// Ensure we start from today or later
+		if (currentDate < startDate) {
+			currentDate = startDate;
+		}
+
+		// Calculate dates based on frequency
+		while (currentDate <= endDate) {
+			// Skip weekends if it's a business communication
+			if (!this.shouldSkipDate(currentDate, schedule)) {
+				dates.push(new Date(currentDate));
+			}
+
+			// Calculate next date based on frequency
+			currentDate = this.calculateNextScheduleDate(currentDate, schedule);
+
+			// Safety check to prevent infinite loops
+			if (dates.length > 365) {
+				// Max 1 year of daily tasks
+				this.logger.warn(`⚠️ Too many dates calculated for schedule ${schedule.uid}, breaking loop`);
+				break;
+			}
+		}
+
+		return dates;
+	}
+
+	/**
+	 * Calculate the next schedule date based on frequency
+	 */
+	private calculateNextScheduleDate(currentDate: Date, schedule: ClientCommunicationSchedule): Date {
+		let nextDate = new Date(currentDate);
+
+		switch (schedule.frequency) {
+			case CommunicationFrequency.DAILY:
+				nextDate = addDays(nextDate, 1);
+				break;
+			case CommunicationFrequency.WEEKLY:
+				nextDate = addWeeks(nextDate, 1);
+				break;
+			case CommunicationFrequency.BIWEEKLY:
+				nextDate = addWeeks(nextDate, 2);
+				break;
+			case CommunicationFrequency.MONTHLY:
+				nextDate = addMonths(nextDate, 1);
+				break;
+			case CommunicationFrequency.QUARTERLY:
+				nextDate = addMonths(nextDate, 3);
+				break;
+			case CommunicationFrequency.SEMIANNUALLY:
+				nextDate = addMonths(nextDate, 6);
+				break;
+			case CommunicationFrequency.ANNUALLY:
+				nextDate = addYears(nextDate, 1);
+				break;
+			case CommunicationFrequency.CUSTOM:
+				if (schedule.customFrequencyDays) {
+					nextDate = addDays(nextDate, schedule.customFrequencyDays);
+				} else {
+					nextDate = addWeeks(nextDate, 1); // Default to weekly
+				}
+				break;
+			default:
+				return new Date(2099, 0, 1); // Far future date to break the loop
+		}
+
+		// Adjust for preferred days if specified
+		if (schedule.preferredDays && schedule.preferredDays.length > 0) {
+			nextDate = this.adjustForPreferredDays(nextDate, schedule.preferredDays);
+		}
+
+		// Set preferred time if specified
+		if (schedule.preferredTime) {
+			const [hours, minutes] = schedule.preferredTime.split(':').map(Number);
+			nextDate = setHours(setMinutes(nextDate, minutes), hours);
+		} else {
+			// Default to 9 AM
+			nextDate = setHours(nextDate, 9);
+		}
+
+		return nextDate;
+	}
+
+	/**
+	 * Adjust date to match preferred days of the week
+	 */
+	private adjustForPreferredDays(date: Date, preferredDays: number[]): Date {
+		let adjustedDate = new Date(date);
+		let daysChecked = 0;
+		const maxDaysToCheck = 14; // Check up to 2 weeks ahead
+
+		while (daysChecked < maxDaysToCheck) {
+			const dayOfWeek = adjustedDate.getDay();
+			if (preferredDays.includes(dayOfWeek)) {
+				return adjustedDate;
+			}
+			adjustedDate = addDays(adjustedDate, 1);
+			daysChecked++;
+		}
+
+		// If no preferred day found within 2 weeks, return original date
+		return date;
+	}
+
+	/**
+	 * Check if a date should be skipped (e.g., weekends for business communications)
+	 */
+	private shouldSkipDate(date: Date, schedule: ClientCommunicationSchedule): boolean {
+		// Skip weekends for business communications (except SMS/WhatsApp which can be any time)
+		if (
+			isWeekend(date) &&
+			![CommunicationType.SMS, CommunicationType.WHATSAPP].includes(schedule.communicationType)
+		) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Get existing task dates for a schedule to prevent duplicates
+	 */
+	private async getExistingTaskDates(schedule: ClientCommunicationSchedule, checkDates: Date[]): Promise<Date[]> {
+		if (checkDates.length === 0) return [];
+
+		// Use query builder for better JSON field handling across different databases
+		const existingTasks = await this.taskRepository
+			.createQueryBuilder('task')
+			.select(['task.deadline'])
+			.where('task.targetCategory = :category', { category: 'communication_schedule' })
+			.andWhere('task.isDeleted = :isDeleted', { isDeleted: false })
+			.andWhere('task.deadline IN (:...dates)', { dates: checkDates })
+			.andWhere(
+				'JSON_EXTRACT(task.assignees, "$[*].uid") LIKE :assigneeId OR task.assignees LIKE :assigneePattern',
+				{
+					assigneeId: `%${schedule.assignedTo.uid}%`,
+					assigneePattern: `%{"uid":${schedule.assignedTo.uid}}%`
+				}
+			)
+			.andWhere(
+				'JSON_EXTRACT(task.clients, "$[*].uid") LIKE :clientId OR task.clients LIKE :clientPattern',
+				{
+					clientId: `%${schedule.client.uid}%`,
+					clientPattern: `%{"uid":${schedule.client.uid}}%`
+				}
+			)
+			.getMany();
+
+		return existingTasks.map((task) => task.deadline);
+	}
+
+	/**
+	 * Create a task for a specific schedule and date using TasksService
+	 */
+	private async createTaskForSchedule(schedule: ClientCommunicationSchedule, taskDate: Date): Promise<any> {
+		// Map communication type to task type
+		const taskTypeMap = {
+			[CommunicationType.PHONE_CALL]: TaskType.CALL,
+			[CommunicationType.EMAIL]: TaskType.EMAIL,
+			[CommunicationType.IN_PERSON_VISIT]: TaskType.VISIT,
+			[CommunicationType.VIDEO_CALL]: TaskType.VIRTUAL_MEETING,
+			[CommunicationType.WHATSAPP]: TaskType.WHATSAPP,
+			[CommunicationType.SMS]: TaskType.SMS,
+		};
+
+		const taskType = taskTypeMap[schedule.communicationType] || TaskType.FOLLOW_UP;
+
+		// Create task title and description
+		const formattedDate = format(taskDate, 'MMM dd, yyyy');
+		const title = `${schedule.communicationType.replace(/_/g, ' ')} with ${
+			schedule.client.name
+		} - ${formattedDate}`;
+		const description = `Scheduled ${schedule.communicationType
+			.replace(/_/g, ' ')
+			.toLowerCase()} communication with ${schedule.client.name}.${
+			schedule.notes ? `\n\nNotes: ${schedule.notes}` : ''
+		}`;
+
+		// Prepare task data
+		const createTaskDto = {
+			title,
+			description,
+			taskType,
+			priority: TaskPriority.MEDIUM,
+			deadline: taskDate,
+			repetitionType: RepetitionType.NONE, // Don't use task repetition, use schedule repetition
+			assignees: [{ uid: schedule.assignedTo.uid }],
+			client: [{ uid: schedule.client.uid }],
+			creators: [{ uid: schedule.assignedTo.uid }],
+			targetCategory: 'communication_schedule',
+			attachments: [],
+			subtasks: [],
+		};
+
+		try {
+			// Use TasksService to create the task (this handles all notifications, events, etc.)
+			const result = await this.tasksService.create(
+				createTaskDto,
+				schedule.organisation?.uid,
+				schedule.branch?.uid,
+			);
+
+			if (result.message === 'Task created successfully') {
+				this.logger.debug(`✅ Task created for ${schedule.client.name} on ${formattedDate}`);
+				return {
+					title,
+					deadline: taskDate,
+					taskType,
+					clientName: schedule.client.name,
+					communicationType: schedule.communicationType,
+				};
+			} else {
+				throw new Error(result.message);
+			}
+		} catch (error) {
+			this.logger.error(`❌ TasksService.create failed: ${error.message}`);
+			throw error;
+		}
+	}
+
+	/**
+	 * Send email notifications to users about newly created tasks
+	 */
+	private async sendTaskCreationNotifications(
+		userTasksMap: Map<number, Array<{ task: any; schedule: ClientCommunicationSchedule }>>,
+	): Promise<void> {
+		if (userTasksMap.size === 0) {
+			return;
+		}
+
+		for (const [userId, userTasks] of userTasksMap) {
+			try {
+				const user = await this.userRepository.findOne({
+					where: { uid: userId },
+					select: ['uid', 'name', 'surname', 'email'],
+				});
+
+				if (!user || !user.email) {
+					this.logger.warn(`⚠️ User ${userId} not found or has no email`);
+					continue;
+				}
+
+				// Group tasks by client and communication type for better email organization
+				const tasksSummary = this.groupTasksForEmailSummary(userTasks);
+
+				// Send email notification using EventEmitter (integrates with existing email system)
+				this.eventEmitter.emit('send.email', EmailType.NEW_TASK, [user.email], {
+					name: `${user.name} ${user.surname}`.trim() || user.email,
+					tasks: userTasks.map(({ task }) => ({
+						title: task.title,
+						deadline: task.deadline,
+						clientName: task.clientName,
+						type: task.taskType,
+					})),
+					totalTasks: userTasks.length,
+					summary: tasksSummary,
+					generatedDate: new Date().toISOString(),
+				});
+
+				this.logger.debug(`📧 Email notification sent to ${user.email} for ${userTasks.length} new tasks`);
+			} catch (error) {
+				this.logger.error(`❌ Failed to send notification to user ${userId}: ${error.message}`);
+			}
+		}
+	}
+
+	/**
+	 * Group tasks by client and communication type for email summary
+	 */
+	private groupTasksForEmailSummary(
+		userTasks: Array<{ task: any; schedule: ClientCommunicationSchedule }>,
+	): Array<{ clientName: string; communicationType: string; taskCount: number }> {
+		const summary = new Map<string, { clientName: string; communicationType: string; taskCount: number }>();
+
+		userTasks.forEach(({ task, schedule }) => {
+			const key = `${schedule.client.name}-${schedule.communicationType}`;
+			if (summary.has(key)) {
+				summary.get(key).taskCount++;
+			} else {
+				summary.set(key, {
+					clientName: schedule.client.name,
+					communicationType: schedule.communicationType.replace(/_/g, ' '),
+					taskCount: 1,
+				});
+			}
+		});
+
+		return Array.from(summary.values()).sort((a, b) => b.taskCount - a.taskCount);
 	}
 }

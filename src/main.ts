@@ -2,17 +2,12 @@ import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import helmet from 'helmet';
-import compression from 'compression';
+import * as compression from 'compression';
 
 async function bootstrap() {
 	const app = await NestFactory.create(AppModule);
 
-	// Configure for serverless environments
-	app.enableShutdownHooks();
-
-	app.use(helmet({
-		crossOriginEmbedderPolicy: false,
-	}));
+	app.use(helmet());
 
 	app.use(compression());
 
@@ -448,4 +443,3 @@ socket.on("error", function(error) {
 	await app.listen(process.env.PORT ?? 4400);
 }
 bootstrap();
-

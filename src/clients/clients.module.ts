@@ -12,6 +12,8 @@ import { Organisation } from '../organisation/entities/organisation.entity';
 import { OrganisationSettings } from '../organisation/entities/organisation-settings.entity';
 import { User } from '../user/entities/user.entity';
 import { Task } from '../tasks/entities/task.entity';
+import { TasksModule } from '../tasks/tasks.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -19,6 +21,8 @@ import { Task } from '../tasks/entities/task.entity';
     TypeOrmModule.forFeature([Client, ClientCommunicationSchedule, Organisation, OrganisationSettings, User, Task]),
     ConfigModule,
     LibModule,
+    TasksModule,
+    ScheduleModule.forRoot(),
   ],
   controllers: [ClientsController],
   providers: [ClientsService, ClientCommunicationScheduleService],

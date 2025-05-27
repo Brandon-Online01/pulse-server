@@ -405,4 +405,32 @@ export class ClientsController {
 		const branchId = req.user?.branch?.uid;
 		return this.clientsService.getClientCheckIns(clientId, orgId, branchId);
 	}
+
+	@Post('test-task-generation')
+	@Roles(AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.DEVELOPER, AccessLevel.OWNER)
+	@ApiOperation({
+		summary: 'Test communication task generation',
+		description: 'Manually trigger the communication task generation cron job for testing purposes. Admin/Manager access only.',
+	})
+	@ApiCreatedResponse({
+		description: 'Task generation completed successfully',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', example: 'Communication task generation completed successfully' },
+			},
+		},
+	})
+	async testTaskGeneration(@Req() req: AuthenticatedRequest) {
+		try {
+			await this.clientsService.generateCommunicationTasks();
+			return {
+				message: 'Communication task generation completed successfully',
+			};
+		} catch (error) {
+			return {
+				message: `Task generation failed: ${error.message}`,
+			};
+		}
+	}
 }
