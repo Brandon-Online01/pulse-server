@@ -1,9 +1,12 @@
 import { Branch } from "src/branch/entities/branch.entity";
 import { BannerCategory } from "src/lib/enums/category.enum";
 import { Organisation } from "src/organisation/entities/organisation.entity";
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, Index } from "typeorm";
 
 @Entity('banners')
+@Index(['category'])
+@Index(['organisation', 'branch', 'createdAt'])
+@Index(['createdAt'])
 export class Banners {
     @PrimaryGeneratedColumn()
     uid: number;
