@@ -20,6 +20,12 @@ import { BreakDetail } from './interfaces/break-detail.interface';
 import { AccessLevel } from '../lib/enums/user.enums';
 import { User } from '../user/entities/user.entity';
 
+// Import our enhanced calculation services
+import { TimeCalculatorUtil } from './utils/time-calculator.util';
+import { DateRangeUtil } from './utils/date-range.util';
+import { OrganizationHoursService } from './services/organization-hours.service';
+import { AttendanceCalculatorService } from './services/attendance-calculator.service';
+
 @Injectable()
 export class AttendanceService {
 	private readonly logger = new Logger(AttendanceService.name);
@@ -33,6 +39,9 @@ export class AttendanceService {
 		private rewardsService: RewardsService,
 		private readonly eventEmitter: EventEmitter2,
 		@Inject(CACHE_MANAGER) private cacheManager: Cache,
+		// Inject our enhanced services
+		private readonly organizationHoursService: OrganizationHoursService,
+		private readonly attendanceCalculatorService: AttendanceCalculatorService,
 	) {}
 
 	// ======================================================
@@ -81,6 +90,7 @@ export class AttendanceService {
 					checkIn: Not(IsNull()),
 					checkOut: IsNull(),
 				},
+				relations: ['owner', 'owner.organisation'],
 				order: {
 					checkIn: 'DESC',
 				},
@@ -90,20 +100,24 @@ export class AttendanceService {
 				const checkOutTime = new Date();
 				const checkInTime = new Date(activeShift.checkIn);
 
-				const totalMinutesWorked = differenceInMinutes(checkOutTime, checkInTime);
+				// Enhanced calculation using our new utilities
+				const organizationId = activeShift.owner?.organisation?.uid;
+				const breakMinutes = TimeCalculatorUtil.calculateTotalBreakMinutes(
+					activeShift.breakDetails,
+					activeShift.totalBreakTime
+				);
 
-				// Calculate break time if exists
-				const totalBreakMinutes = activeShift.totalBreakTime
-					? this.parseBreakTime(activeShift.totalBreakTime)
-					: 0;
+				// Calculate precise work session
+				const workSession = TimeCalculatorUtil.calculateWorkSession(
+					checkInTime,
+					checkOutTime,
+					activeShift.breakDetails,
+					activeShift.totalBreakTime,
+					organizationId ? await this.organizationHoursService.getOrganizationHours(organizationId) : null
+				);
 
-				// Actual work time = total time - break time
-				const actualMinutesWorked = totalMinutesWorked - totalBreakMinutes;
-
-				const hoursWorked = Math.floor(actualMinutesWorked / 60);
-				const remainingMinutes = actualMinutesWorked % 60;
-
-				const duration = `${hoursWorked}h ${remainingMinutes}m`;
+				// Format duration (maintains original format)
+				const duration = TimeCalculatorUtil.formatDuration(workSession.netWorkMinutes);
 
 				const updatedShift = {
 					...activeShift,
@@ -741,23 +755,8 @@ export class AttendanceService {
 	}
 
 	private parseBreakTime(breakTimeString: string): number {
-		if (!breakTimeString) return 0;
-		
-		const parts = breakTimeString.split(':');
-		if (parts.length === 3) {
-			// Format: HH:MM:SS
-			const hours = parseInt(parts[0], 10) || 0;
-			const minutes = parseInt(parts[1], 10) || 0;
-			const seconds = parseInt(parts[2], 10) || 0;
-			return hours * 60 + minutes + Math.round(seconds / 60);
-		} else if (parts.length === 2) {
-			// Format: MM:SS
-			const minutes = parseInt(parts[0], 10) || 0;
-			const seconds = parseInt(parts[1], 10) || 0;
-			return minutes + Math.round(seconds / 60);
-		}
-		
-		return 0;
+		// Enhanced break time parsing using our utility
+		return TimeCalculatorUtil.parseBreakTimeString(breakTimeString);
 	}
 
 	public async getDailyStats(
@@ -765,134 +764,45 @@ export class AttendanceService {
 		dateStr?: string,
 	): Promise<{ message: string; dailyWorkTime: number; dailyBreakTime: number }> {
 		try {
-			// Set date to today if not provided
+			// Enhanced date handling using our utilities
 			const date = dateStr ? new Date(dateStr) : new Date();
-			const startOfDayDate = new Date(date.setHours(0, 0, 0, 0));
-			const endOfDayDate = new Date(date.setHours(23, 59, 59, 999));
+			const dateFilter = DateRangeUtil.getDateFilter('today', date);
 
 			// Get completed shifts for the day
 			const completedShifts = await this.attendanceRepository.find({
 				where: {
 					owner: { uid: userId },
-					checkIn: MoreThanOrEqual(startOfDayDate),
-					checkOut: LessThanOrEqual(endOfDayDate),
+					checkIn: dateFilter,
 					status: AttendanceStatus.COMPLETED,
 				},
+				relations: ['owner', 'owner.organisation'],
 			});
 
 			// Get active shift (if any)
 			const activeShift = await this.attendanceRepository.findOne({
 				where: {
 					owner: { uid: userId },
-					checkIn: MoreThanOrEqual(startOfDayDate),
+					checkIn: dateFilter,
 					checkOut: IsNull(),
 				},
+				relations: ['owner', 'owner.organisation'],
 			});
 
-			let totalWorkTimeMs = 0;
-			let totalBreakTimeMs = 0;
+			// Get organization ID for enhanced calculations
+			const organizationId = completedShifts[0]?.owner?.organisation?.uid || 
+							   activeShift?.owner?.organisation?.uid;
 
-			// Calculate time from completed shifts
-			for (const shift of completedShifts) {
-				const checkInTime = new Date(shift.checkIn);
-				const checkOutTime = new Date(shift.checkOut);
-
-				// Calculate total shift duration in milliseconds
-				const shiftDuration = differenceInMilliseconds(checkOutTime, checkInTime);
-
-				// Calculate break time
-				let breakMs = 0;
-
-				// Use breakDetails array if available for more accurate break tracking
-				if (shift.breakDetails && shift.breakDetails.length > 0) {
-					for (const breakEntry of shift.breakDetails) {
-						if (breakEntry.startTime && breakEntry.endTime) {
-							const breakStart = new Date(breakEntry.startTime);
-							const breakEnd = new Date(breakEntry.endTime);
-							const breakDuration = differenceInMilliseconds(breakEnd, breakStart);
-							breakMs += breakDuration;
-						}
-					}
-				}
-				// Fallback to totalBreakTime for backward compatibility
-				else if (shift.totalBreakTime) {
-					const breakMinutes = this.parseBreakTime(shift.totalBreakTime);
-					breakMs = breakMinutes * 60 * 1000;
-				}
-
-				totalBreakTimeMs += breakMs;
-				totalWorkTimeMs += shiftDuration - breakMs;
-			}
-
-			// Add time from active shift
-			if (activeShift) {
-				const now = new Date();
-				const checkInTime = new Date(activeShift.checkIn);
-				const currentDuration = differenceInMilliseconds(now, checkInTime);
-
-				// Calculate break time
-				let breakMs = 0;
-
-				// If on break, add the current break time
-				if (activeShift.status === AttendanceStatus.ON_BREAK && activeShift.breakStartTime) {
-					const breakStartTime = new Date(activeShift.breakStartTime);
-					const currentBreakDuration = differenceInMilliseconds(now, breakStartTime);
-
-					// Use breakDetails array if available
-					if (activeShift.breakDetails && activeShift.breakDetails.length > 0) {
-						// Add all completed breaks from breakDetails
-						for (const breakEntry of activeShift.breakDetails) {
-							if (breakEntry.startTime && breakEntry.endTime) {
-								const breakStart = new Date(breakEntry.startTime);
-								const breakEnd = new Date(breakEntry.endTime);
-								const breakDuration = differenceInMilliseconds(breakEnd, breakStart);
-								breakMs += breakDuration;
-							}
-						}
-
-						// Add current ongoing break (the last one without an end time)
-						breakMs += currentBreakDuration;
-					}
-					// Fallback to totalBreakTime for backward compatibility
-					else if (activeShift.totalBreakTime) {
-						const breakMinutes = this.parseBreakTime(activeShift.totalBreakTime);
-						breakMs = breakMinutes * 60 * 1000 + currentBreakDuration;
-					} else {
-						breakMs = currentBreakDuration;
-					}
-
-					totalBreakTimeMs += breakMs;
-					totalWorkTimeMs += currentDuration - breakMs;
-				} else {
-					// If actively working, add previous breaks
-
-					// Use breakDetails array if available
-					if (activeShift.breakDetails && activeShift.breakDetails.length > 0) {
-						// Add all completed breaks from breakDetails
-						for (const breakEntry of activeShift.breakDetails) {
-							if (breakEntry.startTime && breakEntry.endTime) {
-								const breakStart = new Date(breakEntry.startTime);
-								const breakEnd = new Date(breakEntry.endTime);
-								const breakDuration = differenceInMilliseconds(breakEnd, breakStart);
-								breakMs += breakDuration;
-							}
-						}
-					}
-					// Fallback to totalBreakTime for backward compatibility
-					else if (activeShift.totalBreakTime) {
-						const breakMinutes = this.parseBreakTime(activeShift.totalBreakTime);
-						breakMs = breakMinutes * 60 * 1000;
-					}
-
-					totalBreakTimeMs += breakMs;
-					totalWorkTimeMs += currentDuration - breakMs;
-				}
-			}
+			// Use enhanced calculation service
+			const result = await this.attendanceCalculatorService.calculateDailyStats(
+				completedShifts,
+				activeShift,
+				organizationId
+			);
 
 			return {
 				message: process.env.SUCCESS_MESSAGE || 'Success',
-				dailyWorkTime: totalWorkTimeMs,
-				dailyBreakTime: totalBreakTimeMs,
+				dailyWorkTime: result.dailyWorkTime,
+				dailyBreakTime: result.dailyBreakTime,
 			};
 		} catch (error) {
 			return {
@@ -1018,14 +928,17 @@ export class AttendanceService {
 				(record) => new Date(record.checkIn) >= startOfMonth
 			);
 
-			// Helper function to calculate total hours from attendance records
+			// Enhanced helper function using our new utilities
 			const calculateTotalHours = (records: Attendance[]): number => {
 				return records.reduce((total, record) => {
 					if (record.checkIn && record.checkOut) {
-						const minutes = differenceInMinutes(new Date(record.checkOut), new Date(record.checkIn));
-						// Subtract break time if available
-						const breakMinutes = record.totalBreakTime ? this.parseBreakTime(record.totalBreakTime) : 0;
-						return total + (minutes - breakMinutes) / 60;
+						const breakMinutes = TimeCalculatorUtil.calculateTotalBreakMinutes(
+							record.breakDetails,
+							record.totalBreakTime
+						);
+						const totalMinutes = differenceInMinutes(new Date(record.checkOut), new Date(record.checkIn));
+						const workMinutes = Math.max(0, totalMinutes - breakMinutes);
+						return total + TimeCalculatorUtil.minutesToHours(workMinutes, TimeCalculatorUtil.PRECISION.HOURS);
 					}
 					return total;
 				}, 0);
@@ -1066,19 +979,28 @@ export class AttendanceService {
 				}
 			}
 
-			// ===== BREAK ANALYTICS =====
+			// ===== ENHANCED BREAK ANALYTICS =====
 			const calculateBreakAnalytics = (records: Attendance[]) => {
 				let totalBreakMinutes = 0;
 				let totalBreaks = 0;
 				let breakDurations: number[] = [];
 
 				records.forEach(record => {
-					if (record.totalBreakTime) {
-						const breakMinutes = this.parseBreakTime(record.totalBreakTime);
+					// Use enhanced break calculation that handles multiple formats
+					const breakMinutes = TimeCalculatorUtil.calculateTotalBreakMinutes(
+						record.breakDetails,
+						record.totalBreakTime
+					);
+					
+					if (breakMinutes > 0) {
 						totalBreakMinutes += breakMinutes;
 						breakDurations.push(breakMinutes);
 					}
-					if (record.breakCount) {
+
+					// Count breaks more accurately
+					if (record.breakDetails && record.breakDetails.length > 0) {
+						totalBreaks += record.breakDetails.length;
+					} else if (record.breakCount) {
 						totalBreaks += record.breakCount;
 					}
 				});
@@ -1109,89 +1031,63 @@ export class AttendanceService {
 				? Math.min(...allTimeBreaks.breakDurations) 
 				: 0;
 
-			// ===== TIMING PATTERNS =====
-			const calculateAverageTime = (times: Date[], isCheckOut = false): string => {
-				if (times.length === 0) return 'N/A';
-				
-				const totalMinutes = times.reduce((sum, time) => {
-					const hours = time.getHours();
-					const minutes = time.getMinutes();
-					return sum + (hours * 60) + minutes;
-				}, 0);
-				
-				const avgMinutes = Math.round(totalMinutes / times.length);
-				const avgHours = Math.floor(avgMinutes / 60);
-				const remainingMinutes = avgMinutes % 60;
-				
-				return `${avgHours.toString().padStart(2, '0')}:${remainingMinutes.toString().padStart(2, '0')}`;
-			};
-
+			// ===== ENHANCED TIMING PATTERNS =====
 			const checkInTimes = allAttendance.map(record => new Date(record.checkIn));
 			const checkOutTimes = allAttendance
 				.filter(record => record.checkOut)
 				.map(record => new Date(record.checkOut!));
 
-			const averageCheckInTime = calculateAverageTime(checkInTimes);
-			const averageCheckOutTime = calculateAverageTime(checkOutTimes, true);
+			// Use enhanced average time calculation
+			const averageCheckInTime = TimeCalculatorUtil.calculateAverageTime(checkInTimes);
+			const averageCheckOutTime = TimeCalculatorUtil.calculateAverageTime(checkOutTimes);
 
-			// Punctuality score (assuming 9:00 AM is standard start time)
-			const standardStartHour = 9;
-			const onTimeArrivals = allAttendance.filter(record => {
-				const checkInTime = new Date(record.checkIn);
-				return checkInTime.getHours() <= standardStartHour;
-			}).length;
-			const punctualityScore = allAttendance.length > 0 
-				? Math.round((onTimeArrivals / allAttendance.length) * 100) 
-				: 0;
+			// Enhanced punctuality and overtime calculation using organization hours
+			let punctualityScore = 0;
+			let overtimeFrequency = 0;
 
-			// Overtime frequency (assuming 8-hour standard workday)
-			const standardWorkHours = 8;
-			const overtimeShifts = completedShifts.filter(record => {
-				if (!record.checkOut) return false;
-				const workMinutes = differenceInMinutes(new Date(record.checkOut), new Date(record.checkIn));
-				const breakMinutes = record.totalBreakTime ? this.parseBreakTime(record.totalBreakTime) : 0;
-				const actualWorkHours = (workMinutes - breakMinutes) / 60;
-				return actualWorkHours > standardWorkHours;
-			}).length;
-			const overtimeFrequency = completedShifts.length > 0 
-				? Math.round((overtimeShifts / completedShifts.length) * 100) 
-				: 0;
-
-			// ===== PRODUCTIVITY INSIGHTS =====
-			// Work efficiency score (work time vs total time including breaks)
-			const totalWorkMinutes = allAttendance.reduce((total, record) => {
-				if (record.checkIn && record.checkOut) {
-					return total + differenceInMinutes(new Date(record.checkOut), new Date(record.checkIn));
+			if (allAttendance.length > 0) {
+				// Get organization ID from user data
+				let organizationId = null;
+				if (allAttendance[0]?.owner?.uid) {
+					const userResult = await this.userService.findOneByUid(allAttendance[0].owner.uid);
+					organizationId = userResult?.user?.organisation?.uid || null;
 				}
-				return total;
-			}, 0);
-			const workEfficiencyScore = totalWorkMinutes > 0 
-				? Math.round(((totalWorkMinutes - allTimeBreaks.totalBreakMinutes) / totalWorkMinutes) * 100) 
-				: 0;
 
-			// Shift completion rate
-			const totalShifts = allAttendance.length;
-			const shiftCompletionRate = totalShifts > 0 
-				? Math.round((completedShifts.length / totalShifts) * 100) 
-				: 0;
+				// Use enhanced productivity metrics calculation
+				const productivityMetrics = await this.attendanceCalculatorService.calculateProductivityMetrics(
+					allAttendance,
+					organizationId
+				);
 
-			// Late arrivals count (after 9:15 AM)
-			const lateThresholdHour = 9;
-			const lateThresholdMinute = 15;
-			const lateArrivalsCount = allAttendance.filter(record => {
-				const checkInTime = new Date(record.checkIn);
-				const checkInMinutes = checkInTime.getHours() * 60 + checkInTime.getMinutes();
-				const lateThreshold = lateThresholdHour * 60 + lateThresholdMinute;
-				return checkInMinutes > lateThreshold;
-			}).length;
+				punctualityScore = productivityMetrics.punctualityScore;
+				overtimeFrequency = productivityMetrics.overtimeFrequency;
+			}
 
-			// Early departures count (before 5:00 PM)
-			const earlyDepartureHour = 17; // 5 PM
-			const earlyDeparturesCount = completedShifts.filter(record => {
-				if (!record.checkOut) return false;
-				const checkOutTime = new Date(record.checkOut);
-				return checkOutTime.getHours() < earlyDepartureHour;
-			}).length;
+			// ===== ENHANCED PRODUCTIVITY INSIGHTS =====
+			// Get productivity insights from enhanced calculator service
+			let workEfficiencyScore = 0;
+			let shiftCompletionRate = 0;
+			let lateArrivalsCount = 0;
+			let earlyDeparturesCount = 0;
+
+			if (allAttendance.length > 0) {
+				// Get organization ID if not already retrieved
+				let organizationId = null;
+				if (allAttendance[0]?.owner?.uid) {
+					const userResult = await this.userService.findOneByUid(allAttendance[0].owner.uid);
+					organizationId = userResult?.user?.organisation?.uid || null;
+				}
+
+				const productivityMetrics = await this.attendanceCalculatorService.calculateProductivityMetrics(
+					allAttendance,
+					organizationId
+				);
+
+				workEfficiencyScore = productivityMetrics.workEfficiencyScore;
+				shiftCompletionRate = productivityMetrics.shiftCompletionRate;
+				lateArrivalsCount = productivityMetrics.lateArrivalsCount;
+				earlyDeparturesCount = productivityMetrics.earlyDeparturesCount;
+			}
 
 			// Format response
 			const metrics = {
@@ -1505,7 +1401,7 @@ export class AttendanceService {
 			const averageTimes = this.calculateAverageTimes(attendanceRecords);
 
 			// Calculate totals
-			const totals = this.calculateTotals(attendanceRecords, users);
+			const totals = await this.calculateTotals(attendanceRecords, users);
 
 			// Group by branch
 			const byBranch = this.groupByBranch(attendanceRecords, users);
@@ -1540,58 +1436,14 @@ export class AttendanceService {
 				};
 			}
 
-			// Calculate average check-in time
-			const checkInTimes = attendanceRecords.map(record => {
-				const date = new Date(record.checkIn);
-				return date.getHours() * 60 + date.getMinutes();
-			});
-
-			const avgCheckInMinutes = checkInTimes.reduce((sum, minutes) => sum + minutes, 0) / checkInTimes.length;
-			const avgCheckInHours = Math.floor(avgCheckInMinutes / 60);
-			const avgCheckInMins = Math.round(avgCheckInMinutes % 60);
-			const startTime = `${avgCheckInHours.toString().padStart(2, '0')}:${avgCheckInMins.toString().padStart(2, '0')}:00`;
-
-			// Calculate average check-out time
-			const completedShifts = attendanceRecords.filter(record => record.checkOut);
-			let endTime = 'N/A';
-			
-			if (completedShifts.length > 0) {
-				const checkOutTimes = completedShifts.map(record => {
-					const date = new Date(record.checkOut!);
-					return date.getHours() * 60 + date.getMinutes();
-				});
-
-				const avgCheckOutMinutes = checkOutTimes.reduce((sum, minutes) => sum + minutes, 0) / checkOutTimes.length;
-				const avgCheckOutHours = Math.floor(avgCheckOutMinutes / 60);
-				const avgCheckOutMins = Math.round(avgCheckOutMinutes % 60);
-				endTime = `${avgCheckOutHours.toString().padStart(2, '0')}:${avgCheckOutMins.toString().padStart(2, '0')}:00`;
-			}
-
-			// Calculate average shift duration
-			const shiftDurations = completedShifts.map(record => {
-				const startTime = new Date(record.checkIn);
-				const endTime = new Date(record.checkOut!);
-				return differenceInMinutes(endTime, startTime) / 60; // Convert to hours
-			});
-
-			const avgShiftDuration = shiftDurations.length > 0 
-				? shiftDurations.reduce((sum, duration) => sum + duration, 0) / shiftDurations.length 
-				: 0;
-
-			// Calculate average break duration
-			const breakDurations = attendanceRecords.map(record => {
-				return record.totalBreakTime ? this.parseBreakTime(record.totalBreakTime) / 60 : 0; // Convert to hours
-			});
-
-			const avgBreakDuration = breakDurations.length > 0 
-				? breakDurations.reduce((sum, duration) => sum + duration, 0) / breakDurations.length 
-				: 0;
+			// Use enhanced calculation service for average times
+			const averageTimes = this.attendanceCalculatorService.calculateAverageTimes(attendanceRecords);
 
 			return {
-				startTime,
-				endTime,
-				shiftDuration: Math.round(avgShiftDuration * 100) / 100,
-				breakDuration: Math.round(avgBreakDuration * 100) / 100,
+				startTime: averageTimes.averageCheckInTime,
+				endTime: averageTimes.averageCheckOutTime,
+				shiftDuration: TimeCalculatorUtil.roundToHours(averageTimes.averageShiftDuration, TimeCalculatorUtil.PRECISION.HOURS),
+				breakDuration: TimeCalculatorUtil.roundToHours(averageTimes.averageBreakDuration, TimeCalculatorUtil.PRECISION.HOURS),
 			};
 		} catch (error) {
 			this.logger.error('Error calculating average times:', error);
@@ -1604,34 +1456,57 @@ export class AttendanceService {
 		}
 	}
 
-	private calculateTotals(attendanceRecords: Attendance[], users: User[]): any {
+	private async calculateTotals(attendanceRecords: Attendance[], users: User[]): Promise<any> {
 		try {
 			const completedShifts = attendanceRecords.filter(record => record.checkOut);
 
-			// Calculate total hours
+			// Enhanced total hours calculation using our utilities
 			const totalHours = completedShifts.reduce((sum, record) => {
-				const startTime = new Date(record.checkIn);
-				const endTime = new Date(record.checkOut!);
-				const breakMinutes = record.totalBreakTime ? this.parseBreakTime(record.totalBreakTime) : 0;
-				const workMinutes = differenceInMinutes(endTime, startTime) - breakMinutes;
-				return sum + (workMinutes / 60); // Convert to hours
+				const breakMinutes = TimeCalculatorUtil.calculateTotalBreakMinutes(
+					record.breakDetails,
+					record.totalBreakTime
+				);
+				const totalMinutes = differenceInMinutes(new Date(record.checkOut!), new Date(record.checkIn));
+				const workMinutes = Math.max(0, totalMinutes - breakMinutes);
+				return sum + TimeCalculatorUtil.minutesToHours(workMinutes, TimeCalculatorUtil.PRECISION.CURRENCY);
 			}, 0);
 
-			// Calculate overtime hours (assuming 8-hour standard workday)
-			const standardWorkHours = 8;
-			const overtimeHours = completedShifts.reduce((sum, record) => {
-				const startTime = new Date(record.checkIn);
-				const endTime = new Date(record.checkOut!);
-				const breakMinutes = record.totalBreakTime ? this.parseBreakTime(record.totalBreakTime) : 0;
-				const workHours = (differenceInMinutes(endTime, startTime) - breakMinutes) / 60;
-				return sum + Math.max(0, workHours - standardWorkHours);
-			}, 0);
+			// Enhanced overtime calculation (organization-aware)
+			let overtimeHours = 0;
+			for (const record of completedShifts) {
+				const organizationId = record.owner?.organisation?.uid;
+				if (organizationId) {
+					const breakMinutes = TimeCalculatorUtil.calculateTotalBreakMinutes(
+						record.breakDetails,
+						record.totalBreakTime
+					);
+					const totalMinutes = differenceInMinutes(new Date(record.checkOut!), new Date(record.checkIn));
+					const workMinutes = Math.max(0, totalMinutes - breakMinutes);
+					
+					const overtimeInfo = await this.organizationHoursService.calculateOvertime(
+						organizationId,
+						record.checkIn,
+						workMinutes
+					);
+					overtimeHours += TimeCalculatorUtil.minutesToHours(overtimeInfo.overtimeMinutes, TimeCalculatorUtil.PRECISION.CURRENCY);
+				} else {
+					// Fallback to default 8-hour calculation
+					const breakMinutes = TimeCalculatorUtil.calculateTotalBreakMinutes(
+						record.breakDetails,
+						record.totalBreakTime
+					);
+					const totalMinutes = differenceInMinutes(new Date(record.checkOut!), new Date(record.checkIn));
+					const workMinutes = Math.max(0, totalMinutes - breakMinutes);
+					const workHours = TimeCalculatorUtil.minutesToHours(workMinutes, TimeCalculatorUtil.PRECISION.CURRENCY);
+					overtimeHours += Math.max(0, workHours - TimeCalculatorUtil.DEFAULT_WORK.STANDARD_HOURS);
+				}
+			}
 
 			return {
 				totalEmployees: users.length,
-				totalHours: Math.round(totalHours * 100) / 100,
+				totalHours: TimeCalculatorUtil.roundToHours(totalHours, TimeCalculatorUtil.PRECISION.HOURS),
 				totalShifts: attendanceRecords.length,
-				overtimeHours: Math.round(overtimeHours * 100) / 100,
+				overtimeHours: TimeCalculatorUtil.roundToHours(overtimeHours, TimeCalculatorUtil.PRECISION.HOURS),
 			};
 		} catch (error) {
 			this.logger.error('Error calculating totals:', error);
@@ -1677,10 +1552,14 @@ export class AttendanceService {
 						branchData.totalShifts++;
 						
 						if (record.checkOut) {
-							const startTime = new Date(record.checkIn);
-							const endTime = new Date(record.checkOut);
-							const breakMinutes = record.totalBreakTime ? this.parseBreakTime(record.totalBreakTime) : 0;
-							const workHours = (differenceInMinutes(endTime, startTime) - breakMinutes) / 60;
+							// Enhanced calculation using our utilities
+							const breakMinutes = TimeCalculatorUtil.calculateTotalBreakMinutes(
+								record.breakDetails,
+								record.totalBreakTime
+							);
+							const totalMinutes = differenceInMinutes(new Date(record.checkOut), new Date(record.checkIn));
+							const workMinutes = Math.max(0, totalMinutes - breakMinutes);
+							const workHours = TimeCalculatorUtil.minutesToHours(workMinutes, TimeCalculatorUtil.PRECISION.CURRENCY);
 							branchData.totalHours += workHours;
 						}
 					}
@@ -1692,13 +1571,13 @@ export class AttendanceService {
 				branchId: branch.branchId,
 				branchName: branch.branchName,
 				employeeCount: branch.employees.size,
-				totalHours: Math.round(branch.totalHours * 100) / 100,
+				totalHours: TimeCalculatorUtil.roundToHours(branch.totalHours, TimeCalculatorUtil.PRECISION.HOURS),
 				totalShifts: branch.totalShifts,
 				averageHoursPerEmployee: branch.employees.size > 0 
-					? Math.round((branch.totalHours / branch.employees.size) * 100) / 100 
+					? TimeCalculatorUtil.roundToHours(branch.totalHours / branch.employees.size, TimeCalculatorUtil.PRECISION.HOURS) 
 					: 0,
 				averageShiftsPerEmployee: branch.employees.size > 0 
-					? Math.round((branch.totalShifts / branch.employees.size) * 100) / 100 
+					? TimeCalculatorUtil.roundToHours(branch.totalShifts / branch.employees.size, TimeCalculatorUtil.PRECISION.DISPLAY) 
 					: 0,
 			}));
 		} catch (error) {

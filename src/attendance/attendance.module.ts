@@ -9,11 +9,14 @@ import { User } from '../user/entities/user.entity';
 import { UserModule } from '../user/user.module';
 import { RewardsModule } from '../rewards/rewards.module';
 import { LicensingModule } from '../licensing/licensing.module';
+import { OrganisationHours } from '../organisation/entities/organisation-hours.entity';
+import { OrganizationHoursService } from './services/organization-hours.service';
+import { AttendanceCalculatorService } from './services/attendance-calculator.service';
 
 @Module({
 	imports: [
 		LicensingModule, 
-		TypeOrmModule.forFeature([Attendance, User]), 
+		TypeOrmModule.forFeature([Attendance, User, OrganisationHours]), 
 		UserModule, 
 		RewardsModule,
 		CacheModule.registerAsync({
@@ -30,7 +33,7 @@ import { LicensingModule } from '../licensing/licensing.module';
 		}),
 	],
 	controllers: [AttendanceController],
-	providers: [AttendanceService],
-	exports: [AttendanceService],
+	providers: [AttendanceService, OrganizationHoursService, AttendanceCalculatorService],
+	exports: [AttendanceService, OrganizationHoursService, AttendanceCalculatorService],
 })
 export class AttendanceModule {}

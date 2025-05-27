@@ -33,7 +33,6 @@ import { ShopModule } from '../shop/shop.module';
 import { TasksModule } from '../tasks/tasks.module';
 import { OrganisationModule } from '../organisation/organisation.module';
 import { UserDailyReportGenerator } from './generators/user-daily-report.generator';
-import { AttendanceService } from '../attendance/attendance.service';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { CommunicationModule } from '../communication/communication.module';
 import { Reward } from '../rewards/entities/reward.entity';
@@ -49,6 +48,7 @@ import { MapDataReportGenerator } from './generators/map-data-report.generator';
 import { UserProfile } from 'src/user/entities/user.profile.entity';
 import { UserEmployeementProfile } from 'src/user/entities/user.employeement.profile.entity';
 import { License } from 'src/licensing/entities/license.entity';
+import { AttendanceModule } from '../attendance/attendance.module';
 
 @Module({
 	imports: [
@@ -110,6 +110,7 @@ import { License } from 'src/licensing/entities/license.entity';
 		CommunicationModule,
 		RewardsModule,
 		TrackingModule,
+		AttendanceModule,
 	],
 	controllers: [ReportsController],
 	providers: [
@@ -118,7 +119,6 @@ import { License } from 'src/licensing/entities/license.entity';
 		QuotationReportGenerator,
 		UserDailyReportGenerator,
 		LiveOverviewReportGenerator,
-		AttendanceService,
 		MapDataReportGenerator,
 	],
 	exports: [TypeOrmModule, ReportsService],
