@@ -2,10 +2,14 @@ import { Organisation } from 'src/organisation/entities/organisation.entity';
 import { Branch } from '../../branch/entities/branch.entity';
 import { AttendanceStatus } from '../../lib/enums/attendance.enums';
 import { User } from '../../user/entities/user.entity';
-import { Column, Entity, PrimaryGeneratedColumn, ManyToOne } from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn, ManyToOne, Index } from 'typeorm';
 import { BreakDetail } from '../interfaces/break-detail.interface';
 
 @Entity('attendance')
+@Index(['owner', 'checkIn']) // User attendance queries
+@Index(['status', 'checkIn']) // Status-based filtering
+@Index(['checkIn', 'checkOut']) // Time range queries
+@Index(['createdAt']) // Date-based reporting
 export class Attendance {
 	@PrimaryGeneratedColumn()
 	uid: number;

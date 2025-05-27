@@ -1,9 +1,15 @@
 import { Organisation } from 'src/organisation/entities/organisation.entity';
 import { Branch } from '../../branch/entities/branch.entity';
 import { User } from '../../user/entities/user.entity';
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn, Index } from 'typeorm';
 
 @Entity()
+@Index(['serialNumber']) // Unique asset lookups
+@Index(['owner', 'isDeleted']) // User asset queries
+@Index(['brand', 'modelNumber']) // Asset categorization
+@Index(['insuranceExpiryDate', 'hasInsurance']) // Insurance management
+@Index(['org', 'branch', 'isDeleted']) // Organizational asset tracking
+@Index(['purchaseDate']) // Purchase date tracking
 export class Asset {
 	@PrimaryGeneratedColumn()
 	uid: number;
