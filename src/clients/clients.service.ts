@@ -866,7 +866,7 @@ export class ClientsService {
 	 * Cron job that runs daily at 2:00 AM to generate communication tasks 3 months ahead
 	 * for all active client communication schedules with assigned users.
 	 */
-	@Cron('0 2 * * *') // Daily at 2:00 AM
+	@Cron(CronExpression.EVERY_DAY_AT_6AM) // Daily at 6:00 AM
 	async generateCommunicationTasks(): Promise<void> {
 		this.logger.log('🚀 Starting automated communication task generation...');
 

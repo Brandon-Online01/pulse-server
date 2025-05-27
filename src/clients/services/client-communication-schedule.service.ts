@@ -72,6 +72,7 @@ export class ClientCommunicationScheduleService {
             // Create the schedule
             const schedule = this.scheduleRepository.create({
                 client,
+                clientUid: client.uid,
                 communicationType: createDto.communicationType,
                 frequency: createDto.frequency,
                 customFrequencyDays: createDto.customFrequencyDays,
@@ -81,9 +82,12 @@ export class ClientCommunicationScheduleService {
                 isActive: createDto.isActive !== undefined ? createDto.isActive : true,
                 notes: createDto.notes,
                 assignedTo: assignedUser,
+                assignedToUid: assignedUser?.uid,
                 metadata: createDto.metadata,
                 organisation: client.organisation,
-                branch: client.branch
+                organisationUid: client.organisation?.uid,
+                branch: client.branch,
+                branchUid: client.branch?.uid
             });
 
             // Calculate next scheduled date if not provided
@@ -140,6 +144,7 @@ export class ClientCommunicationScheduleService {
                     throw new BadRequestException('Assigned user not found');
                 }
                 schedule.assignedTo = assignedUser;
+                schedule.assignedToUid = assignedUser.uid;
             }
 
             // Update other fields

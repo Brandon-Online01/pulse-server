@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn, Index, JoinColumn } from 'typeorm';
 import { Client } from './client.entity';
 import { User } from '../../user/entities/user.entity';
 import { CommunicationFrequency, CommunicationType } from '../../lib/enums/client.enums';
@@ -6,6 +6,9 @@ import { Organisation } from '../../organisation/entities/organisation.entity';
 import { Branch } from '../../branch/entities/branch.entity';
 
 @Entity('client_communication_schedules')
+@Index(['client', 'isActive', 'isDeleted']) // Composite index for efficient queries
+@Index(['assignedTo', 'isActive']) // Index for user-specific queries
+@Index(['nextScheduledDate', 'isActive']) // Index for scheduling queries
 export class ClientCommunicationSchedule {
     @PrimaryGeneratedColumn()
     uid: number;
@@ -25,10 +28,10 @@ export class ClientCommunicationSchedule {
     @Column({ type: 'json', nullable: true })
     preferredDays: number[]; // Array of day numbers (0=Sunday, 1=Monday, etc.)
 
-    @Column({ type: 'datetime', nullable: true })
+    @Column({ type: 'timestamp', nullable: true })
     nextScheduledDate: Date;
 
-    @Column({ type: 'datetime', nullable: true })
+    @Column({ type: 'timestamp', nullable: true })
     lastCompletedDate: Date;
 
     @Column({ type: 'boolean', default: true })
@@ -49,16 +52,32 @@ export class ClientCommunicationSchedule {
     @Column({ type: 'boolean', default: false })
     isDeleted: boolean;
 
-    // Relations
-    @ManyToOne(() => Client, (client) => client.communicationSchedules)
+    // Relations with proper JoinColumn decorators and nullable flags
+    @ManyToOne(() => Client, (client) => client.communicationSchedules, { nullable: false, onDelete: 'CASCADE' })
+    @JoinColumn({ name: 'clientUid' })
     client: Client;
 
-    @ManyToOne(() => User, (user) => user.clientCommunicationSchedules, { nullable: true })
+    @Column({ nullable: false })
+    clientUid: number;
+
+    @ManyToOne(() => User, (user) => user.clientCommunicationSchedules, { nullable: true, onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'assignedToUid' })
     assignedTo: User; // The user responsible for this communication
 
-    @ManyToOne(() => Organisation, { nullable: true })
+    @Column({ nullable: true })
+    assignedToUid: number;
+
+    @ManyToOne(() => Organisation, { nullable: true, onDelete: 'CASCADE' })
+    @JoinColumn({ name: 'organisationUid' })
     organisation: Organisation;
 
-    @ManyToOne(() => Branch, { nullable: true })
+    @Column({ nullable: true })
+    organisationUid: number;
+
+    @ManyToOne(() => Branch, { nullable: true, onDelete: 'CASCADE' })
+    @JoinColumn({ name: 'branchUid' })
     branch: Branch;
+
+    @Column({ nullable: true })
+    branchUid: number;
 } 
