@@ -15,6 +15,7 @@ import { ClientAuthController } from './client-auth.controller';
 import { ClientPasswordReset } from './entities/client-password-reset.entity';
 import { ClientAuth } from '../clients/entities/client.auth.entity';
 import { ClientJwtAuthGuard } from '../guards/client-jwt-auth.guard';
+import { PlatformService } from '../lib/services/platform.service';
 
 @Module({
     imports: [
@@ -39,7 +40,8 @@ import { ClientJwtAuthGuard } from '../guards/client-jwt-auth.guard';
         PendingSignupService, 
         PasswordResetService,
         ClientAuthService,
-        ClientJwtAuthGuard
+        ClientJwtAuthGuard,
+        PlatformService
     ],
     exports: [AuthService, ClientAuthService, ClientJwtAuthGuard],
 })

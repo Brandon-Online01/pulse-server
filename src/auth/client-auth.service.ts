@@ -11,6 +11,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { EmailType } from '../lib/enums/email.enums';
 import { LicensingService } from '../licensing/licensing.service';
 import { AccessLevel } from 'src/lib/enums/user.enums';
+import { PlatformService } from '../lib/services/platform.service';
 
 @Injectable()
 export class ClientAuthService {
@@ -22,6 +23,7 @@ export class ClientAuthService {
 		private clientPasswordResetRepository: Repository<ClientPasswordReset>,
 		private eventEmitter: EventEmitter2,
 		private licensingService: LicensingService,
+		private platformService: PlatformService,
 	) {}
 
 	// Reuse the same secure token generation method as in AuthService
@@ -88,11 +90,12 @@ export class ClientAuthService {
 					'quotations.access': true,
 				};
 
-							const payload = {
+				const platform = this.platformService.getPrimaryPlatform(activeLicense?.features || {});
+				const payload = {
 				uid: clientAuth.uid,
 				role: AccessLevel.CLIENT,
 				organisationRef,
-				platform: clientAuth.client?.organisation?.platform || 'all',
+				platform,
 				licenseId: String(activeLicense?.uid),
 				licensePlan: activeLicense?.plan,
 				// Override with quotations-only permissions
@@ -346,11 +349,12 @@ export class ClientAuthService {
 					'quotations.access': true,
 				};
 
-							const newPayload = {
+				const platform = this.platformService.getPrimaryPlatform(activeLicense?.features || {});
+				const newPayload = {
 				uid: clientAuth.uid,
 				role: AccessLevel.CLIENT,
 				organisationRef,
-				platform: clientAuth.client?.organisation?.platform || 'all',
+				platform,
 				licenseId: String(activeLicense?.uid),
 				licensePlan: activeLicense?.plan,
 				features: clientPermissions,

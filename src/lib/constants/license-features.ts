@@ -55,6 +55,11 @@ const STARTER_FEATURES = {
     'reports.basic': true,
     'mobile.basic': true,
     'support.email': true,
+    // Platform Access (HR, SALES, CRM, ALL)
+    'platform.hr': true,
+    'platform.sales': true,
+    'platform.crm': true,
+    'platform.all': true,
     // Basic Views
     'assets.view': true,
     'claims.view': true,
@@ -83,6 +88,8 @@ const PROFESSIONAL_FEATURES = {
     'reports.advanced': true,
     'mobile.offline': true,
     'support.priority': true,
+    // Platform Access - Professional
+    'platform.all': true,
     // Enhanced Operations
     'assets.advanced': true,
     'journal.advanced': true,
@@ -111,6 +118,8 @@ const BUSINESS_FEATURES = {
     'support.dedicated_manager': true,
     'branding.white_label': true,
     'analytics.predictive': true,
+    // Platform Access - Business
+    'platform.all': true,
     // Premium Features
     'claims.premium': true,
     'clients.premium': true,
@@ -128,6 +137,8 @@ const BUSINESS_FEATURES = {
 const ENTERPRISE_FEATURES = {
     ...BUSINESS_FEATURES,
     ...ENTERPRISE_ONLY_FEATURES,
+    // Platform Access - Enterprise
+    'platform.all': true,
     // Enterprise Features
     'assets.enterprise': true,
     'claims.enterprise': true,
