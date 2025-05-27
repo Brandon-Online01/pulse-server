@@ -68,6 +68,9 @@ export class User {
 	status: string;
 
 	@Column({ nullable: true })
+	businesscardURL: string;
+
+	@Column({ nullable: true })
 	departmentId: number;
 
 	@CreateDateColumn()
