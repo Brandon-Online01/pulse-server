@@ -2,12 +2,17 @@ import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import helmet from 'helmet';
-import * as compression from 'compression';
+import compression from 'compression';
 
 async function bootstrap() {
 	const app = await NestFactory.create(AppModule);
 
-	app.use(helmet());
+	// Configure for serverless environments
+	app.enableShutdownHooks();
+
+	app.use(helmet({
+		crossOriginEmbedderPolicy: false,
+	}));
 
 	app.use(compression());
 
@@ -444,16 +449,3 @@ socket.on("error", function(error) {
 }
 bootstrap();
 
-// read the @mobile
-
-// then I have tested the notifications work and display the data as needed
-
-// now I need send the notifications from the server
-
-// how to trigger notifications for exmaple we have to start with the @tasks
-
-// when a task is issues to a user there is an email send to the user or users assigned to the task -  what I need done is send the email to the user also send the user a notification
-
-// how to do that
-
-// Plan no code as yet
