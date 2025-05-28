@@ -22,6 +22,11 @@ import {
 	TaskOverdueMissedData,
 	LeadAssignedToUserData,
 	OrderReceivedClientData,
+	QuotationWarehouseData,
+	LicenseTransferEmailData,
+	WarningIssuedEmailData,
+	WarningUpdatedEmailData,
+	WarningExpiredEmailData,
 } from '../types/email-templates.types';
 import { formatDate } from '../utils/date.utils';
 
@@ -3078,6 +3083,440 @@ export const OrderReceivedClient = (data: OrderReceivedClientData): string => `
 
         <div style="${BASE_STYLES.footer}">
           <p style="margin: 0;">Thank you for your interest!</p>
+        </div>
+      </div>
+    </div>
+`;
+
+// New Quotation Warehouse Fulfillment Template
+export const NewQuotationWarehouseFulfillment = (data: QuotationWarehouseData): string => {
+  const itemsList = data.items
+    .map(
+      (item) => `
+    <tr>
+      <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">${item.quantity}x</td>
+      <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">
+        <div style="font-weight: 500;">${item.sku}</div>
+        ${item.location ? `<div style="font-size: 12px; color: #666;">Location: ${item.location}</div>` : ''}
+      </td>
+    </tr>
+  `,
+    )
+    .join('');
+
+  const priorityColor = data.fulfillmentPriority === 'rush' ? '#dc3545' : 
+                       data.fulfillmentPriority === 'express' ? '#fd7e14' : '#28a745';
+
+  return `
+    <div style="${BASE_STYLES.wrapper}">
+      <div style="${BASE_STYLES.container}">
+        <div style="${BASE_STYLES.header}">
+          <h1 style="margin: 16px 0 8px; font-size: 24px;">Warehouse Fulfillment Required</h1>
+          <p style="margin: 0; opacity: 0.9;">Quotation ID: ${data.quotationId}</p>
+        </div>
+
+        <div style="padding: 24px 20px;">
+          <div style="${BASE_STYLES.card}">
+            <h2 style="${BASE_STYLES.heading}">Fulfillment Request</h2>
+            <p style="${BASE_STYLES.text}">New quotation requires warehouse fulfillment processing:</p>
+            
+            <div style="margin: 24px 0; background: #f7fafc; border-radius: 8px; padding: 16px;">
+              <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px;">
+                <div>
+                  <h4 style="margin: 0 0 8px; color: #4a5568;">Priority</h4>
+                  <span style="background: ${priorityColor}; color: white; padding: 4px 12px; border-radius: 12px; font-weight: 500;">
+                    ${data.fulfillmentPriority.toUpperCase()}
+                  </span>
+                </div>
+                <div>
+                  <h4 style="margin: 0 0 8px; color: #4a5568;">Total Amount</h4>
+                  <p style="margin: 0; font-weight: 500;">${new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: data.currency,
+                  }).format(data.total)}</p>
+                </div>
+              </div>
+
+              <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                  <tr>
+                    <th style="text-align: left; padding: 12px; border-bottom: 2px solid #e2e8f0;">Quantity</th>
+                    <th style="text-align: left; padding: 12px; border-bottom: 2px solid #e2e8f0;">SKU & Location</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${itemsList}
+                </tbody>
+              </table>
+            </div>
+
+            ${data.shippingInstructions ? `
+            <div style="${BASE_STYLES.alert}">
+              <p style="margin: 0; font-weight: 500;">Shipping Instructions:</p>
+              <p style="margin: 8px 0 0;">${data.shippingInstructions}</p>
+            </div>
+            ` : ''}
+
+            ${data.packagingRequirements ? `
+            <div style="${BASE_STYLES.highlight}">
+              <p style="margin: 0; font-weight: 500;">Packaging Requirements:</p>
+              <p style="margin: 8px 0 0;">${data.packagingRequirements}</p>
+            </div>
+            ` : ''}
+          </div>
+        </div>
+
+        <div style="${BASE_STYLES.footer}">
+          <p style="margin: 0;">Process according to priority level - ${data.fulfillmentPriority}</p>
+        </div>
+      </div>
+    </div>
+  `;
+};
+
+// License Transfer Templates
+export const LicenseTransferredFrom = (data: LicenseTransferEmailData): string => `
+    <div style="${BASE_STYLES.wrapper}">
+      <div style="${BASE_STYLES.container}">
+        <div style="${BASE_STYLES.header}">
+          <h1 style="margin: 16px 0 8px; font-size: 24px;">License Transferred</h1>
+          <p style="margin: 0; opacity: 0.9;">License Key: ${data.licenseKey}</p>
+        </div>
+
+        <div style="padding: 24px 20px;">
+          <div style="${BASE_STYLES.card}">
+            <h2 style="${BASE_STYLES.heading}">Hi ${data.name},</h2>
+            <p style="${BASE_STYLES.text}">
+              Your license has been successfully transferred from your organization.
+            </p>
+
+            <div style="${BASE_STYLES.highlight}">
+              <div style="display: grid; gap: 12px;">
+                <div style="display: flex; justify-content: space-between;">
+                  <span>License Key</span>
+                  <span style="font-weight: 600">${data.licenseKey}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Transfer Date</span>
+                  <span style="font-weight: 600">${data.transferDate}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Transferred By</span>
+                  <span style="font-weight: 600">${data.transferredBy}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span>To Organization</span>
+                  <span style="font-weight: 600">${data.newOrganizationName}</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="${BASE_STYLES.alert}">
+              <p style="margin: 0;">
+                <strong>Important:</strong> You no longer have access to this license. 
+                Please contact support if you need assistance with license management.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div style="${BASE_STYLES.footer}">
+          <p style="margin: 0;">License transfer completed successfully.</p>
+        </div>
+      </div>
+    </div>
+`;
+
+export const LicenseTransferredTo = (data: LicenseTransferEmailData): string => `
+    <div style="${BASE_STYLES.wrapper}">
+      <div style="${BASE_STYLES.container}">
+        <div style="${BASE_STYLES.header}">
+          <h1 style="margin: 16px 0 8px; font-size: 24px;">License Received</h1>
+          <p style="margin: 0; opacity: 0.9;">License Key: ${data.licenseKey}</p>
+        </div>
+
+        <div style="padding: 24px 20px;">
+          <div style="${BASE_STYLES.card}">
+            <h2 style="${BASE_STYLES.heading}">Hi ${data.name},</h2>
+            <p style="${BASE_STYLES.text}">
+              A license has been transferred to your organization!
+            </p>
+
+            <div style="${BASE_STYLES.highlight}">
+              <div style="display: grid; gap: 12px;">
+                <div style="display: flex; justify-content: space-between;">
+                  <span>License Key</span>
+                  <span style="font-weight: 600">${data.licenseKey}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Transfer Date</span>
+                  <span style="font-weight: 600">${data.transferDate}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Transferred By</span>
+                  <span style="font-weight: 600">${data.transferredBy}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span>From Organization</span>
+                  <span style="font-weight: 600">${data.oldOrganizationName}</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="${BASE_STYLES.alert}">
+              <p style="margin: 0;">
+                <strong>Welcome!</strong> You now have access to this license. 
+                Please review your dashboard to configure the license settings.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div style="${BASE_STYLES.footer}">
+          <p style="margin: 0;">Start using your new license today!</p>
+        </div>
+      </div>
+    </div>
+`;
+
+// Client Password Reset Templates
+export const ClientPasswordReset = (data: PasswordResetData): string => `
+    <div style="${BASE_STYLES.wrapper}">
+      <div style="${BASE_STYLES.container}">
+        <div style="${BASE_STYLES.header}">
+          <h1 style="margin: 16px 0 8px; font-size: 24px;">Client Password Reset 🔒</h1>
+          <p style="margin: 0; opacity: 0.9;">Secure your client account</p>
+        </div>
+
+        <div style="padding: 24px 20px;">
+          <div style="${BASE_STYLES.card}">
+            <h2 style="${BASE_STYLES.heading}">Hi ${data.name},</h2>
+            <p style="${BASE_STYLES.text}">We received a request to reset your client account password. Click the button below to proceed:</p>
+            
+            <div style="text-align: center; margin: 24px 0;">
+              <a href="${data.resetLink}" style="${BASE_STYLES.button}">
+                Reset Client Password
+              </a>
+            </div>
+
+            <div style="${BASE_STYLES.alert}">
+              <p style="margin: 0;">
+                <strong>Important:</strong> This link expires in 1 hour.
+                If you didn't request this reset, please contact our client support immediately.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div style="${BASE_STYLES.footer}">
+          <p style="margin: 0;">For security reasons, never share your password reset link.</p>
+        </div>
+      </div>
+    </div>
+`;
+
+export const ClientPasswordChanged = (data: PasswordChangedData): string => `
+    <div style="${BASE_STYLES.wrapper}">
+      <div style="${BASE_STYLES.container}">
+        <div style="${BASE_STYLES.header}">
+          <h1 style="margin: 16px 0 8px; font-size: 24px;">Client Password Updated 🔐</h1>
+          <p style="margin: 0; opacity: 0.9;">Your client account is secure</p>
+        </div>
+
+        <div style="padding: 24px 20px;">
+          <div style="${BASE_STYLES.card}">
+            <h2 style="${BASE_STYLES.heading}">Hi ${data.name},</h2>
+            <p style="${BASE_STYLES.text}">Your client account password was successfully changed on ${data.changeTime}.</p>
+
+            <div style="${BASE_STYLES.alert}">
+              <p style="margin: 0;">
+                <strong>Security Notice:</strong> If you didn't make this change,
+                please contact our client support team immediately.
+              </p>
+            </div>
+
+            <div style="text-align: center; margin: 24px 0;">
+              <a href="/client/sign-in" style="${BASE_STYLES.button}">
+                Access Client Portal
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div style="${BASE_STYLES.footer}">
+          <p style="margin: 0;">Keep your client account secure - never share your password.</p>
+        </div>
+      </div>
+    </div>
+`;
+
+// Warning Email Templates
+export const WarningIssued = (data: WarningIssuedEmailData): string => `
+    <div style="${BASE_STYLES.wrapper}">
+      <div style="${BASE_STYLES.container}">
+        <div style="${BASE_STYLES.header}">
+          <h1 style="margin: 16px 0 8px; font-size: 24px;">Warning Issued ⚠️</h1>
+          <p style="margin: 0; opacity: 0.9;">Warning ID: ${data.warningId}</p>
+        </div>
+
+        <div style="padding: 24px 20px;">
+          <div style="${BASE_STYLES.card}">
+            <h2 style="${BASE_STYLES.heading}">Hi ${data.userName},</h2>
+            <p style="${BASE_STYLES.text}">
+              A ${data.severity.toLowerCase()} warning has been issued to your account.
+            </p>
+
+            <div style="${BASE_STYLES.alert}">
+              <div style="display: grid; gap: 12px;">
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Warning ID</span>
+                  <span style="font-weight: 600">${data.warningId}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Severity</span>
+                  <span style="font-weight: 600; color: ${data.severity === 'HIGH' ? '#dc3545' : data.severity === 'MEDIUM' ? '#fd7e14' : '#ffc107'}">${data.severity}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Issued Date</span>
+                  <span style="font-weight: 600">${data.issuedAt}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Expires</span>
+                  <span style="font-weight: 600">${data.expiresAt}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Issued By</span>
+                  <span style="font-weight: 600">${data.issuedBy.name}</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="${BASE_STYLES.highlight}">
+              <h3 style="${BASE_STYLES.subheading}">Reason:</h3>
+              <p style="${BASE_STYLES.text}">${data.reason}</p>
+            </div>
+
+            <div style="text-align: center; margin: 24px 0;">
+              <a href="${data.dashboardLink}" style="${BASE_STYLES.button}">
+                View Warning Details
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div style="${BASE_STYLES.footer}">
+          <p style="margin: 0;">Please take appropriate action to address this warning.</p>
+        </div>
+      </div>
+    </div>
+`;
+
+export const WarningUpdated = (data: WarningUpdatedEmailData): string => `
+    <div style="${BASE_STYLES.wrapper}">
+      <div style="${BASE_STYLES.container}">
+        <div style="${BASE_STYLES.header}">
+          <h1 style="margin: 16px 0 8px; font-size: 24px;">Warning Updated ⚠️</h1>
+          <p style="margin: 0; opacity: 0.9;">Warning ID: ${data.warningId}</p>
+        </div>
+
+        <div style="padding: 24px 20px;">
+          <div style="${BASE_STYLES.card}">
+            <h2 style="${BASE_STYLES.heading}">Hi ${data.userName},</h2>
+            <p style="${BASE_STYLES.text}">
+              Your warning has been updated with the following changes:
+            </p>
+
+            <div style="${BASE_STYLES.highlight}">
+              <h3 style="${BASE_STYLES.subheading}">Updated Fields:</h3>
+              <ul style="margin: 8px 0; padding-left: 20px;">
+                ${data.updatedFields.map(field => `<li>${field}</li>`).join('')}
+              </ul>
+            </div>
+
+            <div style="${BASE_STYLES.alert}">
+              <div style="display: grid; gap: 12px;">
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Warning ID</span>
+                  <span style="font-weight: 600">${data.warningId}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Severity</span>
+                  <span style="font-weight: 600; color: ${data.severity === 'HIGH' ? '#dc3545' : data.severity === 'MEDIUM' ? '#fd7e14' : '#ffc107'}">${data.severity}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Updated By</span>
+                  <span style="font-weight: 600">${data.issuedBy.name}</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="text-align: center; margin: 24px 0;">
+              <a href="${data.dashboardLink}" style="${BASE_STYLES.button}">
+                View Updated Warning
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div style="${BASE_STYLES.footer}">
+          <p style="margin: 0;">Review the updated warning details and take necessary action.</p>
+        </div>
+      </div>
+    </div>
+`;
+
+export const WarningExpired = (data: WarningExpiredEmailData): string => `
+    <div style="${BASE_STYLES.wrapper}">
+      <div style="${BASE_STYLES.container}">
+        <div style="${BASE_STYLES.header}">
+          <h1 style="margin: 16px 0 8px; font-size: 24px;">Warning Expired ✅</h1>
+          <p style="margin: 0; opacity: 0.9;">Warning ID: ${data.warningId}</p>
+        </div>
+
+        <div style="padding: 24px 20px;">
+          <div style="${BASE_STYLES.card}">
+            <h2 style="${BASE_STYLES.heading}">Hi ${data.userName},</h2>
+            <p style="${BASE_STYLES.text}">
+              Your warning has expired and is no longer active.
+            </p>
+
+            <div style="${BASE_STYLES.highlight}">
+              <div style="display: grid; gap: 12px;">
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Warning ID</span>
+                  <span style="font-weight: 600">${data.warningId}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Original Severity</span>
+                  <span style="font-weight: 600">${data.severity}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Issued Date</span>
+                  <span style="font-weight: 600">${data.issuedAt}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Expired Date</span>
+                  <span style="font-weight: 600">${data.expiresAt}</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="${BASE_STYLES.alert}">
+              <p style="margin: 0;">
+                <strong>Note:</strong> This warning is now archived. Continue to maintain good standing to avoid future warnings.
+              </p>
+            </div>
+
+            <div style="text-align: center; margin: 24px 0;">
+              <a href="${data.dashboardLink}" style="${BASE_STYLES.button}">
+                View Warning History
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div style="${BASE_STYLES.footer}">
+          <p style="margin: 0;">Thank you for maintaining compliance standards.</p>
         </div>
       </div>
     </div>

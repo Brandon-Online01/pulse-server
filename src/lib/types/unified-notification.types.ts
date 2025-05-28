@@ -20,6 +20,7 @@ export enum NotificationEvent {
 	LEAD_CONVERTED = 'lead_converted',
 	LEAD_DELETED = 'lead_deleted',
 	LEAD_REMINDER = 'lead_reminder',
+	LEAD_FOLLOW_UP_OVERDUE = 'lead_follow_up_overdue',
 
 	// General Events
 	GENERAL_NOTIFICATION = 'general_notification',

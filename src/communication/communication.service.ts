@@ -26,6 +26,7 @@ import {
 	NewQuotationClient,
 	NewQuotationInternal,
 	NewQuotationReseller,
+	NewQuotationWarehouseFulfillment,
 	QuotationStatusUpdate,
 	Invoice,
 } from '../lib/templates/emails';
@@ -37,6 +38,8 @@ import {
 	LicenseRenewed,
 	LicenseSuspended,
 	LicenseActivated,
+	LicenseTransferredFrom,
+	LicenseTransferredTo,
 } from '../lib/templates/emails';
 // Task related templates
 import { TaskReminderAssignee, TaskReminderCreator, TaskOverdueMissed } from '../lib/templates/emails';
@@ -44,6 +47,10 @@ import { TaskReminderAssignee, TaskReminderCreator, TaskOverdueMissed } from '..
 import { NewUserAdminNotification } from '../lib/templates/emails';
 // Lead related templates
 import { LeadConvertedClient, LeadConvertedCreator, LeadReminder, LeadAssignedToUser } from '../lib/templates/emails';
+// Client auth templates
+import { ClientPasswordReset, ClientPasswordChanged } from '../lib/templates/emails';
+// Warning templates
+import { WarningIssued, WarningUpdated, WarningExpired } from '../lib/templates/emails';
 // Email data types
 import {
 	DailyReportData,
@@ -55,8 +62,10 @@ import {
 	EmailTemplateData,
 	LicenseEmailData,
 	LicenseLimitData,
+	LicenseTransferEmailData,
 	QuotationInternalData,
 	QuotationResellerData,
+	QuotationWarehouseData,
 	QuotationData,
 	NewUserAdminNotificationData,
 	TaskReminderData,
@@ -70,6 +79,9 @@ import {
 	TaskFeedbackEmailData,
 	TaskOverdueMissedData,
 	OrderReceivedClientData,
+	WarningIssuedEmailData,
+	WarningUpdatedEmailData,
+	WarningExpiredEmailData,
 } from '../lib/types/email-templates.types';
 import {
 	TaskFlagCreated,
@@ -178,6 +190,11 @@ export class CommunicationService {
 					subject: 'New Quotation from Your Referral',
 					body: NewQuotationReseller(data as QuotationResellerData),
 				};
+			case EmailType.NEW_QUOTATION_WAREHOUSE_FULFILLMENT:
+				return {
+					subject: 'New Quotation from Warehouse Fulfillment',
+					body: NewQuotationWarehouseFulfillment(data as QuotationWarehouseData),
+				};
 			case EmailType.INVOICE:
 				return {
 					subject: 'Invoice for Your Quotation',
@@ -228,6 +245,16 @@ export class CommunicationService {
 					subject: 'License Activated Successfully',
 					body: LicenseActivated(data as LicenseEmailData),
 				};
+			case EmailType.LICENSE_TRANSFERRED_FROM:
+				return {
+					subject: 'License Transferred From',
+					body: LicenseTransferredFrom(data as LicenseTransferEmailData),
+				};
+			case EmailType.LICENSE_TRANSFERRED_TO:
+				return {
+					subject: 'License Transferred To',
+					body: LicenseTransferredTo(data as LicenseTransferEmailData),
+				};
 			case EmailType.NEW_TASK:
 				return {
 					subject: 'New Task Assigned',
@@ -256,6 +283,51 @@ export class CommunicationService {
 			case EmailType.QUOTATION_STATUS_UPDATE:
 				return {
 					subject: 'Quotation Status Update',
+					body: QuotationStatusUpdate(data as QuotationData),
+				};
+			case EmailType.QUOTATION_READY_FOR_REVIEW:
+				return {
+					subject: 'Quotation Ready for Review',
+					body: QuotationStatusUpdate(data as QuotationData),
+				};
+			case EmailType.QUOTATION_UPDATED:
+				return {
+					subject: 'Quotation Updated',
+					body: QuotationStatusUpdate(data as QuotationData),
+				};
+			case EmailType.QUOTATION_SOURCING:
+				return {
+					subject: 'Quotation Items Being Sourced',
+					body: QuotationStatusUpdate(data as QuotationData),
+				};
+			case EmailType.QUOTATION_PACKING:
+				return {
+					subject: 'Quotation Items Being Packed',
+					body: QuotationStatusUpdate(data as QuotationData),
+				};
+			case EmailType.QUOTATION_PAID:
+				return {
+					subject: 'Quotation Payment Received',
+					body: QuotationStatusUpdate(data as QuotationData),
+				};
+			case EmailType.QUOTATION_SHIPPED:
+				return {
+					subject: 'Quotation Items Shipped',
+					body: QuotationStatusUpdate(data as QuotationData),
+				};
+			case EmailType.QUOTATION_DELIVERED:
+				return {
+					subject: 'Quotation Items Delivered',
+					body: QuotationStatusUpdate(data as QuotationData),
+				};
+			case EmailType.QUOTATION_RETURNED:
+				return {
+					subject: 'Quotation Items Returned',
+					body: QuotationStatusUpdate(data as QuotationData),
+				};
+			case EmailType.QUOTATION_COMPLETED:
+				return {
+					subject: 'Quotation Completed',
 					body: QuotationStatusUpdate(data as QuotationData),
 				};
 			case EmailType.NEW_USER_ADMIN_NOTIFICATION:
@@ -322,6 +394,31 @@ export class CommunicationService {
 				return {
 					subject: 'Your Order Request Has Been Received',
 					body: OrderReceivedClient(data as OrderReceivedClientData),
+				};
+			case EmailType.CLIENT_PASSWORD_RESET:
+				return {
+					subject: 'Password Reset Request',
+					body: ClientPasswordReset(data as PasswordResetData),
+				};
+			case EmailType.CLIENT_PASSWORD_CHANGED:
+				return {
+					subject: 'Password Successfully Changed',
+					body: ClientPasswordChanged(data as PasswordChangedData),
+				};
+			case EmailType.WARNING_ISSUED:
+				return {
+					subject: 'Warning Issued',
+					body: WarningIssued(data as WarningIssuedEmailData),
+				};
+			case EmailType.WARNING_UPDATED:
+				return {
+					subject: 'Warning Updated',
+					body: WarningUpdated(data as WarningUpdatedEmailData),
+				};
+			case EmailType.WARNING_EXPIRED:
+				return {
+					subject: 'Warning Expired',
+					body: WarningExpired(data as WarningExpiredEmailData),
 				};
 			default:
 				throw new NotFoundException(`Unknown email template type: ${type}`);

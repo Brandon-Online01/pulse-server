@@ -229,6 +229,18 @@ export class UnifiedNotificationService {
 				pushSettings: { sound: 'default', badge: 1 },
 			},
 		],
+		[
+			NotificationEvent.LEAD_FOLLOW_UP_OVERDUE,
+			{
+				event: NotificationEvent.LEAD_FOLLOW_UP_OVERDUE,
+				title: '⚠️ Overdue Lead Follow-up',
+				messageTemplate: 'Lead "{leadName}" is {daysOverdue} day(s) overdue for follow-up',
+				priority: NotificationPriority.HIGH,
+				channel: NotificationChannel.IMPORTANT,
+				defaultData: { screen: '/sales/leads', action: 'view_lead' },
+				pushSettings: { sound: 'critical', badge: 1 },
+			},
+		],
 	]);
 
 	constructor(

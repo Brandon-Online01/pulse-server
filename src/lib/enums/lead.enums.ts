@@ -18,3 +18,138 @@ export enum LeadCategory {
     WEBSITE = "WEBSITE",
     OTHER = "OTHER",
 }
+
+// New enums for enhanced lead management
+
+export enum LeadIntent {
+    PURCHASE = "PURCHASE",
+    ENQUIRY = "ENQUIRY", 
+    SERVICES = "SERVICES",
+    LOST = "LOST",
+    CONVERSION = "CONVERSION",
+}
+
+export enum LeadTemperature {
+    HOT = "HOT",
+    WARM = "WARM", 
+    COLD = "COLD",
+    FROZEN = "FROZEN",
+}
+
+export enum LeadSource {
+    WEBSITE = "WEBSITE",
+    SOCIAL_MEDIA = "SOCIAL_MEDIA",
+    REFERRAL = "REFERRAL",
+    COLD_CALL = "COLD_CALL",
+    EMAIL_CAMPAIGN = "EMAIL_CAMPAIGN",
+    TRADE_SHOW = "TRADE_SHOW",
+    ADVERTISING = "ADVERTISING",
+    DIRECT_MAIL = "DIRECT_MAIL",
+    PARTNER = "PARTNER",
+    ORGANIC_SEARCH = "ORGANIC_SEARCH",
+    PAID_SEARCH = "PAID_SEARCH",
+    CONTENT_MARKETING = "CONTENT_MARKETING",
+    WEBINAR = "WEBINAR",
+    OTHER = "OTHER",
+}
+
+export enum LeadLifecycleStage {
+    SUBSCRIBER = "SUBSCRIBER",
+    LEAD = "LEAD",
+    MARKETING_QUALIFIED_LEAD = "MARKETING_QUALIFIED_LEAD",
+    SALES_QUALIFIED_LEAD = "SALES_QUALIFIED_LEAD",
+    OPPORTUNITY = "OPPORTUNITY",
+    CUSTOMER = "CUSTOMER",
+    EVANGELIST = "EVANGELIST",
+}
+
+export enum BusinessSize {
+    STARTUP = "STARTUP",           // 1-10 employees
+    SMALL = "SMALL",               // 11-50 employees  
+    MEDIUM = "MEDIUM",             // 51-200 employees
+    LARGE = "LARGE",               // 201-1000 employees
+    ENTERPRISE = "ENTERPRISE",     // 1000+ employees
+    UNKNOWN = "UNKNOWN",
+}
+
+export enum Industry {
+    TECHNOLOGY = "TECHNOLOGY",
+    HEALTHCARE = "HEALTHCARE",
+    FINANCE = "FINANCE",
+    RETAIL = "RETAIL",
+    MANUFACTURING = "MANUFACTURING",
+    EDUCATION = "EDUCATION",
+    CONSTRUCTION = "CONSTRUCTION",
+    REAL_ESTATE = "REAL_ESTATE",
+    AUTOMOTIVE = "AUTOMOTIVE",
+    AGRICULTURE = "AGRICULTURE",
+    ENERGY = "ENERGY",
+    TELECOMMUNICATIONS = "TELECOMMUNICATIONS",
+    ENTERTAINMENT = "ENTERTAINMENT",
+    HOSPITALITY = "HOSPITALITY",
+    TRANSPORTATION = "TRANSPORTATION",
+    GOVERNMENT = "GOVERNMENT",
+    NON_PROFIT = "NON_PROFIT",
+    CONSULTING = "CONSULTING",
+    MARKETING = "MARKETING",
+    LEGAL = "LEGAL",
+    OTHER = "OTHER",
+}
+
+export enum DecisionMakerRole {
+    CEO = "CEO",
+    CTO = "CTO",
+    CFO = "CFO",
+    CMO = "CMO",
+    DIRECTOR = "DIRECTOR",
+    MANAGER = "MANAGER",
+    SUPERVISOR = "SUPERVISOR",
+    ANALYST = "ANALYST",
+    COORDINATOR = "COORDINATOR",
+    SPECIALIST = "SPECIALIST",
+    CONSULTANT = "CONSULTANT",
+    OWNER = "OWNER",
+    PARTNER = "PARTNER",
+    OTHER = "OTHER",
+    UNKNOWN = "UNKNOWN",
+}
+
+export enum CommunicationPreference {
+    EMAIL = "EMAIL",
+    PHONE = "PHONE",
+    SMS = "SMS",
+    WHATSAPP = "WHATSAPP",
+    IN_PERSON = "IN_PERSON",
+    VIDEO_CALL = "VIDEO_CALL",
+    SOCIAL_MEDIA = "SOCIAL_MEDIA",
+}
+
+export enum LeadPriority {
+    CRITICAL = "CRITICAL",        // Immediate attention required
+    HIGH = "HIGH",                // High priority, handle today
+    MEDIUM = "MEDIUM",            // Normal priority
+    LOW = "LOW",                  // Can be handled later
+}
+
+export enum BudgetRange {
+    UNDER_1K = "UNDER_1K",        // Under R1,000
+    R1K_5K = "R1K_5K",           // R1,000 - R5,000
+    R5K_10K = "R5K_10K",         // R5,000 - R10,000
+    R10K_25K = "R10K_25K",       // R10,000 - R25,000
+    R25K_50K = "R25K_50K",       // R25,000 - R50,000
+    R50K_100K = "R50K_100K",     // R50,000 - R100,000
+    R100K_250K = "R100K_250K",   // R100,000 - R250,000
+    R250K_500K = "R250K_500K",   // R250,000 - R500,000
+    R500K_1M = "R500K_1M",       // R500,000 - R1M
+    OVER_1M = "OVER_1M",         // Over R1M
+    UNKNOWN = "UNKNOWN",
+}
+
+export enum Timeline {
+    IMMEDIATE = "IMMEDIATE",      // Within 1 week
+    SHORT_TERM = "SHORT_TERM",    // 1-4 weeks
+    MEDIUM_TERM = "MEDIUM_TERM",  // 1-3 months
+    LONG_TERM = "LONG_TERM",      // 3-6 months
+    FUTURE = "FUTURE",            // 6+ months
+    UNKNOWN = "UNKNOWN",
+}

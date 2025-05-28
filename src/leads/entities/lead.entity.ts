@@ -12,7 +12,21 @@ import {
 import { User } from '../../user/entities/user.entity';
 import { Branch } from '../../branch/entities/branch.entity';
 import { Client } from '../../clients/entities/client.entity';
-import { LeadCategory, LeadStatus } from '../../lib/enums/lead.enums';
+import { 
+	LeadCategory, 
+	LeadStatus,
+	LeadIntent,
+	LeadTemperature,
+	LeadSource,
+	LeadLifecycleStage,
+	BusinessSize,
+	Industry,
+	DecisionMakerRole,
+	CommunicationPreference,
+	LeadPriority,
+	BudgetRange,
+	Timeline
+} from '../../lib/enums/lead.enums';
 import { Organisation } from 'src/organisation/entities/organisation.entity';
 import { Interaction } from 'src/interactions/entities/interaction.entity';
 
@@ -28,6 +42,92 @@ export interface LeadStatusHistoryEntry {
 	user?: User; // Populated user details (name, surname, email, etc.)
 }
 
+// Lead scoring components for intelligent lead management
+export interface LeadScoringData {
+	totalScore: number; // 0-100
+	engagementScore: number; // 0-25 - based on interactions, response rates
+	demographicScore: number; // 0-25 - based on company size, industry, role
+	behavioralScore: number; // 0-25 - based on activity patterns, content engagement
+	fitScore: number; // 0-25 - based on budget, timeline, needs match
+	lastCalculated: Date;
+	scoreHistory: Array<{
+		score: number;
+		timestamp: Date;
+		reason: string;
+	}>;
+}
+
+// Enhanced lead activity tracking
+export interface LeadActivityData {
+	lastContactDate?: Date;
+	nextFollowUpDate?: Date;
+	totalInteractions: number;
+	emailInteractions: number;
+	phoneInteractions: number;
+	meetingInteractions: number;
+	averageResponseTime: number; // in hours
+	engagementLevel: 'HIGH' | 'MEDIUM' | 'LOW';
+	lastEngagementType: string;
+	touchPointsCount: number;
+	unresponsiveStreak: number; // days without response
+}
+
+// BANT qualification tracking
+export interface BANTQualification {
+	budget: {
+		confirmed: boolean;
+		range?: BudgetRange;
+		notes?: string;
+	};
+	authority: {
+		confirmed: boolean;
+		decisionMaker?: boolean;
+		role?: DecisionMakerRole;
+		influenceLevel: 'HIGH' | 'MEDIUM' | 'LOW' | 'UNKNOWN';
+	};
+	need: {
+		confirmed: boolean;
+		painPoints: string[];
+		urgency: 'HIGH' | 'MEDIUM' | 'LOW';
+		description?: string;
+	};
+	timeline: {
+		confirmed: boolean;
+		range?: Timeline;
+		specificDate?: Date;
+		notes?: string;
+	};
+	overallQualification: 'QUALIFIED' | 'PARTIALLY_QUALIFIED' | 'UNQUALIFIED' | 'UNKNOWN';
+}
+
+// UTM and source tracking
+export interface SourceTracking {
+	utmSource?: string;
+	utmMedium?: string;
+	utmCampaign?: string;
+	utmTerm?: string;
+	utmContent?: string;
+	landingPage?: string;
+	referralSource?: string;
+	firstTouchSource: LeadSource;
+	lastTouchSource?: LeadSource;
+	touchSourceHistory: Array<{
+		source: LeadSource;
+		timestamp: Date;
+		details?: string;
+	}>;
+}
+
+// Competitive intelligence
+export interface CompetitorData {
+	competitorsConsidered: string[];
+	currentProvider?: string;
+	switchingBarriers: string[];
+	competitiveAdvantages: string[];
+	lostToCompetitor?: string;
+	competitorNotes?: string;
+}
+
 @Entity('leads')
 @Index(['status', 'isDeleted']) // Lead pipeline management
 @Index(['category', 'status']) // Lead categorization
@@ -36,6 +136,11 @@ export interface LeadStatusHistoryEntry {
 @Index(['organisationUid', 'branchUid', 'status']) // Regional lead management
 @Index(['createdAt']) // Lead generation tracking
 @Index(['latitude', 'longitude']) // Location-based leads
+@Index(['intent', 'temperature']) // Lead qualification
+@Index(['leadScore', 'priority']) // Lead scoring and priority
+@Index(['industry', 'businessSize']) // Industry analysis
+@Index(['lifecycleStage', 'status']) // Lead nurturing
+@Index(['lastContactDate', 'nextFollowUpDate']) // Follow-up management
 export class Lead {
 	@PrimaryGeneratedColumn()
 	uid: number;
@@ -72,6 +177,129 @@ export class Lead {
 
 	@Column({ type: 'decimal', precision: 10, scale: 7, nullable: true })
 	longitude: number;
+
+	// NEW ENHANCED FIELDS FOR INTELLIGENT LEAD MANAGEMENT
+
+	// Core qualification fields
+	@Column({ type: 'enum', enum: LeadIntent, nullable: true })
+	intent: LeadIntent;
+
+	@Column({ type: 'int', default: 3, comment: 'User-rated lead quality: 1-5 scale' })
+	userQualityRating: number;
+
+	@Column({ type: 'enum', enum: LeadTemperature, default: LeadTemperature.COLD })
+	temperature: LeadTemperature;
+
+	@Column({ type: 'enum', enum: LeadSource, nullable: true })
+	source: LeadSource;
+
+	@Column({ type: 'enum', enum: LeadPriority, default: LeadPriority.MEDIUM })
+	priority: LeadPriority;
+
+	@Column({ type: 'enum', enum: LeadLifecycleStage, default: LeadLifecycleStage.LEAD })
+	lifecycleStage: LeadLifecycleStage;
+
+	// Company/demographic information
+	@Column({ nullable: true })
+	jobTitle: string;
+
+	@Column({ type: 'enum', enum: DecisionMakerRole, nullable: true })
+	decisionMakerRole: DecisionMakerRole;
+
+	@Column({ type: 'enum', enum: Industry, nullable: true })
+	industry: Industry;
+
+	@Column({ type: 'enum', enum: BusinessSize, nullable: true })
+	businessSize: BusinessSize;
+
+	@Column({ type: 'enum', enum: BudgetRange, nullable: true })
+	budgetRange: BudgetRange;
+
+	@Column({ type: 'enum', enum: Timeline, nullable: true })
+	purchaseTimeline: Timeline;
+
+	// Communication preferences
+	@Column({ type: 'enum', enum: CommunicationPreference, default: CommunicationPreference.EMAIL })
+	preferredCommunication: CommunicationPreference;
+
+	@Column({ nullable: true })
+	timezone: string;
+
+	@Column({ nullable: true })
+	bestContactTime: string; // e.g., "9:00-17:00"
+
+	// Lead scoring and activity tracking
+	@Column({ type: 'int', default: 0, comment: 'Calculated lead score: 0-100' })
+	leadScore: number;
+
+	@Column({ type: 'timestamp', nullable: true })
+	lastContactDate: Date;
+
+	@Column({ type: 'timestamp', nullable: true })
+	nextFollowUpDate: Date;
+
+	@Column({ type: 'int', default: 0 })
+	totalInteractions: number;
+
+	@Column({ type: 'decimal', precision: 5, scale: 2, default: 0, comment: 'Average response time in hours' })
+	averageResponseTime: number;
+
+	@Column({ type: 'int', default: 0, comment: 'Days since last response' })
+	daysSinceLastResponse: number;
+
+	// Business context
+	@Column({ type: 'text', nullable: true })
+	painPoints: string; // JSON string of pain points array
+
+	@Column({ type: 'decimal', precision: 15, scale: 2, nullable: true })
+	estimatedValue: number;
+
+	@Column({ nullable: true })
+	competitorInfo: string; // Current provider or competitors being considered
+
+	@Column({ nullable: true })
+	referralSource: string; // Who referred this lead
+
+	// Campaign and source tracking
+	@Column({ nullable: true })
+	campaignName: string;
+
+	@Column({ nullable: true })
+	landingPage: string;
+
+	@Column({ nullable: true })
+	utmSource: string;
+
+	@Column({ nullable: true })
+	utmMedium: string;
+
+	@Column({ nullable: true })
+	utmCampaign: string;
+
+	@Column({ nullable: true })
+	utmTerm: string;
+
+	@Column({ nullable: true })
+	utmContent: string;
+
+	// Advanced JSON fields for complex data
+	@Column({ type: 'json', nullable: true })
+	scoringData: LeadScoringData;
+
+	@Column({ type: 'json', nullable: true })
+	activityData: LeadActivityData;
+
+	@Column({ type: 'json', nullable: true })
+	bantQualification: BANTQualification;
+
+	@Column({ type: 'json', nullable: true })
+	sourceTracking: SourceTracking;
+
+	@Column({ type: 'json', nullable: true })
+	competitorData: CompetitorData;
+
+	@Column({ type: 'json', nullable: true })
+	customFields: Record<string, any>; // Flexible field for org-specific data
 
 	@CreateDateColumn()
 	createdAt: Date;
