@@ -12,6 +12,8 @@ import {
     BudgetRange, 
     Timeline, 
     LeadIntent,
+    LeadStatus,
+    LeadPriority,
 } from '../lib/enums/lead.enums';
 
 @Injectable()
@@ -27,6 +29,7 @@ export class LeadScoringService {
 
     /**
      * Calculate comprehensive lead score based on multiple factors
+     * Enhanced with status-aware scoring and velocity intelligence
      */
     async calculateLeadScore(leadId: number): Promise<LeadScoringData> {
         const lead = await this.leadRepository.findOne({
@@ -44,10 +47,10 @@ export class LeadScoringService {
             relations: ['createdBy'],
         });
 
-        // Calculate individual scoring components
+        // Calculate individual scoring components with enhanced logic
         const engagementScore = this.calculateEngagementScore(lead, interactions);
         const demographicScore = this.calculateDemographicScore(lead);
-        const behavioralScore = this.calculateBehavioralScore(lead, interactions);
+        const behavioralScore = this.calculateEnhancedBehavioralScore(lead, interactions);
         const fitScore = this.calculateFitScore(lead);
 
         const totalScore = engagementScore + demographicScore + behavioralScore + fitScore;
@@ -64,7 +67,7 @@ export class LeadScoringService {
                 {
                     score: totalScore,
                     timestamp: new Date(),
-                    reason: 'Automated scoring calculation',
+                    reason: 'Enhanced automated scoring calculation',
                 },
             ].slice(-10), // Keep last 10 entries
         };
@@ -79,8 +82,7 @@ export class LeadScoringService {
     }
 
     /**
-     * Calculate engagement score (0-25 points)
-     * Based on interaction frequency, response rates, and engagement quality
+     * Enhanced engagement score with status-aware weighting (0-25 points)
      */
     private calculateEngagementScore(lead: Lead, interactions: Interaction[]): number {
         let score = 0;
@@ -93,13 +95,20 @@ export class LeadScoringService {
         else if (interactionCount >= 2) score += 4;
         else if (interactionCount >= 1) score += 2;
 
-        // Recent activity score (0-8 points)
+        // Recent activity score with status-aware weighting (0-8 points)
         const recentInteractions = interactions.filter(
             (i) => new Date(i.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // Last 7 days
         );
-        if (recentInteractions.length >= 5) score += 8;
-        else if (recentInteractions.length >= 3) score += 6;
-        else if (recentInteractions.length >= 1) score += 4;
+        
+        // Status-aware weighting: APPROVED leads need more recent activity
+        const statusMultiplier = this.getStatusEngagementMultiplier(lead.status);
+        let recentActivityScore = 0;
+        
+        if (recentInteractions.length >= 5) recentActivityScore = 8;
+        else if (recentInteractions.length >= 3) recentActivityScore = 6;
+        else if (recentInteractions.length >= 1) recentActivityScore = 4;
+        
+        score += Math.floor(recentActivityScore * statusMultiplier);
 
         // Response rate score (0-7 points)
         const responseRate = this.calculateResponseRate(interactions);
@@ -112,8 +121,154 @@ export class LeadScoringService {
     }
 
     /**
-     * Calculate demographic score (0-25 points)
-     * Based on company size, industry, role, and profile completeness
+     * Enhanced behavioral score with velocity intelligence (0-25 points)
+     * Replaces simple interaction diversity with status progression speed
+     */
+    private calculateEnhancedBehavioralScore(lead: Lead, interactions: Interaction[]): number {
+        let score = 0;
+
+        // Temperature score with status validation (0-8 points)
+        const temperatureScore = this.calculateTemperatureScore(lead);
+        score += temperatureScore;
+
+        // Intent score with status-aware logic (0-8 points)
+        const intentScore = this.calculateIntentScore(lead);
+        score += intentScore;
+
+        // Enhanced response timing with velocity intelligence (0-9 points) - increased from 5
+        const velocityScore = this.calculateVelocityScore(lead, interactions);
+        score += velocityScore;
+
+        return Math.min(25, score);
+    }
+
+    /**
+     * Calculate temperature score with status validation
+     */
+    private calculateTemperatureScore(lead: Lead): number {
+        let baseScore = 0;
+        
+        switch (lead.temperature) {
+            case LeadTemperature.HOT:
+                baseScore = 8;
+                break;
+            case LeadTemperature.WARM:
+                baseScore = 6;
+                break;
+            case LeadTemperature.COLD:
+                baseScore = 3;
+                break;
+            case LeadTemperature.FROZEN:
+                baseScore = 0;
+                break;
+        }
+
+        // Status validation: APPROVED leads cannot have COLD/FROZEN temperature
+        if (lead.status === LeadStatus.APPROVED && lead.temperature === LeadTemperature.COLD) {
+            baseScore = Math.max(baseScore, 6); // Minimum WARM for approved
+        }
+        if (lead.status === LeadStatus.CONVERTED && lead.temperature !== LeadTemperature.HOT) {
+            baseScore = 8; // Force HOT for converted
+        }
+
+        return baseScore;
+    }
+
+    /**
+     * Calculate intent score with status awareness
+     */
+    private calculateIntentScore(lead: Lead): number {
+        let baseScore = 0;
+        
+        switch (lead.intent) {
+            case LeadIntent.PURCHASE:
+                baseScore = 8;
+                break;
+            case LeadIntent.CONVERSION:
+                baseScore = 7;
+                break;
+            case LeadIntent.SERVICES:
+                baseScore = 5;
+                break;
+            case LeadIntent.ENQUIRY:
+                baseScore = 4;
+                break;
+            case LeadIntent.LOST:
+                baseScore = 0;
+                break;
+        }
+
+        // Boost score for advanced status leads with high intent
+        if (lead.status === LeadStatus.APPROVED && lead.intent === LeadIntent.PURCHASE) {
+            baseScore = Math.min(8, baseScore + 1);
+        }
+
+        return baseScore;
+    }
+
+    /**
+     * Calculate velocity score combining response time and status progression speed (0-9 points)
+     */
+    private calculateVelocityScore(lead: Lead, interactions: Interaction[]): number {
+        let score = 0;
+
+        // Response timing score (0-5 points)
+        const avgResponseTime = this.calculateAverageResponseTime(interactions);
+        if (avgResponseTime > 0 && avgResponseTime <= 2) score += 5; // Within 2 hours
+        else if (avgResponseTime <= 8) score += 4; // Within 8 hours
+        else if (avgResponseTime <= 24) score += 3; // Within 24 hours
+        else if (avgResponseTime <= 72) score += 2; // Within 3 days
+        else if (avgResponseTime > 0) score += 1; // Eventually responds
+
+        // Status progression velocity (0-4 points)
+        const statusVelocityScore = this.calculateStatusProgressionVelocity(lead);
+        score += statusVelocityScore;
+
+        return Math.min(9, score);
+    }
+
+    /**
+     * Calculate status progression velocity based on time in current status
+     */
+    private calculateStatusProgressionVelocity(lead: Lead): number {
+        const now = new Date();
+        const updatedAt = new Date(lead.updatedAt);
+        const daysInCurrentStatus = Math.floor((now.getTime() - updatedAt.getTime()) / (24 * 60 * 60 * 1000));
+
+        // Fast progression bonuses
+        if (daysInCurrentStatus <= 1) {
+            return 4; // Very fast progression
+        } else if (daysInCurrentStatus <= 3) {
+            return 3; // Fast progression
+        } else if (daysInCurrentStatus <= 7) {
+            return 2; // Normal progression
+        } else if (daysInCurrentStatus <= 14) {
+            return 1; // Slow progression
+        } else {
+            return 0; // Stagnant
+        }
+    }
+
+    /**
+     * Get status-based engagement multiplier for recent activity scoring
+     */
+    private getStatusEngagementMultiplier(status: LeadStatus): number {
+        switch (status) {
+            case LeadStatus.APPROVED:
+                return 1.2; // 20% boost for approved leads
+            case LeadStatus.CONVERTED:
+                return 1.1; // 10% boost for converted leads
+            case LeadStatus.REVIEW:
+                return 1.0; // Normal weight
+            case LeadStatus.PENDING:
+                return 0.9; // Slight reduction for pending
+            default:
+                return 1.0;
+        }
+    }
+
+    /**
+     * Calculate demographic score (0-25 points) - Enhanced with better role scoring
      */
     private calculateDemographicScore(lead: Lead): number {
         let score = 0;
@@ -137,7 +292,7 @@ export class LeadScoringService {
                 break;
         }
 
-        // Decision maker role score (0-8 points)
+        // Enhanced decision maker role score (0-8 points)
         switch (lead.decisionMakerRole) {
             case DecisionMakerRole.CEO:
             case DecisionMakerRole.OWNER:
@@ -186,125 +341,88 @@ export class LeadScoringService {
     }
 
     /**
-     * Calculate behavioral score (0-25 points)
-     * Based on activity patterns, communication preferences, and engagement timing
-     */
-    private calculateBehavioralScore(lead: Lead, interactions: Interaction[]): number {
-        let score = 0;
-
-        // Temperature score (0-8 points)
-        switch (lead.temperature) {
-            case LeadTemperature.HOT:
-                score += 8;
-                break;
-            case LeadTemperature.WARM:
-                score += 6;
-                break;
-            case LeadTemperature.COLD:
-                score += 3;
-                break;
-            case LeadTemperature.FROZEN:
-                score += 0;
-                break;
-        }
-
-        // Intent score (0-8 points)
-        switch (lead.intent) {
-            case LeadIntent.PURCHASE:
-                score += 8;
-                break;
-            case LeadIntent.CONVERSION:
-                score += 7;
-                break;
-            case LeadIntent.SERVICES:
-                score += 5;
-                break;
-            case LeadIntent.ENQUIRY:
-                score += 4;
-                break;
-            case LeadIntent.LOST:
-                score += 0;
-                break;
-        }
-
-        // Response timing score (0-5 points)
-        const avgResponseTime = this.calculateAverageResponseTime(interactions);
-        if (avgResponseTime > 0 && avgResponseTime <= 2) score += 5; // Within 2 hours
-        else if (avgResponseTime <= 8) score += 4; // Within 8 hours
-        else if (avgResponseTime <= 24) score += 3; // Within 24 hours
-        else if (avgResponseTime <= 72) score += 2; // Within 3 days
-        else if (avgResponseTime > 0) score += 1; // Eventually responds
-
-        // Interaction diversity score (0-4 points)
-        const interactionTypes = new Set(interactions.map(i => i.type));
-        score += Math.min(4, interactionTypes.size);
-
-        return Math.min(25, score);
-    }
-
-    /**
-     * Calculate fit score (0-25 points)
-     * Based on budget, timeline, and specific needs alignment
+     * Calculate fit score (0-25 points) - Enhanced with status-aware value assessment
      */
     private calculateFitScore(lead: Lead): number {
         let score = 0;
 
-        // Budget score (0-10 points)
+        // Budget score with status boost (0-10 points)
+        let budgetScore = 0;
         switch (lead.budgetRange) {
             case BudgetRange.OVER_1M:
-                score += 10;
+                budgetScore = 10;
                 break;
             case BudgetRange.R500K_1M:
-                score += 9;
+                budgetScore = 9;
                 break;
             case BudgetRange.R250K_500K:
-                score += 8;
+                budgetScore = 8;
                 break;
             case BudgetRange.R100K_250K:
-                score += 7;
+                budgetScore = 7;
                 break;
             case BudgetRange.R50K_100K:
-                score += 6;
+                budgetScore = 6;
                 break;
             case BudgetRange.R25K_50K:
-                score += 5;
+                budgetScore = 5;
                 break;
             case BudgetRange.R10K_25K:
-                score += 4;
+                budgetScore = 4;
                 break;
             case BudgetRange.R5K_10K:
-                score += 3;
+                budgetScore = 3;
                 break;
             case BudgetRange.R1K_5K:
-                score += 2;
+                budgetScore = 2;
                 break;
             case BudgetRange.UNDER_1K:
-                score += 1;
+                budgetScore = 1;
                 break;
         }
 
-        // Timeline score (0-8 points)
+        // Boost budget score for advanced status leads
+        if (lead.status === LeadStatus.APPROVED || lead.status === LeadStatus.CONVERTED) {
+            budgetScore = Math.min(10, Math.floor(budgetScore * 1.1));
+        }
+        score += budgetScore;
+
+        // Timeline score with urgency intelligence (0-8 points)
+        let timelineScore = 0;
         switch (lead.purchaseTimeline) {
             case Timeline.IMMEDIATE:
-                score += 8;
+                timelineScore = 8;
                 break;
             case Timeline.SHORT_TERM:
-                score += 7;
+                timelineScore = 7;
                 break;
             case Timeline.MEDIUM_TERM:
-                score += 5;
+                timelineScore = 5;
                 break;
             case Timeline.LONG_TERM:
-                score += 3;
+                timelineScore = 3;
                 break;
             case Timeline.FUTURE:
-                score += 1;
+                timelineScore = 1;
                 break;
         }
 
-        // User quality rating score (0-5 points)
+        // Boost timeline score for hot leads
+        if (lead.temperature === LeadTemperature.HOT && timelineScore > 0) {
+            timelineScore = Math.min(8, timelineScore + 1);
+        }
+        score += timelineScore;
+
+        // Enhanced user quality rating score (0-5 points)
         if (lead.userQualityRating) {
-            score += lead.userQualityRating;
+            let qualityScore = lead.userQualityRating;
+            
+            // Boost quality score for approved leads
+            if (lead.status === LeadStatus.APPROVED && qualityScore >= 4) {
+                qualityScore = Math.min(5, qualityScore + 0.5);
+            }
+            
+            score += Math.floor(qualityScore);
         }
 
         // Estimated value score (0-2 points)
@@ -363,7 +481,7 @@ export class LeadScoringService {
     }
 
     /**
-     * Update activity data for a lead
+     * Enhanced activity data update with status-aware follow-up calculation
      */
     async updateActivityData(leadId: number): Promise<LeadActivityData> {
         const lead = await this.leadRepository.findOne({
@@ -386,13 +504,13 @@ export class LeadScoringService {
 
         const activityData: LeadActivityData = {
             lastContactDate,
-            nextFollowUpDate: this.calculateNextFollowUpDate(lead, lastContactDate),
+            nextFollowUpDate: this.calculateIntelligentFollowUpDate(lead, lastContactDate),
             totalInteractions: interactions.length,
             emailInteractions: interactions.filter(i => i.type === InteractionType.EMAIL).length,
             phoneInteractions: interactions.filter(i => i.type === InteractionType.CALL).length,
             meetingInteractions: interactions.filter(i => i.type === InteractionType.MEETING).length,
             averageResponseTime: this.calculateAverageResponseTime(interactions),
-            engagementLevel: this.calculateEngagementLevel(interactions),
+            engagementLevel: this.calculateEnhancedEngagementLevel(lead, interactions),
             lastEngagementType: lastInteraction?.type || 'NONE',
             touchPointsCount: interactions.length,
             unresponsiveStreak: lastContactDate ? 
@@ -413,9 +531,9 @@ export class LeadScoringService {
     }
 
     /**
-     * Calculate next follow-up date based on lead behavior and activity
+     * Calculate intelligent follow-up date based on lead status, behavior and velocity
      */
-    private calculateNextFollowUpDate(lead: Lead, lastContactDate: Date | null): Date | null {
+    private calculateIntelligentFollowUpDate(lead: Lead, lastContactDate: Date | null): Date | null {
         if (!lastContactDate) return new Date(); // Follow up immediately for new leads
 
         const now = new Date();
@@ -423,23 +541,41 @@ export class LeadScoringService {
 
         let followUpDays = 7; // Default 1 week
 
-        // Adjust based on temperature
+        // Status-aware follow-up intervals
+        switch (lead.status) {
+            case LeadStatus.APPROVED:
+                followUpDays = 2; // More frequent for approved
+                break;
+            case LeadStatus.REVIEW:
+                followUpDays = 3; // Regular for review
+                break;
+            case LeadStatus.CONVERTED:
+                followUpDays = 30; // Monthly check-ins
+                break;
+            default:
+                followUpDays = 7; // Weekly for pending
+        }
+
+        // Adjust based on temperature with status validation
         switch (lead.temperature) {
             case LeadTemperature.HOT:
-                followUpDays = 1; // Daily follow-up
+                followUpDays = Math.min(followUpDays, 1); // Daily for hot
                 break;
             case LeadTemperature.WARM:
-                followUpDays = 3; // Every 3 days
+                followUpDays = Math.min(followUpDays, 3); // Every 3 days for warm
                 break;
             case LeadTemperature.COLD:
-                followUpDays = 7; // Weekly
+                // Don't extend for approved leads even if cold
+                if (lead.status !== LeadStatus.APPROVED) {
+                    followUpDays = Math.max(followUpDays, 7); // Weekly for cold
+                }
                 break;
             case LeadTemperature.FROZEN:
-                followUpDays = 30; // Monthly
+                followUpDays = 30; // Monthly for frozen
                 break;
         }
 
-        // Adjust based on lead score
+        // Velocity-based adjustments
         if (lead.leadScore >= 80) followUpDays = Math.min(followUpDays, 1);
         else if (lead.leadScore >= 60) followUpDays = Math.min(followUpDays, 3);
 
@@ -450,15 +586,30 @@ export class LeadScoringService {
     }
 
     /**
-     * Calculate engagement level based on recent interactions
+     * Calculate enhanced engagement level with status awareness
      */
-    private calculateEngagementLevel(interactions: Interaction[]): 'HIGH' | 'MEDIUM' | 'LOW' {
+    private calculateEnhancedEngagementLevel(lead: Lead, interactions: Interaction[]): 'HIGH' | 'MEDIUM' | 'LOW' {
         const recentInteractions = interactions.filter(
             i => new Date(i.createdAt) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
         );
 
-        if (recentInteractions.length >= 10) return 'HIGH';
-        if (recentInteractions.length >= 3) return 'MEDIUM';
+        // Status-aware thresholds
+        const getThresholds = (status: LeadStatus) => {
+            switch (status) {
+                case LeadStatus.APPROVED:
+                case LeadStatus.CONVERTED:
+                    return { high: 8, medium: 2 }; // Higher expectations
+                case LeadStatus.REVIEW:
+                    return { high: 10, medium: 3 }; // Standard expectations
+                default:
+                    return { high: 12, medium: 4 }; // Lower expectations for pending
+            }
+        };
+
+        const thresholds = getThresholds(lead.status);
+
+        if (recentInteractions.length >= thresholds.high) return 'HIGH';
+        if (recentInteractions.length >= thresholds.medium) return 'MEDIUM';
         return 'LOW';
     }
 

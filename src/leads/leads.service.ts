@@ -1,4 +1,4 @@
-import { Between, Repository, In } from 'typeorm';
+import { Between, Repository, In, MoreThan } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { Lead } from './entities/lead.entity';
@@ -26,6 +26,7 @@ import { UnifiedNotificationService } from '../lib/services/unified-notification
 import { NotificationEvent, NotificationPriority } from '../lib/types/unified-notification.types';
 import { LeadScoringService } from './lead-scoring.service';
 import { Cron } from '@nestjs/schedule';
+import { Interaction } from '../interactions/entities/interaction.entity';
 
 @Injectable()
 export class LeadsService {
@@ -33,9 +34,11 @@ export class LeadsService {
 
 	constructor(
 		@InjectRepository(Lead)
-		private leadRepository: Repository<Lead>,
+		private leadsRepository: Repository<Lead>,
 		@InjectRepository(User)
 		private userRepository: Repository<User>,
+		@InjectRepository(Interaction)
+		private interactionRepository: Repository<Interaction>,
 		private readonly eventEmitter: EventEmitter2,
 		private readonly rewardsService: RewardsService,
 		private readonly communicationService: CommunicationService,
@@ -55,7 +58,7 @@ export class LeadsService {
 			}
 
 			// Create the lead entity
-			const lead = this.leadRepository.create(createLeadDto as unknown as Lead);
+			const lead = this.leadsRepository.create(createLeadDto as unknown as Lead);
 
 			// Set organization
 			if (orgId) {
@@ -79,7 +82,7 @@ export class LeadsService {
 			// Set intelligent defaults for new leads
 			await this.setIntelligentDefaults(lead);
 
-			const savedLead = await this.leadRepository.save(lead);
+			const savedLead = await this.leadsRepository.save(lead);
 
 			// Populate the lead with full relation data
 			const populatedLead = await this.populateLeadRelations(savedLead);
@@ -124,7 +127,7 @@ export class LeadsService {
 				throw new BadRequestException('Organization ID is required');
 			}
 
-			const queryBuilder = this.leadRepository
+			const queryBuilder = this.leadsRepository
 				.createQueryBuilder('lead')
 				.leftJoinAndSelect('lead.owner', 'owner')
 				.leftJoinAndSelect('lead.branch', 'branch')
@@ -228,7 +231,7 @@ export class LeadsService {
 				whereClause.branch = { uid: branchId };
 			}
 
-			const lead = await this.leadRepository.findOne({
+			const lead = await this.leadsRepository.findOne({
 				where: whereClause,
 				relations: ['owner', 'organisation', 'branch', 'interactions'],
 			});
@@ -247,7 +250,7 @@ export class LeadsService {
 			// Update activity data when lead is viewed
 			await this.leadScoringService.updateActivityData(ref);
 
-			const allLeads = await this.leadRepository.find({
+			const allLeads = await this.leadsRepository.find({
 				where: {
 					isDeleted: false,
 					organisation: { uid: orgId },
@@ -293,7 +296,7 @@ export class LeadsService {
 				whereClause.branch = { uid: branchId };
 			}
 
-			const leads = await this.leadRepository.find({
+			const leads = await this.leadsRepository.find({
 				where: whereClause,
 				relations: ['owner', 'organisation', 'branch'],
 				order: { leadScore: 'DESC', updatedAt: 'DESC' }, // Order by score and recency
@@ -338,7 +341,7 @@ export class LeadsService {
 				throw new BadRequestException('Organization ID is required');
 			}
 
-			const lead = await this.leadRepository.findOne({
+			const lead = await this.leadsRepository.findOne({
 				where: { uid: ref, organisation: { uid: orgId }, branch: { uid: branchId } },
 				relations: ['owner', 'organisation', 'branch', 'interactions'],
 			});
@@ -391,10 +394,10 @@ export class LeadsService {
 			// Apply intelligent updates based on data changes
 			await this.applyIntelligentUpdates(lead, dataToSave);
 
-			await this.leadRepository.update(ref, dataToSave);
+			await this.leadsRepository.update(ref, dataToSave);
 
 			// EVENT-DRIVEN AUTOMATION: Post-update actions
-			const updatedLead = await this.leadRepository.findOne({
+			const updatedLead = await this.leadsRepository.findOne({
 				where: { uid: ref },
 				relations: ['owner', 'organisation', 'branch', 'interactions']
 			});
@@ -433,7 +436,7 @@ export class LeadsService {
 				whereClause.branch = { uid: branchId };
 			}
 
-			const lead = await this.leadRepository.findOne({
+			const lead = await this.leadsRepository.findOne({
 				where: whereClause,
 			});
 
@@ -444,7 +447,7 @@ export class LeadsService {
 			}
 
 			// Use soft delete by updating isDeleted flag
-			await this.leadRepository.update(ref, { isDeleted: true });
+			await this.leadsRepository.update(ref, { isDeleted: true });
 
 			return {
 				message: process.env.SUCCESS_MESSAGE,
@@ -472,7 +475,7 @@ export class LeadsService {
 				whereClause.branch = { uid: branchId };
 			}
 
-			const lead = await this.leadRepository.findOne({
+			const lead = await this.leadsRepository.findOne({
 				where: whereClause,
 			});
 
@@ -483,7 +486,7 @@ export class LeadsService {
 			}
 
 			// Restore by setting isDeleted to false
-			await this.leadRepository.update(ref, { isDeleted: false });
+			await this.leadsRepository.update(ref, { isDeleted: false });
 
 			// Recalculate score for restored lead
 			await this.leadScoringService.calculateLeadScore(ref);
@@ -509,7 +512,7 @@ export class LeadsService {
 			// Get leads that need scoring (either never scored or score older than 4 hours)
 			const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000);
 			
-			const leadsToScore = await this.leadRepository
+			const leadsToScore = await this.leadsRepository
 				.createQueryBuilder('lead')
 				.where('lead.isDeleted = false')
 				.andWhere(
@@ -552,7 +555,7 @@ export class LeadsService {
 		
 		try {
 			const now = new Date();
-			const overdueLeads = await this.leadRepository.find({
+			const overdueLeads = await this.leadsRepository.find({
 				where: {
 					isDeleted: false,
 					nextFollowUpDate: Between(new Date('2020-01-01'), now), // Overdue
@@ -587,7 +590,7 @@ export class LeadsService {
 					// Update priority if significantly overdue
 					const daysOverdue = Math.floor((now.getTime() - lead.nextFollowUpDate!.getTime()) / (24 * 60 * 60 * 1000));
 					if (daysOverdue > 7 && lead.priority !== LeadPriority.CRITICAL) {
-						await this.leadRepository.update(lead.uid, { 
+						await this.leadsRepository.update(lead.uid, { 
 							priority: LeadPriority.HIGH,
 							daysSinceLastResponse: daysOverdue 
 						});
@@ -630,7 +633,7 @@ export class LeadsService {
 		};
 	}> {
 		try {
-			const leads = await this.leadRepository.find({
+			const leads = await this.leadsRepository.find({
 				where: { createdAt: Between(startOfDay(date), endOfDay(date)) },
 			});
 
@@ -665,7 +668,7 @@ export class LeadsService {
 
 	async getLeadsReport(filter: any) {
 		try {
-			const leads = await this.leadRepository.find({
+			const leads = await this.leadsRepository.find({
 				where: {
 					...filter,
 					isDeleted: false,
@@ -1336,7 +1339,7 @@ export class LeadsService {
 	 * Update temperature based on lead score
 	 */
 	private async updateTemperatureBasedOnScore(leadId: number): Promise<void> {
-		const lead = await this.leadRepository.findOne({ where: { uid: leadId } });
+		const lead = await this.leadsRepository.findOne({ where: { uid: leadId } });
 		if (!lead) return;
 
 		let newTemperature = lead.temperature;
@@ -1354,7 +1357,7 @@ export class LeadsService {
 
 		// Only update if temperature actually changed
 		if (newTemperature !== lead.temperature) {
-			await this.leadRepository.update(leadId, { temperature: newTemperature });
+			await this.leadsRepository.update(leadId, { temperature: newTemperature });
 			this.logger.log(`Updated temperature for lead ${leadId} from ${lead.temperature} to ${newTemperature} based on score ${lead.leadScore}`);
 		}
 	}
@@ -1375,5 +1378,682 @@ export class LeadsService {
 			default:
 				return 7;
 		}
+	}
+
+	/**
+	 * Generate intelligent email using enhanced AI system with rich lead data
+	 */
+	async generateIntelligentEmail(
+		leadId: number,
+		templateType: string,
+		customMessage?: string,
+		tone?: any,
+		orgId?: number,
+		branchId?: number
+	): Promise<{
+		success: boolean;
+		email?: {
+			subject: string;
+			body: string;
+			followUpReminder?: string;
+			personalizationScore?: number;
+			keyPersonalizationElements?: string[];
+			alternativeSubjectLines?: string[];
+			responseStrategy?: string;
+		};
+		message: string;
+	}> {
+		try {
+			if (!orgId) {
+				throw new BadRequestException('Organization ID is required');
+			}
+
+			// Get the lead with all related data
+			const lead = await this.leadsRepository.findOne({
+				where: { 
+					uid: leadId, 
+					isDeleted: false,
+					organisation: { uid: orgId },
+					...(branchId && { branch: { uid: branchId } })
+				},
+				relations: ['owner', 'organisation', 'branch', 'interactions'],
+			});
+
+			if (!lead) {
+				return {
+					success: false,
+					message: 'Lead not found',
+				};
+			}
+
+			// Transform lead data to enhanced format for AI
+			const enhancedLeadData = {
+				uid: lead.uid,
+				name: lead.name,
+				email: lead.email,
+				phone: lead.phone,
+				companyName: lead.companyName,
+				jobTitle: lead.jobTitle,
+				
+				// Lead qualification and scoring
+				status: lead.status,
+				intent: lead.intent,
+				temperature: lead.temperature,
+				priority: lead.priority,
+				leadScore: lead.leadScore,
+				userQualityRating: lead.userQualityRating,
+				lifecycleStage: lead.lifecycleStage,
+				
+				// Business context
+				industry: lead.industry,
+				businessSize: lead.businessSize,
+				decisionMakerRole: lead.decisionMakerRole,
+				budgetRange: lead.budgetRange,
+				purchaseTimeline: lead.purchaseTimeline,
+				estimatedValue: lead.estimatedValue,
+				
+				// Communication and behavior
+				source: lead.source,
+				preferredCommunication: lead.preferredCommunication,
+				timezone: lead.timezone,
+				bestContactTime: lead.bestContactTime,
+				averageResponseTime: lead.averageResponseTime,
+				totalInteractions: lead.totalInteractions,
+				daysSinceLastResponse: lead.daysSinceLastResponse,
+				lastContactDate: lead.lastContactDate?.toISOString(),
+				nextFollowUpDate: lead.nextFollowUpDate?.toISOString(),
+				
+				// Business intelligence
+				painPoints: lead.painPoints ? JSON.parse(lead.painPoints) : [],
+				competitorInfo: lead.competitorInfo,
+				referralSource: lead.referralSource,
+				campaignName: lead.campaignName,
+				utmSource: lead.utmSource,
+				utmMedium: lead.utmMedium,
+				utmCampaign: lead.utmCampaign,
+				
+				// Activity and engagement data
+				scoringData: lead.scoringData,
+				activityData: lead.activityData,
+				
+				// Additional context
+				notes: lead.notes,
+				assignee: lead.owner?.name,
+				customFields: lead.customFields,
+			};
+
+			// Set intelligent tone defaults if not provided
+			const intelligentTone = tone || {
+				baseTone: this.selectOptimalTone(enhancedLeadData),
+				intensity: this.selectToneIntensity(enhancedLeadData),
+				regionalAdaptation: 'south_african',
+				industrySpecific: true,
+			};
+
+			// Prepare the AI request
+			const aiRequest = {
+				recipientName: lead.name || 'Valued Contact',
+				recipientEmail: lead.email || '',
+				leadData: enhancedLeadData,
+				templateType: templateType as any,
+				tone: intelligentTone,
+				customMessage: customMessage,
+				industryInsights: this.generateIndustryInsights(lead.industry),
+				competitiveContext: lead.competitorInfo ? [`Currently evaluating: ${lead.competitorInfo}`] : [],
+				urgencyFactors: this.generateUrgencyFactors(enhancedLeadData),
+				businessContext: {
+					marketConditions: this.generateMarketConditions(lead.industry),
+					seasonalFactors: this.generateSeasonalFactors(),
+				},
+			};
+
+			// Call the enhanced AI email generation API
+			const response = await fetch(`${process.env.DASHBOARD_URL}/api/ai/email`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify(aiRequest),
+			});
+
+			if (!response.ok) {
+				throw new Error(`AI service responded with status: ${response.status}`);
+			}
+
+			const emailData = await response.json();
+
+			return {
+				success: true,
+				email: {
+					subject: emailData.subject,
+					body: emailData.body,
+					followUpReminder: emailData.followUpReminder,
+					personalizationScore: emailData.personalizationScore,
+					keyPersonalizationElements: emailData.keyPersonalizationElements,
+					alternativeSubjectLines: emailData.alternativeSubjectLines,
+					responseStrategy: emailData.responseStrategy,
+				},
+				message: 'Email generated successfully',
+			};
+
+		} catch (error) {
+			this.logger.error(`Error generating intelligent email for lead ${leadId}: ${error.message}`, error.stack);
+			return {
+				success: false,
+				message: `Failed to generate email: ${error.message}`,
+			};
+		}
+	}
+
+	/**
+	 * Select optimal tone based on lead intelligence
+	 */
+	private selectOptimalTone(leadData: any): string {
+		// High-score or hot leads get more confident approach
+		if (leadData.temperature === 'HOT' || (leadData.leadScore && leadData.leadScore > 80)) {
+			return leadData.decisionMakerRole === 'CEO' || leadData.decisionMakerRole === 'OWNER' 
+				? 'authoritative' : 'results-driven';
+		}
+
+		// Technical decision makers prefer consultative approach
+		if (leadData.decisionMakerRole === 'CTO' || leadData.industry === 'TECHNOLOGY') {
+			return 'consultative';
+		}
+
+		// Financial decision makers prefer data-driven approach
+		if (leadData.decisionMakerRole === 'CFO' || leadData.industry === 'FINANCE') {
+			return 'results-driven';
+		}
+
+		// Educational approach for early-stage leads
+		if (leadData.temperature === 'COLD' || leadData.lifecycleStage === 'LEAD') {
+			return 'educational';
+		}
+
+		return 'collaborative';
+	}
+
+	/**
+	 * Select tone intensity based on lead characteristics
+	 */
+	private selectToneIntensity(leadData: any): string {
+		if (leadData.temperature === 'HOT' && leadData.priority === 'HIGH') {
+			return 'strong';
+		} else if (leadData.temperature === 'WARM' || leadData.priority === 'MEDIUM') {
+			return 'moderate';
+		}
+		return 'subtle';
+	}
+
+	/**
+	 * Generate industry-specific insights
+	 */
+	private generateIndustryInsights(industry?: string): string[] {
+		const insights: Record<string, string[]> = {
+			TECHNOLOGY: [
+				'Digital transformation acceleration in SA market',
+				'Cybersecurity and data protection priorities',
+				'Cloud adoption and skills shortage challenges'
+			],
+			HEALTHCARE: [
+				'Healthcare digitization trends',
+				'Telemedicine and patient data security',
+				'Cost optimization and efficiency improvements'
+			],
+			FINANCE: [
+				'Fintech disruption and digital banking',
+				'Regulatory compliance (POPIA, Basel III)',
+				'Customer experience transformation'
+			],
+			RETAIL: [
+				'Omnichannel retail evolution',
+				'Supply chain optimization',
+				'Customer data analytics and personalization'
+			],
+			MANUFACTURING: [
+				'Industry 4.0 and smart manufacturing',
+				'Supply chain resilience',
+				'Sustainability and carbon reduction'
+			],
+			MINING: [
+				'Safety technology and compliance',
+				'Operational efficiency optimization',
+				'Environmental impact management'
+			]
+		};
+
+		return insights[industry as string] || [
+			'Digital transformation opportunities',
+			'Operational efficiency improvements',
+			'Competitive advantage enhancement'
+		];
+	}
+
+	/**
+	 * Generate urgency factors based on lead data
+	 */
+	private generateUrgencyFactors(leadData: any): string[] {
+		const factors: string[] = [];
+
+		if (leadData.temperature === 'HOT') {
+			factors.push('High-interest lead requiring immediate attention');
+		}
+
+		if (leadData.purchaseTimeline === 'IMMEDIATE') {
+			factors.push('Immediate purchase timeline');
+		} else if (leadData.purchaseTimeline === 'SHORT_TERM') {
+			factors.push('Short-term purchase timeline (1-4 weeks)');
+		}
+
+		if (leadData.daysSinceLastResponse && leadData.daysSinceLastResponse > 7) {
+			factors.push('Extended period since last contact');
+		}
+
+		if (leadData.competitorInfo) {
+			factors.push('Actively considering competitive solutions');
+		}
+
+		if (leadData.budgetRange && ['OVER_1M', 'R500K_1M'].includes(leadData.budgetRange)) {
+			factors.push('High-value opportunity');
+		}
+
+		return factors;
+	}
+
+	/**
+	 * Generate market conditions based on industry
+	 */
+	private generateMarketConditions(industry?: string): string[] {
+		const conditions: Record<string, string[]> = {
+			RETAIL: ['Consumer spending pressure', 'Supply chain challenges'],
+			MANUFACTURING: ['Raw material cost inflation', 'Skills shortage'],
+			TECHNOLOGY: ['Digital acceleration', 'Cybersecurity concerns'],
+			FINANCE: ['Regulatory changes', 'Digital disruption'],
+			HEALTHCARE: ['Healthcare transformation', 'Cost pressures'],
+			MINING: ['Commodity price volatility', 'Environmental regulations']
+		};
+
+		return conditions[industry as string] || ['Economic uncertainty', 'Digital transformation pressure'];
+	}
+
+	/**
+	 * Generate seasonal factors
+	 */
+	private generateSeasonalFactors(): string[] {
+		const currentMonth = new Date().getMonth();
+		if (currentMonth >= 10 || currentMonth <= 1) {
+			return ['Year-end budget considerations', 'Holiday season planning'];
+		} else if (currentMonth >= 2 && currentMonth <= 4) {
+			return ['New year implementation planning', 'Q1 priority setting'];
+		}
+		return ['Mid-year review and planning', 'Summer business cycles'];
+	}
+
+	/**
+	 * Update lead status with enhanced automatic temperature adjustment
+	 * Enhanced with status validation and velocity-based scoring
+	 */
+	async updateLeadStatus(
+		id: number, 
+		status: LeadStatus, 
+		reason?: string,
+		description?: string,
+		nextStep?: string
+	): Promise<Lead> {
+		const result = await this.findOne(id);
+		if (!result.lead) {
+			throw new NotFoundException(`Lead with ID ${id} not found`);
+		}
+
+		const lead = result.lead;
+
+		// Store previous values for comparison
+		const previousStatus = lead.status;
+		const previousTemperature = lead.temperature;
+
+		// Update the lead status
+		lead.status = status;
+		lead.updatedAt = new Date();
+
+		// Enhanced status-aware temperature adjustment with velocity intelligence
+		await this.updateTemperatureBasedOnStatus(lead, previousStatus);
+
+		// Recalculate scores with new status and temperature
+		await this.leadScoringService.calculateLeadScore(id);
+		await this.leadScoringService.updateActivityData(id);
+
+		// Update audit trail - removing non-existent properties
+		// Note: Lead entity doesn't have reason, description, nextStep properties
+		// These would need to be tracked in a separate audit/history table
+
+		const savedLead = await this.leadsRepository.save(lead);
+
+		// Log significant changes
+		if (previousStatus !== status || previousTemperature !== lead.temperature) {
+			this.logger.log(
+				`Lead ${id} status updated: ${previousStatus} → ${status}, ` +
+				`temperature: ${previousTemperature} → ${lead.temperature}, ` +
+				`score: ${lead.leadScore || 0}`
+			);
+		}
+
+		return savedLead;
+	}
+
+	/**
+	 * Enhanced temperature adjustment based on status and velocity intelligence
+	 */
+	private async updateTemperatureBasedOnStatus(lead: Lead, previousStatus?: LeadStatus): Promise<void> {
+		const currentScore = lead.leadScore || 0;
+		const now = new Date();
+		const statusChangeTime = previousStatus && previousStatus !== lead.status ? 
+			(now.getTime() - new Date(lead.updatedAt).getTime()) / (1000 * 60 * 60) : // Hours since last update
+			0;
+
+		// Status-based temperature rules with velocity intelligence
+		switch (lead.status) {
+			case LeadStatus.APPROVED:
+				// APPROVED leads cannot be COLD or FROZEN
+				if (lead.temperature === LeadTemperature.COLD || lead.temperature === LeadTemperature.FROZEN) {
+					// Determine new temperature based on score and velocity
+					if (currentScore >= 70 || statusChangeTime <= 24) { // High score or fast progression
+						lead.temperature = LeadTemperature.HOT;
+					} else {
+						lead.temperature = LeadTemperature.WARM;
+					}
+				}
+				// If already HOT/WARM, maintain or upgrade based on velocity
+				else if (statusChangeTime <= 6) { // Very fast approval (within 6 hours)
+					lead.temperature = LeadTemperature.HOT;
+				}
+				break;
+
+			case LeadStatus.CONVERTED:
+				// CONVERTED leads must be HOT (they completed the journey)
+				lead.temperature = LeadTemperature.HOT;
+				break;
+
+			case LeadStatus.REVIEW:
+				// REVIEW status with scoring-based temperature
+				if (currentScore >= 80) {
+					lead.temperature = LeadTemperature.HOT;
+				} else if (currentScore >= 60) {
+					lead.temperature = LeadTemperature.WARM;
+				} else if (currentScore >= 40) {
+					lead.temperature = LeadTemperature.COLD;
+				} else {
+					lead.temperature = LeadTemperature.FROZEN;
+				}
+				break;
+
+			case LeadStatus.PENDING:
+				// PENDING leads get temperature based on score and velocity
+				if (statusChangeTime > 0) { // Status just changed
+					if (statusChangeTime <= 2) { // Very recent activity
+						lead.temperature = lead.temperature && lead.temperature > LeadTemperature.COLD ? 
+							lead.temperature : LeadTemperature.WARM;
+					} else if (statusChangeTime > 168) { // Over a week old
+						lead.temperature = LeadTemperature.COLD;
+					}
+				}
+				// Adjust based on score if no recent status change
+				if (currentScore >= 75) {
+					lead.temperature = LeadTemperature.HOT;
+				} else if (currentScore >= 50) {
+					lead.temperature = LeadTemperature.WARM;
+				} else if (currentScore >= 25) {
+					lead.temperature = LeadTemperature.COLD;
+				} else {
+					lead.temperature = LeadTemperature.FROZEN;
+				}
+				break;
+
+			case LeadStatus.DECLINED:
+			case LeadStatus.CANCELLED:
+				// Declined/cancelled leads cool down over time but may have potential
+				if (currentScore >= 60) {
+					lead.temperature = LeadTemperature.COLD; // Still has potential
+				} else {
+					lead.temperature = LeadTemperature.FROZEN;
+				}
+				break;
+
+			default:
+				// For any other status, use score-based assignment
+				if (currentScore >= 75) {
+					lead.temperature = LeadTemperature.HOT;
+				} else if (currentScore >= 50) {
+					lead.temperature = LeadTemperature.WARM;
+				} else if (currentScore >= 25) {
+					lead.temperature = LeadTemperature.COLD;
+				} else {
+					lead.temperature = LeadTemperature.FROZEN;
+				}
+				break;
+		}
+
+		// Additional velocity-based adjustments
+		await this.applyVelocityBasedTemperatureAdjustments(lead, statusChangeTime);
+	}
+
+	/**
+	 * Apply velocity-based temperature adjustments
+	 */
+	private async applyVelocityBasedTemperatureAdjustments(lead: Lead, statusChangeTime: number): Promise<void> {
+		// Get recent interactions for velocity analysis
+		const recentInteractions = await this.interactionRepository.find({
+			where: { 
+				lead: { uid: lead.uid },
+				createdAt: MoreThan(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)) // Last 7 days
+			},
+			order: { createdAt: 'DESC' }
+		});
+
+		const interactionVelocity = recentInteractions.length;
+
+		// Very fast progression (status change within hours) = HOT boost
+		if (statusChangeTime > 0 && statusChangeTime <= 6 && lead.temperature !== LeadTemperature.HOT) {
+			if (lead.status === LeadStatus.APPROVED || lead.status === LeadStatus.REVIEW) {
+				lead.temperature = LeadTemperature.HOT;
+			}
+		}
+
+		// High interaction velocity = temperature boost
+		if (interactionVelocity >= 5 && lead.temperature === LeadTemperature.COLD) {
+			lead.temperature = LeadTemperature.WARM;
+		} else if (interactionVelocity >= 8 && lead.temperature === LeadTemperature.WARM) {
+			lead.temperature = LeadTemperature.HOT;
+		}
+
+		// Very slow progression (status unchanged for too long) = cooling down
+		const daysSinceUpdate = Math.floor((new Date().getTime() - new Date(lead.updatedAt).getTime()) / (24 * 60 * 60 * 1000));
+		
+		if (daysSinceUpdate > 14 && lead.temperature === LeadTemperature.HOT) {
+			lead.temperature = LeadTemperature.WARM;
+		} else if (daysSinceUpdate > 30 && lead.temperature === LeadTemperature.WARM) {
+			lead.temperature = LeadTemperature.COLD;
+		} else if (daysSinceUpdate > 60 && lead.temperature === LeadTemperature.COLD) {
+			lead.temperature = LeadTemperature.FROZEN;
+		}
+	}
+
+	/**
+	 * Enhanced bulk temperature update with velocity-aware logic
+	 */
+	async updateLeadTemperatures(): Promise<void> {
+		this.logger.log('Starting enhanced bulk temperature update...');
+
+		const leads = await this.leadsRepository.find({
+			where: { isDeleted: false },
+			relations: ['interactions'],
+		});
+
+		let updated = 0;
+		for (const lead of leads) {
+			try {
+				const originalTemperature = lead.temperature;
+				
+				// Recalculate score first
+				await this.leadScoringService.calculateLeadScore(lead.uid);
+				
+				// Update temperature based on current status and score
+				await this.updateTemperatureBasedOnStatus(lead);
+				
+				if (originalTemperature !== lead.temperature) {
+					await this.leadsRepository.save(lead);
+					updated++;
+					
+					this.logger.debug(
+						`Lead ${lead.uid} temperature updated: ${originalTemperature} → ${lead.temperature} ` +
+						`(Status: ${lead.status}, Score: ${lead.leadScore || 0})`
+					);
+				}
+			} catch (error) {
+				this.logger.error(`Failed to update temperature for lead ${lead.uid}: ${error.message}`);
+			}
+		}
+
+		this.logger.log(`Completed bulk temperature update. Updated ${updated}/${leads.length} leads.`);
+	}
+
+	/**
+	 * Enhanced automatic lead processing with velocity intelligence
+	 */
+	async processLeadAutomatically(leadId: number): Promise<Lead> {
+		const lead = await this.findOne(leadId);
+		if (!lead.lead) {
+			throw new NotFoundException(`Lead with ID ${leadId} not found`);
+		}
+
+		// Calculate current scores and activity data
+		await this.leadScoringService.calculateLeadScore(leadId);
+		await this.leadScoringService.updateActivityData(leadId);
+
+		// Refresh lead data with updated scores
+		const updatedLead = await this.findOne(leadId);
+		const currentScore = updatedLead.lead?.leadScore || 0;
+
+		// Enhanced status progression logic with velocity awareness
+		let shouldUpdateStatus = false;
+		let newStatus = updatedLead.lead.status;
+		let autoReason = '';
+
+		// Get velocity metrics
+		const daysSinceCreation = Math.floor(
+			(new Date().getTime() - new Date(updatedLead.lead.createdAt).getTime()) / (24 * 60 * 60 * 1000)
+		);
+		const daysSinceUpdate = Math.floor(
+			(new Date().getTime() - new Date(updatedLead.lead.updatedAt).getTime()) / (24 * 60 * 60 * 1000)
+		);
+
+		switch (updatedLead.lead.status) {
+			case LeadStatus.PENDING:
+				// High-scoring leads with good velocity should move to REVIEW
+				if (currentScore >= 70 && daysSinceCreation <= 3) {
+					newStatus = LeadStatus.REVIEW;
+					autoReason = `High score (${currentScore}) with fast initial response`;
+					shouldUpdateStatus = true;
+				} else if (currentScore >= 80) {
+					newStatus = LeadStatus.REVIEW;
+					autoReason = `Exceptional score (${currentScore}) warrants review`;
+					shouldUpdateStatus = true;
+				}
+				break;
+
+			case LeadStatus.REVIEW:
+				// Very high-scoring leads in review should be auto-approved if velocity is good
+				if (currentScore >= 85 && daysSinceUpdate <= 2) {
+					newStatus = LeadStatus.APPROVED;
+					autoReason = `Exceptional score (${currentScore}) with fast progression`;
+					shouldUpdateStatus = true;
+				} else if (currentScore < 40 && daysSinceUpdate >= 7) {
+					// Low-scoring leads stagnating in review should be declined
+					newStatus = LeadStatus.DECLINED;
+					autoReason = `Low score (${currentScore}) with slow progression`;
+					shouldUpdateStatus = true;
+				}
+				break;
+
+			case LeadStatus.APPROVED:
+				// Approved leads with declining performance should be flagged for review
+				if (currentScore < 30 && daysSinceUpdate >= 14) {
+					newStatus = LeadStatus.REVIEW;
+					autoReason = `Score degradation (${currentScore}) requires re-evaluation`;
+					shouldUpdateStatus = true;
+				}
+				break;
+		}
+
+		// Apply status update if needed
+		if (shouldUpdateStatus) {
+			await this.updateLeadStatus(
+				leadId, 
+				newStatus, 
+				autoReason,
+				`Automated processing based on score ${currentScore} and velocity analysis`,
+				this.getAutomatedNextStep(newStatus, currentScore)
+			);
+			
+			this.logger.log(
+				`Lead ${leadId} auto-processed: ${updatedLead.lead.status} → ${newStatus}. ${autoReason}`
+			);
+		} else {
+			// Even if status doesn't change, update temperature based on current score
+			await this.updateTemperatureBasedOnStatus(updatedLead.lead);
+			await this.leadsRepository.save(updatedLead.lead);
+		}
+
+		return updatedLead.lead;
+	}
+
+	/**
+	 * Get automated next step based on new status and score
+	 */
+	private getAutomatedNextStep(status: LeadStatus, score: number): string {
+		switch (status) {
+			case LeadStatus.REVIEW:
+				return score >= 80 ? 
+					'Priority review - consider for immediate approval' : 
+					'Standard review process - validate lead quality';
+			case LeadStatus.APPROVED:
+				return score >= 85 ? 
+					'Immediate outreach - high-priority prospect' : 
+					'Schedule follow-up within 48 hours';
+			case LeadStatus.DECLINED:
+				return 'Lead declined due to low engagement - consider for nurture campaign';
+			default:
+				return 'Continue monitoring lead progress';
+		}
+	}
+
+	/**
+	 * Enhanced batch processing with velocity intelligence
+	 */
+	async batchProcessLeads(): Promise<void> {
+		this.logger.log('Starting enhanced batch lead processing...');
+
+		const leads = await this.leadsRepository.find({
+			where: { 
+				isDeleted: false,
+				status: In([LeadStatus.PENDING, LeadStatus.REVIEW, LeadStatus.APPROVED])
+			},
+			order: { leadScore: 'DESC' }, // Process highest-scoring leads first
+		});
+
+		let processed = 0;
+		for (const lead of leads) {
+			try {
+				await this.processLeadAutomatically(lead.uid);
+				processed++;
+
+				if (processed % 50 === 0) {
+					this.logger.log(`Processed ${processed}/${leads.length} leads`);
+				}
+			} catch (error) {
+				this.logger.error(`Failed to process lead ${lead.uid}: ${error.message}`);
+			}
+		}
+
+		this.logger.log(`Completed batch processing. Processed ${processed}/${leads.length} leads.`);
 	}
 }
