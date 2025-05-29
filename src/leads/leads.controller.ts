@@ -378,6 +378,46 @@ export class LeadsController {
 		return this.leadsService.restore(ref, Number(orgId), branchId);
 	}
 
+	@Patch(':ref/reactivate')
+	@Roles(
+		AccessLevel.ADMIN,
+		AccessLevel.MANAGER,
+		AccessLevel.SUPPORT,
+		AccessLevel.DEVELOPER,
+		AccessLevel.USER,
+		AccessLevel.OWNER,
+		AccessLevel.TECHNICIAN,
+	)
+	@ApiOperation({
+		summary: 'Reactivate a lead',
+		description: 'Reactivates a declined or cancelled lead by setting its status back to pending',
+	})
+	@ApiParam({ name: 'ref', description: 'Lead reference code or ID', type: 'number' })
+	@ApiOkResponse({
+		description: 'Lead reactivated successfully',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', example: 'Success' },
+			},
+		},
+	})
+	@ApiNotFoundResponse({
+		description: 'Lead not found',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', example: 'Lead not found' },
+			},
+		},
+	})
+	reactivate(@Param('ref') ref: number, @Req() req: AuthenticatedRequest) {
+		const orgId = req.user?.organisationRef;
+		const branchId = req.user?.branch?.uid;
+		const userId = req.user?.uid;
+		return this.leadsService.reactivate(ref, Number(orgId), branchId, userId);
+	}
+
 	@Delete(':ref')
 	@Roles(
 		AccessLevel.ADMIN,

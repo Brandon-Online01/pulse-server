@@ -64,7 +64,7 @@ export class MapDataReportGenerator {
 					checkInTime: a.checkIn?.toISOString(),
 				}));
 
-			// ---------- CLIENTS ----------
+			// ---------- CLIENTS (Enhanced with comprehensive data) ----------
 			const clients = await this.clientRepository.find({
 				where: {
 					organisation: { uid: organisationId },
@@ -72,7 +72,19 @@ export class MapDataReportGenerator {
 					latitude: Not(IsNull()),
 					longitude: Not(IsNull()),
 				},
-				select: ['uid', 'name', 'latitude', 'longitude', 'address', 'status'],
+				relations: ['assignedSalesRep'],
+				select: [
+					'uid', 'name', 'latitude', 'longitude', 'address', 'status',
+					'contactPerson', 'email', 'phone', 'alternativePhone', 'website',
+					'logo', 'description', 'industry', 'companySize', 'annualRevenue',
+					'creditLimit', 'outstandingBalance', 'lifetimeValue', 'priceTier',
+					'riskLevel', 'satisfactionScore', 'npsScore', 'preferredContactMethod',
+					'preferredPaymentMethod', 'paymentTerms', 'discountPercentage',
+					'lastVisitDate', 'nextContactDate', 'acquisitionChannel', 'acquisitionDate',
+					'birthday', 'anniversaryDate', 'tags', 'visibleCategories',
+					'socialProfiles', 'customFields', 'geofenceType', 'geofenceRadius',
+					'enableGeofence', 'createdAt', 'updatedAt'
+				],
 			});
 
 			const clientMarkers = clients.map((c) => ({
@@ -82,19 +94,72 @@ export class MapDataReportGenerator {
 				latitude: Number(c.latitude),
 				longitude: Number(c.longitude),
 				address: c.address,
-				clientRef: c?.uid,
+				clientRef: c.uid.toString(),
 				status: c.status ?? 'active',
 				markerType: 'client',
+				// Enhanced client data
+				contactName: c.contactPerson,
+				phone: c.phone,
+				alternativePhone: c.alternativePhone,
+				email: c.email,
+				website: c.website,
+				logo: c.logo,
+				description: c.description,
+				industry: c.industry,
+				companySize: c.companySize,
+				annualRevenue: c.annualRevenue,
+				creditLimit: c.creditLimit,
+				outstandingBalance: c.outstandingBalance,
+				lifetimeValue: c.lifetimeValue,
+				priceTier: c.priceTier,
+				riskLevel: c.riskLevel,
+				satisfactionScore: c.satisfactionScore,
+				npsScore: c.npsScore,
+				preferredContactMethod: c.preferredContactMethod,
+				preferredPaymentMethod: c.preferredPaymentMethod,
+				paymentTerms: c.paymentTerms,
+				discountPercentage: c.discountPercentage,
+				lastVisitDate: c.lastVisitDate,
+				nextContactDate: c.nextContactDate,
+				acquisitionChannel: c.acquisitionChannel,
+				acquisitionDate: c.acquisitionDate,
+				birthday: c.birthday,
+				anniversaryDate: c.anniversaryDate,
+				tags: c.tags,
+				visibleCategories: c.visibleCategories,
+				socialProfiles: c.socialProfiles,
+				customFields: c.customFields,
+				assignedSalesRep: c.assignedSalesRep ? {
+					uid: c.assignedSalesRep.uid,
+					name: (c.assignedSalesRep as any).name
+				} : null,
+				geofencing: {
+					enabled: c.enableGeofence,
+					type: c.geofenceType,
+					radius: c.geofenceRadius
+				},
+				createdAt: c.createdAt,
+				updatedAt: c.updatedAt
 			}));
 
-			// ---------- COMPETITORS ----------
+			// ---------- COMPETITORS (Enhanced with comprehensive data) ----------
 			const competitors = await this.competitorRepository.find({
 				where: {
 					organisation: { uid: organisationId },
 					latitude: Not(IsNull()),
 					longitude: Not(IsNull()),
 				},
-				select: ['uid', 'name', 'latitude', 'longitude', 'address', 'industry', 'competitorRef', 'status'],
+				relations: ['createdBy'],
+				select: [
+					'uid', 'name', 'latitude', 'longitude', 'address', 'status',
+					'description', 'website', 'contactEmail', 'contactPhone', 'logoUrl',
+					'industry', 'marketSharePercentage', 'estimatedAnnualRevenue',
+					'estimatedEmployeeCount', 'threatLevel', 'competitiveAdvantage',
+					'isDirect', 'foundedDate', 'keyProducts', 'keyStrengths', 'keyWeaknesses',
+					'pricingData', 'businessStrategy', 'marketingStrategy', 'socialMedia',
+					'competitorRef', 'geofenceType', 'geofenceRadius', 'enableGeofence',
+					'createdAt', 'updatedAt'
+				],
 			});
 
 			const competitorMarkers = competitors.map((c) => ({
@@ -105,9 +170,40 @@ export class MapDataReportGenerator {
 				longitude: Number(c.longitude),
 				address: c.address,
 				industry: c.industry,
-				competitorRef: (c as any).competitorRef,
+				competitorRef: c.competitorRef || c.uid.toString(),
 				status: c.status ?? 'active',
 				markerType: 'competitor',
+				// Enhanced competitor data
+				description: c.description,
+				website: c.website,
+				contactEmail: c.contactEmail,
+				contactPhone: c.contactPhone,
+				logoUrl: c.logoUrl,
+				marketSharePercentage: c.marketSharePercentage,
+				estimatedAnnualRevenue: c.estimatedAnnualRevenue,
+				estimatedEmployeeCount: c.estimatedEmployeeCount,
+				threatLevel: c.threatLevel,
+				competitiveAdvantage: c.competitiveAdvantage,
+				isDirect: c.isDirect,
+				foundedDate: c.foundedDate,
+				keyProducts: c.keyProducts,
+				keyStrengths: c.keyStrengths,
+				keyWeaknesses: c.keyWeaknesses,
+				pricingData: c.pricingData,
+				businessStrategy: c.businessStrategy,
+				marketingStrategy: c.marketingStrategy,
+				socialMedia: c.socialMedia,
+				geofencing: {
+					enabled: c.enableGeofence,
+					type: c.geofenceType,
+					radius: c.geofenceRadius
+				},
+				createdBy: c.createdBy ? {
+					uid: c.createdBy.uid,
+					name: (c.createdBy as any).name
+				} : null,
+				createdAt: c.createdAt,
+				updatedAt: c.updatedAt
 			}));
 
 			// ---------- QUOTATIONS (recent) ----------

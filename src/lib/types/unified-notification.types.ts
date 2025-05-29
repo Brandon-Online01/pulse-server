@@ -29,6 +29,7 @@ export enum NotificationEvent {
 export enum NotificationPriority {
 	LOW = 'low',
 	NORMAL = 'normal',
+	MEDIUM = 'medium',
 	HIGH = 'high',
 	URGENT = 'urgent',
 }

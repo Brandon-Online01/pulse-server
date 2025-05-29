@@ -501,6 +501,114 @@ export class LeadsService {
 		}
 	}
 
+	async reactivate(ref: number, orgId?: number, branchId?: number, userId?: number): Promise<{ message: string }> {
+		try {
+			if (!orgId) {
+				throw new BadRequestException('Organization ID is required');
+			}
+
+			const whereClause: any = {
+				uid: ref,
+				isDeleted: false,
+				organisation: { uid: orgId },
+			};
+
+			if (branchId) {
+				whereClause.branch = { uid: branchId };
+			}
+
+			const lead = await this.leadsRepository.findOne({
+				where: whereClause,
+				relations: ['owner', 'organisation', 'branch'],
+			});
+
+			if (!lead) {
+				return {
+					message: process.env.NOT_FOUND_MESSAGE,
+				};
+			}
+
+			// Check if lead can be reactivated (only declined or cancelled leads)
+			if (lead.status !== LeadStatus.DECLINED && lead.status !== LeadStatus.CANCELLED) {
+				return {
+					message: 'Only declined or cancelled leads can be reactivated',
+				};
+			}
+
+			const oldStatus = lead.status;
+			const newStatus = LeadStatus.PENDING;
+
+			// Ensure changeHistory is treated as an array of LeadStatusHistoryEntry
+			const changeHistoryArray: LeadStatusHistoryEntry[] = Array.isArray(lead.changeHistory)
+				? lead.changeHistory
+				: [];
+
+			// Add reactivation entry to history
+			const newHistoryEntry: LeadStatusHistoryEntry = {
+				timestamp: new Date(),
+				oldStatus: oldStatus,
+				newStatus: newStatus,
+				reason: 'Lead reactivated',
+				description: 'Lead status changed from ' + oldStatus + ' to ' + newStatus + ' via reactivation',
+				nextStep: 'Review and follow up with lead',
+				userId: userId,
+			};
+
+			changeHistoryArray.push(newHistoryEntry);
+
+			// Update lead status and add history
+			await this.leadsRepository.update(ref, {
+				status: newStatus,
+				changeHistory: changeHistoryArray,
+				temperature: LeadTemperature.COLD, // Reset temperature to cold for reactivated leads
+				priority: LeadPriority.MEDIUM, // Reset priority to medium
+			});
+
+			// Recalculate lead score
+			await this.leadScoringService.calculateLeadScore(ref);
+			await this.leadScoringService.updateActivityData(ref);
+
+			// Send notification about reactivation
+			const updatedLead = await this.leadsRepository.findOne({
+				where: { uid: ref },
+				relations: ['owner', 'assignees']
+			});
+
+			if (updatedLead) {
+				const userIds = [
+					updatedLead.owner?.uid,
+					...(updatedLead.assignees?.map((a: any) => a.uid) || [])
+				].filter(Boolean);
+
+				if (userIds.length > 0) {
+					await this.unifiedNotificationService.sendTemplatedNotification(
+						NotificationEvent.LEAD_UPDATED,
+						userIds,
+						{
+							leadId: updatedLead.uid,
+							leadName: updatedLead.name || `Lead #${updatedLead.uid}`,
+							status: newStatus,
+						},
+						{
+							priority: NotificationPriority.MEDIUM
+						}
+					);
+				}
+			}
+
+			this.logger.log(`Lead ${ref} reactivated from ${oldStatus} to ${newStatus} by user ${userId}`);
+
+			return {
+				message: process.env.SUCCESS_MESSAGE,
+			};
+		} catch (error) {
+			this.logger.error(`Error reactivating lead ${ref}: ${error.message}`, error.stack);
+			return {
+				message: error?.message,
+			};
+		}
+	}
+
 	/**
 	 * AUTOMATED SCORING: Runs every hour to update lead scores
 	 */
