@@ -12,6 +12,10 @@ import {
 	ApiQuery,
 	ApiProperty,
 	ApiExtraModels,
+	ApiBearerAuth,
+	ApiResponse,
+	ApiHeader,
+	ApiSecurity,
 } from '@nestjs/swagger';
 import { Controller, Post, Body, Param, Get, UseGuards, Query, UseInterceptors, Req } from '@nestjs/common';
 import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
@@ -135,10 +139,18 @@ export class AttendanceWithUserProfileSchema {
 	organisation: OrganisationSchema;
 }
 
-@ApiTags('att')
+@ApiTags('⏰ Attendance Management')
 @Controller('att')
 @UseGuards(AuthGuard, RoleGuard)
 @EnterpriseOnly('reports')
+@ApiBearerAuth('JWT-auth')
+@ApiSecurity('JWT-auth')
+@ApiHeader({
+	name: 'Authorization',
+	description: 'Bearer JWT token for authentication',
+	example: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+	required: true,
+})
 @ApiUnauthorizedResponse({ description: 'Unauthorized - Invalid credentials or missing token' })
 @ApiExtraModels(UserProfileSchema, BranchSchema, OrganisationSchema, AttendanceWithUserProfileSchema)
 export class AttendanceController {
@@ -155,25 +167,247 @@ export class AttendanceController {
 		AccessLevel.TECHNICIAN,
 	)
 	@ApiOperation({
-		summary: 'Check in',
-		description: 'Records a user check-in for attendance tracking',
+		summary: '🏁 Record Employee Check-In',
+		description: `
+		**GPS-verified employee check-in with real-time tracking**
+		
+		**⏰ Workforce Management:**
+		- Records employee arrival time with GPS coordinates for location verification
+		- Validates check-in against organization working hours and policies
+		- Prevents duplicate check-ins and ensures data integrity
+		- Awards gamification XP points for consistent attendance behavior
+		
+		**📍 Location Intelligence:**
+		- GPS coordinate validation for geofencing compliance
+		- Branch-based attendance tracking for multi-location organizations
+		- Location notes for additional context and verification
+		- Real-time proximity validation to designated work areas
+		
+		**🎯 Business Impact:**
+		- **Fraud Prevention**: GPS verification prevents time theft and buddy punching
+		- **Compliance**: Automated labor law compliance with accurate time records
+		- **Productivity**: Real-time workforce visibility for managers
+		- **Analytics**: Foundation data for attendance and productivity insights
+		- **Payroll**: Accurate time data for payroll processing and overtime calculation
+		
+		**🔄 Automated Features:**
+		- XP rewards system integration for employee engagement
+		- Real-time notifications to managers for late arrivals
+		- Attendance streak tracking for performance incentives
+		- Integration with daily reporting and analytics systems
+		`,
+		operationId: 'recordCheckIn',
 	})
-	@ApiBody({ type: CreateCheckInDto })
-	@ApiCreatedResponse({
-		description: 'Check-in recorded successfully',
-		schema: {
-			type: 'object',
-			properties: {
-				message: { type: 'string', example: 'Success' },
+	@ApiBody({
+		type: CreateCheckInDto,
+		description: 'Check-in data with GPS coordinates and metadata',
+		examples: {
+			'standard-check-in': {
+				summary: '📍 Standard Morning Check-In',
+				description: 'Regular employee check-in with location data',
+				value: {
+					checkIn: '2025-01-15T08:00:00.000Z',
+					checkInLatitude: -26.2041,
+					checkInLongitude: 28.0473,
+					checkInNotes: 'Starting morning shift - all systems ready',
+					status: 'PRESENT',
+					branch: { uid: 12 },
+					owner: { uid: 45 },
+				},
+			},
+			'field-worker-check-in': {
+				summary: '🚗 Field Worker Check-In',
+				description: 'Mobile employee checking in at client location',
+				value: {
+					checkIn: '2025-01-15T07:30:00.000Z',
+					checkInLatitude: -26.154,
+					checkInLongitude: 28.0927,
+					checkInNotes: 'Arrived at client site - ABC Corp offices',
+					status: 'PRESENT',
+					branch: { uid: 15 },
+					owner: { uid: 67 },
+				},
+			},
+			'early-arrival': {
+				summary: '⏰ Early Arrival Check-In',
+				description: 'Employee arriving before standard hours',
+				value: {
+					checkIn: '2025-01-15T07:00:00.000Z',
+					checkInLatitude: -26.2041,
+					checkInLongitude: 28.0473,
+					checkInNotes: 'Early arrival for project deadline',
+					status: 'PRESENT',
+					branch: { uid: 12 },
+					owner: { uid: 45 },
+				},
 			},
 		},
 	})
-	@ApiBadRequestResponse({
-		description: 'Bad Request - Invalid data provided',
+	@ApiResponse({
+		status: 201,
+		description: '✅ Check-in recorded successfully',
 		schema: {
 			type: 'object',
 			properties: {
-				message: { type: 'string', example: 'Error recording check-in' },
+				success: {
+					type: 'boolean',
+					example: true,
+					description: 'Operation success status',
+				},
+				message: {
+					type: 'string',
+					example: 'Check-in recorded successfully',
+					description: 'Human-readable success message',
+				},
+				data: {
+					type: 'object',
+					description: 'Complete check-in record with metadata',
+					properties: {
+						uid: {
+							type: 'number',
+							example: 1234,
+							description: 'Attendance record identifier',
+						},
+						status: {
+							type: 'string',
+							example: 'PRESENT',
+							description: 'Current attendance status',
+						},
+						checkIn: {
+							type: 'string',
+							example: '2025-01-15T08:00:00.000Z',
+							description: 'Check-in timestamp',
+						},
+						checkInLatitude: {
+							type: 'number',
+							example: -26.2041,
+							description: 'GPS latitude at check-in',
+						},
+						checkInLongitude: {
+							type: 'number',
+							example: 28.0473,
+							description: 'GPS longitude at check-in',
+						},
+						checkInNotes: {
+							type: 'string',
+							example: 'Starting morning shift - all systems ready',
+							description: 'Check-in notes or context',
+						},
+						owner: {
+							type: 'object',
+							properties: {
+								uid: { type: 'number', example: 45 },
+								name: { type: 'string', example: 'John' },
+								surname: { type: 'string', example: 'Doe' },
+								email: { type: 'string', example: 'john.doe@company.com' },
+							},
+						},
+						branch: {
+							type: 'object',
+							properties: {
+								uid: { type: 'number', example: 12 },
+								name: { type: 'string', example: 'Main Branch' },
+								address: { type: 'string', example: '123 Main Street, City' },
+							},
+						},
+						xpAwarded: {
+							type: 'number',
+							example: 10,
+							description: 'XP points awarded for check-in',
+						},
+						attendanceStreak: {
+							type: 'number',
+							example: 5,
+							description: 'Current consecutive attendance days',
+						},
+						isEarlyArrival: {
+							type: 'boolean',
+							example: false,
+							description: 'Whether this is an early arrival',
+						},
+						expectedStartTime: {
+							type: 'string',
+							example: '08:00:00',
+							description: 'Organization standard start time',
+						},
+						createdAt: {
+							type: 'string',
+							example: '2025-01-15T08:00:00.000Z',
+							description: 'Record creation timestamp',
+						},
+					},
+				},
+			},
+		},
+	})
+	@ApiResponse({
+		status: 400,
+		description: '❌ Bad Request - Invalid check-in data',
+		schema: {
+			type: 'object',
+			properties: {
+				statusCode: { type: 'number', example: 400 },
+				message: {
+					type: 'array',
+					items: { type: 'string' },
+					example: [
+						'Check-in time must be a valid date',
+						'GPS coordinates are required',
+						'Duplicate check-in detected for today',
+						'Branch reference is invalid',
+					],
+				},
+				error: { type: 'string', example: 'Bad Request' },
+			},
+		},
+	})
+	@ApiResponse({
+		status: 401,
+		description: '🚫 Unauthorized - Invalid or missing JWT token',
+		schema: {
+			type: 'object',
+			properties: {
+				statusCode: { type: 'number', example: 401 },
+				message: { type: 'string', example: 'Unauthorized' },
+			},
+		},
+	})
+	@ApiResponse({
+		status: 409,
+		description: '⚠️ Conflict - Already checked in',
+		schema: {
+			type: 'object',
+			properties: {
+				statusCode: { type: 'number', example: 409 },
+				message: {
+					type: 'string',
+					example: 'User already has an active check-in for today',
+				},
+				error: { type: 'string', example: 'Conflict' },
+				data: {
+					type: 'object',
+					properties: {
+						existingCheckIn: {
+							type: 'object',
+							properties: {
+								uid: { type: 'number', example: 1233 },
+								checkIn: { type: 'string', example: '2025-01-15T07:45:00.000Z' },
+								status: { type: 'string', example: 'PRESENT' },
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+	@ApiResponse({
+		status: 500,
+		description: '🔥 Internal server error during check-in processing',
+		schema: {
+			type: 'object',
+			properties: {
+				statusCode: { type: 'number', example: 500 },
+				message: { type: 'string', example: 'Internal server error' },
 			},
 		},
 	})
@@ -192,25 +426,245 @@ export class AttendanceController {
 		AccessLevel.TECHNICIAN,
 	)
 	@ApiOperation({
-		summary: 'Check out',
-		description: 'Records a user check-out for attendance tracking',
+		summary: '🏁 Record Employee Check-Out',
+		description: `
+		**Complete shift with automatic calculations and reporting**
+		
+		**⏰ Shift Completion:**
+		- Records employee departure time with GPS coordinates for verification
+		- Automatically calculates total shift duration and work time
+		- Processes break time deductions and overtime calculations
+		- Updates attendance status to 'COMPLETED' with comprehensive metrics
+		
+		**📊 Automatic Calculations:**
+		- Net work time (total time minus breaks)
+		- Overtime detection based on organization policies
+		- Break time analysis and productivity metrics
+		- Shift efficiency and performance scoring
+		
+		**🎯 Business Intelligence:**
+		- **Payroll Integration**: Accurate time data for payroll processing
+		- **Compliance**: Automated labor law compliance verification
+		- **Analytics**: Shift performance and productivity insights
+		- **Reporting**: Daily metrics for management dashboards
+		- **Gamification**: XP rewards for completed shifts and consistency
+		
+		**🔄 Automated Features:**
+		- Daily report generation and distribution
+		- Target and metrics updates for performance tracking
+		- Real-time notifications to managers about shift completion
+		- Integration with rewards system for attendance streaks
+		`,
+		operationId: 'recordCheckOut',
 	})
-	@ApiBody({ type: CreateCheckOutDto })
-	@ApiCreatedResponse({
-		description: 'Check-out recorded successfully',
-		schema: {
-			type: 'object',
-			properties: {
-				message: { type: 'string', example: 'Success' },
+	@ApiBody({
+		type: CreateCheckOutDto,
+		description: 'Check-out data with GPS coordinates and shift summary',
+		examples: {
+			'standard-check-out': {
+				summary: '🏁 Standard End of Shift',
+				description: 'Regular employee check-out with completion notes',
+				value: {
+					checkOut: '2025-01-15T17:30:00.000Z',
+					checkOutLatitude: -26.2041,
+					checkOutLongitude: 28.0473,
+					checkOutNotes: 'Completed all daily tasks, handed over to night shift',
+					owner: { uid: 45 },
+				},
+			},
+			'overtime-check-out': {
+				summary: '⏰ Overtime Check-Out',
+				description: 'Employee checking out after extended hours',
+				value: {
+					checkOut: '2025-01-15T19:30:00.000Z',
+					checkOutLatitude: -26.2041,
+					checkOutLongitude: 28.0473,
+					checkOutNotes: 'Stayed late to finish project deadline - 2h overtime',
+					owner: { uid: 45 },
+				},
+			},
+			'field-worker-check-out': {
+				summary: '🚗 Field Worker Check-Out',
+				description: 'Mobile employee checking out from client location',
+				value: {
+					checkOut: '2025-01-15T16:45:00.000Z',
+					checkOutLatitude: -26.154,
+					checkOutLongitude: 28.0927,
+					checkOutNotes: 'Client meeting completed successfully, all deliverables met',
+					owner: { uid: 67 },
+				},
 			},
 		},
 	})
-	@ApiBadRequestResponse({
-		description: 'Bad Request - Invalid data provided',
+	@ApiResponse({
+		status: 201,
+		description: '✅ Check-out recorded successfully',
 		schema: {
 			type: 'object',
 			properties: {
-				message: { type: 'string', example: 'Error recording check-out' },
+				success: {
+					type: 'boolean',
+					example: true,
+					description: 'Operation success status',
+				},
+				message: {
+					type: 'string',
+					example: 'Check-out recorded successfully',
+					description: 'Human-readable success message',
+				},
+				data: {
+					type: 'object',
+					description: 'Complete shift record with calculations',
+					properties: {
+						uid: {
+							type: 'number',
+							example: 1234,
+							description: 'Attendance record identifier',
+						},
+						status: {
+							type: 'string',
+							example: 'COMPLETED',
+							description: 'Final attendance status',
+						},
+						checkIn: {
+							type: 'string',
+							example: '2025-01-15T08:00:00.000Z',
+							description: 'Shift start timestamp',
+						},
+						checkOut: {
+							type: 'string',
+							example: '2025-01-15T17:30:00.000Z',
+							description: 'Shift end timestamp',
+						},
+						duration: {
+							type: 'string',
+							example: '9h 30m',
+							description: 'Total shift duration',
+						},
+						netWorkTime: {
+							type: 'string',
+							example: '8h 45m',
+							description: 'Actual work time (excluding breaks)',
+						},
+						totalBreakTime: {
+							type: 'string',
+							example: '45m',
+							description: 'Total break time taken',
+						},
+						breakCount: {
+							type: 'number',
+							example: 2,
+							description: 'Number of breaks taken',
+						},
+						overtime: {
+							type: 'string',
+							example: '30m',
+							description: 'Overtime worked',
+						},
+						checkOutLatitude: {
+							type: 'number',
+							example: -26.2041,
+							description: 'GPS latitude at check-out',
+						},
+						checkOutLongitude: {
+							type: 'number',
+							example: 28.0473,
+							description: 'GPS longitude at check-out',
+						},
+						checkOutNotes: {
+							type: 'string',
+							example: 'Completed all daily tasks, handed over to night shift',
+							description: 'Check-out notes or summary',
+						},
+						xpAwarded: {
+							type: 'number',
+							example: 15,
+							description: 'XP points awarded for check-out',
+						},
+						productivityScore: {
+							type: 'number',
+							example: 92.5,
+							description: 'Shift productivity percentage',
+						},
+						attendanceStreak: {
+							type: 'number',
+							example: 6,
+							description: 'Updated consecutive attendance days',
+						},
+						shiftEfficiency: {
+							type: 'number',
+							example: 91.2,
+							description: 'Work efficiency score (work time vs total time)',
+						},
+						updatedAt: {
+							type: 'string',
+							example: '2025-01-15T17:30:00.000Z',
+							description: 'Record update timestamp',
+						},
+					},
+				},
+			},
+		},
+	})
+	@ApiResponse({
+		status: 400,
+		description: '❌ Bad Request - Invalid check-out data',
+		schema: {
+			type: 'object',
+			properties: {
+				statusCode: { type: 'number', example: 400 },
+				message: {
+					type: 'array',
+					items: { type: 'string' },
+					example: [
+						'Check-out time must be a valid date',
+						'Check-out time cannot be before check-in time',
+						'GPS coordinates are required',
+						'No active shift found for user',
+					],
+				},
+				error: { type: 'string', example: 'Bad Request' },
+			},
+		},
+	})
+	@ApiResponse({
+		status: 401,
+		description: '🚫 Unauthorized - Invalid or missing JWT token',
+		schema: {
+			type: 'object',
+			properties: {
+				statusCode: { type: 'number', example: 401 },
+				message: { type: 'string', example: 'Unauthorized' },
+			},
+		},
+	})
+	@ApiResponse({
+		status: 404,
+		description: '❌ No Active Shift Found',
+		schema: {
+			type: 'object',
+			properties: {
+				statusCode: { type: 'number', example: 404 },
+				message: {
+					type: 'string',
+					example: 'No active check-in found for user to check out from',
+				},
+				error: { type: 'string', example: 'Not Found' },
+				suggestion: {
+					type: 'string',
+					example: 'Please check in first before attempting to check out',
+				},
+			},
+		},
+	})
+	@ApiResponse({
+		status: 500,
+		description: '🔥 Internal server error during check-out processing',
+		schema: {
+			type: 'object',
+			properties: {
+				statusCode: { type: 'number', example: 500 },
+				message: { type: 'string', example: 'Internal server error' },
 			},
 		},
 	})
@@ -407,10 +861,8 @@ export class AttendanceController {
 			},
 		},
 	})
-	allCheckIns(@Req() req: AuthenticatedRequest) {
-		const orgId = req.user?.org?.uid || req.user?.organisationRef;
-		const branchId = req.user?.branch?.uid;
-		return this.attendanceService.allCheckIns(orgId, branchId);
+	allCheckIns() {
+		return this.attendanceService.allCheckIns();
 	}
 
 	@Get('date/:date')
@@ -471,10 +923,8 @@ export class AttendanceController {
 			},
 		},
 	})
-	checkInsByDate(@Param('date') date: string, @Req() req: AuthenticatedRequest) {
-		const orgId = req.user?.org?.uid || req.user?.organisationRef;
-		const branchId = req.user?.branch?.uid;
-		return this.attendanceService.checkInsByDate(date, orgId, branchId);
+	checkInsByDate(@Param('date') date: string) {
+		return this.attendanceService.checkInsByDate(date);
 	}
 
 	@Get('user/:ref')
@@ -581,10 +1031,8 @@ export class AttendanceController {
 			},
 		},
 	})
-	checkInsByUser(@Param('ref') ref: number, @Req() req: AuthenticatedRequest) {
-		const orgId = req.user?.org?.uid || req.user?.organisationRef;
-		const branchId = req.user?.branch?.uid;
-		return this.attendanceService.checkInsByUser(ref, orgId, branchId);
+	checkInsByUser(@Param('ref') ref: number) {
+		return this.attendanceService.checkInsByUser(ref);
 	}
 
 	@Get('status/:ref')
@@ -718,10 +1166,8 @@ export class AttendanceController {
 			},
 		},
 	})
-	checkInsByStatus(@Param('ref') ref: number, @Req() req: AuthenticatedRequest) {
-		const orgId = req.user?.org?.uid || req.user?.organisationRef;
-		const branchId = req.user?.branch?.uid;
-		return this.attendanceService.checkInsByStatus(ref, orgId, branchId);
+	checkInsByStatus(@Param('ref') ref: number) {
+		return this.attendanceService.checkInsByStatus(ref);
 	}
 
 	@Get('branch/:ref')
@@ -797,9 +1243,8 @@ export class AttendanceController {
 			},
 		},
 	})
-	checkInsByBranch(@Param('ref') ref: string, @Req() req: AuthenticatedRequest) {
-		const orgId = req.user?.org?.uid || req.user?.organisationRef;
-		return this.attendanceService.checkInsByBranch(ref, orgId);
+	checkInsByBranch(@Param('ref') ref: string) {
+		return this.attendanceService.checkInsByBranch(ref);
 	}
 
 	@Get('daily-stats/:uid')

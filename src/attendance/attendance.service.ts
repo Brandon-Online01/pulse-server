@@ -165,9 +165,22 @@ export class AttendanceService {
 		}
 	}
 
-	public async allCheckIns(): Promise<{ message: string; checkIns: Attendance[] }> {
+	public async allCheckIns(orgId?: number, branchId?: number): Promise<{ message: string; checkIns: Attendance[] }> {
 		try {
+			const whereConditions: any = {};
+
+			// Apply organization filtering
+			if (orgId) {
+				whereConditions.organisation = { uid: orgId };
+			}
+
+			// Apply branch filtering if provided
+			if (branchId) {
+				whereConditions.branch = { uid: branchId };
+			}
+
 			const checkIns = await this.attendanceRepository.find({
+				where: Object.keys(whereConditions).length > 0 ? whereConditions : undefined,
 				relations: ['owner', 'owner.branch', 'owner.organisation', 'owner.userProfile', 'verifiedBy', 'organisation', 'branch'],
 			});
 
@@ -191,12 +204,29 @@ export class AttendanceService {
 		}
 	}
 
-	public async checkInsByDate(date: string): Promise<{ message: string; checkIns: Attendance[] }> {
+	public async checkInsByDate(date: string, orgId?: number, branchId?: number): Promise<{ message: string; checkIns: Attendance[] }> {
 		try {
+			const startOfDay = new Date(date);
+			startOfDay.setHours(0, 0, 0, 0);
+			const endOfDay = new Date(date);
+			endOfDay.setHours(23, 59, 59, 999);
+
+			const whereConditions: any = {
+				checkIn: Between(startOfDay, endOfDay),
+			};
+
+			// Apply organization filtering
+			if (orgId) {
+				whereConditions.organisation = { uid: orgId };
+			}
+
+			// Apply branch filtering if provided
+			if (branchId) {
+				whereConditions.branch = { uid: branchId };
+			}
+
 			const checkIns = await this.attendanceRepository.find({
-				where: {
-					checkIn: MoreThanOrEqual(new Date(date)),
-				},
+				where: whereConditions,
 				relations: ['owner', 'owner.branch', 'owner.organisation', 'owner.userProfile', 'verifiedBy', 'organisation', 'branch'],
 				order: {
 					checkIn: 'DESC',
@@ -223,7 +253,7 @@ export class AttendanceService {
 		}
 	}
 
-	public async checkInsByStatus(ref: number): Promise<{
+	public async checkInsByStatus(ref: number, orgId?: number, branchId?: number): Promise<{
 		message: string;
 		startTime: string;
 		endTime: string;
@@ -234,12 +264,24 @@ export class AttendanceService {
 		attendance: Attendance;
 	}> {
 		try {
-			const [checkIn] = await this.attendanceRepository.find({
-				where: {
-					owner: {
-						uid: ref,
-					},
+			const whereConditions: any = {
+				owner: {
+					uid: ref,
 				},
+			};
+
+			// Apply organization filtering - validate user belongs to requester's org
+			if (orgId) {
+				whereConditions.organisation = { uid: orgId };
+			}
+
+			// Apply branch filtering if provided
+			if (branchId) {
+				whereConditions.branch = { uid: branchId };
+			}
+
+			const [checkIn] = await this.attendanceRepository.find({
+				where: whereConditions,
 				relations: ['owner', 'owner.branch', 'owner.organisation', 'owner.userProfile', 'verifiedBy', 'organisation', 'branch'],
 				order: {
 					checkIn: 'DESC',
@@ -302,10 +344,24 @@ export class AttendanceService {
 	// ATTENDANCE REPORTS
 	// ======================================================
 
-	public async checkInsByUser(ref: number): Promise<{ message: string; checkIns: Attendance[]; user: any }> {
+	public async checkInsByUser(ref: number, orgId?: number, branchId?: number): Promise<{ message: string; checkIns: Attendance[]; user: any }> {
 		try {
+			const whereConditions: any = { 
+				owner: { uid: ref } 
+			};
+
+			// Apply organization filtering - validate user belongs to requester's org
+			if (orgId) {
+				whereConditions.organisation = { uid: orgId };
+			}
+
+			// Apply branch filtering if provided
+			if (branchId) {
+				whereConditions.branch = { uid: branchId };
+			}
+
 			const checkIns = await this.attendanceRepository.find({
-				where: { owner: { uid: ref } },
+				where: whereConditions,
 				relations: ['owner', 'owner.branch', 'owner.organisation', 'owner.userProfile', 'verifiedBy', 'organisation', 'branch'],
 				order: {
 					checkIn: 'DESC',
@@ -337,12 +393,19 @@ export class AttendanceService {
 		}
 	}
 
-	public async checkInsByBranch(ref: string): Promise<{ message: string; checkIns: Attendance[]; branch: any; totalUsers: number }> {
+	public async checkInsByBranch(ref: string, orgId?: number): Promise<{ message: string; checkIns: Attendance[]; branch: any; totalUsers: number }> {
 		try {
+			const whereConditions: any = {
+				branch: { ref },
+			};
+
+			// Apply organization filtering - validate branch belongs to requester's org
+			if (orgId) {
+				whereConditions.organisation = { uid: orgId };
+			}
+
 			const checkIns = await this.attendanceRepository.find({
-				where: {
-					branch: { ref },
-				},
+				where: whereConditions,
 				relations: ['owner', 'owner.branch', 'owner.organisation', 'owner.userProfile', 'verifiedBy', 'organisation', 'branch'],
 				order: {
 					checkIn: 'DESC',
