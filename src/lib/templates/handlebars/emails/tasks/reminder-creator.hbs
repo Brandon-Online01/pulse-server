@@ -1,0 +1,113 @@
+{{#> base headerTitle="Task Status Update" headerSubtitle="A reminder about your created task"}}
+
+<div class="greeting">
+    Hello {{creatorName}}! 📋
+</div>
+
+<div class="message">
+    <p>This is a status update for the task you created in {{appName}}. The task {{#if isOverdue}}is now overdue{{else}}is approaching its deadline{{/if}} and may need your attention.</p>
+</div>
+
+{{#if isOverdue}}
+<div class="error-notice">
+    <p>⚠️ <strong>Task Overdue:</strong> The task "{{taskTitle}}" was due on {{dueDate}} and is now {{daysDifference}} days overdue.</p>
+</div>
+{{else}}
+<div class="warning-notice">
+    <p>📅 <strong>Deadline Approaching:</strong> The task "{{taskTitle}}" is due {{#if daysDifference}}in {{daysDifference}} day{{#if (gt daysDifference 1)}}s{{/if}}{{else}}today{{/if}}.</p>
+</div>
+{{/if}}
+
+<div class="info-card">
+    <h3>📋 Task Information</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Task Title</span>
+            <span class="detail-value">{{taskTitle}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Assigned To</span>
+            <span class="detail-value">{{assigneeName}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Project</span>
+            <span class="detail-value">{{projectName}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Due Date</span>
+            <span class="detail-value">{{dueDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Current Status</span>
+            <span class="detail-value">{{taskStatus}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Priority</span>
+            <span class="detail-value">{{priority}}</span>
+        </div>
+    </div>
+</div>
+
+<div class="cta-section">
+    <a href="{{taskUrl}}" class="cta-button">Review Task</a>
+</div>
+
+<div class="info-card">
+    <h4>💡 Recommended Actions</h4>
+    <ul class="feature-list">
+        <li><strong>Check In:</strong> Contact the assignee to understand progress and blockers</li>
+        <li><strong>Adjust Deadline:</strong> Consider extending the deadline if circumstances have changed</li>
+        <li><strong>Provide Support:</strong> Offer additional resources or assistance if needed</li>
+        <li><strong>Reassign:</strong> Move the task to another team member if necessary</li>
+        <li><strong>Break Down:</strong> Split complex tasks into smaller, manageable pieces</li>
+        <li><strong>Clarify Requirements:</strong> Ensure the task details are clear and actionable</li>
+    </ul>
+</div>
+
+{{#if lastUpdate}}
+<div class="info-card">
+    <h4>📝 Latest Update</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Last Updated</span>
+            <span class="detail-value">{{lastUpdate.date}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Update By</span>
+            <span class="detail-value">{{lastUpdate.by}}</span>
+        </div>
+    </div>
+    {{#if lastUpdate.notes}}
+    <p style="margin-top: 12px; color: #4b5563;">{{lastUpdate.notes}}</p>
+    {{/if}}
+</div>
+{{/if}}
+
+<div class="message">
+    <p><strong>Need to take action?</strong> You can:</p>
+    <ul style="margin-left: 20px; color: #4b5563;">
+        <li>Contact {{assigneeName}} directly at {{assigneeEmail}}</li>
+        <li>Update task details or deadline in the system</li>
+        <li>Reassign the task to another team member</li>
+        <li>Mark the task as completed if it's been finished</li>
+    </ul>
+</div>
+
+{{#if isOverdue}}
+<div class="info-card">
+    <h4>🎯 Overdue Task Resolution</h4>
+    <p>Since this task is overdue, consider these actions:</p>
+    <ul class="feature-list">
+        <li><strong>Immediate Follow-up:</strong> Contact the assignee urgently</li>
+        <li><strong>Impact Assessment:</strong> Evaluate how this affects other project timelines</li>
+        <li><strong>Resource Allocation:</strong> Provide additional help or resources</li>
+        <li><strong>Timeline Adjustment:</strong> Update project schedules accordingly</li>
+    </ul>
+</div>
+{{/if}}
+
+<div class="success-notice">
+    <p>📊 <strong>Task Management Tip:</strong> Regular check-ins and clear communication help prevent tasks from becoming overdue and keep projects on track.</p>
+</div>
+
+{{/base}}

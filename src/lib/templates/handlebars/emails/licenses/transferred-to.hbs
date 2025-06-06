@@ -1,0 +1,194 @@
+{{#> base headerTitle="License Transferred to You" headerSubtitle="You have received a {{ENV.APP_NAME}} license transfer"}}
+
+<div class="greeting">
+    Hello {{recipientName}}! 🎉
+</div>
+
+<div class="success-notice">
+    <p>✅ <strong>License Transfer Complete!</strong> A {{ENV.APP_NAME}} license has been successfully transferred to your account.</p>
+</div>
+
+<div class="message">
+    <p>Great news! You have received a license transfer from {{fromUserName}}. The license is now active in your account and ready to use.</p>
+</div>
+
+<div class="info-card">
+    <h3>📋 Transfer Details</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">License ID</span>
+            <span class="detail-value">{{licenseId}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">License Type</span>
+            <span class="detail-value">{{licenseType}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Transfer Date</span>
+            <span class="detail-value">{{transferDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">From</span>
+            <span class="detail-value">{{fromUserName}} ({{fromUserEmail}})</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Transfer ID</span>
+            <span class="detail-value">{{transferId}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Status</span>
+            <span class="detail-value">{{status}}</span>
+        </div>
+    </div>
+</div>
+
+<div class="info-card">
+    <h4>📋 License Information</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Valid Until</span>
+            <span class="detail-value">{{expiryDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">User Limit</span>
+            <span class="detail-value">{{userLimit}} users</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Installation Limit</span>
+            <span class="detail-value">{{installationLimit}} installations</span>
+        </div>
+        {{#if licenseKey}}
+        <div class="detail-item">
+            <span class="detail-label">License Key</span>
+            <span class="detail-value">{{licenseKey}}</span>
+        </div>
+        {{/if}}
+    </div>
+</div>
+
+<div class="cta-section">
+    <a href="{{activateUrl}}" class="cta-button">Activate License</a>
+    <a href="{{dashboardUrl}}" class="cta-button-secondary">View Dashboard</a>
+</div>
+
+<div class="info-card">
+    <h4>🚀 Available Features</h4>
+    <ul class="feature-list">
+        {{#each features}}
+        <li>✅ {{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+
+{{#if transferReason}}
+<div class="info-card">
+    <h4>📝 Transfer Reason</h4>
+    <p>{{transferReason}}</p>
+</div>
+{{/if}}
+
+{{#if transferConditions}}
+<div class="info-card">
+    <h4>📋 Transfer Conditions</h4>
+    <ul class="feature-list">
+        {{#each transferConditions}}
+        <li>📄 {{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+{{/if}}
+
+<div class="info-card">
+    <h4>🔄 Next Steps</h4>
+    <ol class="numbered-list">
+        <li><strong>Activate License:</strong> Click the activation button above to enable your license</li>
+        <li><strong>Setup Access:</strong> Configure user accounts and permissions</li>
+        <li><strong>Import Data:</strong> Transfer any existing data if applicable</li>
+        <li><strong>Configure Settings:</strong> Customize the platform to your needs</li>
+        {{#if trainingRequired}}
+        <li><strong>Complete Training:</strong> Access our onboarding materials</li>
+        {{/if}}
+    </ol>
+</div>
+
+{{#if supportTransition}}
+<div class="info-card">
+    <h4>🤝 Transition Support</h4>
+    <p>{{supportTransition.message}}</p>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Support Level</span>
+            <span class="detail-value">{{supportTransition.level}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Transition Period</span>
+            <span class="detail-value">{{supportTransition.period}}</span>
+        </div>
+        {{#if supportTransition.specialist}}
+        <div class="detail-item">
+            <span class="detail-label">Specialist</span>
+            <span class="detail-value">{{supportTransition.specialist}}</span>
+        </div>
+        {{/if}}
+    </div>
+</div>
+{{/if}}
+
+{{#if dataTransfer}}
+<div class="info-card">
+    <h4>💾 Data Transfer Information</h4>
+    <p>{{dataTransfer.message}}</p>
+    {{#if dataTransfer.migrationUrl}}
+    <a href="{{dataTransfer.migrationUrl}}" class="cta-button-secondary">Start Data Migration</a>
+    {{/if}}
+    {{#if dataTransfer.backupUrl}}
+    <a href="{{dataTransfer.backupUrl}}" class="cta-button-secondary">Download Backup</a>
+    {{/if}}
+</div>
+{{/if}}
+
+<div class="info-card">
+    <h4>🛠️ Support Information</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Support Email</span>
+            <span class="detail-value">{{ENV.SUPPORT_EMAIL}}</span>
+        </div>
+        {{#if supportPhone}}
+        <div class="detail-item">
+            <span class="detail-label">Support Phone</span>
+            <span class="detail-value">{{supportPhone}}</span>
+        </div>
+        {{/if}}
+        <div class="detail-item">
+            <span class="detail-label">Transfer Reference</span>
+            <span class="detail-value">{{transferId}}</span>
+        </div>
+    </div>
+</div>
+
+{{#if originalOwnerMessage}}
+<div class="info-card">
+    <h4>💬 Message from Previous Owner</h4>
+    <blockquote>
+        <p>"{{originalOwnerMessage}}"</p>
+        <cite>- {{fromUserName}}</cite>
+    </blockquote>
+</div>
+{{/if}}
+
+<div class="warning-notice">
+    <p>🔐 <strong>Important:</strong> This license transfer is final. Please ensure you understand all terms and conditions associated with the transferred license.</p>
+</div>
+
+<div class="message">
+    <p>Welcome to {{ENV.APP_NAME}}! We're excited to support your business with our comprehensive platform. If you have any questions about the transfer or need assistance getting started, our team is here to help.</p>
+</div>
+
+<div class="contact-info">
+    <p>Questions about your transfer? Contact us at <a href="mailto:{{ENV.SUPPORT_EMAIL}}">{{ENV.SUPPORT_EMAIL}}</a></p>
+    <p>Reference Transfer ID: <strong>{{transferId}}</strong></p>
+    <p>Best regards,<br>The {{ENV.COMPANY_NAME}} Team</p>
+</div>
+
+{{/base}}

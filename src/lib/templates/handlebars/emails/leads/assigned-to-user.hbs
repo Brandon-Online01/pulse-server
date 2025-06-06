@@ -1,0 +1,137 @@
+{{#> base headerTitle="New Lead Assignment" headerSubtitle="A new lead has been assigned to you"}}
+
+<div class="greeting">
+    Hello {{assigneeName}}! 🎯
+</div>
+
+<div class="message">
+    <p>Great news! A new lead has been assigned to you in {{appName}}. This is an opportunity to expand our client base and drive business growth.</p>
+</div>
+
+<div class="success-notice">
+    <p>📈 <strong>New Lead Assigned!</strong> Lead {{leadName}} is now in your queue and ready for action.</p>
+</div>
+
+<div class="info-card">
+    <h3>👤 Lead Information</h3>
+    <div class="detail-grid">
+    <div class="detail-item">
+            <span class="detail-label">Lead Name</span>
+        <span class="detail-value">{{leadName}}</span>
+    </div>
+    <div class="detail-item">
+            <span class="detail-label">Company</span>
+            <span class="detail-value">{{companyName}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Email</span>
+        <span class="detail-value">{{leadEmail}}</span>
+    </div>
+    <div class="detail-item">
+            <span class="detail-label">Phone</span>
+        <span class="detail-value">{{leadPhone}}</span>
+    </div>
+    <div class="detail-item">
+            <span class="detail-label">Lead Source</span>
+        <span class="detail-value">{{leadSource}}</span>
+    </div>
+    <div class="detail-item">
+            <span class="detail-label">Priority</span>
+        <span class="detail-value">{{priority}}</span>
+        </div>
+    </div>
+</div>
+
+<div class="info-card">
+    <h4>💼 Business Details</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Industry</span>
+            <span class="detail-value">{{industry}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Company Size</span>
+            <span class="detail-value">{{companySize}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Budget Range</span>
+            <span class="detail-value">{{budgetRange}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Location</span>
+            <span class="detail-value">{{location}}</span>
+        </div>
+    </div>
+</div>
+
+{{#if leadNotes}}
+<div class="info-card">
+    <h4>📝 Lead Notes</h4>
+    <p>{{leadNotes}}</p>
+</div>
+{{/if}}
+
+<div class="cta-section">
+    <a href="{{leadUrl}}" class="cta-button">View Lead Details</a>
+</div>
+
+<div class="info-card">
+    <h4>🎯 Recommended Next Steps</h4>
+    <ul class="feature-list">
+        <li><strong>Review Lead Profile:</strong> Study their business needs and background</li>
+        <li><strong>Initial Contact:</strong> Reach out within 24 hours for best results</li>
+        <li><strong>Qualify Opportunity:</strong> Assess fit and potential value</li>
+        <li><strong>Schedule Meeting:</strong> Set up a discovery call or demo</li>
+        <li><strong>Update CRM:</strong> Log all interactions and progress</li>
+        <li><strong>Follow Up:</strong> Maintain regular contact per follow-up schedule</li>
+    </ul>
+</div>
+
+<div class="warning-notice">
+    <p>⏰ <strong>Response Time Matters:</strong> Studies show that leads contacted within the first hour are 7x more likely to convert. Strike while the iron is hot!</p>
+</div>
+
+<div class="info-card">
+    <h4>📊 Assignment Details</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Assigned By</span>
+            <span class="detail-value">{{assignedBy}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Assignment Date</span>
+            <span class="detail-value">{{assignmentDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Expected Response</span>
+            <span class="detail-value">{{responseTime}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Lead Stage</span>
+            <span class="detail-value">{{currentStage}}</span>
+        </div>
+    </div>
+</div>
+
+<div class="message">
+    <p><strong>Need support with this lead?</strong> Our sales enablement team is here to help with:</p>
+    <ul style="margin-left: 20px; color: #4b5563;">
+        <li>Sales strategy and approach recommendations</li>
+        <li>Product positioning and pricing guidance</li>
+        <li>Technical support for demos and presentations</li>
+        <li>Proposal templates and customization</li>
+    </ul>
+</div>
+
+<div class="success-notice">
+    <p>🚀 <strong>You've Got This!</strong> Remember, every successful client relationship starts with a great first impression. Show them why {{appName}} is the perfect solution for their business needs.</p>
+</div>
+
+<div class="message">
+    <p>Best of luck with this lead! We're rooting for your success.</p>
+    
+    <p><em>Happy selling!<br>
+    The {{appName}} Sales Team 💪</em></p>
+</div>
+
+{{/base}}

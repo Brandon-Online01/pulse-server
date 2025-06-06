@@ -1,0 +1,88 @@
+{{#> base headerTitle="License Created Successfully" headerSubtitle="Your new license is ready for use"}}
+
+<div class="greeting">
+    Hello {{recipientName}}! 🎉
+</div>
+
+<div class="success-notice">
+    <p>✅ <strong>License Created!</strong> Your new {{appName}} license has been successfully created and activated.</p>
+</div>
+
+<div class="message">
+    <p>Congratulations! Your license is now active and ready to use. This license grants you access to all the features and capabilities included in your selected plan.</p>
+</div>
+
+<div class="info-card">
+    <h3>📋 License Details</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">License ID</span>
+            <span class="detail-value">{{licenseId}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">License Type</span>
+            <span class="detail-value">{{licenseType}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Created Date</span>
+            <span class="detail-value">{{createdDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Expiry Date</span>
+            <span class="detail-value">{{expiryDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">User Limit</span>
+            <span class="detail-value">{{userLimit}} users</span>
+      </div>
+        <div class="detail-item">
+            <span class="detail-label">Status</span>
+            <span class="detail-value">{{status}}</span>
+      </div>
+    </div>
+  </div>
+
+<div class="cta-section">
+    <a href="{{activationUrl}}" class="cta-button">Activate License</a>
+</div>
+
+<div class="info-card">
+    <h4>🚀 Features Included</h4>
+    <ul class="feature-list">
+        {{#each features}}
+        <li>{{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+
+<div class="info-card">
+    <h4>📞 Support Information</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Support Level</span>
+            <span class="detail-value">{{supportLevel}}</span>
+    </div>
+        <div class="detail-item">
+            <span class="detail-label">Support Email</span>
+            <span class="detail-value">{{supportEmail}}</span>
+    </div>
+        <div class="detail-item">
+            <span class="detail-label">Support Phone</span>
+            <span class="detail-value">{{supportPhone}}</span>
+    </div>
+        <div class="detail-item">
+            <span class="detail-label">License Key</span>
+            <span class="detail-value">{{licenseKey}}</span>
+    </div>
+    </div>
+  </div>
+
+<div class="warning-notice">
+    <p>🔐 <strong>Important:</strong> Keep your license key secure and do not share it with unauthorized users. This key is required for activation and support.</p>
+</div>
+
+<div class="message">
+    <p>Thank you for choosing {{appName}}. We're excited to support your business growth with our comprehensive platform!</p>
+</div>
+
+{{/base}} 

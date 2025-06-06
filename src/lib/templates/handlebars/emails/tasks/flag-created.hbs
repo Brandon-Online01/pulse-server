@@ -1,0 +1,126 @@
+{{#> base headerTitle="Task Flag Created" headerSubtitle="A concern has been raised about your task"}}
+
+<div class="greeting">
+    Hello {{assigneeName}}! 🚩
+</div>
+
+<div class="message">
+    <p>A flag has been raised for the task "{{taskTitle}}" by {{flaggedBy}}. This flag indicates a concern or issue that needs attention and resolution.</p>
+</div>
+
+<div class="warning-notice">
+    <p>🚩 <strong>Task Flagged:</strong> Task "{{taskTitle}}" has been flagged with priority level {{flagPriority}} on {{flagDate}}.</p>
+</div>
+
+<div class="info-card">
+    <h3>📋 Flagged Task Details</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Task Title</span>
+            <span class="detail-value">{{taskTitle}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Project</span>
+            <span class="detail-value">{{projectName}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Flagged By</span>
+            <span class="detail-value">{{flaggedBy}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Flag Date</span>
+            <span class="detail-value">{{flagDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Flag Priority</span>
+            <span class="detail-value">{{flagPriority}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Flag Type</span>
+            <span class="detail-value">{{flagType}}</span>
+        </div>
+    </div>
+</div>
+
+<div class="cta-section">
+    <a href="{{taskUrl}}" class="cta-button">Address Flag</a>
+</div>
+
+<div class="info-card">
+    <h4>🔍 Flag Description</h4>
+    <p>{{flagDescription}}</p>
+</div>
+
+{{#if flagCategory}}
+<div class="{{#ifEquals flagPriority 'high'}}error-notice{{else}}{{#ifEquals flagPriority 'medium'}}warning-notice{{else}}info-card{{/ifEquals}}{{/ifEquals}}">
+    <p><strong>Flag Category:</strong> {{flagCategory}}</p>
+    <p>{{#ifEquals flagCategory 'quality'}}This flag relates to work quality or deliverable standards.{{/ifEquals}}
+       {{#ifEquals flagCategory 'timeline'}}This flag relates to deadline or scheduling concerns.{{/ifEquals}}
+       {{#ifEquals flagCategory 'resource'}}This flag relates to resource availability or requirements.{{/ifEquals}}
+       {{#ifEquals flagCategory 'communication'}}This flag relates to communication or collaboration issues.{{/ifEquals}}
+       {{#ifEquals flagCategory 'scope'}}This flag relates to task scope or requirement clarity.{{/ifEquals}}</p>
+</div>
+{{/if}}
+
+{{#if suggestedActions}}
+<div class="info-card">
+    <h4>💡 Suggested Actions</h4>
+    <ul class="feature-list">
+        {{#each suggestedActions}}
+        <li>{{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+{{/if}}
+
+<div class="info-card">
+    <h4>🛠️ Next Steps to Resolve</h4>
+    <ul class="feature-list">
+        <li><strong>Acknowledge Flag:</strong> Respond to confirm you've received and understood the concern</li>
+        <li><strong>Investigate Issue:</strong> Review the flagged concern thoroughly</li>
+        <li><strong>Communicate:</strong> Contact the flag creator to discuss details</li>
+        <li><strong>Create Action Plan:</strong> Develop a plan to address the identified issue</li>
+        <li><strong>Take Corrective Action:</strong> Implement necessary changes or improvements</li>
+        <li><strong>Update Status:</strong> Provide regular updates on resolution progress</li>
+    </ul>
+</div>
+
+{{#if impactLevel}}
+<div class="{{#ifEquals impactLevel 'high'}}error-notice{{else}}warning-notice{{/ifEquals}}">
+    <p>⚠️ <strong>Impact Level:</strong> This flag has {{impactLevel}} impact on the project. {{#ifEquals impactLevel 'high'}}Immediate action is required to prevent project delays.{{/ifEquals}}</p>
+</div>
+{{/if}}
+
+{{#if deadline}}
+<div class="warning-notice">
+    <p>⏰ <strong>Resolution Deadline:</strong> This flag should be resolved by {{deadline}}. Please prioritize addressing this concern.</p>
+</div>
+{{/if}}
+
+<div class="message">
+    <p><strong>Need to discuss this flag?</strong> Contact:</p>
+    <ul style="margin-left: 20px; color: #4b5563;">
+        <li><strong>Flag Creator:</strong> {{flaggedBy}} ({{flaggedByEmail}})</li>
+        <li><strong>Project Manager:</strong> {{projectManager}} ({{projectManagerEmail}})</li>
+        <li><strong>Team Lead:</strong> {{teamLead}} ({{teamLeadEmail}})</li>
+        <li><strong>Support Team:</strong> {{supportEmail}}</li>
+    </ul>
+</div>
+
+{{#if escalationPath}}
+<div class="info-card">
+    <h4>📈 Escalation Path</h4>
+    <p>If this flag cannot be resolved quickly:</p>
+    <ol style="margin-left: 20px; color: #4b5563;">
+        {{#each escalationPath}}
+        <li>{{this}}</li>
+        {{/each}}
+    </ol>
+</div>
+{{/if}}
+
+<div class="success-notice">
+    <p>🎯 <strong>Flag Resolution:</strong> Flags are quality control measures that help maintain project excellence. Thank you for taking this seriously and working toward resolution.</p>
+</div>
+
+{{/base}}

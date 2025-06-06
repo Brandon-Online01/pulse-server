@@ -1,0 +1,157 @@
+{{#> base headerTitle="License Renewed Successfully" headerSubtitle="Your {{ENV.APP_NAME}} license has been renewed"}}
+
+<div class="greeting">
+    Hello {{recipientName}}! 🎉
+</div>
+
+<div class="success-notice">
+    <p>✅ <strong>License Renewed!</strong> Your {{ENV.APP_NAME}} license has been successfully renewed and extended.</p>
+</div>
+
+<div class="message">
+    <p>Thank you for renewing your {{ENV.APP_NAME}} license! Your subscription has been extended and all features will continue to be available without interruption.</p>
+</div>
+
+<div class="info-card">
+    <h3>📋 Renewal Details</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">License ID</span>
+            <span class="detail-value">{{licenseId}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">License Type</span>
+            <span class="detail-value">{{licenseType}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Renewed Date</span>
+            <span class="detail-value">{{renewedDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Previous Expiry</span>
+            <span class="detail-value">{{previousExpiryDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">New Expiry Date</span>
+            <span class="detail-value">{{newExpiryDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Extension Period</span>
+            <span class="detail-value">{{extensionPeriod}}</span>
+        </div>
+    </div>
+</div>
+
+{{#if paymentInfo}}
+<div class="info-card">
+    <h4>💳 Payment Information</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Amount Paid</span>
+            <span class="detail-value">${{paymentInfo.amount}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Payment Method</span>
+            <span class="detail-value">{{paymentInfo.method}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Transaction ID</span>
+            <span class="detail-value">{{paymentInfo.transactionId}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Next Bill Date</span>
+            <span class="detail-value">{{paymentInfo.nextBillDate}}</span>
+        </div>
+    </div>
+</div>
+{{/if}}
+
+<div class="cta-section">
+    <a href="{{dashboardUrl}}" class="cta-button">View Dashboard</a>
+    <a href="{{invoiceUrl}}" class="cta-button-secondary">Download Invoice</a>
+</div>
+
+<div class="info-card">
+    <h4>🚀 Continued Features</h4>
+    <ul class="feature-list">
+        {{#each continuedFeatures}}
+        <li>✅ {{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+
+{{#if upgrades}}
+<div class="info-card">
+    <h4>🆕 New Features Added</h4>
+    <ul class="feature-list">
+        {{#each upgrades}}
+        <li>🌟 {{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+{{/if}}
+
+<div class="info-card">
+    <h4>📅 Renewal Benefits</h4>
+    <ul class="feature-list">
+        <li>🔄 <strong>Uninterrupted Service:</strong> No downtime or feature restrictions</li>
+        <li>💾 <strong>Data Preservation:</strong> All your data and settings remain intact</li>
+        <li>📞 <strong>Continued Support:</strong> Access to {{supportLevel}} support</li>
+        <li>🔒 <strong>Security Updates:</strong> Latest security patches and updates</li>
+        {{#if loyaltyBonus}}
+        <li>🎁 <strong>Loyalty Bonus:</strong> {{loyaltyBonus}}</li>
+        {{/if}}
+    </ul>
+</div>
+
+{{#if autoRenewal}}
+<div class="info-card">
+    <h4>🔄 Auto-Renewal Status</h4>
+    <p>Your license is set to automatically renew on <strong>{{autoRenewal.nextDate}}</strong> for <strong>${{autoRenewal.amount}}</strong>.</p>
+    <p>You can manage your auto-renewal settings in your account dashboard.</p>
+    <a href="{{manageRenewalUrl}}" class="cta-button-secondary">Manage Auto-Renewal</a>
+</div>
+{{/if}}
+
+{{#if recommendedActions}}
+<div class="info-card">
+    <h4>💡 Recommended Next Steps</h4>
+    <ul class="feature-list">
+        {{#each recommendedActions}}
+        <li>{{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+{{/if}}
+
+<div class="info-card">
+    <h4>📞 Support Information</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Support Level</span>
+            <span class="detail-value">{{supportLevel}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Support Email</span>
+            <span class="detail-value">{{ENV.SUPPORT_EMAIL}}</span>
+        </div>
+        {{#if supportPhone}}
+        <div class="detail-item">
+            <span class="detail-label">Support Phone</span>
+            <span class="detail-value">{{supportPhone}}</span>
+        </div>
+        {{/if}}
+    </div>
+</div>
+
+<div class="message">
+    <p>Thank you for your continued trust in {{ENV.APP_NAME}}! We're committed to providing you with the best possible experience and support.</p>
+    <p>Here's to another successful period with {{ENV.APP_NAME}}! 🚀</p>
+</div>
+
+<div class="contact-info">
+    <p>Questions about your renewal? Contact us at <a href="mailto:{{ENV.SUPPORT_EMAIL}}">{{ENV.SUPPORT_EMAIL}}</a></p>
+    <p>Best regards,<br>The {{ENV.COMPANY_NAME}} Team</p>
+</div>
+
+{{/base}}

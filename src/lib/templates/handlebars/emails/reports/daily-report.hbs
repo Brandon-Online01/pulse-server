@@ -1,0 +1,147 @@
+{{#> base headerTitle="Daily Business Report" headerSubtitle="Your daily performance summary and insights"}}
+
+<div class="greeting">
+    Hello {{recipientName}}! 📊
+</div>
+
+<div class="message">
+    <p>Here's your comprehensive daily business report for {{reportDate}}. This summary provides key insights into your business performance and highlights important metrics.</p>
+    </div>
+
+<div class="info-card">
+    <h3>📈 Key Performance Indicators</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Total Revenue</span>
+            <span class="detail-value">{{currency}} {{totalRevenue}}</span>
+    </div>
+        <div class="detail-item">
+            <span class="detail-label">New Leads</span>
+            <span class="detail-value">{{newLeads}}</span>
+    </div>
+        <div class="detail-item">
+            <span class="detail-label">Tasks Completed</span>
+            <span class="detail-value">{{completedTasks}}</span>
+  </div>
+        <div class="detail-item">
+            <span class="detail-label">Active Users</span>
+            <span class="detail-value">{{activeUsers}}</span>
+    </div>
+        <div class="detail-item">
+            <span class="detail-label">Conversion Rate</span>
+            <span class="detail-value">{{conversionRate}}%</span>
+    </div>
+        <div class="detail-item">
+            <span class="detail-label">Customer Satisfaction</span>
+            <span class="detail-value">{{customerSatisfaction}}/10</span>
+    </div>
+    </div>
+  </div>
+
+<div class="info-card">
+    <h4>💰 Sales Performance</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Daily Sales</span>
+            <span class="detail-value">{{currency}} {{dailySales}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Monthly Target</span>
+            <span class="detail-value">{{currency}} {{monthlyTarget}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Progress to Target</span>
+            <span class="detail-value">{{targetProgress}}%</span>
+    </div>
+        <div class="detail-item">
+            <span class="detail-label">Top Performer</span>
+            <span class="detail-value">{{topPerformer}}</span>
+    </div>
+    </div>
+  </div>
+
+<div class="info-card">
+    <h4>📋 Task & Project Updates</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Tasks Due Today</span>
+            <span class="detail-value">{{tasksDueToday}}</span>
+    </div>
+        <div class="detail-item">
+            <span class="detail-label">Overdue Tasks</span>
+            <span class="detail-value">{{overdueTasks}}</span>
+    </div>
+        <div class="detail-item">
+            <span class="detail-label">Projects On Track</span>
+            <span class="detail-value">{{projectsOnTrack}}</span>
+    </div>
+        <div class="detail-item">
+            <span class="detail-label">Team Productivity</span>
+            <span class="detail-value">{{teamProductivity}}%</span>
+    </div>
+    </div>
+  </div>
+
+<div class="cta-section">
+    <a href="{{dashboardUrl}}" class="cta-button">View Full Dashboard</a>
+</div>
+
+{{#if alerts}}
+<div class="warning-notice">
+    <p>⚠️ <strong>Attention Required:</strong></p>
+    <ul style="margin-left: 20px; margin-top: 10px;">
+        {{#each alerts}}
+        <li>{{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+{{/if}}
+
+{{#if achievements}}
+<div class="success-notice">
+    <p>🏆 <strong>Today's Achievements:</strong></p>
+    <ul style="margin-left: 20px; margin-top: 10px;">
+        {{#each achievements}}
+        <li>{{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+{{/if}}
+
+<div class="info-card">
+    <h4>📊 Trend Analysis</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Revenue vs Yesterday</span>
+            <span class="detail-value">{{revenueChange}}%</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Lead Generation</span>
+            <span class="detail-value">{{leadChange}}%</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Task Completion</span>
+            <span class="detail-value">{{taskCompletionChange}}%</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">User Engagement</span>
+            <span class="detail-value">{{engagementChange}}%</span>
+    </div>
+    </div>
+    </div>
+
+<div class="message">
+    <p><strong>Tomorrow's Focus Areas:</strong></p>
+    <ul style="margin-left: 20px; color: #4b5563;">
+        <li>Follow up on {{pendingLeads}} pending leads</li>
+        <li>Complete {{priorityTasks}} high-priority tasks</li>
+        <li>Review {{projectsNeedingAttention}} projects needing attention</li>
+        <li>Schedule {{upcomingMeetings}} upcoming client meetings</li>
+    </ul>
+  </div>
+
+<div class="success-notice">
+    <p>📈 <strong>Keep Up the Great Work!</strong> Your business is showing positive momentum. Stay focused on your goals and continue building on today's success.</p>
+</div>
+
+{{/base}} 

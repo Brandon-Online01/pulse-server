@@ -1,0 +1,159 @@
+{{#> base headerTitle="Task Flag Updated" headerSubtitle="Changes have been made to your task flag"}}
+
+<div class="greeting">
+    Hello {{assigneeName}}! 🔄
+</div>
+
+<div class="message">
+    <p>The flag on your task "{{taskTitle}}" has been updated by {{updatedBy}}. Please review the changes and take any necessary action based on the updated information.</p>
+</div>
+
+<div class="warning-notice">
+    <p>🔄 <strong>Flag Updated:</strong> Task flag for "{{taskTitle}}" was modified on {{updateDate}} with new priority level {{newPriority}}.</p>
+</div>
+
+<div class="info-card">
+    <h3>📋 Updated Flag Details</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Task Title</span>
+            <span class="detail-value">{{taskTitle}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Project</span>
+            <span class="detail-value">{{projectName}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Updated By</span>
+            <span class="detail-value">{{updatedBy}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Update Date</span>
+            <span class="detail-value">{{updateDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">New Priority</span>
+            <span class="detail-value">{{newPriority}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Flag Status</span>
+            <span class="detail-value">{{flagStatus}}</span>
+        </div>
+    </div>
+</div>
+
+<div class="cta-section">
+    <a href="{{taskUrl}}" class="cta-button">View Updated Flag</a>
+</div>
+
+{{#if changes}}
+<div class="info-card">
+    <h4>🔄 What Changed</h4>
+    {{#each changes}}
+    <div class="detail-item">
+        <span class="detail-label">{{field}}</span>
+        <span class="detail-value">
+            {{#if oldValue}}<s style="color: #ef4444;">{{oldValue}}</s> → {{/if}}
+            <strong style="color: #10b981;">{{newValue}}</strong>
+        </span>
+    </div>
+    {{/each}}
+</div>
+{{/if}}
+
+{{#if updateReason}}
+<div class="info-card">
+    <h4>📝 Update Reason</h4>
+    <p>{{updateReason}}</p>
+</div>
+{{/if}}
+
+{{#if newDescription}}
+<div class="info-card">
+    <h4>🔍 Updated Flag Description</h4>
+    <p>{{newDescription}}</p>
+</div>
+{{/if}}
+
+{{#if priorityChanged}}
+<div class="{{#ifEquals newPriority 'high'}}error-notice{{else}}{{#ifEquals newPriority 'medium'}}warning-notice{{else}}info-card{{/ifEquals}}{{/ifEquals}}">
+    <p>🎯 <strong>Priority Changed:</strong> Flag priority has been {{#ifEquals newPriority 'high'}}escalated to HIGH{{else}}{{#ifEquals newPriority 'low'}}reduced to LOW{{else}}updated to {{newPriority}}{{/ifEquals}}{{/ifEquals}} from {{oldPriority}}.</p>
+    {{#ifEquals newPriority 'high'}}
+    <p>This flag now requires immediate attention and should be your top priority.</p>
+    {{/ifEquals}}
+</div>
+{{/if}}
+
+{{#if deadlineChanged}}
+<div class="warning-notice">
+    <p>⏰ <strong>Deadline Updated:</strong> The resolution deadline has been {{#if deadlineExtended}}extended{{else}}moved up{{/if}} from {{oldDeadline}} to {{newDeadline}}.</p>
+</div>
+{{/if}}
+
+{{#if additionalResources}}
+<div class="success-notice">
+    <p>🆘 <strong>Additional Support:</strong> New resources have been assigned to help resolve this flag:</p>
+    <ul style="margin-left: 20px; margin-top: 10px;">
+        {{#each additionalResources}}
+        <li>{{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+{{/if}}
+
+<div class="info-card">
+    <h4>📋 Updated Action Items</h4>
+    <ul class="feature-list">
+        <li><strong>Review Changes:</strong> Carefully review all modifications to the flag</li>
+        <li><strong>Adjust Priority:</strong> Update your work schedule based on new priority level</li>
+        <li><strong>Contact Updater:</strong> Reach out if you need clarification on changes</li>
+        <li><strong>Update Progress:</strong> Provide current status based on new requirements</li>
+        <li><strong>Meet New Deadlines:</strong> Ensure work aligns with updated timeline</li>
+        <li><strong>Escalate if Needed:</strong> Request help if new requirements are challenging</li>
+    </ul>
+</div>
+
+{{#if impactAssessment}}
+<div class="info-card">
+    <h4>📊 Impact Assessment</h4>
+    <p>How these changes affect your work:</p>
+    <ul class="feature-list">
+        {{#each impactAssessment}}
+        <li>{{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+{{/if}}
+
+<div class="message">
+    <p><strong>Questions about these updates?</strong> Contact:</p>
+    <ul style="margin-left: 20px; color: #4b5563;">
+        <li><strong>Flag Updater:</strong> {{updatedBy}} ({{updatedByEmail}})</li>
+        <li><strong>Original Flag Creator:</strong> {{originalFlaggedBy}} ({{originalFlaggedByEmail}})</li>
+        <li><strong>Project Manager:</strong> {{projectManager}} ({{projectManagerEmail}})</li>
+        <li><strong>Support Team:</strong> {{supportEmail}}</li>
+    </ul>
+</div>
+
+{{#if escalationNote}}
+<div class="error-notice">
+    <p>🔥 <strong>Escalation Notice:</strong> {{escalationNote}}</p>
+</div>
+{{/if}}
+
+<div class="info-card">
+    <h4>💡 Best Practices for Flag Updates</h4>
+    <ul class="feature-list">
+        <li><strong>Stay Informed:</strong> Always read flag updates thoroughly</li>
+        <li><strong>Ask Questions:</strong> Clarify anything that's unclear</li>
+        <li><strong>Communicate Changes:</strong> Inform your team about timeline impacts</li>
+        <li><strong>Document Progress:</strong> Keep detailed records of your resolution efforts</li>
+        <li><strong>Be Proactive:</strong> Address concerns before they become bigger issues</li>
+    </ul>
+</div>
+
+<div class="success-notice">
+    <p>🔄 <strong>Adaptive Excellence:</strong> Your ability to adapt to changing requirements and flag updates demonstrates professional flexibility. Thank you for staying responsive to project needs!</p>
+</div>
+
+{{/base}}

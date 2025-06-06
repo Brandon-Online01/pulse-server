@@ -1,0 +1,85 @@
+{{#> base headerTitle="Task Reminder" headerSubtitle="Don't forget about your upcoming task deadline"}}
+
+<div class="greeting">
+    Hello {{assigneeName}}! ⏰
+</div>
+
+<div class="warning-notice">
+    <p>📅 <strong>Task Reminder:</strong> The task "{{taskTitle}}" is due {{#if isOverdue}}and is now overdue{{else}}soon{{/if}}. Please review your progress and take action as needed.</p>
+</div>
+
+<div class="message">
+    <p>This is a friendly reminder about your assigned task. {{#if isOverdue}}This task is now overdue and requires immediate attention.{{else}}Completing tasks on time helps keep our projects on track and ensures team success.{{/if}}</p>
+</div>
+
+<div class="info-card">
+    <h3>📋 Task Details</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Task Title</span>
+            <span class="detail-value">{{taskTitle}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Project</span>
+            <span class="detail-value">{{projectName}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Due Date</span>
+            <span class="detail-value">{{dueDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Priority</span>
+            <span class="detail-value">{{priority}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Current Status</span>
+            <span class="detail-value">{{taskStatus}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Days {{#if isOverdue}}Overdue{{else}}Remaining{{/if}}</span>
+            <span class="detail-value">{{daysDifference}}</span>
+        </div>
+    </div>
+</div>
+
+<div class="cta-section">
+    <a href="{{taskUrl}}" class="cta-button">{{#if isOverdue}}Complete Task Now{{else}}View Task Details{{/if}}</a>
+</div>
+
+{{#if taskDescription}}
+<div class="info-card">
+    <h4>📝 Task Description</h4>
+    <p>{{taskDescription}}</p>
+</div>
+{{/if}}
+
+{{#if isOverdue}}
+<div class="error-notice">
+    <p>🚨 <strong>Overdue Task:</strong> This task was due on {{dueDate}}. Please complete it as soon as possible to avoid project delays.</p>
+</div>
+{{else}}
+<div class="info-card">
+    <h4>💡 Helpful Tips</h4>
+    <ul class="feature-list">
+        <li><strong>Break it down:</strong> Divide large tasks into smaller, manageable pieces</li>
+        <li><strong>Set priorities:</strong> Focus on the most critical elements first</li>
+        <li><strong>Ask for help:</strong> Don't hesitate to reach out if you need assistance</li>
+        <li><strong>Update status:</strong> Keep your progress updated in the system</li>
+    </ul>
+</div>
+{{/if}}
+
+<div class="message">
+    <p><strong>Need assistance with this task?</strong> Contact:</p>
+    <ul style="margin-left: 20px; color: #4b5563;">
+        <li>Task Creator: {{taskCreator}}</li>
+        <li>Project Manager: {{projectManager}}</li>
+        <li>Support Team: {{supportEmail}}</li>
+    </ul>
+</div>
+
+<div class="success-notice">
+    <p>💪 <strong>You've Got This!</strong> {{#if isOverdue}}Every expert was once a beginner who never gave up.{{else}}Your dedication to meeting deadlines is appreciated by the entire team.{{/if}}</p>
+</div>
+
+{{/base}}

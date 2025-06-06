@@ -1,0 +1,208 @@
+{{#> base headerTitle="License Transfer Confirmation" headerSubtitle="Your {{ENV.APP_NAME}} license has been transferred"}}
+
+<div class="greeting">
+    Hello {{recipientName}}, 📤
+</div>
+
+<div class="success-notice">
+    <p>✅ <strong>Transfer Complete!</strong> Your {{ENV.APP_NAME}} license has been successfully transferred to {{toUserName}}.</p>
+</div>
+
+<div class="message">
+    <p>This email confirms that your license transfer has been completed successfully. The license is no longer associated with your account and has been activated for the new owner.</p>
+</div>
+
+<div class="info-card">
+    <h3>📋 Transfer Details</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">License ID</span>
+            <span class="detail-value">{{licenseId}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">License Type</span>
+            <span class="detail-value">{{licenseType}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Transfer Date</span>
+            <span class="detail-value">{{transferDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Transferred To</span>
+            <span class="detail-value">{{toUserName}} ({{toUserEmail}})</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Transfer ID</span>
+            <span class="detail-value">{{transferId}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Status</span>
+            <span class="detail-value">{{status}}</span>
+        </div>
+    </div>
+</div>
+
+{{#if transferReason}}
+<div class="info-card">
+    <h4>📝 Transfer Reason</h4>
+    <p>{{transferReason}}</p>
+</div>
+{{/if}}
+
+<div class="info-card">
+    <h4>🔄 Transfer Process</h4>
+    <ul class="feature-list">
+        <li>✅ <strong>Authorization Verified:</strong> Transfer request was properly authorized</li>
+        <li>✅ <strong>License Deactivated:</strong> License removed from your account</li>
+        <li>✅ <strong>New Owner Notified:</strong> {{toUserName}} has been informed of the transfer</li>
+        <li>✅ <strong>Transfer Complete:</strong> License is now active under new ownership</li>
+    </ul>
+</div>
+
+{{#if accessLoss}}
+<div class="info-card">
+    <h4>🚫 Access Changes</h4>
+    <p>As a result of this transfer, you will no longer have access to:</p>
+    <ul class="feature-list">
+        {{#each accessLoss}}
+        <li>❌ {{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+{{/if}}
+
+{{#if dataHandling}}
+<div class="info-card">
+    <h4>💾 Data Handling</h4>
+    <p>{{dataHandling.message}}</p>
+    {{#if dataHandling.exportUrl}}
+    <div class="cta-section">
+        <a href="{{dataHandling.exportUrl}}" class="cta-button-secondary">Download Data Export</a>
+    </div>
+    {{/if}}
+    {{#if dataHandling.retentionPeriod}}
+    <p><strong>Data Retention:</strong> Your data will be retained for {{dataHandling.retentionPeriod}} before permanent deletion.</p>
+    {{/if}}
+</div>
+{{/if}}
+
+{{#if alternativeLicenses}}
+<div class="info-card">
+    <h4>🔄 Alternative Options</h4>
+    <p>Need continued access to {{ENV.APP_NAME}}? Consider these options:</p>
+    <ul class="feature-list">
+        {{#each alternativeLicenses}}
+        <li>💡 {{name}} - {{description}} ({{price}})</li>
+        {{/each}}
+    </ul>
+    <div class="cta-section">
+        <a href="{{purchaseUrl}}" class="cta-button">Purchase New License</a>
+    </div>
+</div>
+{{/if}}
+
+{{#if refundInfo}}
+<div class="info-card">
+    <h4>💰 Refund Information</h4>
+    <p>{{refundInfo.message}}</p>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Refund Amount</span>
+            <span class="detail-value">${{refundInfo.amount}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Processing Time</span>
+            <span class="detail-value">{{refundInfo.processingTime}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Method</span>
+            <span class="detail-value">{{refundInfo.method}}</span>
+        </div>
+    </div>
+</div>
+{{/if}}
+
+{{#if gracePeriod}}
+<div class="info-card">
+    <h4>⏰ Grace Period</h4>
+    <p>You have <strong>{{gracePeriod.duration}}</strong> remaining to:</p>
+    <ul class="feature-list">
+        {{#each gracePeriod.allowedActions}}
+        <li>🕐 {{this}}</li>
+        {{/each}}
+    </ul>
+    <p><strong>Grace period ends:</strong> {{gracePeriod.endDate}}</p>
+</div>
+{{/if}}
+
+<div class="info-card">
+    <h4>📋 Transfer Summary</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Original Purchase Date</span>
+            <span class="detail-value">{{originalPurchaseDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">License Duration</span>
+            <span class="detail-value">{{licenseDuration}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Remaining Value</span>
+            <span class="detail-value">{{remainingValue}}</span>
+        </div>
+        {{#if transferFee}}
+        <div class="detail-item">
+            <span class="detail-label">Transfer Fee</span>
+            <span class="detail-value">${{transferFee}}</span>
+        </div>
+        {{/if}}
+    </div>
+</div>
+
+{{#if supportInfo}}
+<div class="info-card">
+    <h4>🛠️ Support & Documentation</h4>
+    <p>For questions about this transfer or future license needs:</p>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Support Email</span>
+            <span class="detail-value">{{ENV.SUPPORT_EMAIL}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Sales Team</span>
+            <span class="detail-value">{{ENV.SALES_EMAIL}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Transfer Reference</span>
+            <span class="detail-value">{{transferId}}</span>
+        </div>
+    </div>
+</div>
+{{/if}}
+
+{{#if testimonial}}
+<div class="info-card">
+    <h4>💬 Thank You Message</h4>
+    <p>{{testimonial.message}}</p>
+    {{#if testimonial.returnOffer}}
+    <p><strong>Future Offer:</strong> {{testimonial.returnOffer}}</p>
+    {{/if}}
+</div>
+{{/if}}
+
+<div class="warning-notice">
+    <p>⚠️ <strong>Important:</strong> This transfer is final and cannot be reversed. Please ensure you've saved any important data before the grace period expires.</p>
+</div>
+
+<div class="message">
+    <p>Thank you for being a valued {{ENV.APP_NAME}} customer. While we're sad to see this license go, we hope you had a positive experience with our platform.</p>
+    <p>We'd love to serve you again in the future! 🙏</p>
+</div>
+
+<div class="contact-info">
+    <p>Questions about this transfer? Contact us at <a href="mailto:{{ENV.SUPPORT_EMAIL}}">{{ENV.SUPPORT_EMAIL}}</a></p>
+    <p>Reference Transfer ID: <strong>{{transferId}}</strong></p>
+    <p>Best regards,<br>The {{ENV.COMPANY_NAME}} Team</p>
+</div>
+
+{{/base}}

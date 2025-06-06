@@ -1,0 +1,150 @@
+{{#> base headerTitle="Task Feedback Received" headerSubtitle="New feedback has been added to your task"}}
+
+<div class="greeting">
+    Hello {{assigneeName}}! 💬
+</div>
+
+<div class="message">
+    <p>New feedback has been added to your task "{{taskTitle}}" by {{feedbackBy}}. This feedback contains valuable insights to help you improve your work quality and performance.</p>
+</div>
+
+<div class="success-notice">
+    <p>💬 <strong>Feedback Added:</strong> {{feedbackBy}} has provided feedback on task "{{taskTitle}}" on {{feedbackDate}}.</p>
+</div>
+
+<div class="info-card">
+    <h3>📋 Task Information</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Task Title</span>
+            <span class="detail-value">{{taskTitle}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Project</span>
+            <span class="detail-value">{{projectName}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Feedback By</span>
+            <span class="detail-value">{{feedbackBy}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Feedback Date</span>
+            <span class="detail-value">{{feedbackDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Task Status</span>
+            <span class="detail-value">{{taskStatus}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Rating</span>
+            <span class="detail-value">{{#if rating}}{{rating}}/5 ⭐{{else}}No rating provided{{/if}}</span>
+        </div>
+    </div>
+</div>
+
+<div class="cta-section">
+    <a href="{{taskUrl}}" class="cta-button">View Full Feedback</a>
+</div>
+
+<div class="info-card">
+    <h4>💭 Feedback Summary</h4>
+    <p>{{feedbackSummary}}</p>
+</div>
+
+{{#if positivePoints}}
+<div class="success-notice">
+    <p>✅ <strong>What Went Well:</strong></p>
+    <ul style="margin-left: 20px; margin-top: 10px;">
+        {{#each positivePoints}}
+        <li>{{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+{{/if}}
+
+{{#if improvementAreas}}
+<div class="warning-notice">
+    <p>📈 <strong>Areas for Improvement:</strong></p>
+    <ul style="margin-left: 20px; margin-top: 10px;">
+        {{#each improvementAreas}}
+        <li>{{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+{{/if}}
+
+{{#if actionItems}}
+<div class="info-card">
+    <h4>🎯 Action Items</h4>
+    <p>Based on the feedback, here are recommended next steps:</p>
+    <ul class="feature-list">
+        {{#each actionItems}}
+        <li>{{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+{{/if}}
+
+{{#if feedbackType}}
+<div class="info-card">
+    <h4>📊 Feedback Details</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Feedback Type</span>
+            <span class="detail-value">{{feedbackType}}</span>
+        </div>
+        {{#if qualityScore}}
+        <div class="detail-item">
+            <span class="detail-label">Quality Score</span>
+            <span class="detail-value">{{qualityScore}}/10</span>
+        </div>
+        {{/if}}
+        {{#if timeliness}}
+        <div class="detail-item">
+            <span class="detail-label">Timeliness</span>
+            <span class="detail-value">{{timeliness}}</span>
+        </div>
+        {{/if}}
+        {{#if communication}}
+        <div class="detail-item">
+            <span class="detail-label">Communication</span>
+            <span class="detail-value">{{communication}}</span>
+        </div>
+        {{/if}}
+    </div>
+</div>
+{{/if}}
+
+<div class="info-card">
+    <h4>💡 How to Use This Feedback</h4>
+    <ul class="feature-list">
+        <li><strong>Stay Positive:</strong> View feedback as an opportunity for growth and improvement</li>
+        <li><strong>Ask Questions:</strong> Clarify any points you don't understand</li>
+        <li><strong>Take Notes:</strong> Document key insights for future reference</li>
+        <li><strong>Apply Learning:</strong> Incorporate suggestions into future work</li>
+        <li><strong>Follow Up:</strong> Thank the feedback provider and show progress</li>
+        <li><strong>Share Wins:</strong> Update on improvements you've implemented</li>
+    </ul>
+</div>
+
+<div class="message">
+    <p><strong>Want to discuss this feedback?</strong> Reach out to:</p>
+    <ul style="margin-left: 20px; color: #4b5563;">
+        <li><strong>Feedback Provider:</strong> {{feedbackBy}} ({{feedbackByEmail}})</li>
+        <li><strong>Project Manager:</strong> {{projectManager}} ({{projectManagerEmail}})</li>
+        <li><strong>HR/Development:</strong> {{hrContact}} ({{hrEmail}})</li>
+        <li><strong>Support Team:</strong> {{supportEmail}}</li>
+    </ul>
+</div>
+
+{{#if nextReviewDate}}
+<div class="warning-notice">
+    <p>📅 <strong>Follow-up Review:</strong> Your next performance review is scheduled for {{nextReviewDate}}. Use this feedback to prepare and show your improvement.</p>
+</div>
+{{/if}}
+
+<div class="success-notice">
+    <p>🌟 <strong>Growth Mindset:</strong> Every piece of feedback is a stepping stone to excellence. Thank you for being open to continuous improvement!</p>
+</div>
+
+{{/base}}

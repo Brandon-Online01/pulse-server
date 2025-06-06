@@ -1,0 +1,150 @@
+{{#> base headerTitle="Internal Quotation Created" headerSubtitle="New quotation requires review and approval"}}
+
+<div class="greeting">
+    Hello {{recipientName}}! 📋
+</div>
+
+<div class="message">
+    <p>A new quotation has been created by {{createdBy}} and requires your review and approval before being sent to the client. Please examine the details and pricing to ensure everything meets our standards.</p>
+</div>
+
+<div class="warning-notice">
+    <p>📋 <strong>Awaiting Review:</strong> Quotation #{{quotationNumber}} for {{clientName}} is pending approval before client delivery.</p>
+</div>
+
+<div class="info-card">
+    <h3>📋 Quotation Details</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Quote Number</span>
+            <span class="detail-value">{{quotationNumber}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Client Name</span>
+            <span class="detail-value">{{clientName}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Created By</span>
+            <span class="detail-value">{{createdBy}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Created Date</span>
+            <span class="detail-value">{{createdDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Total Amount</span>
+            <span class="detail-value"><strong>{{currency}} {{totalAmount}}</strong></span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Project Duration</span>
+            <span class="detail-value">{{projectDuration}}</span>
+        </div>
+    </div>
+</div>
+
+<div class="cta-section">
+    <a href="{{reviewUrl}}" class="cta-button">Review Quotation</a>
+</div>
+
+<div class="info-card">
+    <h4>📦 Quoted Services</h4>
+    {{#each quotationItems}}
+    <div class="detail-item">
+        <span class="detail-label">{{description}}</span>
+        <span class="detail-value">{{quantity}}x {{currency}} {{unitPrice}} = {{currency}} {{lineTotal}}</span>
+    </div>
+    {{/each}}
+    
+    <div style="border-top: 2px solid #A855F7; margin-top: 15px; padding-top: 15px;">
+        <div class="detail-grid">
+            <div class="detail-item">
+                <span class="detail-label">Subtotal</span>
+                <span class="detail-value">{{currency}} {{subtotal}}</span>
+            </div>
+            {{#if discount}}
+            <div class="detail-item">
+                <span class="detail-label">Discount ({{discountPercentage}}%)</span>
+                <span class="detail-value">-{{currency}} {{discount}}</span>
+            </div>
+            {{/if}}
+            {{#if tax}}
+            <div class="detail-item">
+                <span class="detail-label">Tax</span>
+                <span class="detail-value">{{currency}} {{tax}}</span>
+            </div>
+            {{/if}}
+            <div class="detail-item">
+                <span class="detail-label"><strong>Total Amount</strong></span>
+                <span class="detail-value"><strong>{{currency}} {{totalAmount}}</strong></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="info-card">
+    <h4>📊 Financial Analysis</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Estimated Costs</span>
+            <span class="detail-value">{{currency}} {{estimatedCosts}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Projected Margin</span>
+            <span class="detail-value">{{marginPercentage}}% ({{currency}} {{projectedMargin}})</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Revenue Category</span>
+            <span class="detail-value">{{revenueCategory}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Risk Level</span>
+            <span class="detail-value">{{riskLevel}}</span>
+        </div>
+    </div>
+</div>
+
+{{#if clientRequirements}}
+<div class="info-card">
+    <h4>📝 Client Requirements</h4>
+    <p>{{clientRequirements}}</p>
+</div>
+{{/if}}
+
+<div class="info-card">
+    <h4>✅ Review Checklist</h4>
+    <ul class="feature-list">
+        <li><strong>Pricing Accuracy:</strong> Verify all prices match current rate cards</li>
+        <li><strong>Scope Alignment:</strong> Ensure services match client requirements</li>
+        <li><strong>Margin Review:</strong> Confirm margins meet company minimums</li>
+        <li><strong>Risk Assessment:</strong> Evaluate project and client risks</li>
+        <li><strong>Terms & Conditions:</strong> Review payment and delivery terms</li>
+        <li><strong>Compliance Check:</strong> Ensure regulatory compliance</li>
+    </ul>
+</div>
+
+<div class="info-card">
+    <h4>🚀 Approval Actions</h4>
+    <ul class="feature-list">
+        <li><strong>Approve:</strong> Authorize quotation for client delivery</li>
+        <li><strong>Request Changes:</strong> Send back with modification requests</li>
+        <li><strong>Reject:</strong> Decline quotation with reasons</li>
+        <li><strong>Escalate:</strong> Forward to senior management for review</li>
+        <li><strong>Defer:</strong> Hold pending additional information</li>
+    </ul>
+</div>
+
+<div class="message">
+    <p><strong>Questions or concerns?</strong> Contact:</p>
+    <ul style="margin-left: 20px; color: #4b5563;">
+        <li><strong>Quote Creator:</strong> {{createdBy}} ({{createdByEmail}})</li>
+        <li><strong>Sales Manager:</strong> {{salesManager}} ({{salesManagerEmail}})</li>
+        <li><strong>Finance Team:</strong> {{financeTeam}} ({{financeEmail}})</li>
+        <li><strong>Approval System:</strong> {{approvalSystemUrl}}</li>
+    </ul>
+</div>
+
+<div class="success-notice">
+    <p>⚡ <strong>Quality First:</strong> Your thorough review ensures we deliver accurate, competitive quotations that maintain our professional standards and win rate.</p>
+</div>
+
+{{/base}}

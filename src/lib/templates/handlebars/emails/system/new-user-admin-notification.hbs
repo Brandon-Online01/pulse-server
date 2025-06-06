@@ -1,0 +1,256 @@
+{{#> base headerTitle="New User Registration" headerSubtitle="A new user has registered for {{ENV.APP_NAME}}"}}
+
+<div class="greeting">
+    Hello {{adminName}}! 👋
+</div>
+
+<div class="success-notice">
+    <p>👤 <strong>New User Alert!</strong> A new user has successfully registered for {{ENV.APP_NAME}} and requires admin review.</p>
+</div>
+
+<div class="message">
+    <p>This notification informs you that a new user has completed the registration process. Please review their information and approve their access as appropriate for your organization's policies.</p>
+</div>
+
+<div class="info-card">
+    <h3>👤 New User Information</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Full Name</span>
+            <span class="detail-value">{{newUser.firstName}} {{newUser.lastName}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Email Address</span>
+            <span class="detail-value">{{newUser.email}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">User ID</span>
+            <span class="detail-value">{{newUser.id}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Registration Date</span>
+            <span class="detail-value">{{newUser.registrationDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Registration IP</span>
+            <span class="detail-value">{{newUser.registrationIP}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Current Status</span>
+            <span class="detail-value">{{newUser.status}}</span>
+        </div>
+    </div>
+</div>
+
+{{#if newUser.company}}
+<div class="info-card">
+    <h4>🏢 Company Information</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Company Name</span>
+            <span class="detail-value">{{newUser.company.name}}</span>
+        </div>
+        {{#if newUser.company.role}}
+        <div class="detail-item">
+            <span class="detail-label">Role/Position</span>
+            <span class="detail-value">{{newUser.company.role}}</span>
+        </div>
+        {{/if}}
+        {{#if newUser.company.size}}
+        <div class="detail-item">
+            <span class="detail-label">Company Size</span>
+            <span class="detail-value">{{newUser.company.size}}</span>
+        </div>
+        {{/if}}
+        {{#if newUser.company.industry}}
+        <div class="detail-item">
+            <span class="detail-label">Industry</span>
+            <span class="detail-value">{{newUser.company.industry}}</span>
+        </div>
+        {{/if}}
+    </div>
+</div>
+{{/if}}
+
+{{#if newUser.requestedPermissions}}
+<div class="info-card">
+    <h4>🔐 Requested Permissions</h4>
+    <ul class="feature-list">
+        {{#each newUser.requestedPermissions}}
+        <li>🔑 {{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+{{/if}}
+
+{{#if newUser.registrationSource}}
+<div class="info-card">
+    <h4>📍 Registration Details</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Registration Source</span>
+            <span class="detail-value">{{newUser.registrationSource}}</span>
+        </div>
+        {{#if newUser.referralCode}}
+        <div class="detail-item">
+            <span class="detail-label">Referral Code</span>
+            <span class="detail-value">{{newUser.referralCode}}</span>
+        </div>
+        {{/if}}
+        {{#if newUser.campaignSource}}
+        <div class="detail-item">
+            <span class="detail-label">Campaign Source</span>
+            <span class="detail-value">{{newUser.campaignSource}}</span>
+        </div>
+        {{/if}}
+        <div class="detail-item">
+            <span class="detail-label">User Agent</span>
+            <span class="detail-value">{{newUser.userAgent}}</span>
+        </div>
+    </div>
+</div>
+{{/if}}
+
+<div class="cta-section">
+    <a href="{{approveUrl}}" class="cta-button">Approve User</a>
+    <a href="{{reviewUrl}}" class="cta-button-secondary">Review Profile</a>
+</div>
+
+{{#if securityChecks}}
+<div class="info-card">
+    <h4>🔒 Security Assessment</h4>
+    <div class="detail-grid">
+        {{#each securityChecks}}
+        <div class="detail-item">
+            <span class="detail-label">{{name}}</span>
+            <span class="detail-value">{{#if passed}}✅ Passed{{else}}❌ Failed{{/if}}</span>
+        </div>
+        {{/each}}
+    </div>
+    {{#if securityFlags}}
+    <div class="warning-notice">
+        <p>⚠️ <strong>Security Flags:</strong></p>
+        <ul class="feature-list">
+            {{#each securityFlags}}
+            <li>🚩 {{this}}</li>
+            {{/each}}
+        </ul>
+    </div>
+    {{/if}}
+</div>
+{{/if}}
+
+{{#if duplicateCheck}}
+<div class="info-card">
+    <h4>🔍 Duplicate Account Check</h4>
+    {{#if duplicateCheck.found}}
+    <div class="warning-notice">
+        <p>⚠️ <strong>Potential Duplicates Found:</strong></p>
+        {{#each duplicateCheck.matches}}
+        <div class="detail-grid">
+            <div class="detail-item">
+                <span class="detail-label">{{type}}</span>
+                <span class="detail-value">{{value}} (User ID: {{userId}})</span>
+            </div>
+        </div>
+        {{/each}}
+    </div>
+    {{else}}
+    <p>✅ No duplicate accounts detected.</p>
+    {{/if}}
+</div>
+{{/if}}
+
+<div class="info-card">
+    <h4>⚡ Required Admin Actions</h4>
+    <ol class="numbered-list">
+        <li><strong>Review User Information:</strong> Verify the provided details are accurate and legitimate</li>
+        <li><strong>Security Assessment:</strong> Check any security flags or concerns</li>
+        <li><strong>Permission Assignment:</strong> Assign appropriate roles and permissions</li>
+        <li><strong>Approval Decision:</strong> Approve or reject the user registration</li>
+        {{#if newUser.trialRequest}}
+        <li><strong>Trial Setup:</strong> Configure trial access and limitations</li>
+        {{/if}}
+    </ol>
+</div>
+
+{{#if autoApprovalEligible}}
+<div class="info-card">
+    <h4>🤖 Auto-Approval Status</h4>
+    {{#if autoApprovalEligible.eligible}}
+    <p>✅ This user meets criteria for auto-approval based on:</p>
+    <ul class="feature-list">
+        {{#each autoApprovalEligible.criteria}}
+        <li>✅ {{this}}</li>
+        {{/each}}
+    </ul>
+    <p>The user will be auto-approved in {{autoApprovalEligible.delay}} unless manual action is taken.</p>
+    <a href="{{preventAutoApprovalUrl}}" class="cta-button-secondary">Prevent Auto-Approval</a>
+    {{else}}
+    <p>⚠️ Manual approval required due to:</p>
+    <ul class="feature-list">
+        {{#each autoApprovalEligible.blockers}}
+        <li>❌ {{this}}</li>
+        {{/each}}
+    </ul>
+    {{/if}}
+</div>
+{{/if}}
+
+{{#if adminActions}}
+<div class="info-card">
+    <h4>🛠️ Available Admin Actions</h4>
+    <div class="detail-grid">
+        {{#each adminActions}}
+        <div class="detail-item">
+            <span class="detail-label">{{name}}</span>
+            <span class="detail-value"><a href="{{url}}">{{label}}</a></span>
+        </div>
+        {{/each}}
+    </div>
+</div>
+{{/if}}
+
+{{#if organizationStats}}
+<div class="info-card">
+    <h4>📊 Organization Statistics</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Total Users</span>
+            <span class="detail-value">{{organizationStats.totalUsers}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Pending Approvals</span>
+            <span class="detail-value">{{organizationStats.pendingApprovals}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">This Month's Registrations</span>
+            <span class="detail-value">{{organizationStats.monthlyRegistrations}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">License Capacity</span>
+            <span class="detail-value">{{organizationStats.usedLicenses}}/{{organizationStats.totalLicenses}}</span>
+        </div>
+    </div>
+</div>
+{{/if}}
+
+{{#if escalation}}
+<div class="warning-notice">
+    <p>⚠️ <strong>Escalation Notice:</strong> This registration will be automatically escalated to senior admin review if no action is taken within {{escalation.timeLimit}}.</p>
+    <p><strong>Escalation Date:</strong> {{escalation.escalationDate}}</p>
+</div>
+{{/if}}
+
+<div class="message">
+    <p>Thank you for maintaining the security and integrity of our {{ENV.APP_NAME}} platform. Your prompt review of new user registrations helps ensure a safe environment for all users.</p>
+</div>
+
+<div class="contact-info">
+    <p>Admin Dashboard: <a href="{{adminDashboardUrl}}">{{adminDashboardUrl}}</a></p>
+    <p>System notifications can be configured in your admin preferences.</p>
+    <p>Reference ID: <strong>{{notificationId}}</strong></p>
+    <p>Best regards,<br>The {{ENV.APP_NAME}} System</p>
+</div>
+
+{{/base}}

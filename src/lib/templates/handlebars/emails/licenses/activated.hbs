@@ -1,0 +1,116 @@
+{{#> base headerTitle="License Activated Successfully" headerSubtitle="Your {{ENV.APP_NAME}} license is now active"}}
+
+<div class="greeting">
+    Hello {{recipientName}}! 🎉
+</div>
+
+<div class="success-notice">
+    <p>✅ <strong>License Activated!</strong> Your {{ENV.APP_NAME}} license has been successfully activated and is now ready for use.</p>
+</div>
+
+<div class="message">
+    <p>Great news! Your license activation is complete and all features are now available. You can start using {{ENV.APP_NAME}} with full access to your licensed capabilities.</p>
+</div>
+
+<div class="info-card">
+    <h3>📋 License Details</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">License ID</span>
+            <span class="detail-value">{{licenseId}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">License Type</span>
+            <span class="detail-value">{{licenseType}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Activated Date</span>
+            <span class="detail-value">{{activatedDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Valid Until</span>
+            <span class="detail-value">{{expiryDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">User Limit</span>
+            <span class="detail-value">{{userLimit}} users</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Status</span>
+            <span class="detail-value">{{status}}</span>
+        </div>
+    </div>
+</div>
+
+<div class="cta-section">
+    <a href="{{dashboardUrl}}" class="cta-button">Access Dashboard</a>
+</div>
+
+<div class="info-card">
+    <h4>🚀 Active Features</h4>
+    <ul class="feature-list">
+        {{#each activeFeatures}}
+        <li>✅ {{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+
+{{#if licenseKey}}
+<div class="info-card">
+    <h4>🔑 License Information</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">License Key</span>
+            <span class="detail-value">{{licenseKey}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Installation Limit</span>
+            <span class="detail-value">{{installationLimit}} installations</span>
+        </div>
+    </div>
+</div>
+{{/if}}
+
+<div class="info-card">
+    <h4>📈 Next Steps</h4>
+    <ul class="feature-list">
+        <li>🎯 <strong>Get Started:</strong> Visit your dashboard to begin using {{ENV.APP_NAME}}</li>
+        <li>📚 <strong>Learn More:</strong> Check out our documentation and tutorials</li>
+        <li>🤝 <strong>Join Community:</strong> Connect with other users in our community forum</li>
+        <li>📞 <strong>Need Help:</strong> Contact our support team if you have questions</li>
+    </ul>
+</div>
+
+{{#if supportLevel}}
+<div class="info-card">
+    <h4>🛠️ Support Information</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Support Level</span>
+            <span class="detail-value">{{supportLevel}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Support Email</span>
+            <span class="detail-value">{{ENV.SUPPORT_EMAIL}}</span>
+        </div>
+        {{#if supportPhone}}
+        <div class="detail-item">
+            <span class="detail-label">Support Phone</span>
+            <span class="detail-value">{{supportPhone}}</span>
+        </div>
+        {{/if}}
+    </div>
+</div>
+{{/if}}
+
+<div class="message">
+    <p>Thank you for activating {{ENV.APP_NAME}}! We're here to help you succeed with our platform.</p>
+    <p>Welcome to the {{ENV.APP_NAME}} community! 🚀</p>
+</div>
+
+<div class="contact-info">
+    <p>Questions? Contact us at <a href="mailto:{{ENV.SUPPORT_EMAIL}}">{{ENV.SUPPORT_EMAIL}}</a></p>
+    <p>Best regards,<br>The {{ENV.COMPANY_NAME}} Team</p>
+</div>
+
+{{/base}}

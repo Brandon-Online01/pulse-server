@@ -1,0 +1,128 @@
+{{#> base headerTitle="Task Updated" headerSubtitle="Important changes have been made to your task"}}
+
+<div class="greeting">
+    Hello {{assigneeName}}! 📝
+</div>
+
+<div class="message">
+    <p>The task "{{taskTitle}}" has been updated with important changes. Please review the modifications below and adjust your work accordingly.</p>
+</div>
+
+<div class="success-notice">
+    <p>✅ <strong>Task Updated:</strong> Changes have been made to task "{{taskTitle}}" on {{updateDate}} by {{updatedBy}}.</p>
+</div>
+
+<div class="info-card">
+    <h3>📋 Task Information</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Task Title</span>
+            <span class="detail-value">{{taskTitle}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Project</span>
+            <span class="detail-value">{{projectName}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Updated By</span>
+            <span class="detail-value">{{updatedBy}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Update Date</span>
+            <span class="detail-value">{{updateDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Current Status</span>
+            <span class="detail-value">{{currentStatus}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Due Date</span>
+            <span class="detail-value">{{dueDate}}</span>
+        </div>
+    </div>
+</div>
+
+<div class="cta-section">
+    <a href="{{taskUrl}}" class="cta-button">View Updated Task</a>
+</div>
+
+{{#if changes}}
+<div class="info-card">
+    <h4>🔄 What Changed</h4>
+    {{#each changes}}
+    <div class="detail-item">
+        <span class="detail-label">{{field}}</span>
+        <span class="detail-value">
+            {{#if oldValue}}<s style="color: #ef4444;">{{oldValue}}</s> → {{/if}}
+            <strong style="color: #10b981;">{{newValue}}</strong>
+        </span>
+    </div>
+    {{/each}}
+</div>
+{{/if}}
+
+{{#if updateNotes}}
+<div class="info-card">
+    <h4>📝 Update Notes</h4>
+    <p>{{updateNotes}}</p>
+</div>
+{{/if}}
+
+{{#if newDescription}}
+<div class="info-card">
+    <h4>📄 Updated Description</h4>
+    <p>{{newDescription}}</p>
+</div>
+{{/if}}
+
+{{#if dueDateChanged}}
+<div class="warning-notice">
+    <p>📅 <strong>Due Date Changed:</strong> The task deadline has been {{#if dueDateExtended}}extended{{else}}moved up{{/if}} from {{oldDueDate}} to {{newDueDate}}. Please adjust your schedule accordingly.</p>
+</div>
+{{/if}}
+
+{{#if priorityChanged}}
+<div class="{{#ifEquals newPriority 'high'}}warning-notice{{else}}info-card{{/ifEquals}}">
+    <p>🎯 <strong>Priority Updated:</strong> Task priority has changed from {{oldPriority}} to {{newPriority}}. {{#ifEquals newPriority 'high'}}This task now requires immediate attention.{{/ifEquals}}</p>
+</div>
+{{/if}}
+
+{{#if assigneeChanged}}
+<div class="info-card">
+    <h4>👥 Assignment Changed</h4>
+    <p>This task has been reassigned {{#if previousAssignee}}from {{previousAssignee}} {{/if}}to {{newAssignee}}. {{#if reassignmentReason}}Reason: {{reassignmentReason}}{{/if}}</p>
+</div>
+{{/if}}
+
+<div class="info-card">
+    <h4>💡 Next Steps</h4>
+    <ul class="feature-list">
+        <li><strong>Review Changes:</strong> Carefully read through all modifications made to the task</li>
+        <li><strong>Update Your Plans:</strong> Adjust your work schedule if deadline or priority changed</li>
+        <li><strong>Ask Questions:</strong> Contact the updater if anything is unclear</li>
+        <li><strong>Confirm Understanding:</strong> Reply to acknowledge you've reviewed the changes</li>
+        <li><strong>Continue Work:</strong> Proceed with the task based on the new requirements</li>
+    </ul>
+</div>
+
+<div class="message">
+    <p><strong>Questions about these changes?</strong> Contact:</p>
+    <ul style="margin-left: 20px; color: #4b5563;">
+        <li><strong>Updated By:</strong> {{updatedBy}} ({{updatedByEmail}})</li>
+        <li><strong>Project Manager:</strong> {{projectManager}} ({{projectManagerEmail}})</li>
+        <li><strong>Task Creator:</strong> {{taskCreator}} ({{taskCreatorEmail}})</li>
+        <li><strong>Support Team:</strong> {{supportEmail}}</li>
+    </ul>
+</div>
+
+{{#if impactOnOtherTasks}}
+<div class="warning-notice">
+    <p>⚠️ <strong>Impact Alert:</strong> These changes may affect {{impactOnOtherTasks}} other task{{#if (gt impactOnOtherTasks 1)}}s{{/if}} in your project. Please review your overall project timeline.</p>
+</div>
+{{/if}}
+
+<div class="success-notice">
+    <p>🔄 <strong>Stay Flexible:</strong> Task updates are normal in dynamic projects. Thank you for adapting to these changes and maintaining project momentum!</p>
+</div>
+
+{{/base}}

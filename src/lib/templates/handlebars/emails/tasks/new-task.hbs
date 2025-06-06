@@ -1,0 +1,110 @@
+{{#> base headerTitle="New Task Assignment" headerSubtitle="A new task has been assigned to you"}}
+
+<div class="greeting">
+    Hello {{assigneeName}}! 📋
+</div>
+
+<div class="message">
+    <p>You have been assigned a new task in {{appName}}. This task is important for our project success and we're counting on your expertise to complete it effectively.</p>
+</div>
+
+<div class="success-notice">
+    <p>✅ <strong>New Task Assigned!</strong> Task "{{taskTitle}}" is now in your queue and ready for action.</p>
+</div>
+
+<div class="info-card">
+    <h3>📋 Task Details</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Task Title</span>
+            <span class="detail-value">{{taskTitle}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Project</span>
+            <span class="detail-value">{{projectName}}</span>
+    </div>
+        <div class="detail-item">
+            <span class="detail-label">Priority</span>
+            <span class="detail-value">{{priority}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Due Date</span>
+            <span class="detail-value">{{dueDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Assigned By</span>
+            <span class="detail-value">{{assignedBy}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Estimated Time</span>
+            <span class="detail-value">{{estimatedTime}}</span>
+        </div>
+    </div>
+</div>
+
+{{#if taskDescription}}
+<div class="info-card">
+    <h4>📝 Task Description</h4>
+    <p>{{taskDescription}}</p>
+    </div>
+            {{/if}}
+
+<div class="cta-section">
+    <a href="{{taskUrl}}" class="cta-button">View Task Details</a>
+</div>
+
+{{#if dependencies}}
+<div class="info-card">
+    <h4>🔗 Dependencies</h4>
+    <p>This task depends on the following items being completed first:</p>
+    <ul class="feature-list">
+        {{#each dependencies}}
+        <li>{{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+{{/if}}
+
+<div class="info-card">
+    <h4>🎯 Success Criteria</h4>
+    {{#if successCriteria}}
+    <ul class="feature-list">
+        {{#each successCriteria}}
+        <li>{{this}}</li>
+        {{/each}}
+    </ul>
+    {{else}}
+    <p>Please review the task details for specific requirements and deliverables.</p>
+    {{/if}}
+</div>
+
+{{#if attachments}}
+<div class="info-card">
+    <h4>📎 Attachments</h4>
+    <p>The following files are attached to this task:</p>
+    <ul style="margin-left: 20px; color: #4b5563;">
+        {{#each attachments}}
+        <li><a href="{{url}}" style="color: #A855F7;">{{name}}</a></li>
+        {{/each}}
+    </ul>
+</div>
+{{/if}}
+
+<div class="warning-notice">
+    <p>⏰ <strong>Due Date:</strong> This task is due on {{dueDate}}. Please plan your work accordingly to meet this deadline.</p>
+</div>
+
+<div class="message">
+    <p><strong>Need help with this task?</strong> Don't hesitate to reach out to:</p>
+    <ul style="margin-left: 20px; color: #4b5563;">
+        <li>Your project manager: {{projectManager}}</li>
+        <li>The task creator: {{assignedBy}}</li>
+        <li>Our support team: {{supportEmail}}</li>
+    </ul>
+</div>
+
+<div class="success-notice">
+    <p>🚀 <strong>You've Got This!</strong> We have confidence in your ability to complete this task successfully. Thank you for your dedication to our team's success.</p>
+</div>
+
+{{/base}} 

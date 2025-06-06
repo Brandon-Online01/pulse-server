@@ -1,0 +1,68 @@
+{{#> base headerTitle="Email Verification" headerSubtitle="Verify your email address to complete your registration"}}
+
+<div class="greeting">
+    Hello {{firstName}}! 👋
+</div>
+
+<div class="message">
+    <p>🎉 <strong>Welcome to {{appName}}!</strong> We're absolutely thrilled to have you join our community of innovative African business leaders.</p>
+    
+    <p>You're just one step away from unlocking the full power of our platform. To complete your registration and secure your account, please verify your email address by clicking the button below.</p>
+</div>
+
+<div class="cta-section">
+    <a href="{{verificationUrl}}" class="cta-button">Verify Email Address</a>
+</div>
+
+<div class="info-card">
+    <h4>🔐 Why Email Verification?</h4>
+    <ul class="feature-list">
+        <li><strong>Account Security:</strong> Protect your business data with verified access</li>
+        <li><strong>Important Updates:</strong> Receive critical notifications and platform updates</li>
+        <li><strong>Password Recovery:</strong> Secure way to reset your password if needed</li>
+        <li><strong>Team Communication:</strong> Enable seamless collaboration with your team</li>
+    </ul>
+</div>
+
+<div class="warning-notice">
+    <p>⏰ This verification link will expire in <strong>24 hours</strong> for security reasons. Please complete verification as soon as possible.</p>
+</div>
+
+<div class="message">
+    <p><strong>Having trouble with the button?</strong> Copy and paste this link into your browser:</p>
+    <p style="word-break: break-all; color: #A855F7; font-family: monospace; background: #f8fafc; padding: 10px; border-radius: 6px; margin: 10px 0;">{{verificationUrl}}</p>
+</div>
+
+<div class="info-card">
+    <h4>🚀 What's Next After Verification?</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Complete Profile</span>
+            <span class="detail-value">Add your business details and preferences</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Explore Features</span>
+            <span class="detail-value">Discover CRM, inventory, and analytics tools</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Connect Team</span>
+            <span class="detail-value">Invite team members and set up permissions</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Get Training</span>
+            <span class="detail-value">Access tutorials and onboarding resources</span>
+        </div>
+    </div>
+</div>
+
+<div class="message">
+    <p>If you didn't create this account, please ignore this email. The account will remain unverified and no further emails will be sent.</p>
+    
+    <p><strong>Questions?</strong> Our support team is here to help at <a href="mailto:{{supportEmail}}" style="color: #A855F7;">{{supportEmail}}</a></p>
+</div>
+
+<div class="success-notice">
+    <p>🌟 <strong>Pro Tip:</strong> Add {{supportEmail}} to your email contacts to ensure you never miss important updates from {{appName}}!</p>
+</div>
+
+{{/base}} 

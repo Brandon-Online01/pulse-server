@@ -1,0 +1,128 @@
+{{#> base headerTitle="Task Flag Resolved" headerSubtitle="The flagged concern has been successfully addressed"}}
+
+<div class="greeting">
+    Hello {{assigneeName}}! ✅
+</div>
+
+<div class="success-notice">
+    <p>🎉 <strong>Flag Resolved:</strong> The flag on task "{{taskTitle}}" has been successfully resolved by {{resolvedBy}} on {{resolvedDate}}.</p>
+</div>
+
+<div class="message">
+    <p>Great work! The concern that was flagged for your task has been addressed and resolved. This demonstrates your commitment to quality and continuous improvement.</p>
+</div>
+
+<div class="info-card">
+    <h3>📋 Resolution Details</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Task Title</span>
+            <span class="detail-value">{{taskTitle}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Project</span>
+            <span class="detail-value">{{projectName}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Original Flag Date</span>
+            <span class="detail-value">{{flagDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Resolved Date</span>
+            <span class="detail-value">{{resolvedDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Resolved By</span>
+            <span class="detail-value">{{resolvedBy}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Resolution Time</span>
+            <span class="detail-value">{{resolutionTime}}</span>
+        </div>
+    </div>
+</div>
+
+<div class="cta-section">
+    <a href="{{taskUrl}}" class="cta-button">View Updated Task</a>
+</div>
+
+{{#if resolutionNotes}}
+<div class="info-card">
+    <h4>📝 Resolution Summary</h4>
+    <p>{{resolutionNotes}}</p>
+</div>
+{{/if}}
+
+{{#if actionsTaken}}
+<div class="success-notice">
+    <p>✅ <strong>Actions Completed:</strong></p>
+    <ul style="margin-left: 20px; margin-top: 10px;">
+        {{#each actionsTaken}}
+        <li>{{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+{{/if}}
+
+{{#if qualityImprovement}}
+<div class="info-card">
+    <h4>📈 Quality Improvements</h4>
+    <ul class="feature-list">
+        {{#each qualityImprovement}}
+        <li>{{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+{{/if}}
+
+<div class="info-card">
+    <h4>🏆 Recognition</h4>
+    <p>Your professional response to this flag demonstrates:</p>
+    <ul class="feature-list">
+        <li><strong>Accountability:</strong> Taking ownership of concerns and addressing them promptly</li>
+        <li><strong>Quality Focus:</strong> Commitment to delivering excellent work</li>
+        <li><strong>Collaboration:</strong> Working well with team members to resolve issues</li>
+        <li><strong>Growth Mindset:</strong> Using feedback as an opportunity for improvement</li>
+        <li><strong>Professionalism:</strong> Handling concerns with maturity and focus</li>
+    </ul>
+</div>
+
+{{#if lessonsLearned}}
+<div class="info-card">
+    <h4>💡 Lessons Learned</h4>
+    <p>Key takeaways from this resolution:</p>
+    <ul class="feature-list">
+        {{#each lessonsLearned}}
+        <li>{{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+{{/if}}
+
+<div class="message">
+    <p><strong>Want to share feedback?</strong> Contact:</p>
+    <ul style="margin-left: 20px; color: #4b5563;">
+        <li><strong>Flag Resolver:</strong> {{resolvedBy}} ({{resolvedByEmail}})</li>
+        <li><strong>Original Flag Creator:</strong> {{flaggedBy}} ({{flaggedByEmail}})</li>
+        <li><strong>Project Manager:</strong> {{projectManager}} ({{projectManagerEmail}})</li>
+        <li><strong>Team Lead:</strong> {{teamLead}} ({{teamLeadEmail}})</li>
+    </ul>
+</div>
+
+{{#if preventiveMeasures}}
+<div class="info-card">
+    <h4>🛡️ Preventive Measures</h4>
+    <p>To prevent similar issues in the future:</p>
+    <ul class="feature-list">
+        {{#each preventiveMeasures}}
+        <li>{{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+{{/if}}
+
+<div class="success-notice">
+    <p>🌟 <strong>Excellent Work!</strong> Your proactive approach to resolving this flag contributes to the overall success of the project and team. Keep up the great work!</p>
+</div>
+
+{{/base}}

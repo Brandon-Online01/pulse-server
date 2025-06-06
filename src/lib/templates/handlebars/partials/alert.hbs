@@ -1,0 +1,11 @@
+<div style="background-color: {{#if alertType}}{{#eq alertType 'warning'}}#fef3c7{{/eq}}{{#eq alertType 'error'}}#fef2f2{{/eq}}{{#eq alertType 'success'}}#f0f9f4{{/eq}}{{#eq alertType 'info'}}#faf5ff{{/eq}}{{else}}#faf5ff{{/if}}; border-left: 4px solid {{#if alertType}}{{#eq alertType 'warning'}}#f59e0b{{/eq}}{{#eq alertType 'error'}}#ef4444{{/eq}}{{#eq alertType 'success'}}#10b981{{/eq}}{{#eq alertType 'info'}}#A855F7{{/eq}}{{else}}#A855F7{{/if}}; padding: 20px; margin: 24px 0; border-radius: 8px;">
+    {{#if alertTitle}}
+        <p style="margin: 0 0 8px; font-weight: 600; color: #1f2937; font-family: 'Unbounded', sans-serif;">
+            {{alertTitle}}
+        </p>
+    {{/if}}
+    
+    <div style="margin: 0; color: #4b5563; font-family: 'Unbounded', sans-serif;">
+        {{{alertContent}}}
+    </div>
+</div> 

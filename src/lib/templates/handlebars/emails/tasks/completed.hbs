@@ -1,0 +1,75 @@
+{{#> base headerTitle="Task Completed Successfully!" headerSubtitle="Great work on completing your assigned task"}}
+
+<div class="greeting">
+    Hello {{assigneeName}}! 🎉
+</div>
+
+<div class="success-notice">
+    <p>✅ <strong>Task Completed!</strong> You have successfully completed the task "{{taskTitle}}". Excellent work!</p>
+</div>
+
+<div class="message">
+    <p>Thank you for your dedication and hard work in completing this task. Your contribution is valuable to our team's success and project progress.</p>
+</div>
+
+<div class="info-card">
+    <h3>📋 Completed Task Details</h3>
+    <div class="detail-grid">
+    <div class="detail-item">
+            <span class="detail-label">Task Title</span>
+            <span class="detail-value">{{taskTitle}}</span>
+    </div>
+    <div class="detail-item">
+            <span class="detail-label">Project</span>
+            <span class="detail-value">{{projectName}}</span>
+    </div>
+    <div class="detail-item">
+            <span class="detail-label">Completed On</span>
+        <span class="detail-value">{{completionDate}}</span>
+    </div>
+    <div class="detail-item">
+            <span class="detail-label">Due Date</span>
+            <span class="detail-value">{{dueDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Time Taken</span>
+            <span class="detail-value">{{timeTaken}}</span>
+    </div>
+    <div class="detail-item">
+            <span class="detail-label">Status</span>
+            <span class="detail-value">{{completionStatus}}</span>
+        </div>
+    </div>
+</div>
+
+{{#if completionNotes}}
+<div class="info-card">
+    <h4>📝 Completion Notes</h4>
+    <p>{{completionNotes}}</p>
+</div>
+{{/if}}
+
+<div class="cta-section">
+    <a href="{{taskUrl}}" class="cta-button">View Task Details</a>
+</div>
+
+{{#if deliverables}}
+<div class="info-card">
+    <h4>📦 Deliverables Submitted</h4>
+    <ul class="feature-list">
+        {{#each deliverables}}
+        <li>{{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+{{/if}}
+
+<div class="success-notice">
+    <p>🏆 <strong>Well Done!</strong> Your commitment to quality and timely delivery is appreciated by the entire team.</p>
+</div>
+
+<div class="message">
+    <p>Keep up the excellent work! Your contributions make a real difference to our project success.</p>
+</div>
+
+{{/base}}

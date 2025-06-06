@@ -1,0 +1,172 @@
+{{#> base headerTitle="License Suspended" headerSubtitle="Your {{ENV.APP_NAME}} license has been temporarily suspended"}}
+
+<div class="greeting">
+    Hello {{recipientName}}, 🚨
+</div>
+
+<div class="error-notice">
+    <p>🚫 <strong>License Suspended!</strong> Your {{ENV.APP_NAME}} license has been temporarily suspended and access is currently restricted.</p>
+</div>
+
+<div class="message">
+    <p>We regret to inform you that your license has been suspended. This action was taken due to policy violations or outstanding account issues that require immediate attention.</p>
+</div>
+
+<div class="info-card">
+    <h3>📋 Suspension Details</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">License ID</span>
+            <span class="detail-value">{{licenseId}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">License Type</span>
+            <span class="detail-value">{{licenseType}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Suspended Date</span>
+            <span class="detail-value">{{suspendedDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Suspension Reason</span>
+            <span class="detail-value">{{suspensionReason}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Status</span>
+            <span class="detail-value">{{status}}</span>
+        </div>
+        {{#if reviewDate}}
+        <div class="detail-item">
+            <span class="detail-label">Review Date</span>
+            <span class="detail-value">{{reviewDate}}</span>
+        </div>
+        {{/if}}
+    </div>
+</div>
+
+<div class="info-card">
+    <h4>⚠️ Reason for Suspension</h4>
+    <p><strong>{{suspensionCategory}}:</strong> {{suspensionDetails}}</p>
+    {{#if violations}}
+    <ul class="feature-list">
+        {{#each violations}}
+        <li>🚫 {{this}}</li>
+        {{/each}}
+    </ul>
+    {{/if}}
+</div>
+
+<div class="info-card">
+    <h4>🚫 Current Restrictions</h4>
+    <ul class="feature-list">
+        {{#each restrictions}}
+        <li>❌ {{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+
+<div class="info-card">
+    <h4>🔄 Resolution Steps</h4>
+    <ol class="numbered-list">
+        {{#each resolutionSteps}}
+        <li>{{this}}</li>
+        {{/each}}
+    </ol>
+</div>
+
+{{#if paymentIssue}}
+<div class="info-card">
+    <h4>💳 Payment Resolution</h4>
+    <p>This suspension is related to payment issues. Please resolve the following:</p>
+    <ul class="feature-list">
+        <li>💰 <strong>Outstanding Amount:</strong> ${{paymentIssue.amount}}</li>
+        <li>📅 <strong>Due Date:</strong> {{paymentIssue.dueDate}}</li>
+        <li>💳 <strong>Payment Method:</strong> {{paymentIssue.method}}</li>
+    </ul>
+    <div class="cta-section">
+        <a href="{{paymentUrl}}" class="cta-button">Make Payment</a>
+    </div>
+</div>
+{{/if}}
+
+{{#if complianceIssue}}
+<div class="info-card">
+    <h4>📋 Compliance Requirements</h4>
+    <p>To restore your license, please complete the following compliance requirements:</p>
+    <ul class="feature-list">
+        {{#each complianceIssue.requirements}}
+        <li>📄 {{this}}</li>
+        {{/each}}
+    </ul>
+    {{#if complianceIssue.deadline}}
+    <p><strong>Deadline:</strong> {{complianceIssue.deadline}}</p>
+    {{/if}}
+</div>
+{{/if}}
+
+<div class="cta-section">
+    <a href="{{appealUrl}}" class="cta-button">Submit Appeal</a>
+    <a href="{{contactUrl}}" class="cta-button-secondary">Contact Support</a>
+</div>
+
+{{#if dataAccess}}
+<div class="info-card">
+    <h4>💾 Data Access</h4>
+    <p>{{dataAccess.message}}</p>
+    {{#if dataAccess.exportUrl}}
+    <a href="{{dataAccess.exportUrl}}" class="cta-button-secondary">Export Data</a>
+    {{/if}}
+</div>
+{{/if}}
+
+<div class="info-card">
+    <h4>⏰ Timeline & Next Steps</h4>
+    <div class="detail-grid">
+        {{#if gracePeriod}}
+        <div class="detail-item">
+            <span class="detail-label">Grace Period</span>
+            <span class="detail-value">{{gracePeriod}} days remaining</span>
+        </div>
+        {{/if}}
+        {{#if appealDeadline}}
+        <div class="detail-item">
+            <span class="detail-label">Appeal Deadline</span>
+            <span class="detail-value">{{appealDeadline}}</span>
+        </div>
+        {{/if}}
+        {{#if reinstatementDate}}
+        <div class="detail-item">
+            <span class="detail-label">Possible Reinstatement</span>
+            <span class="detail-value">{{reinstatementDate}}</span>
+        </div>
+        {{/if}}
+    </div>
+</div>
+
+{{#if alternativeOptions}}
+<div class="info-card">
+    <h4>🔄 Alternative Options</h4>
+    <ul class="feature-list">
+        {{#each alternativeOptions}}
+        <li>💡 {{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+{{/if}}
+
+<div class="warning-notice">
+    <p>⚠️ <strong>Important:</strong> Failure to address the suspension within the specified timeframe may result in permanent license termination and data loss.</p>
+</div>
+
+<div class="message">
+    <p>We understand this situation is concerning, and we're committed to helping you resolve it quickly. Our support team is available to guide you through the resolution process.</p>
+</div>
+
+<div class="contact-info">
+    <p><strong>Urgent Support:</strong> <a href="mailto:{{ENV.SUPPORT_EMAIL}}">{{ENV.SUPPORT_EMAIL}}</a> | Phone: {{ENV.SUPPORT_PHONE}}</p>
+    <p><strong>Appeals Department:</strong> <a href="mailto:{{ENV.APPEALS_EMAIL}}">{{ENV.APPEALS_EMAIL}}</a></p>
+    <p>Reference Case ID: <strong>{{caseId}}</strong></p>
+    <p>Best regards,<br>The {{ENV.COMPANY_NAME}} Compliance Team</p>
+</div>
+
+{{/base}}

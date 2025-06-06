@@ -1,0 +1,122 @@
+{{#> base headerTitle="License Limit Reached" headerSubtitle="Your {{ENV.APP_NAME}} usage has reached the license limit"}}
+
+<div class="greeting">
+    Hello {{recipientName}}! 📊
+</div>
+
+<div class="warning-notice">
+    <p>⚠️ <strong>License Limit Reached!</strong> Your {{ENV.APP_NAME}} license has reached its usage limit and may affect functionality.</p>
+</div>
+
+<div class="message">
+    <p>Your current license has reached its maximum capacity. To continue using all features without interruption, you may need to upgrade your license or manage your current usage.</p>
+</div>
+
+<div class="info-card">
+    <h3>📋 Current License Status</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">License ID</span>
+            <span class="detail-value">{{licenseId}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">License Type</span>
+            <span class="detail-value">{{licenseType}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Limit Type</span>
+            <span class="detail-value">{{limitType}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Current Usage</span>
+            <span class="detail-value">{{currentUsage}} / {{maximumLimit}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Usage Percentage</span>
+            <span class="detail-value">{{usagePercentage}}%</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Status</span>
+            <span class="detail-value">{{status}}</span>
+        </div>
+    </div>
+</div>
+
+<div class="info-card">
+    <h4>⚡ Impact & Limitations</h4>
+    <ul class="feature-list">
+        {{#each limitations}}
+        <li>🚫 {{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+
+<div class="info-card">
+    <h4>💡 Recommended Actions</h4>
+    <ul class="feature-list">
+        <li>🔄 <strong>Upgrade License:</strong> Increase your limits with a higher-tier license</li>
+        <li>🗑️ <strong>Clean Up:</strong> Remove unused {{limitType}} to free up capacity</li>
+        <li>📊 <strong>Optimize Usage:</strong> Review and optimize your current resource usage</li>
+        <li>📞 <strong>Contact Sales:</strong> Discuss enterprise options for unlimited usage</li>
+    </ul>
+</div>
+
+<div class="cta-section">
+    <a href="{{upgradeUrl}}" class="cta-button">Upgrade License</a>
+    <a href="{{manageUrl}}" class="cta-button-secondary">Manage Usage</a>
+</div>
+
+{{#if availableUpgrades}}
+<div class="info-card">
+    <h4>🚀 Available Upgrades</h4>
+    {{#each availableUpgrades}}
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">{{name}}</span>
+            <span class="detail-value">{{limit}} {{../limitType}} - ${{price}}/{{billing}}</span>
+        </div>
+    </div>
+    {{/each}}
+</div>
+{{/if}}
+
+<div class="info-card">
+    <h4>📈 Usage History</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">This Month</span>
+            <span class="detail-value">{{monthlyUsage}} {{limitType}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Last Month</span>
+            <span class="detail-value">{{lastMonthUsage}} {{limitType}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Average Monthly</span>
+            <span class="detail-value">{{averageUsage}} {{limitType}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Peak Usage</span>
+            <span class="detail-value">{{peakUsage}} {{limitType}}</span>
+        </div>
+    </div>
+</div>
+
+{{#if gracePeriod}}
+<div class="info-card">
+    <h4>⏰ Grace Period</h4>
+    <p>You have <strong>{{gracePeriod}} days</strong> of grace period remaining. During this time, all features will continue to work normally. Please upgrade before {{gracePeriodEnd}} to avoid service interruption.</p>
+</div>
+{{/if}}
+
+<div class="message">
+    <p>We're here to help you find the right solution for your needs. Our team can work with you to ensure you have the appropriate license for your usage requirements.</p>
+</div>
+
+<div class="contact-info">
+    <p>Need assistance? Contact our sales team at <a href="mailto:{{ENV.SALES_EMAIL}}">{{ENV.SALES_EMAIL}}</a></p>
+    <p>Support questions? Reach us at <a href="mailto:{{ENV.SUPPORT_EMAIL}}">{{ENV.SUPPORT_EMAIL}}</a></p>
+    <p>Best regards,<br>The {{ENV.COMPANY_NAME}} Team</p>
+</div>
+
+{{/base}}

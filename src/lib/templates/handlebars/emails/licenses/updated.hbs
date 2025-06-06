@@ -1,0 +1,268 @@
+{{#> base headerTitle="License Updated" headerSubtitle="Your {{ENV.APP_NAME}} license has been updated"}}
+
+<div class="greeting">
+    Hello {{recipientName}}! 📝
+</div>
+
+<div class="success-notice">
+    <p>✅ <strong>License Updated!</strong> Your {{ENV.APP_NAME}} license has been successfully updated with new settings and features.</p>
+</div>
+
+<div class="message">
+    <p>We've made updates to your license based on your request or as part of our service improvements. All changes are now active and ready for use.</p>
+</div>
+
+<div class="info-card">
+    <h3>📋 License Information</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">License ID</span>
+            <span class="detail-value">{{licenseId}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">License Type</span>
+            <span class="detail-value">{{licenseType}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Update Date</span>
+            <span class="detail-value">{{updateDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Update Reason</span>
+            <span class="detail-value">{{updateReason}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Status</span>
+            <span class="detail-value">{{status}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Version</span>
+            <span class="detail-value">{{licenseVersion}}</span>
+        </div>
+    </div>
+</div>
+
+{{#if changesApplied}}
+<div class="info-card">
+    <h4>🔄 Changes Applied</h4>
+    {{#each changesApplied}}
+    <div class="change-item">
+        <h5>{{category}}</h5>
+        <div class="detail-grid">
+            {{#if before}}
+            <div class="detail-item">
+                <span class="detail-label">Previous</span>
+                <span class="detail-value">{{before}}</span>
+            </div>
+            {{/if}}
+            <div class="detail-item">
+                <span class="detail-label">Current</span>
+                <span class="detail-value">{{after}}</span>
+            </div>
+        </div>
+        {{#if description}}
+        <p>{{description}}</p>
+        {{/if}}
+    </div>
+    {{/each}}
+</div>
+{{/if}}
+
+{{#if featuresAdded}}
+<div class="info-card">
+    <h4>🌟 New Features Added</h4>
+    <ul class="feature-list">
+        {{#each featuresAdded}}
+        <li>✨ {{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+{{/if}}
+
+{{#if featuresRemoved}}
+<div class="info-card">
+    <h4>🚫 Features Removed</h4>
+    <ul class="feature-list">
+        {{#each featuresRemoved}}
+        <li>❌ {{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+{{/if}}
+
+{{#if limitChanges}}
+<div class="info-card">
+    <h4>📊 Usage Limits Updated</h4>
+    <div class="detail-grid">
+        {{#each limitChanges}}
+        <div class="detail-item">
+            <span class="detail-label">{{name}}</span>
+            <span class="detail-value">{{previousLimit}} → {{newLimit}}</span>
+        </div>
+        {{/each}}
+    </div>
+</div>
+{{/if}}
+
+<div class="cta-section">
+    <a href="{{dashboardUrl}}" class="cta-button">View Dashboard</a>
+    <a href="{{changesDetailUrl}}" class="cta-button-secondary">View Full Changes</a>
+</div>
+
+{{#if pricingChanges}}
+<div class="info-card">
+    <h4>💰 Pricing Updates</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Previous Price</span>
+            <span class="detail-value">${{pricingChanges.previousPrice}}/{{pricingChanges.billing}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">New Price</span>
+            <span class="detail-value">${{pricingChanges.newPrice}}/{{pricingChanges.billing}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Effective Date</span>
+            <span class="detail-value">{{pricingChanges.effectiveDate}}</span>
+        </div>
+        {{#if pricingChanges.nextBillDate}}
+        <div class="detail-item">
+            <span class="detail-label">Next Bill Date</span>
+            <span class="detail-value">{{pricingChanges.nextBillDate}}</span>
+        </div>
+        {{/if}}
+    </div>
+    {{#if pricingChanges.prorated}}
+    <p>📊 <strong>Pro-rated Billing:</strong> {{pricingChanges.proratedMessage}}</p>
+    {{/if}}
+</div>
+{{/if}}
+
+{{#if supportChanges}}
+<div class="info-card">
+    <h4>🛠️ Support Level Changes</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Previous Support</span>
+            <span class="detail-value">{{supportChanges.previous}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">New Support Level</span>
+            <span class="detail-value">{{supportChanges.current}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Response Time</span>
+            <span class="detail-value">{{supportChanges.responseTime}}</span>
+        </div>
+    </div>
+</div>
+{{/if}}
+
+{{#if expiryChanges}}
+<div class="info-card">
+    <h4>📅 License Duration Changes</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Previous Expiry</span>
+            <span class="detail-value">{{expiryChanges.previousDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">New Expiry Date</span>
+            <span class="detail-value">{{expiryChanges.newDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Extension Period</span>
+            <span class="detail-value">{{expiryChanges.extension}}</span>
+        </div>
+    </div>
+</div>
+{{/if}}
+
+{{#if migrationRequired}}
+<div class="info-card">
+    <h4>🔄 Migration Required</h4>
+    <p>{{migrationRequired.message}}</p>
+    <ul class="feature-list">
+        {{#each migrationRequired.steps}}
+        <li>📋 {{this}}</li>
+        {{/each}}
+    </ul>
+    {{#if migrationRequired.deadline}}
+    <p><strong>Migration Deadline:</strong> {{migrationRequired.deadline}}</p>
+    {{/if}}
+    {{#if migrationRequired.supportUrl}}
+    <a href="{{migrationRequired.supportUrl}}" class="cta-button-secondary">Migration Guide</a>
+    {{/if}}
+</div>
+{{/if}}
+
+{{#if actionRequired}}
+<div class="warning-notice">
+    <p>⚠️ <strong>Action Required:</strong> {{actionRequired.message}}</p>
+    {{#if actionRequired.deadline}}
+    <p><strong>Deadline:</strong> {{actionRequired.deadline}}</p>
+    {{/if}}
+    {{#if actionRequired.url}}
+    <div class="cta-section">
+        <a href="{{actionRequired.url}}" class="cta-button">Take Action</a>
+    </div>
+    {{/if}}
+</div>
+{{/if}}
+
+<div class="info-card">
+    <h4>📋 Update Summary</h4>
+    <ul class="feature-list">
+        <li>📄 <strong>Update Type:</strong> {{updateType}}</li>
+        <li>🏢 <strong>Requested By:</strong> {{requestedBy}}</li>
+        <li>✅ <strong>Approval Status:</strong> {{approvalStatus}}</li>
+        <li>📅 <strong>Effective Date:</strong> {{effectiveDate}}</li>
+        {{#if rollbackDate}}
+        <li>🔙 <strong>Rollback Available Until:</strong> {{rollbackDate}}</li>
+        {{/if}}
+    </ul>
+</div>
+
+{{#if newDocumentation}}
+<div class="info-card">
+    <h4>📚 Updated Documentation</h4>
+    <p>Please review the updated documentation for the new features and changes:</p>
+    <ul class="feature-list">
+        {{#each newDocumentation}}
+        <li>📖 <a href="{{url}}">{{title}}</a></li>
+        {{/each}}
+    </ul>
+</div>
+{{/if}}
+
+<div class="info-card">
+    <h4>📞 Support Information</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Support Email</span>
+            <span class="detail-value">{{ENV.SUPPORT_EMAIL}}</span>
+        </div>
+        {{#if supportPhone}}
+        <div class="detail-item">
+            <span class="detail-label">Support Phone</span>
+            <span class="detail-value">{{supportPhone}}</span>
+        </div>
+        {{/if}}
+        <div class="detail-item">
+            <span class="detail-label">Update Reference</span>
+            <span class="detail-value">{{updateReference}}</span>
+        </div>
+    </div>
+</div>
+
+<div class="message">
+    <p>Thank you for using {{ENV.APP_NAME}}! These updates are designed to improve your experience and provide additional value. If you have any questions about the changes, please don't hesitate to contact our support team.</p>
+</div>
+
+<div class="contact-info">
+    <p>Questions about this update? Contact us at <a href="mailto:{{ENV.SUPPORT_EMAIL}}">{{ENV.SUPPORT_EMAIL}}</a></p>
+    <p>Reference Update ID: <strong>{{updateReference}}</strong></p>
+    <p>Best regards,<br>The {{ENV.COMPANY_NAME}} Team</p>
+</div>
+
+{{/base}}

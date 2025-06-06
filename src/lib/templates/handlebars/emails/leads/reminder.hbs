@@ -1,0 +1,72 @@
+{{#> base headerTitle="Lead Follow-up Reminder" headerSubtitle="Don't let this opportunity slip away"}}
+
+<div class="greeting">
+    Hello {{assigneeName}}! ⏰
+  </div>
+
+<div class="warning-notice">
+    <p>📅 <strong>Follow-up Reminder:</strong> It's time to follow up with lead {{leadName}}. Consistent follow-up is key to conversion success!</p>
+</div>
+
+<div class="message">
+    <p>This is a friendly reminder to follow up with your assigned lead. Research shows that most sales are made after the 5th follow-up, so persistence pays off!</p>
+</div>
+
+<div class="info-card">
+    <h3>👤 Lead Summary</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Lead Name</span>
+            <span class="detail-value">{{leadName}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Company</span>
+            <span class="detail-value">{{companyName}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Last Contact</span>
+            <span class="detail-value">{{lastContactDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Current Stage</span>
+            <span class="detail-value">{{currentStage}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Priority</span>
+            <span class="detail-value">{{priority}}</span>
+      </div>
+        <div class="detail-item">
+            <span class="detail-label">Days Since Contact</span>
+            <span class="detail-value">{{daysSinceContact}}</span>
+      </div>
+    </div>
+</div>
+
+<div class="cta-section">
+    <a href="{{leadUrl}}" class="cta-button">Follow Up Now</a>
+</div>
+
+<div class="info-card">
+    <h4>💡 Follow-up Suggestions</h4>
+    <ul class="feature-list">
+        <li><strong>Value-Added Content:</strong> Share relevant industry insights or case studies</li>
+        <li><strong>Check-in Call:</strong> Schedule a brief call to address any questions</li>
+        <li><strong>Product Demo:</strong> Offer a personalized demonstration</li>
+        <li><strong>Social Proof:</strong> Share testimonials from similar businesses</li>
+        <li><strong>Limited Offer:</strong> Present time-sensitive incentives if appropriate</li>
+    </ul>
+</div>
+
+{{#if lastInteraction}}
+<div class="info-card">
+    <h4>📝 Last Interaction</h4>
+    <p><strong>{{lastInteraction.type}}:</strong> {{lastInteraction.notes}}</p>
+    <p><em>Date: {{lastInteraction.date}}</em></p>
+    </div>
+    {{/if}}
+
+<div class="success-notice">
+    <p>🎯 <strong>Success Tip:</strong> The fortune is in the follow-up! Most prospects need 5-7 touchpoints before making a decision.</p>
+</div>
+
+{{/base}} 

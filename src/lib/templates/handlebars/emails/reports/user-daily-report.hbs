@@ -1,0 +1,202 @@
+{{#> base headerTitle="Your Daily Activity Report" headerSubtitle="Personal performance summary for {{reportDate}}"}}
+
+<div class="greeting">
+    Hello {{userName}}! 📊
+</div>
+
+<div class="message">
+    <p>Here's your personal activity summary for {{reportDate}}. This report highlights your accomplishments, progress, and areas where you can continue to excel.</p>
+</div>
+
+<div class="success-notice">
+    <p>📈 <strong>Daily Summary:</strong> You completed {{completedTasks}} task{{#if (gt completedTasks 1)}}s{{/if}} and contributed to {{projectsWorkedOn}} project{{#if (gt projectsWorkedOn 1)}}s{{/if}} today!</p>
+</div>
+
+<div class="info-card">
+    <h3>✅ Today's Accomplishments</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Tasks Completed</span>
+            <span class="detail-value">{{completedTasks}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Hours Logged</span>
+            <span class="detail-value">{{hoursLogged}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Projects Active</span>
+            <span class="detail-value">{{projectsWorkedOn}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Meetings Attended</span>
+            <span class="detail-value">{{meetingsAttended}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Messages Sent</span>
+            <span class="detail-value">{{messagesSent}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Productivity Score</span>
+            <span class="detail-value">{{productivityScore}}/10</span>
+        </div>
+    </div>
+</div>
+
+{{#if completedTasksList}}
+<div class="info-card">
+    <h4>✅ Tasks Completed Today</h4>
+    <ul class="feature-list">
+        {{#each completedTasksList}}
+        <li><strong>{{title}}</strong> ({{project}}) - {{completionTime}}</li>
+        {{/each}}
+    </ul>
+</div>
+{{/if}}
+
+<div class="cta-section">
+    <a href="{{dashboardUrl}}" class="cta-button">View Full Dashboard</a>
+</div>
+
+<div class="info-card">
+    <h4>⏰ Time Distribution</h4>
+    <div class="detail-grid">
+        {{#each timeBreakdown}}
+        <div class="detail-item">
+            <span class="detail-label">{{category}}</span>
+            <span class="detail-value">{{hours}}h {{minutes}}m</span>
+        </div>
+        {{/each}}
+    </div>
+</div>
+
+{{#if achievements}}
+<div class="success-notice">
+    <p>🏆 <strong>Today's Achievements:</strong></p>
+    <ul style="margin-left: 20px; margin-top: 10px;">
+        {{#each achievements}}
+        <li>{{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+{{/if}}
+
+{{#if pendingTasks}}
+<div class="warning-notice">
+    <p>📋 <strong>Tomorrow's Priorities:</strong> You have {{pendingTasks}} pending task{{#if (gt pendingTasks 1)}}s{{/if}} for tomorrow.</p>
+</div>
+{{/if}}
+
+<div class="info-card">
+    <h4>📊 Performance Metrics</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">On-time Completion</span>
+            <span class="detail-value">{{onTimePercentage}}%</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Quality Rating</span>
+            <span class="detail-value">{{qualityRating}}/5 ⭐</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Team Collaboration</span>
+            <span class="detail-value">{{collaborationScore}}/10</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Goal Progress</span>
+            <span class="detail-value">{{goalProgress}}%</span>
+        </div>
+    </div>
+</div>
+
+{{#if weeklyComparison}}
+<div class="info-card">
+    <h4>📈 Weekly Comparison</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">vs. Yesterday</span>
+            <span class="detail-value">{{weeklyComparison.yesterday}}% {{#if (gt weeklyComparison.yesterday 0)}}📈{{else}}📉{{/if}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Weekly Average</span>
+            <span class="detail-value">{{weeklyComparison.weeklyAvg}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Best Day This Week</span>
+            <span class="detail-value">{{weeklyComparison.bestDay}}</span>
+        </div>
+    </div>
+</div>
+{{/if}}
+
+{{#if upcomingDeadlines}}
+<div class="warning-notice">
+    <p>⏰ <strong>Upcoming Deadlines:</strong></p>
+    <ul style="margin-left: 20px; margin-top: 10px;">
+        {{#each upcomingDeadlines}}
+        <li><strong>{{title}}</strong> - Due {{dueDate}} ({{daysRemaining}} day{{#if (gt daysRemaining 1)}}s{{/if}} remaining)</li>
+        {{/each}}
+    </ul>
+</div>
+{{/if}}
+
+<div class="info-card">
+    <h4>🎯 Tomorrow's Focus</h4>
+    <ul class="feature-list">
+        {{#each tomorrowsFocus}}
+        <li>{{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+
+{{#if learningProgress}}
+<div class="info-card">
+    <h4>📚 Learning & Development</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Skills Used Today</span>
+            <span class="detail-value">{{skillsUsed}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">New Skills Learned</span>
+            <span class="detail-value">{{newSkills}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Training Progress</span>
+            <span class="detail-value">{{trainingProgress}}%</span>
+        </div>
+    </div>
+</div>
+{{/if}}
+
+<div class="message">
+    <p><strong>Want to improve your productivity?</strong> Check out these resources:</p>
+    <ul style="margin-left: 20px; color: #4b5563;">
+        <li>Time Management Tools: {{timeManagementUrl}}</li>
+        <li>Productivity Tips: {{productivityTipsUrl}}</li>
+        <li>Personal Development: {{developmentUrl}}</li>
+        <li>Schedule 1-on-1: {{oneOnOneUrl}}</li>
+    </ul>
+</div>
+
+{{#if motivationalQuote}}
+<div class="success-notice">
+    <p>💪 <strong>Daily Inspiration:</strong> "{{motivationalQuote}}"</p>
+</div>
+{{/if}}
+
+<div class="info-card">
+    <h4>📱 Quick Actions</h4>
+    <ul class="feature-list">
+        <li><strong>Plan Tomorrow:</strong> Review and prioritize your upcoming tasks</li>
+        <li><strong>Update Status:</strong> Ensure all completed work is properly logged</li>
+        <li><strong>Celebrate Wins:</strong> Acknowledge your accomplishments today</li>
+        <li><strong>Reflect & Improve:</strong> Consider what went well and what could be better</li>
+        <li><strong>Prepare for Tomorrow:</strong> Set yourself up for success</li>
+    </ul>
+</div>
+
+<div class="success-notice">
+    <p>🌟 <strong>Great Work Today!</strong> Your consistent effort and dedication contribute to our team's success. Keep up the excellent momentum!</p>
+</div>
+
+{{/base}}

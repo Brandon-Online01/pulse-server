@@ -1,0 +1,280 @@
+{{#> base headerTitle="Warning Update" headerSubtitle="Important update regarding your {{ENV.APP_NAME}} {{warningType}}"}}
+
+<div class="greeting">
+    Hello {{recipientName}}, ⚠️
+</div>
+
+<div class="warning-notice">
+    <p>⚠️ <strong>Warning Updated!</strong> There has been an important update to your {{warningType}} warning that requires your attention.</p>
+</div>
+
+<div class="message">
+    <p>This email contains updated information about a {{warningType}} warning previously issued for your {{ENV.APP_NAME}} account. Please review the changes carefully and take any necessary actions.</p>
+</div>
+
+<div class="info-card">
+    <h3>📋 Warning Details</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Warning Type</span>
+            <span class="detail-value">{{warningType}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Warning ID</span>
+            <span class="detail-value">{{warningId}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Original Date</span>
+            <span class="detail-value">{{originalDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Update Date</span>
+            <span class="detail-value">{{updateDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Current Status</span>
+            <span class="detail-value">{{currentStatus}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Severity Level</span>
+            <span class="detail-value">{{severityLevel}}</span>
+        </div>
+    </div>
+</div>
+
+{{#if changesApplied}}
+<div class="info-card">
+    <h4>🔄 Changes Made</h4>
+    {{#each changesApplied}}
+    <div class="change-item">
+        <h5>{{category}}</h5>
+        <div class="detail-grid">
+            {{#if previous}}
+            <div class="detail-item">
+                <span class="detail-label">Previous</span>
+                <span class="detail-value">{{previous}}</span>
+            </div>
+            {{/if}}
+            <div class="detail-item">
+                <span class="detail-label">Updated</span>
+                <span class="detail-value">{{current}}</span>
+            </div>
+        </div>
+        {{#if reason}}
+        <p><strong>Reason:</strong> {{reason}}</p>
+        {{/if}}
+    </div>
+    {{/each}}
+</div>
+{{/if}}
+
+{{#if statusChange}}
+<div class="info-card">
+    <h4>📊 Status Change</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Previous Status</span>
+            <span class="detail-value">{{statusChange.from}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Current Status</span>
+            <span class="detail-value">{{statusChange.to}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Change Reason</span>
+            <span class="detail-value">{{statusChange.reason}}</span>
+        </div>
+    </div>
+    {{#if statusChange.implications}}
+    <p><strong>Implications:</strong> {{statusChange.implications}}</p>
+    {{/if}}
+</div>
+{{/if}}
+
+{{#if newDeadlines}}
+<div class="info-card">
+    <h4>📅 Updated Deadlines</h4>
+    {{#each newDeadlines}}
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">{{action}}</span>
+            <span class="detail-value">{{deadline}}</span>
+        </div>
+    </div>
+    {{/each}}
+</div>
+{{/if}}
+
+{{#if resolvedIssues}}
+<div class="info-card">
+    <h4>✅ Issues Resolved</h4>
+    <ul class="feature-list">
+        {{#each resolvedIssues}}
+        <li>✅ {{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+{{/if}}
+
+{{#if newRestrictions}}
+<div class="info-card">
+    <h4>🚫 New Restrictions</h4>
+    <ul class="feature-list">
+        {{#each newRestrictions}}
+        <li>❌ {{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+{{/if}}
+
+{{#if liftedRestrictions}}
+<div class="info-card">
+    <h4>🎉 Restrictions Lifted</h4>
+    <ul class="feature-list">
+        {{#each liftedRestrictions}}
+        <li>✅ {{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+{{/if}}
+
+{{#if actionRequired}}
+<div class="warning-notice">
+    <p>⚡ <strong>Action Required:</strong> {{actionRequired.message}}</p>
+    {{#if actionRequired.deadline}}
+    <p><strong>Deadline:</strong> {{actionRequired.deadline}}</p>
+    {{/if}}
+    {{#if actionRequired.consequences}}
+    <p><strong>Consequences if not completed:</strong> {{actionRequired.consequences}}</p>
+    {{/if}}
+</div>
+{{/if}}
+
+<div class="cta-section">
+    {{#if actionUrl}}
+    <a href="{{actionUrl}}" class="cta-button">Take Required Action</a>
+    {{/if}}
+    {{#if reviewUrl}}
+    <a href="{{reviewUrl}}" class="cta-button-secondary">Review Full Details</a>
+    {{/if}}
+</div>
+
+{{#if recommendedActions}}
+<div class="info-card">
+    <h4>💡 Recommended Actions</h4>
+    <ol class="numbered-list">
+        {{#each recommendedActions}}
+        <li>{{this}}</li>
+        {{/each}}
+    </ol>
+</div>
+{{/if}}
+
+{{#if escalationInfo}}
+<div class="info-card">
+    <h4>🚨 Escalation Information</h4>
+    <p>{{escalationInfo.message}}</p>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Next Review</span>
+            <span class="detail-value">{{escalationInfo.nextReview}}</span>
+        </div>
+        {{#if escalationInfo.escalationLevel}}
+        <div class="detail-item">
+            <span class="detail-label">Escalation Level</span>
+            <span class="detail-value">{{escalationInfo.escalationLevel}}</span>
+        </div>
+        {{/if}}
+    </div>
+</div>
+{{/if}}
+
+{{#if updateReason}}
+<div class="info-card">
+    <h4>📝 Reason for Update</h4>
+    <p>{{updateReason}}</p>
+    {{#if updateSource}}
+    <p><strong>Update Source:</strong> {{updateSource}}</p>
+    {{/if}}
+</div>
+{{/if}}
+
+{{#if relatedWarnings}}
+<div class="info-card">
+    <h4>🔗 Related Warnings</h4>
+    {{#each relatedWarnings}}
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">{{type}}</span>
+            <span class="detail-value">{{status}} - {{date}}</span>
+        </div>
+    </div>
+    {{/each}}
+</div>
+{{/if}}
+
+{{#if complianceInfo}}
+<div class="info-card">
+    <h4>📋 Compliance Status</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Compliance Score</span>
+            <span class="detail-value">{{complianceInfo.score}}%</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Required Score</span>
+            <span class="detail-value">{{complianceInfo.required}}%</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Last Assessment</span>
+            <span class="detail-value">{{complianceInfo.lastAssessment}}</span>
+        </div>
+    </div>
+</div>
+{{/if}}
+
+<div class="info-card">
+    <h4>📞 Support Information</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Support Email</span>
+            <span class="detail-value">{{ENV.SUPPORT_EMAIL}}</span>
+        </div>
+        {{#if urgentSupport}}
+        <div class="detail-item">
+            <span class="detail-label">Urgent Support</span>
+            <span class="detail-value">{{urgentSupport}}</span>
+        </div>
+        {{/if}}
+        <div class="detail-item">
+            <span class="detail-label">Warning Reference</span>
+            <span class="detail-value">{{warningId}}</span>
+        </div>
+    </div>
+</div>
+
+{{#if appealProcess}}
+<div class="info-card">
+    <h4>⚖️ Appeal Process</h4>
+    <p>{{appealProcess.message}}</p>
+    {{#if appealProcess.deadline}}
+    <p><strong>Appeal Deadline:</strong> {{appealProcess.deadline}}</p>
+    {{/if}}
+    {{#if appealProcess.url}}
+    <a href="{{appealProcess.url}}" class="cta-button-secondary">Submit Appeal</a>
+    {{/if}}
+</div>
+{{/if}}
+
+<div class="message">
+    <p>We appreciate your attention to this matter. Our goal is to maintain a safe and compliant environment for all users while providing clear guidance for resolution.</p>
+    <p>If you have any questions about this update, please don't hesitate to contact our support team.</p>
+</div>
+
+<div class="contact-info">
+    <p>Questions? Contact us at <a href="mailto:{{ENV.SUPPORT_EMAIL}}">{{ENV.SUPPORT_EMAIL}}</a></p>
+    <p>Reference Warning ID: <strong>{{warningId}}</strong></p>
+    <p>Best regards,<br>The {{ENV.COMPANY_NAME}} Compliance Team</p>
+</div>
+
+{{/base}}

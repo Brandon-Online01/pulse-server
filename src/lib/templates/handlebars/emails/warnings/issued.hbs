@@ -1,0 +1,48 @@
+{{> layouts/base title="Warning Issued ⚠️" subtitle=(concat "Warning ID: " warningId)}}
+
+{{#*inline "content"}}
+<div class="card">
+  <h2 class="heading">Hi {{userName}},</h2>
+  <p class="text">
+    A {{toLowerCase severity}} warning has been issued to your account.
+  </p>
+
+  {{> partials/alert}}
+    <div style="display: grid; gap: 12px;">
+      <div style="display: flex; justify-content: space-between;">
+        <span>Warning ID</span>
+        <span style="font-weight: 600">{{warningId}}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between;">
+        <span>Severity</span>
+        <span style="font-weight: 600; color: {{getSeverityColor severity}}">{{severity}}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between;">
+        <span>Issued Date</span>
+        <span style="font-weight: 600">{{issuedAt}}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between;">
+        <span>Expires</span>
+        <span style="font-weight: 600">{{expiresAt}}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between;">
+        <span>Issued By</span>
+        <span style="font-weight: 600">{{issuedBy.name}}</span>
+      </div>
+    </div>
+  {{> /partials/alert}}
+
+  <div class="highlight">
+    <h3 class="subheading">Reason:</h3>
+    <p class="text">{{reason}}</p>
+  </div>
+
+  <div style="text-align: center; margin: 24px 0;">
+    {{> partials/button text="View Warning Details" url=dashboardLink}}
+  </div>
+</div>
+{{/inline}}
+
+{{#*inline "footer"}}
+<p style="margin: 0;">Please take appropriate action to address this warning.</p>
+{{/inline}} 

@@ -1,0 +1,79 @@
+{{#> base headerTitle="Lead Converted Successfully!" headerSubtitle="Congratulations on closing this deal"}}
+
+<div class="greeting">
+    Hello {{creatorName}}! 🎉
+</div>
+
+<div class="success-notice">
+    <p>🏆 <strong>Fantastic News!</strong> The lead {{leadName}} that you created has been successfully converted to a client. Excellent work!</p>
+</div>
+
+<div class="message">
+    <p>Your lead generation efforts have paid off! This conversion represents not just a new client, but validation of your ability to identify and attract quality prospects.</p>
+</div>
+
+<div class="info-card">
+    <h3>📊 Conversion Details</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Client Name</span>
+            <span class="detail-value">{{clientName}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Company</span>
+            <span class="detail-value">{{companyName}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Conversion Date</span>
+            <span class="detail-value">{{conversionDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Deal Value</span>
+            <span class="detail-value">{{currency}} {{dealValue}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Lead Source</span>
+            <span class="detail-value">{{leadSource}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Time to Convert</span>
+            <span class="detail-value">{{timeToConvert}} days</span>
+        </div>
+    </div>
+</div>
+
+<div class="info-card">
+    <h4>🎯 Your Impact</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Lead Created</span>
+            <span class="detail-value">{{leadCreationDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Assigned To</span>
+            <span class="detail-value">{{assignedTo}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Your Commission</span>
+            <span class="detail-value">{{currency}} {{commission}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Lead Quality Score</span>
+            <span class="detail-value">{{qualityScore}}/10</span>
+        </div>
+    </div>
+</div>
+
+<div class="cta-section">
+    <a href="{{clientUrl}}" class="cta-button">View New Client</a>
+</div>
+
+<div class="success-notice">
+    <p>💰 <strong>Commission Earned:</strong> You've earned {{currency}} {{commission}} in commission for this successful conversion!</p>
+</div>
+
+<div class="message">
+    <p>Keep up the excellent work! Your ability to identify and generate quality leads is a valuable asset to our team.</p>
+</div>
+
+{{/base}}

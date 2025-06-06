@@ -1,0 +1,201 @@
+{{#> base headerTitle="Expiration Warning" headerSubtitle="Important: Your {{ENV.APP_NAME}} {{itemType}} has expired"}}
+
+<div class="greeting">
+    Hello {{recipientName}}, ⚠️
+</div>
+
+<div class="error-notice">
+    <p>🚨 <strong>Expired Notice!</strong> Your {{itemType}} has expired and requires immediate attention to maintain access.</p>
+</div>
+
+<div class="message">
+    <p>This is an important notice that your {{itemType}} expired on {{expiredDate}}. To prevent service interruption and maintain full access to {{ENV.APP_NAME}}, please take action immediately.</p>
+</div>
+
+<div class="info-card">
+    <h3>📋 Expiration Details</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Item Type</span>
+            <span class="detail-value">{{itemType}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Item ID</span>
+            <span class="detail-value">{{itemId}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Expired Date</span>
+            <span class="detail-value">{{expiredDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Days Overdue</span>
+            <span class="detail-value">{{daysOverdue}} days</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Current Status</span>
+            <span class="detail-value">{{currentStatus}}</span>
+        </div>
+        {{#if originalDuration}}
+        <div class="detail-item">
+            <span class="detail-label">Original Duration</span>
+            <span class="detail-value">{{originalDuration}}</span>
+        </div>
+        {{/if}}
+    </div>
+</div>
+
+<div class="info-card">
+    <h4>🚫 Current Restrictions</h4>
+    <p>Due to the expiration, the following restrictions are now in effect:</p>
+    <ul class="feature-list">
+        {{#each restrictions}}
+        <li>❌ {{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+
+{{#if gracePeriod}}
+<div class="info-card">
+    <h4>⏰ Grace Period</h4>
+    <p>You have <strong>{{gracePeriod.remaining}} days</strong> remaining in your grace period. After {{gracePeriod.endDate}}, additional restrictions may apply.</p>
+    <ul class="feature-list">
+        {{#each gracePeriod.allowedActions}}
+        <li>🕐 {{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+{{/if}}
+
+<div class="cta-section">
+    {{#if renewUrl}}
+    <a href="{{renewUrl}}" class="cta-button">Renew Now</a>
+    {{/if}}
+    {{#if upgradeUrl}}
+    <a href="{{upgradeUrl}}" class="cta-button-secondary">Upgrade Plan</a>
+    {{/if}}
+</div>
+
+<div class="info-card">
+    <h4>🔄 Renewal Options</h4>
+    {{#each renewalOptions}}
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">{{name}}</span>
+            <span class="detail-value">{{duration}} - ${{price}}</span>
+        </div>
+    </div>
+    {{#if benefits}}
+    <ul class="feature-list">
+        {{#each benefits}}
+        <li>✅ {{this}}</li>
+        {{/each}}
+    </ul>
+    {{/if}}
+    {{/each}}
+</div>
+
+{{#if warningHistory}}
+<div class="info-card">
+    <h4>📧 Previous Notifications</h4>
+    <p>We've sent several reminders about this expiration:</p>
+    <ul class="feature-list">
+        {{#each warningHistory}}
+        <li>📬 {{date}} - {{message}}</li>
+        {{/each}}
+    </ul>
+</div>
+{{/if}}
+
+{{#if autoRenewal}}
+<div class="info-card">
+    <h4>🔄 Auto-Renewal Information</h4>
+    {{#if autoRenewal.enabled}}
+    <p>⚠️ <strong>Auto-renewal failed!</strong> {{autoRenewal.failureReason}}</p>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Payment Method</span>
+            <span class="detail-value">{{autoRenewal.paymentMethod}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Last Attempt</span>
+            <span class="detail-value">{{autoRenewal.lastAttempt}}</span>
+        </div>
+    </div>
+    <a href="{{autoRenewal.updateUrl}}" class="cta-button-secondary">Update Payment Method</a>
+    {{else}}
+    <p>💡 <strong>Tip:</strong> Enable auto-renewal to avoid future expirations!</p>
+    <a href="{{autoRenewal.enableUrl}}" class="cta-button-secondary">Enable Auto-Renewal</a>
+    {{/if}}
+</div>
+{{/if}}
+
+{{#if dataBackup}}
+<div class="info-card">
+    <h4>💾 Data Protection</h4>
+    <p>{{dataBackup.message}}</p>
+    {{#if dataBackup.retentionPeriod}}
+    <p><strong>Data Retention:</strong> {{dataBackup.retentionPeriod}}</p>
+    {{/if}}
+    {{#if dataBackup.exportUrl}}
+    <a href="{{dataBackup.exportUrl}}" class="cta-button-secondary">Export Data</a>
+    {{/if}}
+</div>
+{{/if}}
+
+<div class="info-card">
+    <h4>⚡ Immediate Actions Required</h4>
+    <ol class="numbered-list">
+        {{#each immediateActions}}
+        <li>{{this}}</li>
+        {{/each}}
+    </ol>
+</div>
+
+{{#if escalation}}
+<div class="warning-notice">
+    <p>⚠️ <strong>Escalation Notice:</strong> If no action is taken by {{escalation.deadline}}, the following additional measures will be implemented:</p>
+    <ul class="feature-list">
+        {{#each escalation.measures}}
+        <li>🚨 {{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+{{/if}}
+
+{{#if supportAvailable}}
+<div class="info-card">
+    <h4>🆘 Need Help?</h4>
+    <p>Our support team is available to assist you with renewal or any questions:</p>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Support Email</span>
+            <span class="detail-value">{{ENV.SUPPORT_EMAIL}}</span>
+        </div>
+        {{#if supportPhone}}
+        <div class="detail-item">
+            <span class="detail-label">Support Phone</span>
+            <span class="detail-value">{{supportPhone}}</span>
+        </div>
+        {{/if}}
+        <div class="detail-item">
+            <span class="detail-label">Live Chat</span>
+            <span class="detail-value">Available {{supportHours}}</span>
+        </div>
+    </div>
+</div>
+{{/if}}
+
+<div class="message">
+    <p>We understand that managing renewals can be challenging. Our team is committed to helping you maintain uninterrupted access to {{ENV.APP_NAME}}. Please don't hesitate to reach out if you need assistance.</p>
+</div>
+
+<div class="contact-info">
+    <p><strong>Urgent Renewal Support:</strong> <a href="mailto:{{ENV.SUPPORT_EMAIL}}">{{ENV.SUPPORT_EMAIL}}</a></p>
+    {{#if emergencyPhone}}
+    <p><strong>Emergency Line:</strong> {{emergencyPhone}}</p>
+    {{/if}}
+    <p>Reference ID: <strong>{{referenceId}}</strong></p>
+    <p>Best regards,<br>The {{ENV.COMPANY_NAME}} Team</p>
+</div>
+
+{{/base}}

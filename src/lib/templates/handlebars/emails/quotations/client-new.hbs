@@ -1,0 +1,106 @@
+{{#> base headerTitle="New Quotation Ready" headerSubtitle="Your customized quote is ready for review"}}
+
+<div class="greeting">
+    Hello {{clientName}}! 📋
+</div>
+
+<div class="message">
+    <p>Thank you for your interest in {{appName}}'s services. We've prepared a customized quotation based on your specific requirements and are excited to present our proposal.</p>
+</div>
+
+<div class="success-notice">
+    <p>✅ <strong>Quotation Ready!</strong> Quote #{{quotationNumber}} has been prepared and is ready for your review.</p>
+</div>
+
+<div class="info-card">
+    <h3>📋 Quotation Summary</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Quote Number</span>
+            <span class="detail-value">{{quotationNumber}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Date Prepared</span>
+            <span class="detail-value">{{quotationDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Valid Until</span>
+            <span class="detail-value">{{validUntil}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Total Amount</span>
+            <span class="detail-value"><strong>{{currency}} {{totalAmount}}</strong></span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Prepared By</span>
+            <span class="detail-value">{{preparedBy}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Project Duration</span>
+            <span class="detail-value">{{projectDuration}}</span>
+        </div>
+    </div>
+</div>
+
+<div class="cta-section">
+    <a href="{{quotationUrl}}" class="cta-button">View Full Quotation</a>
+</div>
+
+<div class="info-card">
+    <h4>📦 Services Included</h4>
+    {{#each services}}
+    <div class="detail-item">
+        <span class="detail-label">{{name}}</span>
+        <span class="detail-value">{{currency}} {{price}}</span>
+    </div>
+        {{/each}}
+    
+    <div style="border-top: 2px solid #A855F7; margin-top: 15px; padding-top: 15px;">
+        <div class="detail-item">
+            <span class="detail-label"><strong>Total</strong></span>
+            <span class="detail-value"><strong>{{currency}} {{totalAmount}}</strong></span>
+        </div>
+    </div>
+  </div>
+
+<div class="info-card">
+    <h4>🎯 What's Included</h4>
+    <ul class="feature-list">
+        <li><strong>Comprehensive Setup:</strong> Full system configuration and customization</li>
+        <li><strong>Data Migration:</strong> Seamless transfer of your existing data</li>
+        <li><strong>Training & Support:</strong> Complete team training and ongoing support</li>
+        <li><strong>Quality Assurance:</strong> Thorough testing and validation</li>
+        <li><strong>Documentation:</strong> Complete user guides and documentation</li>
+        <li><strong>Warranty:</strong> {{warrantyPeriod}} warranty on all services</li>
+    </ul>
+</div>
+
+<div class="warning-notice">
+    <p>⏰ <strong>Quote Validity:</strong> This quotation is valid until {{validUntil}}. Please let us know if you'd like to proceed or have any questions.</p>
+</div>
+
+<div class="info-card">
+    <h4>📞 Next Steps</h4>
+    <p>Ready to move forward? Here's how to proceed:</p>
+    <ul class="feature-list">
+        <li><strong>Review:</strong> Carefully review all services and pricing</li>
+        <li><strong>Questions:</strong> Contact us with any questions or clarifications</li>
+        <li><strong>Approve:</strong> Accept the quotation to begin the project</li>
+        <li><strong>Schedule:</strong> We'll schedule a kickoff meeting</li>
+    </ul>
+</div>
+
+<div class="message">
+    <p><strong>Questions about this quotation?</strong> Our team is here to help:</p>
+    <ul style="margin-left: 20px; color: #4b5563;">
+        <li>Email: {{preparedByEmail}}</li>
+        <li>Phone: {{preparedByPhone}}</li>
+        <li>Quote Reference: {{quotationNumber}}</li>
+    </ul>
+  </div>
+
+<div class="success-notice">
+    <p>🌟 <strong>We're Excited!</strong> We look forward to the opportunity to work with you and help transform your business operations.</p>
+</div>
+
+{{/base}} 

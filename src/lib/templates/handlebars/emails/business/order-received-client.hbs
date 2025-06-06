@@ -1,0 +1,133 @@
+{{#> base headerTitle="Order Confirmation" headerSubtitle="Thank you for your business with {{appName}}"}}
+
+<div class="greeting">
+    Hello {{customerName}}! 👋
+</div>
+
+<div class="success-notice">
+    <p>✅ <strong>Order Confirmed!</strong> We've received your order and are processing it now. You'll receive updates as your order progresses.</p>
+</div>
+
+<div class="message">
+    <p>Thank you for choosing {{appName}} for your business needs. We're excited to fulfill your order and continue supporting your business growth.</p>
+</div>
+
+<div class="info-card">
+    <h3>📋 Order Summary</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Order Number</span>
+            <span class="detail-value">{{orderNumber}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Order Date</span>
+            <span class="detail-value">{{orderDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Order Total</span>
+            <span class="detail-value">{{currency}} {{orderTotal}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Payment Method</span>
+            <span class="detail-value">{{paymentMethod}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Estimated Delivery</span>
+            <span class="detail-value">{{estimatedDelivery}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Order Status</span>
+            <span class="detail-value">{{orderStatus}}</span>
+        </div>
+    </div>
+</div>
+
+<div class="info-card">
+    <h4>📦 Items Ordered</h4>
+    {{#each orderItems}}
+    <div class="detail-item">
+        <span class="detail-label">{{name}}</span>
+        <span class="detail-value">Qty: {{quantity}} × {{currency}} {{unitPrice}} = {{currency}} {{totalPrice}}</span>
+    </div>
+    {{/each}}
+    
+    <div style="border-top: 2px solid #A855F7; margin-top: 15px; padding-top: 15px;">
+        <div class="detail-item">
+            <span class="detail-label"><strong>Subtotal</strong></span>
+            <span class="detail-value"><strong>{{currency}} {{subtotal}}</strong></span>
+        </div>
+        {{#if shippingCost}}
+        <div class="detail-item">
+            <span class="detail-label">Shipping</span>
+            <span class="detail-value">{{currency}} {{shippingCost}}</span>
+        </div>
+        {{/if}}
+        {{#if tax}}
+        <div class="detail-item">
+            <span class="detail-label">Tax</span>
+            <span class="detail-value">{{currency}} {{tax}}</span>
+        </div>
+        {{/if}}
+        <div class="detail-item">
+            <span class="detail-label"><strong>Total</strong></span>
+            <span class="detail-value"><strong>{{currency}} {{orderTotal}}</strong></span>
+        </div>
+    </div>
+</div>
+
+<div class="info-card">
+    <h4>🚚 Shipping Information</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Shipping Address</span>
+            <span class="detail-value">{{shippingAddress}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Shipping Method</span>
+            <span class="detail-value">{{shippingMethod}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Tracking Number</span>
+            <span class="detail-value">{{trackingNumber}}</span>
+        </div>
+    </div>
+</div>
+
+<div class="cta-section">
+    <a href="{{orderTrackingUrl}}" class="cta-button">Track Your Order</a>
+</div>
+
+<div class="info-card">
+    <h4>📞 Need Help?</h4>
+    <p>Our customer service team is here to assist you:</p>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Email Support</span>
+            <span class="detail-value">orders@{{appUrl}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Phone Support</span>
+            <span class="detail-value">{{supportPhone}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Order Reference</span>
+            <span class="detail-value">{{orderNumber}}</span>
+        </div>
+    </div>
+</div>
+
+<div class="message">
+    <p><strong>What happens next?</strong></p>
+    <ul style="margin-left: 20px; color: #4b5563;">
+        <li>We'll process your order within 1-2 business days</li>
+        <li>You'll receive shipping confirmation with tracking details</li>
+        <li>Your order will be delivered to the specified address</li>
+        <li>We'll follow up to ensure your satisfaction</li>
+    </ul>
+</div>
+
+<div class="success-notice">
+    <p>🌟 <strong>Thank You!</strong> We appreciate your business and look forward to supporting your continued success with {{appName}}.</p>
+</div>
+
+{{/base}}

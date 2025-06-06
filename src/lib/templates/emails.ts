@@ -68,14 +68,14 @@ export const Signup = (data: SignupEmailData): string => `
     <div style="${BASE_STYLES.wrapper}">
       <div style="${BASE_STYLES.container}">
         <div style="${BASE_STYLES.header}">
-          <h1 style="margin: 16px 0 8px; font-size: 24px;">Welcome to Pulse! 🚀</h1>
+          <h1 style="margin: 16px 0 8px; font-size: 24px;">Welcome to LORO! 🚀</h1>
           <p style="margin: 0; opacity: 0.9;">Your journey to excellence begins</p>
         </div>
 
         <div style="padding: 24px 20px;">
           <div style="${BASE_STYLES.card}">
             <h2 style="${BASE_STYLES.heading}">Hi ${data.name},</h2>
-            <p style="${BASE_STYLES.text}">Thank you for choosing Pulse. Your account has been created successfully!</p>
+            <p style="${BASE_STYLES.text}">Thank you for choosing LORO. Your account has been created successfully!</p>
             
             <div style="text-align: center; margin: 24px 0;">
               <a href="${data.webAppLink || '/sign-in'}" style="${BASE_STYLES.button}">

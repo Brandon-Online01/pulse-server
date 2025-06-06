@@ -1,0 +1,24 @@
+{{#if footerMessage}}
+    <p style="margin: 0 0 16px; font-family: 'Unbounded', sans-serif;">
+        {{footerMessage}}
+    </p>
+{{/if}}
+
+{{#if footerLinks}}
+    <div style="display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;">
+        {{#each footerLinks}}
+            <a href="{{url}}" style="color: #A855F7; text-decoration: none; font-weight: 500; transition: color 0.2s; margin: 0 12px; font-family: 'Unbounded', sans-serif;">
+                {{text}}
+            </a>
+        {{/each}}
+    </div>
+{{/if}}
+
+{{#unless hideDefaultFooter}}
+    <p style="margin: 16px 0 0; font-size: 14px; color: #6c757d; font-family: 'Unbounded', sans-serif;">
+        This email was sent by LORO Platform. 
+        {{#if unsubscribeLink}}
+            <a href="{{unsubscribeLink}}" style="color: #A855F7; text-decoration: none;">Unsubscribe</a>
+        {{/if}}
+    </p>
+{{/unless}} 

@@ -1,0 +1,57 @@
+{{#> base headerTitle="Warehouse Fulfillment Quote" headerSubtitle="Your {{ENV.APP_NAME}} fulfillment solution quotation"}}
+
+<div class="greeting">
+    Hello {{recipientName}}! 📦
+</div>
+
+<div class="success-notice">
+    <p>📋 <strong>Fulfillment Quote Ready!</strong> We've prepared a comprehensive warehouse fulfillment solution tailored to your requirements.</p>
+</div>
+
+<div class="message">
+    <p>Thank you for considering {{ENV.COMPANY_NAME}} for your warehouse fulfillment needs. We've analyzed your requirements and prepared a detailed quote that covers all aspects of your logistics and fulfillment operations.</p>
+</div>
+
+<div class="info-card">
+    <h3>📋 Quote Summary</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Quote ID</span>
+            <span class="detail-value">{{quoteId}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Quote Date</span>
+            <span class="detail-value">{{quoteDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Valid Until</span>
+            <span class="detail-value">{{validUntil}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Sales Representative</span>
+            <span class="detail-value">{{salesRep.name}}</span>
+        </div>
+    </div>
+</div>
+
+<div class="cta-section">
+    <a href="{{acceptQuoteUrl}}" class="cta-button">Accept Quote</a>
+    <a href="{{downloadPdfUrl}}" class="cta-button-secondary">Download PDF</a>
+</div>
+
+<div class="info-card">
+    <h4>🏢 Warehouse Services Included</h4>
+    <ul class="feature-list">
+        {{#each warehouseServices}}
+        <li>✅ {{service}} - {{description}}</li>
+        {{/each}}
+    </ul>
+</div>
+
+<div class="contact-info">
+    <p><strong>Sales Representative:</strong> {{salesRep.name}} at <a href="mailto:{{salesRep.email}}">{{salesRep.email}}</a></p>
+    <p>Quote Reference: <strong>{{quoteId}}</strong></p>
+    <p>Best regards,<br>The {{ENV.COMPANY_NAME}} Fulfillment Team</p>
+</div>
+
+{{/base}}
