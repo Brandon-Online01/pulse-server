@@ -1,55 +1,193 @@
-{{#> base headerTitle="Your Daily Activity Report" headerSubtitle="Personal performance summary for {{reportDate}}"}}
+{{#> base headerTitle="Your Daily Activity Report" headerSubtitle="Personal performance summary for {{date}}"}}
 
 <div class="greeting">
-    Hello {{userName}}! 📊
+    Hello {{name}}! 📊
 </div>
 
 <div class="message">
-    <p>Here's your personal activity summary for {{reportDate}}. This report highlights your accomplishments, progress, and areas where you can continue to excel.</p>
+    <p>Here's your comprehensive daily activity summary for {{date}}. This report highlights your accomplishments, progress, and target achievements.</p>
 </div>
 
+{{#if metrics.attendance.status}}
 <div class="success-notice">
-    <p>📈 <strong>Daily Summary:</strong> You completed {{completedTasks}} task{{#if (gt completedTasks 1)}}s{{/if}} and contributed to {{projectsWorkedOn}} project{{#if (gt projectsWorkedOn 1)}}s{{/if}} today!</p>
+    <p>⏰ <strong>Work Summary:</strong> You worked {{metrics.attendance.duration}} today{{#if metrics.attendance.startTime}} ({{metrics.attendance.startTime}} - {{#if metrics.attendance.endTime}}{{metrics.attendance.endTime}}{{else}}Currently Working{{/if}}){{/if}}!</p>
 </div>
+{{/if}}
 
+<!-- Core Metrics Section -->
 <div class="info-card">
-    <h3>✅ Today's Accomplishments</h3>
+    <h3>📈 Today's Performance</h3>
     <div class="detail-grid">
         <div class="detail-item">
             <span class="detail-label">Tasks Completed</span>
-            <span class="detail-value">{{completedTasks}}</span>
+            <span class="detail-value">{{metrics.userSpecific.todayTasks}}</span>
         </div>
         <div class="detail-item">
-            <span class="detail-label">Hours Logged</span>
-            <span class="detail-value">{{hoursLogged}}</span>
+            <span class="detail-label">Hours Worked</span>
+            <span class="detail-value">{{metrics.userSpecific.hoursWorked}}h</span>
         </div>
         <div class="detail-item">
-            <span class="detail-label">Projects Active</span>
-            <span class="detail-value">{{projectsWorkedOn}}</span>
+            <span class="detail-label">New Leads</span>
+            <span class="detail-value">{{metrics.userSpecific.todayLeads}}</span>
         </div>
         <div class="detail-item">
-            <span class="detail-label">Meetings Attended</span>
-            <span class="detail-value">{{meetingsAttended}}</span>
+            <span class="detail-label">Quotations Created</span>
+            <span class="detail-value">{{metrics.userSpecific.todayQuotations}}</span>
         </div>
         <div class="detail-item">
-            <span class="detail-label">Messages Sent</span>
-            <span class="detail-value">{{messagesSent}}</span>
+            <span class="detail-label">Revenue Generated</span>
+            <span class="detail-value">{{metrics.totalRevenue}}</span>
         </div>
         <div class="detail-item">
-            <span class="detail-label">Productivity Score</span>
-            <span class="detail-value">{{productivityScore}}/10</span>
+            <span class="detail-label">Claims Processed</span>
+            <span class="detail-value">{{metrics.userSpecific.todayClaims}}</span>
         </div>
     </div>
 </div>
 
-{{#if completedTasksList}}
+<!-- XP and Leaderboard Section -->
+{{#if metrics.userSpecific.xpEarned}}
 <div class="info-card">
-    <h4>✅ Tasks Completed Today</h4>
-    <ul class="feature-list">
-        {{#each completedTasksList}}
-        <li><strong>{{title}}</strong> ({{project}}) - {{completionTime}}</li>
-        {{/each}}
-    </ul>
+    <h4>🏆 Experience & Rank</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">XP Earned Today</span>
+            <span class="detail-value">+{{metrics.userSpecific.xpEarned}} XP</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Current Level</span>
+            <span class="detail-value">Level {{metrics.userSpecific.currentLevel}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Current Rank</span>
+            <span class="detail-value">{{metrics.userSpecific.currentRank}}</span>
+        </div>
+    </div>
+</div>
+{{/if}}
+
+<!-- Targets Progress Section -->
+{{#if metrics.targets.hasTargets}}
+<div class="info-card">
+    <h4>🎯 Target Progress ({{metrics.targets.targetPeriod}})</h4>
+    <div class="detail-grid">
+        {{#if metrics.targets.salesTarget}}
+        <div class="detail-item">
+            <span class="detail-label">Sales Progress</span>
+            <span class="detail-value">{{metrics.targets.salesTarget.formatted}} / {{metrics.targets.salesTarget.targetFormatted}} ({{metrics.targets.targetProgress.sales.progress}}%)</span>
+        </div>
+        {{/if}}
+        {{#if metrics.targets.hoursTarget}}
+        <div class="detail-item">
+            <span class="detail-label">Hours Progress</span>
+            <span class="detail-value">{{metrics.targets.hoursTarget.current}}h / {{metrics.targets.hoursTarget.target}}h ({{metrics.targets.targetProgress.hours.progress}}%)</span>
+        </div>
+        {{/if}}
+        {{#if metrics.targets.leadsTarget}}
+        <div class="detail-item">
+            <span class="detail-label">Leads Progress</span>
+            <span class="detail-value">{{metrics.targets.leadsTarget.current}} / {{metrics.targets.leadsTarget.target}} ({{metrics.targets.targetProgress.leads.progress}}%)</span>
+        </div>
+        {{/if}}
+        {{#if metrics.targets.clientsTarget}}
+        <div class="detail-item">
+            <span class="detail-label">New Clients Progress</span>
+            <span class="detail-value">{{metrics.targets.clientsTarget.current}} / {{metrics.targets.clientsTarget.target}} ({{metrics.targets.targetProgress.clients.progress}}%)</span>
+        </div>
+        {{/if}}
+        {{#if metrics.targets.checkInsTarget}}
+        <div class="detail-item">
+            <span class="detail-label">Check-ins Progress</span>
+            <span class="detail-value">{{metrics.targets.checkInsTarget.current}} / {{metrics.targets.checkInsTarget.target}} ({{metrics.targets.targetProgress.checkIns.progress}}%)</span>
+        </div>
+        {{/if}}
+    </div>
+</div>
+{{/if}}
+
+<!-- Attendance Details -->
+{{#if metrics.attendance.startTime}}
+<div class="info-card">
+    <h4>⏰ Attendance Details</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Status</span>
+            <span class="detail-value">{{metrics.attendance.status}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Start Time</span>
+            <span class="detail-value">{{metrics.attendance.startTime}}</span>
+        </div>
+        {{#if metrics.attendance.endTime}}
+        <div class="detail-item">
+            <span class="detail-label">End Time</span>
+            <span class="detail-value">{{metrics.attendance.endTime}}</span>
+        </div>
+        {{/if}}
+        <div class="detail-item">
+            <span class="detail-label">Total Duration</span>
+            <span class="detail-value">{{metrics.attendance.duration}}</span>
+        </div>
+    </div>
+    {{#if metrics.attendance.checkInLocation}}
+    <p><strong>Check-in Location:</strong> {{metrics.attendance.checkInLocation.latitude}}, {{metrics.attendance.checkInLocation.longitude}}</p>
+    {{/if}}
+</div>
+{{/if}}
+
+<!-- Growth Metrics -->
+<div class="info-card">
+    <h4>📊 Growth vs Yesterday</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Quotations Growth</span>
+            <span class="detail-value">{{metrics.quotationGrowth}} {{#if (startsWith metrics.quotationGrowth "+")}}📈{{else}}{{#unless (eq metrics.quotationGrowth "0%")}}📉{{else}}➡️{{/unless}}{{/if}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Revenue Growth</span>
+            <span class="detail-value">{{metrics.revenueGrowth}} {{#if (startsWith metrics.revenueGrowth "+")}}📈{{else}}{{#unless (eq metrics.revenueGrowth "0%")}}📉{{else}}➡️{{/unless}}{{/if}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Customer Growth</span>
+            <span class="detail-value">{{metrics.customerGrowth}} {{#if (startsWith metrics.customerGrowth "+")}}📈{{else}}{{#unless (eq metrics.customerGrowth "0%")}}📉{{else}}➡️{{/unless}}{{/if}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">New Customers</span>
+            <span class="detail-value">{{metrics.newCustomers}}</span>
+        </div>
+    </div>
+</div>
+
+<!-- Tracking Summary -->
+{{#if tracking.totalDistance}}
+<div class="info-card">
+    <h4>🗺️ Location & Travel</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Total Distance</span>
+            <span class="detail-value">{{tracking.totalDistance}}</span>
+        </div>
+                 <div class="detail-item">
+             <span class="detail-label">Locations Visited</span>
+             <span class="detail-value">{{length tracking.locations}}</span>
+         </div>
+        <div class="detail-item">
+            <span class="detail-label">Avg Time Per Location</span>
+            <span class="detail-value">{{tracking.averageTimePerLocation}}</span>
+        </div>
+    </div>
+    {{#if tracking.locations}}
+    <div style="margin-top: 15px;">
+        <strong>Key Locations:</strong>
+        <ul style="margin-top: 5px; margin-left: 20px;">
+            {{#each tracking.locations}}
+            {{#if @index < 5}}
+            <li>{{address}} - {{timeSpent}}</li>
+            {{/if}}
+            {{/each}}
+        </ul>
+    </div>
+    {{/if}}
 </div>
 {{/if}}
 
@@ -57,146 +195,48 @@
     <a href="{{dashboardUrl}}" class="cta-button">View Full Dashboard</a>
 </div>
 
+<!-- Performance Tips -->
 <div class="info-card">
-    <h4>⏰ Time Distribution</h4>
-    <div class="detail-grid">
-        {{#each timeBreakdown}}
-        <div class="detail-item">
-            <span class="detail-label">{{category}}</span>
-            <span class="detail-value">{{hours}}h {{minutes}}m</span>
-        </div>
-        {{/each}}
-    </div>
-</div>
-
-{{#if achievements}}
-<div class="success-notice">
-    <p>🏆 <strong>Today's Achievements:</strong></p>
-    <ul style="margin-left: 20px; margin-top: 10px;">
-        {{#each achievements}}
-        <li>{{this}}</li>
-        {{/each}}
-    </ul>
-</div>
-{{/if}}
-
-{{#if pendingTasks}}
-<div class="warning-notice">
-    <p>📋 <strong>Tomorrow's Priorities:</strong> You have {{pendingTasks}} pending task{{#if (gt pendingTasks 1)}}s{{/if}} for tomorrow.</p>
-</div>
-{{/if}}
-
-<div class="info-card">
-    <h4>📊 Performance Metrics</h4>
-    <div class="detail-grid">
-        <div class="detail-item">
-            <span class="detail-label">On-time Completion</span>
-            <span class="detail-value">{{onTimePercentage}}%</span>
-        </div>
-        <div class="detail-item">
-            <span class="detail-label">Quality Rating</span>
-            <span class="detail-value">{{qualityRating}}/5 ⭐</span>
-        </div>
-        <div class="detail-item">
-            <span class="detail-label">Team Collaboration</span>
-            <span class="detail-value">{{collaborationScore}}/10</span>
-        </div>
-        <div class="detail-item">
-            <span class="detail-label">Goal Progress</span>
-            <span class="detail-value">{{goalProgress}}%</span>
-        </div>
-    </div>
-</div>
-
-{{#if weeklyComparison}}
-<div class="info-card">
-    <h4>📈 Weekly Comparison</h4>
-    <div class="detail-grid">
-        <div class="detail-item">
-            <span class="detail-label">vs. Yesterday</span>
-            <span class="detail-value">{{weeklyComparison.yesterday}}% {{#if (gt weeklyComparison.yesterday 0)}}📈{{else}}📉{{/if}}</span>
-        </div>
-        <div class="detail-item">
-            <span class="detail-label">Weekly Average</span>
-            <span class="detail-value">{{weeklyComparison.weeklyAvg}}</span>
-        </div>
-        <div class="detail-item">
-            <span class="detail-label">Best Day This Week</span>
-            <span class="detail-value">{{weeklyComparison.bestDay}}</span>
-        </div>
-    </div>
-</div>
-{{/if}}
-
-{{#if upcomingDeadlines}}
-<div class="warning-notice">
-    <p>⏰ <strong>Upcoming Deadlines:</strong></p>
-    <ul style="margin-left: 20px; margin-top: 10px;">
-        {{#each upcomingDeadlines}}
-        <li><strong>{{title}}</strong> - Due {{dueDate}} ({{daysRemaining}} day{{#if (gt daysRemaining 1)}}s{{/if}} remaining)</li>
-        {{/each}}
-    </ul>
-</div>
-{{/if}}
-
-<div class="info-card">
-    <h4>🎯 Tomorrow's Focus</h4>
+    <h4>💡 Performance Insights</h4>
     <ul class="feature-list">
-        {{#each tomorrowsFocus}}
-        <li>{{this}}</li>
-        {{/each}}
+        {{#if (gt metrics.userSpecific.xpEarned 50)}}
+        <li><strong>Great XP Day!</strong> You earned {{metrics.userSpecific.xpEarned}} XP today - keep up the momentum!</li>
+        {{/if}}
+        {{#if (gt metrics.userSpecific.todayQuotations 0)}}
+        <li><strong>Sales Activity:</strong> {{metrics.userSpecific.todayQuotations}} quotation{{#if (gt metrics.userSpecific.todayQuotations 1)}}s{{/if}} created worth {{metrics.totalRevenue}}</li>
+        {{/if}}
+        {{#if (gt metrics.userSpecific.todayLeads 0)}}
+        <li><strong>Lead Generation:</strong> Added {{metrics.userSpecific.todayLeads}} new lead{{#if (gt metrics.userSpecific.todayLeads 1)}}s{{/if}} to your pipeline</li>
+        {{/if}}
+        {{#if (gt metrics.userSpecific.hoursWorked 8)}}
+        <li><strong>Dedication:</strong> You worked {{metrics.userSpecific.hoursWorked}} hours today - excellent commitment!</li>
+        {{/if}}
+                 {{#if tracking.totalDistance}}
+         <li><strong>Field Work:</strong> Covered {{tracking.totalDistance}} visiting customers and prospects</li>
+         {{/if}}
     </ul>
 </div>
 
-{{#if learningProgress}}
+<!-- Quick Actions -->
 <div class="info-card">
-    <h4>📚 Learning & Development</h4>
-    <div class="detail-grid">
-        <div class="detail-item">
-            <span class="detail-label">Skills Used Today</span>
-            <span class="detail-value">{{skillsUsed}}</span>
-        </div>
-        <div class="detail-item">
-            <span class="detail-label">New Skills Learned</span>
-            <span class="detail-value">{{newSkills}}</span>
-        </div>
-        <div class="detail-item">
-            <span class="detail-label">Training Progress</span>
-            <span class="detail-value">{{trainingProgress}}%</span>
-        </div>
-    </div>
-</div>
-{{/if}}
-
-<div class="message">
-    <p><strong>Want to improve your productivity?</strong> Check out these resources:</p>
-    <ul style="margin-left: 20px; color: #4b5563;">
-        <li>Time Management Tools: {{timeManagementUrl}}</li>
-        <li>Productivity Tips: {{productivityTipsUrl}}</li>
-        <li>Personal Development: {{developmentUrl}}</li>
-        <li>Schedule 1-on-1: {{oneOnOneUrl}}</li>
-    </ul>
-</div>
-
-{{#if motivationalQuote}}
-<div class="success-notice">
-    <p>💪 <strong>Daily Inspiration:</strong> "{{motivationalQuote}}"</p>
-</div>
-{{/if}}
-
-<div class="info-card">
-    <h4>📱 Quick Actions</h4>
+    <h4>🚀 Tomorrow's Focus</h4>
     <ul class="feature-list">
-        <li><strong>Plan Tomorrow:</strong> Review and prioritize your upcoming tasks</li>
-        <li><strong>Update Status:</strong> Ensure all completed work is properly logged</li>
-        <li><strong>Celebrate Wins:</strong> Acknowledge your accomplishments today</li>
-        <li><strong>Reflect & Improve:</strong> Consider what went well and what could be better</li>
-        <li><strong>Prepare for Tomorrow:</strong> Set yourself up for success</li>
+        <li><strong>Review Pipeline:</strong> Check your leads and follow up on active prospects</li>
+        <li><strong>Target Progress:</strong> Focus on areas where you can improve target achievement</li>
+        <li><strong>Task Planning:</strong> Plan tomorrow's priorities based on deadlines and importance</li>
+        {{#if (lt metrics.userSpecific.xpEarned 30)}}
+        <li><strong>Boost XP:</strong> Complete more tasks and activities to earn additional experience points</li>
+        {{/if}}
+        {{#if metrics.targets.hasTargets}}
+        {{#if (lt metrics.targets.targetProgress.sales.progress 50)}}
+        <li><strong>Sales Focus:</strong> Your sales target needs attention - consider more quotation activities</li>
+        {{/if}}
+        {{/if}}
     </ul>
 </div>
 
 <div class="success-notice">
-    <p>🌟 <strong>Great Work Today!</strong> Your consistent effort and dedication contribute to our team's success. Keep up the excellent momentum!</p>
+    <p>🌟 <strong>Excellent Work Today!</strong> Your consistent effort contributes to team success. {{#if metrics.userSpecific.currentRank}}You're currently ranked as {{metrics.userSpecific.currentRank}} {{#if metrics.userSpecific.currentLevel}}at Level {{metrics.userSpecific.currentLevel}}{{/if}}!{{/if}}</p>
 </div>
 
 {{/base}}

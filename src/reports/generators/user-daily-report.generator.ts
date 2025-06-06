@@ -16,8 +16,10 @@ import { AttendanceService } from '../../attendance/attendance.service';
 import { ReportParamsDto } from '../dto/report-params.dto';
 import { Quotation } from '../../shop/entities/quotation.entity';
 import { TrackingService } from '../../tracking/tracking.service';
-import { Tracking } from '../../tracking/entities/tracking.entity';
 import { Claim } from '../../claims/entities/claim.entity';
+import { UserRewards } from '../../rewards/entities/user-rewards.entity';
+import { XPTransaction } from '../../rewards/entities/xp-transaction.entity';
+import { UserTarget } from '../../user/entities/user-target.entity';
 
 @Injectable()
 export class UserDailyReportGenerator {
@@ -42,19 +44,31 @@ export class UserDailyReportGenerator {
 		private quotationRepository: Repository<Quotation>,
 		@InjectRepository(Claim)
 		private claimRepository: Repository<Claim>,
+		@InjectRepository(UserRewards)
+		private userRewardsRepository: Repository<UserRewards>,
+		@InjectRepository(XPTransaction)
+		private xpTransactionRepository: Repository<XPTransaction>,
+		@InjectRepository(UserTarget)
+		private userTargetRepository: Repository<UserTarget>,
 		private attendanceService: AttendanceService,
 		private trackingService: TrackingService,
 	) {}
 
 	private calculateGrowth(current: number, previous: number): string {
 		if (previous === 0) {
-			return current > 0 ? '100%' : '0%'; // Or 'N/A' if preferred for 0 to non-zero
+			return current > 0 ? '+100%' : '0%';
 		}
 		if (current === 0 && previous === 0) {
 			return '0%';
 		}
 		const growth = ((current - previous) / previous) * 100;
-		return `${Math.round(growth * 10) / 10}%`;
+		const sign = growth >= 0 ? '+' : '';
+		return `${sign}${Math.round(growth * 10) / 10}%`;
+	}
+
+	private parseGrowthPercentage(growthStr: string): number {
+		if (!growthStr) return 0;
+		return parseFloat(growthStr.replace(/[+%]/g, '')) || 0;
 	}
 
 	async generate(params: ReportParamsDto): Promise<Record<string, any>> {
@@ -102,6 +116,8 @@ export class UserDailyReportGenerator {
 				claimData,
 				previousQuotationData,
 				previousClientData,
+				rewardsData,
+				targetsData,
 			] = await Promise.all([
 				this.collectAttendanceData(userId, startDate, endDate),
 				this.collectTaskMetrics(userId, startDate, endDate),
@@ -113,6 +129,8 @@ export class UserDailyReportGenerator {
 				this.collectClaimData(userId, startDate, endDate),
 				this.collectQuotationData(userId, previousStartDate, previousEndDate),
 				this.collectClientData(userId, previousStartDate, previousEndDate),
+				this.collectRewardsData(userId, startDate, endDate),
+				this.collectTargetsData(userId),
 			]);
 
 			// Format the date for display
@@ -137,6 +155,9 @@ export class UserDailyReportGenerator {
 					totalQuotations: quotationData.totalQuotations,
 					totalRevenue: quotationData.totalRevenueFormatted,
 					totalClaims: claimData.count,
+					xpEarned: rewardsData.dailyXPEarned,
+					currentLevel: rewardsData.currentLevel,
+					currentRank: rewardsData.currentRank,
 				},
 				details: {
 					attendance: attendanceData,
@@ -147,6 +168,8 @@ export class UserDailyReportGenerator {
 					location: locationData,
 					quotations: quotationData,
 					claims: claimData,
+					rewards: rewardsData,
+					targets: targetsData,
 				},
 				// Format data specifically for email template
 				emailData: {
@@ -183,7 +206,11 @@ export class UserDailyReportGenerator {
 							todayTasks: taskMetrics.completedCount,
 							todayQuotations: quotationData.totalQuotations,
 							hoursWorked: Math.round((attendanceData.totalWorkMinutes / 60) * 10) / 10,
+							xpEarned: rewardsData.dailyXPEarned,
+							currentLevel: rewardsData.currentLevel,
+							currentRank: rewardsData.currentRank,
 						},
+						targets: targetsData,
 					},
 					tracking: locationData.trackingData,
 				},
@@ -703,6 +730,227 @@ export class UserDailyReportGenerator {
 				totalRevenue: 0,
 				totalRevenueFormatted: 'R0.00',
 				quotationDetails: [],
+			};
+		}
+	}
+
+	private async collectRewardsData(userId: number, startDate: Date, endDate: Date) {
+		try {
+			// Get user rewards
+			const userRewards = await this.userRewardsRepository.findOne({
+				where: { owner: { uid: userId } },
+				relations: ['owner'],
+			});
+
+			if (!userRewards) {
+				return {
+					dailyXPEarned: 0,
+					currentLevel: 1,
+					currentRank: 'ROOKIE',
+					totalXP: 0,
+					currentXP: 0,
+					xpBreakdown: {
+						tasks: 0,
+						leads: 0,
+						sales: 0,
+						attendance: 0,
+						collaboration: 0,
+						other: 0,
+					},
+					dailyTransactions: [],
+					leaderboardPosition: null,
+				};
+			}
+
+			// Get XP transactions for today
+			const dailyTransactions = await this.xpTransactionRepository.find({
+				where: {
+					userRewards: { uid: userRewards.uid },
+					timestamp: Between(startDate, endDate),
+				},
+				order: { timestamp: 'DESC' },
+			});
+
+			// Calculate daily XP earned
+			const dailyXPEarned = dailyTransactions.reduce((total, transaction) => {
+				return total + transaction.xpAmount;
+			}, 0);
+
+			// Get leaderboard position
+			const leaderboard = await this.userRewardsRepository.find({
+				relations: ['owner'],
+				order: { totalXP: 'DESC' },
+				take: 100, // Get top 100 to find position
+			});
+
+			const leaderboardPosition = leaderboard.findIndex(entry => entry.uid === userRewards.uid) + 1;
+
+			// Format daily transactions
+			const formattedTransactions = dailyTransactions.map(transaction => ({
+				action: transaction.action,
+				xpAmount: transaction.xpAmount,
+				timestamp: format(new Date(transaction.timestamp), 'HH:mm:ss'),
+				sourceType: transaction.metadata?.sourceType || 'unknown',
+				sourceId: transaction.metadata?.sourceId || null,
+			}));
+
+			return {
+				dailyXPEarned,
+				currentLevel: userRewards.level,
+				currentRank: userRewards.rank,
+				totalXP: userRewards.totalXP,
+				currentXP: userRewards.currentXP,
+				xpBreakdown: userRewards.xpBreakdown || {
+					tasks: 0,
+					leads: 0,
+					sales: 0,
+					attendance: 0,
+					collaboration: 0,
+					other: 0,
+				},
+				dailyTransactions: formattedTransactions,
+				leaderboardPosition: leaderboardPosition > 0 ? leaderboardPosition : null,
+			};
+		} catch (error) {
+			this.logger.error(`Error collecting rewards data for user ${userId}: ${error.message}`, error.stack);
+			return {
+				dailyXPEarned: 0,
+				currentLevel: 1,
+				currentRank: 'ROOKIE',
+				totalXP: 0,
+				currentXP: 0,
+				xpBreakdown: {
+					tasks: 0,
+					leads: 0,
+					sales: 0,
+					attendance: 0,
+					collaboration: 0,
+					other: 0,
+				},
+				dailyTransactions: [],
+				leaderboardPosition: null,
+			};
+		}
+	}
+
+	private async collectTargetsData(userId: number) {
+		try {
+			// Get user targets
+			const userTarget = await this.userTargetRepository.findOne({
+				where: { user: { uid: userId } },
+				relations: ['user'],
+			});
+
+			if (!userTarget) {
+				return {
+					hasTargets: false,
+					targetPeriod: null,
+					periodStartDate: null,
+					periodEndDate: null,
+					salesTarget: null,
+					hoursTarget: null,
+					leadsTarget: null,
+					clientsTarget: null,
+					checkInsTarget: null,
+					callsTarget: null,
+					targetProgress: {},
+				};
+			}
+
+			// Calculate progress percentages
+			const calculateProgress = (current: number, target: number) => {
+				if (!target || target <= 0) return 0;
+				return Math.min(Math.round((current / target) * 100), 100);
+			};
+
+			const targetProgress = {
+				sales: {
+					current: userTarget.currentSalesAmount || 0,
+					target: userTarget.targetSalesAmount || 0,
+					progress: calculateProgress(userTarget.currentSalesAmount || 0, userTarget.targetSalesAmount || 0),
+					currency: userTarget.targetCurrency || 'ZAR',
+				},
+				hours: {
+					current: userTarget.currentHoursWorked || 0,
+					target: userTarget.targetHoursWorked || 0,
+					progress: calculateProgress(userTarget.currentHoursWorked || 0, userTarget.targetHoursWorked || 0),
+				},
+				leads: {
+					current: userTarget.currentNewLeads || 0,
+					target: userTarget.targetNewLeads || 0,
+					progress: calculateProgress(userTarget.currentNewLeads || 0, userTarget.targetNewLeads || 0),
+				},
+				clients: {
+					current: userTarget.currentNewClients || 0,
+					target: userTarget.targetNewClients || 0,
+					progress: calculateProgress(userTarget.currentNewClients || 0, userTarget.targetNewClients || 0),
+				},
+				checkIns: {
+					current: userTarget.currentCheckIns || 0,
+					target: userTarget.targetCheckIns || 0,
+					progress: calculateProgress(userTarget.currentCheckIns || 0, userTarget.targetCheckIns || 0),
+				},
+				calls: {
+					current: userTarget.currentCalls || 0,
+					target: userTarget.targetCalls || 0,
+					progress: calculateProgress(userTarget.currentCalls || 0, userTarget.targetCalls || 0),
+				},
+			};
+
+			return {
+				hasTargets: true,
+				targetPeriod: userTarget.targetPeriod || 'Monthly',
+				periodStartDate: userTarget.periodStartDate ? format(new Date(userTarget.periodStartDate), 'yyyy-MM-dd') : null,
+				periodEndDate: userTarget.periodEndDate ? format(new Date(userTarget.periodEndDate), 'yyyy-MM-dd') : null,
+				salesTarget: {
+					current: userTarget.currentSalesAmount || 0,
+					target: userTarget.targetSalesAmount || 0,
+					currency: userTarget.targetCurrency || 'ZAR',
+					formatted: new Intl.NumberFormat('en-ZA', {
+						style: 'currency',
+						currency: userTarget.targetCurrency || 'ZAR',
+					}).format(userTarget.currentSalesAmount || 0),
+					targetFormatted: new Intl.NumberFormat('en-ZA', {
+						style: 'currency',
+						currency: userTarget.targetCurrency || 'ZAR',
+					}).format(userTarget.targetSalesAmount || 0),
+				},
+				hoursTarget: {
+					current: userTarget.currentHoursWorked || 0,
+					target: userTarget.targetHoursWorked || 0,
+				},
+				leadsTarget: {
+					current: userTarget.currentNewLeads || 0,
+					target: userTarget.targetNewLeads || 0,
+				},
+				clientsTarget: {
+					current: userTarget.currentNewClients || 0,
+					target: userTarget.targetNewClients || 0,
+				},
+				checkInsTarget: {
+					current: userTarget.currentCheckIns || 0,
+					target: userTarget.targetCheckIns || 0,
+				},
+				callsTarget: {
+					current: userTarget.currentCalls || 0,
+					target: userTarget.targetCalls || 0,
+				},
+				targetProgress,
+			};
+		} catch (error) {
+			this.logger.error(`Error collecting targets data for user ${userId}: ${error.message}`, error.stack);
+			return {
+				hasTargets: false,
+				targetPeriod: null,
+				periodStartDate: null,
+				periodEndDate: null,
+				salesTarget: null,
+				hoursTarget: null,
+				leadsTarget: null,
+				clientsTarget: null,
+				checkInsTarget: null,
+				callsTarget: null,
+				targetProgress: {},
 			};
 		}
 	}
