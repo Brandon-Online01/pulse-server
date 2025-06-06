@@ -3591,3 +3591,15 @@ export const WarningExpired = (data: WarningExpiredEmailData): string => `
       </div>
     </div>
 `;
+
+// Attendance Report Templates - Using Handlebars
+import emailTemplateService from '../services/email-template.service';
+import { MorningReportData, EveningReportData } from '../types/email-templates.types';
+
+export const AttendanceMorningReport = (data: MorningReportData): string => {
+  return emailTemplateService.attendanceMorningReport(data);
+};
+
+export const AttendanceEveningReport = (data: EveningReportData): string => {
+  return emailTemplateService.attendanceEveningReport(data);
+};

@@ -1,0 +1,242 @@
+{{#> base headerTitle="Daily Attendance Evening Report" headerSubtitle="Daily performance summary for {{reportDate}}"}}
+
+<div class="greeting">
+    Good evening {{recipientName}}! 📊
+</div>
+
+<div class="message">
+    <p>Here's your comprehensive daily attendance summary for {{reportDate}}. This report shows detailed employee performance metrics and comparisons with yesterday's data, generated 30 minutes after the standard close time ({{organizationCloseTime}}).</p>
+</div>
+
+<!-- Daily Summary -->
+<div class="info-card">
+    <h3>📈 Daily Overview</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Total Employees</span>
+            <span class="detail-value">{{totalEmployees}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Worked Today</span>
+            <span class="detail-value" style="color: #10b981;">{{workedTodayCount}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Total Hours</span>
+            <span class="detail-value" style="font-weight: 700;">{{totalHoursWorked}}h</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Average Hours</span>
+            <span class="detail-value" style="font-weight: 700;">{{averageHoursWorked}}h</span>
+        </div>
+    </div>
+</div>
+
+<!-- Performance Comparison -->
+<div class="info-card">
+    <h3>📊 vs Yesterday</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Attendance Change</span>
+            <span class="detail-value" style="color: {{#if (gte attendanceChange 0)}}#10b981{{else}}#ef4444{{/if}}; font-weight: 600;">
+                {{#if (gte attendanceChange 0)}}+{{/if}}{{attendanceChange}}%
+            </span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Hours Change</span>
+            <span class="detail-value" style="color: {{#if (gte hoursChange 0)}}#10b981{{else}}#ef4444{{/if}}; font-weight: 600;">
+                {{#if (gte hoursChange 0)}}+{{/if}}{{hoursChange}}h
+            </span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Punctuality Change</span>
+            <span class="detail-value" style="color: {{#if (gte punctualityChange 0)}}#10b981{{else}}#ef4444{{/if}}; font-weight: 600;">
+                {{#if (gte punctualityChange 0)}}+{{/if}}{{punctualityChange}}%
+            </span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Trend</span>
+            <span class="detail-value" style="font-weight: 700; color: {{#if (eq performanceTrend 'improving')}}#10b981{{else if (eq performanceTrend 'stable')}}#f59e0b{{else}}#ef4444{{/if}};">
+                {{performanceTrend}}
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Employee Performance Table -->
+<div class="info-card">
+    <h3>👥 Individual Performance Summary</h3>
+    <div style="overflow-x: auto; margin-top: 16px;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+            <thead>
+                <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0;">
+                    <th style="padding: 12px 8px; text-align: left; font-weight: 600; color: #374151;">Employee</th>
+                    <th style="padding: 12px 8px; text-align: center; font-weight: 600; color: #374151;">Check In</th>
+                    <th style="padding: 12px 8px; text-align: center; font-weight: 600; color: #374151;">Check Out</th>
+                    <th style="padding: 12px 8px; text-align: center; font-weight: 600; color: #374151;">Hours</th>
+                    <th style="padding: 12px 8px; text-align: center; font-weight: 600; color: #374151;">Status</th>
+                    <th style="padding: 12px 8px; text-align: center; font-weight: 600; color: #374151;">vs Yesterday</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each employeeMetrics}}
+                <tr style="border-bottom: 1px solid #e5e7eb; {{#if (eq @index 0)}}background: #fef3c7;{{else if (eq status 'Perfect')}}background: #ecfdf5;{{else if (eq status 'Late')}}background: #fef2f2;{{else if (eq status 'Absent')}}background: #f9fafb;{{/if}}">
+                    <td style="padding: 12px 8px;">
+                        <div style="font-weight: 600; color: #111827;">{{name}} {{surname}}</div>
+                        <div style="font-size: 12px; color: #6b7280;">{{role}} {{#if branch.name}}• {{branch.name}}{{/if}}</div>
+                    </td>
+                    <td style="padding: 12px 8px; text-align: center;">
+                        {{#if checkInTime}}
+                            <div style="font-weight: 500; color: {{#if isLate}}#dc2626{{else if isEarly}}#059669{{else}}#374151{{/if}};">{{checkInTime}}</div>
+                        {{else}}
+                            <div style="color: #9ca3af; font-style: italic;">--</div>
+                        {{/if}}
+                    </td>
+                    <td style="padding: 12px 8px; text-align: center;">
+                        {{#if checkOutTime}}
+                            <div style="font-weight: 500; color: #374151;">{{checkOutTime}}</div>
+                        {{else if checkInTime}}
+                            <div style="color: #f59e0b; font-style: italic;">Still Working</div>
+                        {{else}}
+                            <div style="color: #9ca3af; font-style: italic;">--</div>
+                        {{/if}}
+                    </td>
+                    <td style="padding: 12px 8px; text-align: center;">
+                        {{#if hoursWorked}}
+                            <div style="font-weight: 600; color: {{#if (gte hoursWorked 8)}}#059669{{else if (gte hoursWorked 6)}}#f59e0b{{else}}#dc2626{{/if}};">{{hoursWorked}}h</div>
+                        {{else}}
+                            <div style="color: #9ca3af;">0h</div>
+                        {{/if}}
+                    </td>
+                    <td style="padding: 12px 8px; text-align: center;">
+                        <span style="padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 600; {{#if (eq status 'Perfect')}}background: #d1fae5; color: #065f46;{{else if (eq status 'Early')}}background: #dcfce7; color: #166534;{{else if (eq status 'On Time')}}background: #dbeafe; color: #1e40af;{{else if (eq status 'Late')}}background: #fecaca; color: #991b1b;{{else if (eq status 'Absent')}}background: #f3f4f6; color: #6b7280;{{else}}background: #fef3c7; color: #92400e;{{/if}}">
+                            {{status}}
+                        </span>
+                    </td>
+                    <td style="padding: 12px 8px; text-align: center;">
+                        {{#if yesterdayComparison}}
+                            <div style="font-size: 12px;">
+                                <div style="color: {{#if (gte yesterdayComparison.hoursChange 0)}}#059669{{else}}#dc2626{{/if}}; font-weight: 500;">
+                                    {{#if (gte yesterdayComparison.hoursChange 0)}}+{{/if}}{{yesterdayComparison.hoursChange}}h
+                                </div>
+                                <div style="color: {{#if (eq yesterdayComparison.punctualityChange 'better')}}#059669{{else if (eq yesterdayComparison.punctualityChange 'same')}}#6b7280{{else}}#dc2626{{/if}}; font-size: 10px;">
+                                    {{yesterdayComparison.punctualityChange}}
+                                </div>
+                            </div>
+                        {{else}}
+                            <div style="color: #9ca3af; font-size: 12px;">No data</div>
+                        {{/if}}
+                    </td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Top Performers -->
+{{#if topPerformers}}
+<div class="info-card" style="background: linear-gradient(135deg, #fef3c7 0%, #fed7aa 100%); border-left-color: #f59e0b;">
+    <h4 style="color: #92400e;">🏆 Top Performers Today</h4>
+    <div style="display: grid; gap: 8px; margin-top: 16px;">
+        {{#each topPerformers}}
+        <div style="display: flex; align-items: center; padding: 12px; background: rgba(245, 158, 11, 0.1); border-radius: 8px; border-left: 3px solid #f59e0b;">
+            <div style="flex: 1;">
+                <div style="font-weight: 600; color: #92400e;">{{name}} {{surname}}</div>
+                <div style="font-size: 14px; color: #d97706;">{{achievement}}</div>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-weight: 600; color: #92400e;">{{hoursWorked}}h</div>
+                <div style="font-size: 12px; color: #d97706;">{{metric}}</div>
+            </div>
+        </div>
+        {{/each}}
+    </div>
+</div>
+{{/if}}
+
+<!-- Areas for Improvement -->
+{{#if improvementAreas}}
+<div class="info-card" style="background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%); border-left-color: #ef4444;">
+    <h4 style="color: #991b1b;">📈 Areas for Improvement</h4>
+    <div style="display: grid; gap: 8px; margin-top: 16px;">
+        {{#each improvementAreas}}
+        <div style="display: flex; align-items: center; padding: 12px; background: rgba(239, 68, 68, 0.1); border-radius: 8px; border-left: 3px solid #ef4444;">
+            <div style="flex: 1;">
+                <div style="font-weight: 600; color: #991b1b;">{{area}}</div>
+                <div style="font-size: 14px; color: #dc2626;">{{description}}</div>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-size: 12px; color: #dc2626;">{{count}} employees</div>
+            </div>
+        </div>
+        {{/each}}
+    </div>
+</div>
+{{/if}}
+
+<!-- Key Insights -->
+<div class="info-card">
+    <h4>💡 Key Insights & Trends</h4>
+    <ul style="margin-left: 20px; color: #4b5563; line-height: 1.8;">
+        <li><strong>Overall Performance:</strong> {{overallPerformance.description}}</li>
+        <li><strong>Attendance Rate:</strong> {{attendanceRate}}% {{#if yesterdayAttendanceRate}}({{#if (gte attendanceChange 0)}}improved{{else}}decreased{{/if}} from {{yesterdayAttendanceRate}}% yesterday){{/if}}</li>
+        <li><strong>Productivity:</strong> Average {{averageHoursWorked}} hours per employee {{#if (gte averageHoursWorked 8)}}- excellent commitment{{else if (gte averageHoursWorked 6)}}- good performance{{else}}- needs attention{{/if}}</li>
+        <li><strong>Punctuality:</strong> {{punctualityRate}}% arrived on time {{#if (gte punctualityRate 90)}}- outstanding{{else if (gte punctualityRate 75)}}- good{{else}}- requires focus{{/if}}</li>
+        {{#if departmentInsights}}
+        <li><strong>Department Focus:</strong> {{departmentInsights}}</li>
+        {{/if}}
+    </ul>
+</div>
+
+<!-- Tomorrow's Focus -->
+<div class="info-card">
+    <h4>🎯 Tomorrow's Action Items</h4>
+    <ul style="margin-left: 20px; color: #4b5563; line-height: 1.6;">
+        {{#each tomorrowActions}}
+        <li>{{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+
+<!-- Manager Actions -->
+{{#if managerActions}}
+<div class="warning-notice">
+    <p>📋 <strong>Manager Action Required:</strong></p>
+    <ul style="margin-left: 20px; margin-top: 10px;">
+        {{#each managerActions}}
+        <li>{{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+{{/if}}
+
+<!-- Achievement Recognition -->
+{{#if achievements}}
+<div class="success-notice">
+    <p>🎉 <strong>Achievements to Celebrate:</strong></p>
+    <ul style="margin-left: 20px; margin-top: 10px;">
+        {{#each achievements}}
+        <li>{{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+{{/if}}
+
+<!-- CTA Section -->
+<div class="cta-section">
+    <a href="{{dashboardUrl}}/attendance" class="cta-button">View Detailed Analytics</a>
+</div>
+
+<!-- Report Footer -->
+<div class="message">
+    <p style="font-size: 14px; color: #6b7280; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+        <strong>Report Details:</strong><br>
+        Generated: {{generatedAt}}<br>
+        Organization: {{organizationName}}<br>
+        Period: {{organizationStartTime}} - {{organizationCloseTime}}<br>
+        Total Employees Tracked: {{totalEmployees}}<br>
+        Report covers: {{reportDate}}
+    </p>
+</div>
+
+{{/base}} 

@@ -6,6 +6,9 @@ export enum EmailType {
     INVOICE = 'invoice',
     DAILY_REPORT = 'daily_report',
     USER_DAILY_REPORT = 'user_daily_report',
+    // Attendance Reports
+    ATTENDANCE_MORNING_REPORT = 'attendance_morning_report',
+    ATTENDANCE_EVENING_REPORT = 'attendance_evening_report',
     // Quotation related emails
     ORDER_RECEIVED_CLIENT = 'order_received_client',
     NEW_QUOTATION_CLIENT = 'new_quotation_client',

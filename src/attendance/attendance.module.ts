@@ -6,18 +6,20 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Attendance } from './entities/attendance.entity';
 import { User } from '../user/entities/user.entity';
+import { Organisation } from '../organisation/entities/organisation.entity';
 import { UserModule } from '../user/user.module';
 import { RewardsModule } from '../rewards/rewards.module';
 import { LicensingModule } from '../licensing/licensing.module';
 import { OrganisationHours } from '../organisation/entities/organisation-hours.entity';
 import { OrganizationHoursService } from './services/organization-hours.service';
 import { AttendanceCalculatorService } from './services/attendance-calculator.service';
+import { AttendanceReportsService } from './services/attendance-reports.service';
 
 @Module({
 	imports: [
-		LicensingModule, 
-		TypeOrmModule.forFeature([Attendance, User, OrganisationHours]), 
-		UserModule, 
+		LicensingModule,
+		TypeOrmModule.forFeature([Attendance, User, Organisation, OrganisationHours]),
+		UserModule,
 		RewardsModule,
 		CacheModule.registerAsync({
 			imports: [ConfigModule],
@@ -33,7 +35,7 @@ import { AttendanceCalculatorService } from './services/attendance-calculator.se
 		}),
 	],
 	controllers: [AttendanceController],
-	providers: [AttendanceService, OrganizationHoursService, AttendanceCalculatorService],
-	exports: [AttendanceService, OrganizationHoursService, AttendanceCalculatorService],
+	providers: [AttendanceService, OrganizationHoursService, AttendanceCalculatorService, AttendanceReportsService],
+	exports: [AttendanceService, OrganizationHoursService, AttendanceCalculatorService, AttendanceReportsService],
 })
 export class AttendanceModule {}

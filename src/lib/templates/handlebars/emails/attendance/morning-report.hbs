@@ -1,0 +1,186 @@
+{{#> base headerTitle="Daily Attendance Morning Report" headerSubtitle="Attendance overview for {{reportDate}}"}}
+
+<div class="greeting">
+    Good morning {{recipientName}}! ⏰
+</div>
+
+<div class="message">
+    <p>Here's your daily attendance overview for {{reportDate}}. This report shows employee attendance status as of 30 minutes after the standard start time ({{organizationStartTime}}).</p>
+</div>
+
+<!-- Attendance Summary -->
+<div class="info-card">
+    <h3>📊 Attendance Summary</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Total Employees</span>
+            <span class="detail-value">{{totalEmployees}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Present Today</span>
+            <span class="detail-value" style="color: #10b981;">{{presentCount}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Absent Today</span>
+            <span class="detail-value" style="color: #ef4444;">{{absentCount}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Attendance Rate</span>
+            <span class="detail-value" style="font-weight: 700; font-size: 18px; color: {{#if (gte attendanceRate 90)}}#10b981{{else if (gte attendanceRate 75)}}#f59e0b{{else}}#ef4444{{/if}};">{{attendanceRate}}%</span>
+        </div>
+    </div>
+</div>
+
+<!-- Punctuality Breakdown -->
+<div class="info-card">
+    <h3>🕐 Punctuality Breakdown</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Early Arrivals</span>
+            <span class="detail-value" style="color: #10b981; font-weight: 600;">{{earlyCount}} employees</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">On Time</span>
+            <span class="detail-value" style="color: #059669; font-weight: 600;">{{onTimeCount}} employees</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Late Arrivals</span>
+            <span class="detail-value" style="color: #dc2626; font-weight: 600;">{{lateCount}} employees</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Punctuality Rate</span>
+            <span class="detail-value" style="font-weight: 700; color: {{#if (gte punctualityRate 90)}}#10b981{{else if (gte punctualityRate 75)}}#f59e0b{{else}}#ef4444{{/if}};">{{punctualityRate}}%</span>
+        </div>
+    </div>
+</div>
+
+<!-- Early Arrivals -->
+{{#if earlyArrivals}}
+<div class="info-card" style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border-left-color: #10b981;">
+    <h4 style="color: #065f46;">🌅 Early Arrivals ({{earlyArrivals.length}})</h4>
+    <div style="display: grid; gap: 8px; margin-top: 16px;">
+        {{#each earlyArrivals}}
+        <div style="display: flex; align-items: center; padding: 12px; background: rgba(16, 185, 129, 0.1); border-radius: 8px; border-left: 3px solid #10b981;">
+            <div style="flex: 1;">
+                <div style="font-weight: 600; color: #065f46;">{{name}} {{surname}}</div>
+                <div style="font-size: 14px; color: #059669;">{{role}} {{#if branch.name}}• {{branch.name}}{{/if}}</div>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-weight: 600; color: #065f46;">{{checkInTime}}</div>
+                <div style="font-size: 12px; color: #059669;">{{earlyMinutes}} min early</div>
+            </div>
+        </div>
+        {{/each}}
+    </div>
+</div>
+{{/if}}
+
+<!-- On Time Arrivals -->
+{{#if onTimeArrivals}}
+<div class="info-card" style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-left-color: #22c55e;">
+    <h4 style="color: #166534;">✅ On Time Arrivals ({{onTimeArrivals.length}})</h4>
+    <div style="display: grid; gap: 8px; margin-top: 16px;">
+        {{#each onTimeArrivals}}
+        <div style="display: flex; align-items: center; padding: 12px; background: rgba(34, 197, 94, 0.1); border-radius: 8px; border-left: 3px solid #22c55e;">
+            <div style="flex: 1;">
+                <div style="font-weight: 600; color: #166534;">{{name}} {{surname}}</div>
+                <div style="font-size: 14px; color: #16a34a;">{{role}} {{#if branch.name}}• {{branch.name}}{{/if}}</div>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-weight: 600; color: #166534;">{{checkInTime}}</div>
+            </div>
+        </div>
+        {{/each}}
+    </div>
+</div>
+{{/if}}
+
+<!-- Late Arrivals -->
+{{#if lateArrivals}}
+<div class="info-card" style="background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%); border-left-color: #ef4444;">
+    <h4 style="color: #991b1b;">⚠️ Late Arrivals ({{lateArrivals.length}})</h4>
+    <div style="display: grid; gap: 8px; margin-top: 16px;">
+        {{#each lateArrivals}}
+        <div style="display: flex; align-items: center; padding: 12px; background: rgba(239, 68, 68, 0.1); border-radius: 8px; border-left: 3px solid #ef4444;">
+            <div style="flex: 1;">
+                <div style="font-weight: 600; color: #991b1b;">{{name}} {{surname}}</div>
+                <div style="font-size: 14px; color: #dc2626;">{{role}} {{#if branch.name}}• {{branch.name}}{{/if}}</div>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-weight: 600; color: #991b1b;">{{checkInTime}}</div>
+                <div style="font-size: 12px; color: #dc2626;">{{lateMinutes}} min late</div>
+            </div>
+        </div>
+        {{/each}}
+    </div>
+</div>
+{{/if}}
+
+<!-- Absent Employees -->
+{{#if absentEmployees}}
+<div class="info-card" style="background: linear-gradient(135deg, #fafafa 0%, #f4f4f5 100%); border-left-color: #71717a;">
+    <h4 style="color: #52525b;">❌ Absent Employees ({{absentEmployees.length}})</h4>
+    <div style="display: grid; gap: 8px; margin-top: 16px;">
+        {{#each absentEmployees}}
+        <div style="display: flex; align-items: center; padding: 12px; background: rgba(113, 113, 122, 0.1); border-radius: 8px; border-left: 3px solid #71717a;">
+            <div style="flex: 1;">
+                <div style="font-weight: 600; color: #52525b;">{{name}} {{surname}}</div>
+                <div style="font-size: 14px; color: #71717a;">{{role}} {{#if branch.name}}• {{branch.name}}{{/if}}</div>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-size: 12px; color: #71717a;">No check-in</div>
+            </div>
+        </div>
+        {{/each}}
+    </div>
+</div>
+{{/if}}
+
+<!-- Key Insights -->
+<div class="info-card">
+    <h4>💡 Key Insights</h4>
+    <ul style="margin-left: 20px; color: #4b5563; line-height: 1.8;">
+        <li><strong>Best Performance:</strong> {{#if (gt earlyCount 0)}}{{earlyCount}} early arrivals showing excellent dedication{{else}}All present employees arrived on time or close to it{{/if}}</li>
+        <li><strong>Attendance Trend:</strong> {{#if (gte attendanceRate 90)}}Excellent attendance rate of {{attendanceRate}}%{{else if (gte attendanceRate 75)}}Good attendance rate of {{attendanceRate}}%, room for improvement{{else}}Attendance rate of {{attendanceRate}}% needs attention{{/if}}</li>
+        <li><strong>Punctuality Focus:</strong> {{#if (gt lateCount 0)}}{{lateCount}} late arrivals - consider following up with affected employees{{else}}Perfect punctuality today!{{/if}}</li>
+        {{#if (gt absentCount 0)}}
+        <li><strong>Follow-up Required:</strong> {{absentCount}} employees absent - verify reasons and provide support if needed</li>
+        {{/if}}
+    </ul>
+</div>
+
+<!-- Action Items -->
+{{#if (or (gt lateCount 0) (gt absentCount 0))}}
+<div class="warning-notice">
+    <p>📋 <strong>Recommended Actions:</strong></p>
+    <ul style="margin-left: 20px; margin-top: 10px;">
+        {{#if (gt lateCount 0)}}
+        <li>Follow up with late arrivals to understand any underlying issues</li>
+        <li>Consider implementing tardiness tracking for patterns</li>
+        {{/if}}
+        {{#if (gt absentCount 0)}}
+        <li>Contact absent employees to verify their status and wellbeing</li>
+        <li>Review attendance policies if patterns emerge</li>
+        {{/if}}
+        <li>Recognize and appreciate early arrivals and consistent performers</li>
+    </ul>
+</div>
+{{/if}}
+
+<!-- CTA Section -->
+<div class="cta-section">
+    <a href="{{dashboardUrl}}/attendance" class="cta-button">View Full Attendance Dashboard</a>
+</div>
+
+<!-- Report Footer -->
+<div class="message">
+    <p style="font-size: 14px; color: #6b7280; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+        <strong>Report Details:</strong><br>
+        Generated: {{generatedAt}}<br>
+        Organization: {{organizationName}}<br>
+        Standard Start Time: {{organizationStartTime}}<br>
+        Late Threshold: 5 minutes after start time
+    </p>
+</div>
+
+{{/base}} 

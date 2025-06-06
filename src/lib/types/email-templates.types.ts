@@ -92,6 +92,77 @@ export interface DailyReportData extends BaseEmailData {
 	};
 }
 
+export interface AttendanceReportUser {
+	uid: number;
+	name: string;
+	email: string;
+	role: string;
+	userProfile?: {
+		avatar?: string;
+	};
+	branch?: {
+		uid: number;
+		name: string;
+	};
+}
+
+export interface AttendanceSummary {
+	totalEmployees: number;
+	presentCount: number;
+	absentCount: number;
+	attendanceRate: number;
+}
+
+export interface PunctualityBreakdown {
+	earlyArrivals: AttendanceReportUser[];
+	onTimeArrivals: AttendanceReportUser[];
+	lateArrivals: AttendanceReportUser[];
+	earlyPercentage: number;
+	onTimePercentage: number;
+	latePercentage: number;
+}
+
+export interface EmployeeAttendanceMetric {
+	user: AttendanceReportUser;
+	todayCheckIn: string | null;
+	todayCheckOut: string | null;
+	hoursWorked: number;
+	isLate: boolean;
+	lateMinutes: number;
+	yesterdayHours: number;
+	comparisonText: string;
+	timingDifference: string;
+}
+
+export interface MorningReportData extends BaseEmailData {
+	organizationName: string;
+	reportDate: string;
+	organizationStartTime: string;
+	summary: AttendanceSummary;
+	punctuality: PunctualityBreakdown;
+	insights: string[];
+	recommendations: string[];
+	generatedAt: string;
+	dashboardUrl: string;
+}
+
+export interface EveningReportData extends BaseEmailData {
+	organizationName: string;
+	reportDate: string;
+	organizationStartTime: string;
+	organizationCloseTime: string;
+	employeeMetrics: EmployeeAttendanceMetric[];
+	summary: {
+		totalEmployees: number;
+		completedShifts: number;
+		averageHours: number;
+		totalOvertimeMinutes: number;
+	};
+	insights: string[];
+	generatedAt: string;
+	dashboardUrl: string;
+}
+
 export interface QuotationData extends BaseEmailData {
 	quotationId: string;
 	validUntil: Date;
@@ -521,6 +592,8 @@ export interface EmailDataMap {
 	[EmailType.PASSWORD_CHANGED]: PasswordChangedData;
 	[EmailType.INVOICE]: InvoiceData;
 	[EmailType.DAILY_REPORT]: DailyReportData;
+	[EmailType.ATTENDANCE_MORNING_REPORT]: MorningReportData;
+	[EmailType.ATTENDANCE_EVENING_REPORT]: EveningReportData;
 	[EmailType.NEW_QUOTATION_CLIENT]: QuotationData;
 	[EmailType.NEW_QUOTATION_INTERNAL]: QuotationInternalData;
 	[EmailType.NEW_QUOTATION_RESELLER]: QuotationResellerData;

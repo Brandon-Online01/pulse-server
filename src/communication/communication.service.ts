@@ -20,6 +20,8 @@ import {
 	TaskUpdated,
 	TaskCompleted,
 	UserDailyReport,
+	AttendanceMorningReport,
+	AttendanceEveningReport,
 } from '../lib/templates/emails';
 // Quotation related templates
 import {
@@ -83,6 +85,8 @@ import {
 	WarningIssuedEmailData,
 	WarningUpdatedEmailData,
 	WarningExpiredEmailData,
+	MorningReportData,
+	EveningReportData,
 } from '../lib/types/email-templates.types';
 import {
 	TaskFlagCreated,
@@ -425,6 +429,16 @@ export class CommunicationService {
 				return {
 					subject: 'Warning Expired',
 					body: WarningExpired(data as WarningExpiredEmailData),
+				};
+			case EmailType.ATTENDANCE_MORNING_REPORT:
+				return {
+					subject: 'Daily Attendance Morning Report',
+					body: AttendanceMorningReport(data as MorningReportData),
+				};
+			case EmailType.ATTENDANCE_EVENING_REPORT:
+				return {
+					subject: 'Daily Attendance Evening Report',
+					body: AttendanceEveningReport(data as EveningReportData),
 				};
 			default:
 				throw new NotFoundException(`Unknown email template type: ${type}`);
