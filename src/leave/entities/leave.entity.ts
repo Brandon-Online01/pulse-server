@@ -105,6 +105,9 @@ export class Leave {
 	@Column({ type: 'simple-array', nullable: true })
 	tags?: string[];
 
+	@Column({ type: 'int', nullable: true })
+	delegatedToUid?: number;
+
 	@CreateDateColumn({ type: 'timestamp' })
 	createdAt: Date;
 

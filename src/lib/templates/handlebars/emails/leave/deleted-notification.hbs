@@ -1,0 +1,205 @@
+{{#> base headerTitle="Leave Application Deleted" headerSubtitle="A leave request has been removed from the system"}}
+
+<div class="greeting">
+    Hello {{recipientName}}! 🗑️
+</div>
+
+{{#if isApplicant}}
+<div class="warning-notice">
+    <p>⚠️ <strong>Application Deleted:</strong> Your leave application has been removed from the system{{#if deletedBy}} by {{deletedBy}}{{/if}}.</p>
+</div>
+
+<div class="message">
+    <p>We're writing to inform you that your leave application (Reference #{{leaveId}}) has been deleted from the system. This action cannot be undone, and the application is no longer available for review or processing.</p>
+</div>
+
+{{else}}
+<div class="info-notice">
+    <p>🗑️ <strong>Application Deleted:</strong> A leave application has been removed from the system{{#if deletedBy}} by {{deletedBy}}{{/if}}.</p>
+</div>
+
+<div class="message">
+    <p>This is a notification that a leave application has been deleted from the system. The details below are provided for your administrative records and awareness.</p>
+</div>
+{{/if}}
+
+<div class="info-card">
+    <h3>👤 {{#if isApplicant}}Your{{else}}Employee{{/if}} Application Details</h3>
+    <div class="detail-grid">
+        {{#unless isApplicant}}
+        <div class="detail-item">
+            <span class="detail-label">Employee Name</span>
+            <span class="detail-value">{{applicantName}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Employee Email</span>
+            <span class="detail-value">{{applicantEmail}}</span>
+        </div>
+        {{/unless}}
+        <div class="detail-item">
+            <span class="detail-label">Reference Number</span>
+            <span class="detail-value">#{{leaveId}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Leave Type</span>
+            <span class="detail-value">{{leaveType}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Start Date</span>
+            <span class="detail-value">{{formatDate startDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">End Date</span>
+            <span class="detail-value">{{formatDate endDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Duration</span>
+            <span class="detail-value">{{duration}} day{{#if (gt duration 1)}}s{{/if}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Status When Deleted</span>
+            <span class="detail-value">{{statusWhenDeleted}}</span>
+        </div>
+    </div>
+</div>
+
+<div class="info-card">
+    <h4>🗑️ Deletion Information</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Deleted On</span>
+            <span class="detail-value">{{formatDate deletedAt}}</span>
+        </div>
+        {{#if deletedBy}}
+        <div class="detail-item">
+            <span class="detail-label">Deleted By</span>
+            <span class="detail-value">{{deletedBy}}</span>
+        </div>
+        {{/if}}
+        <div class="detail-item">
+            <span class="detail-label">Original Application Date</span>
+            <span class="detail-value">{{formatDate createdAt}}</span>
+        </div>
+    </div>
+</div>
+
+{{#if motivation}}
+<div class="info-card">
+    <h4>💬 Original Motivation</h4>
+    <p style="background: #f8fafc; padding: 15px; border-radius: 6px; margin: 0; color: #374151; font-style: italic; border-left: 4px solid #6b7280;">
+        "{{motivation}}"
+    </p>
+</div>
+{{/if}}
+
+{{#if deletionReason}}
+<div class="info-card">
+    <h4>📝 Reason for Deletion</h4>
+    <p style="background: #fef3c7; padding: 15px; border-radius: 6px; margin: 0; color: #374151; font-style: italic; border-left: 4px solid #f59e0b;">
+        {{deletionReason}}
+    </p>
+</div>
+{{/if}}
+
+{{#if isApplicant}}
+<div class="info-card">
+    <h4>⚠️ Important Information</h4>
+    <ul style="margin-left: 20px; color: #4b5563; margin-top: 15px;">
+        <li><strong>Application Removed:</strong> Your leave request is no longer in the system</li>
+        <li><strong>No Processing:</strong> The application will not be reviewed or approved</li>
+        <li><strong>Leave Balance:</strong> No leave days were deducted (if it was pending)</li>
+        {{#if (eq statusWhenDeleted 'APPROVED')}}
+        <li><strong>Previously Approved:</strong> Your approved leave has been cancelled and removed</li>
+        <li><strong>Calendar Cleared:</strong> The leave dates have been removed from schedules</li>
+        {{/if}}
+        <li><strong>Permanent Action:</strong> Deleted applications cannot be restored</li>
+    </ul>
+</div>
+
+{{#if (eq statusWhenDeleted 'PENDING')}}
+<div class="info-card">
+    <h4>🔄 If You Still Need Leave</h4>
+    <p>If you still require time off for the same or different dates, you'll need to submit a completely new leave application through the system.</p>
+    <div style="margin-top: 15px;">
+        <a href="{{appUrl}}/dashboard/leave/new" style="background: #3b82f6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: 500;">Submit New Application</a>
+    </div>
+</div>
+{{/if}}
+
+<div class="warning-notice">
+    <p>❓ <strong>Questions About This Deletion?</strong> If you have concerns or questions about why your application was deleted, please contact your manager or HR department for clarification.</p>
+</div>
+
+{{else}}
+<div class="info-card">
+    <h4>🔄 Administrative Impact</h4>
+    <ul style="margin-left: 20px; color: #4b5563; margin-top: 15px;">
+        <li><strong>System Cleanup:</strong> Application removed from all leave management reports</li>
+        <li><strong>Employee Notified:</strong> {{applicantName}} has been informed of the deletion</li>
+        {{#if (eq statusWhenDeleted 'APPROVED')}}
+        <li><strong>Calendar Updated:</strong> Previously approved leave dates have been cleared</li>
+        <li><strong>Balance Restored:</strong> Leave balance adjustments have been reversed</li>
+        {{/if}}
+        <li><strong>Audit Trail:</strong> Deletion is logged for compliance purposes</li>
+        <li><strong>Workflow Reset:</strong> Any approval workflows have been terminated</li>
+    </ul>
+</div>
+
+<div class="info-card">
+    <h4>📊 System Metrics Updated</h4>
+    <div style="margin-top: 15px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #f8fafc; border-radius: 6px; margin-bottom: 8px;">
+            <span style="font-weight: 500;">Remaining Pending Applications:</span>
+            <span style="background: #fbbf24; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">{{remainingPendingCount}}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #f8fafc; border-radius: 6px;">
+            <span style="font-weight: 500;">Team Coverage Status:</span>
+            <span style="background: {{#if adequateCoverage}}#10b981{{else}}#ef4444{{/if}}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">{{#if adequateCoverage}}Good{{else}}Monitor{{/if}}</span>
+        </div>
+    </div>
+</div>
+{{/if}}
+
+<div class="cta-section">
+    <a href="{{appUrl}}/dashboard{{#if isApplicant}}/leave{{else}}/leave/management{{/if}}" class="cta-button">{{#if isApplicant}}View Leave Dashboard{{else}}Manage Leave Applications{{/if}}</a>
+</div>
+
+{{#if isApplicant}}
+<div class="message">
+    <p><strong>What You Can Do:</strong></p>
+    <ul style="margin-left: 20px; color: #4b5563;">
+        <li>Submit a new leave application if you still need time off</li>
+        <li>Contact your manager or HR if you have questions about the deletion</li>
+        <li>Review leave policies to ensure future applications meet requirements</li>
+        <li>Keep this email for your records</li>
+    </ul>
+</div>
+
+<div class="message">
+    <p>We understand that having an application deleted can be concerning. If you believe this was done in error or have questions about the process, please don't hesitate to reach out to your supervisor or HR team.</p>
+    
+    <p><em>Best regards,<br>
+    Human Resources<br>
+    {{appName}} 🏢</em></p>
+</div>
+
+{{else}}
+<div class="message">
+    <p><strong>Administrative Notes:</strong></p>
+    <ul style="margin-left: 20px; color: #4b5563;">
+        <li>Deletion has been logged in the audit trail for compliance</li>
+        <li>Employee has been notified automatically</li>
+        <li>All related system data has been properly cleaned up</li>
+        <li>Document any follow-up discussions with the employee</li>
+    </ul>
+</div>
+
+<div class="message">
+    <p>This notification ensures transparency in leave management processes and maintains proper documentation of administrative actions.</p>
+    
+    <p><em>Best regards,<br>
+    {{appName}} Leave Management System 📊</em></p>
+</div>
+{{/if}}
+
+{{/base}} 

@@ -11,6 +11,7 @@ import { ConfigService } from '@nestjs/config';
 import { LeaveStatus } from '../lib/enums/leave.enums';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PaginatedResponse } from '../lib/interfaces/product.interfaces';
+import { LeaveEmailService } from './services/leave-email.service';
 
 @Injectable()
 export class LeaveService {
@@ -26,6 +27,7 @@ export class LeaveService {
 		private cacheManager: Cache,
 		private readonly configService: ConfigService,
 		private readonly eventEmitter: EventEmitter2,
+		private readonly leaveEmailService: LeaveEmailService,
 	) {
 		this.CACHE_TTL = this.configService.get<number>('CACHE_EXPIRATION_TIME') || 30;
 	}
@@ -139,11 +141,17 @@ export class LeaveService {
 			});
 
 			// Save the leave request
-			await this.leaveRepository.save(leave);
+			const savedLeave = await this.leaveRepository.save(leave);
+
+			// Send confirmation email to applicant
+			await this.leaveEmailService.sendApplicationConfirmation(savedLeave, owner);
+
+			// Send notification email to admins
+			await this.leaveEmailService.sendNewApplicationAdminNotification(savedLeave, owner);
 
 			// Emit leave created event for notifications
 			this.eventEmitter.emit('leave.created', {
-				leave,
+				leave: savedLeave,
 				owner,
 			});
 
@@ -431,6 +439,9 @@ export class LeaveService {
 				throw new NotFoundException(`Approver with ID ${approverUid} not found`);
 			}
 
+			// Store previous status for email
+			const previousStatus = leave.status;
+
 			// Update the leave
 			await this.leaveRepository.update(ref, {
 				status: LeaveStatus.APPROVED,
@@ -438,9 +449,31 @@ export class LeaveService {
 				approvedAt: new Date(),
 			});
 
+			// Get updated leave with relations
+			const updatedLeave = await this.leaveRepository.findOne({
+				where: { uid: ref },
+				relations: ['owner', 'approvedBy', 'organisation', 'branch'],
+			});
+
+			if (updatedLeave && updatedLeave.owner) {
+				// Send status update emails
+				await this.leaveEmailService.sendStatusUpdateToUser(
+					updatedLeave,
+					updatedLeave.owner,
+					previousStatus,
+					approver
+				);
+				await this.leaveEmailService.sendStatusUpdateToAdmins(
+					updatedLeave,
+					updatedLeave.owner,
+					previousStatus,
+					approver
+				);
+			}
+
 			// Emit leave approved event for notifications
 			this.eventEmitter.emit('leave.approved', {
-				leave,
+				leave: updatedLeave,
 				approver,
 			});
 
@@ -483,6 +516,9 @@ export class LeaveService {
 				throw new BadRequestException('Rejection reason is required');
 			}
 
+			// Store previous status for email
+			const previousStatus = leave.status;
+
 			// Update the leave
 			await this.leaveRepository.update(ref, {
 				status: LeaveStatus.REJECTED,
@@ -490,9 +526,29 @@ export class LeaveService {
 				rejectionReason,
 			});
 
+			// Get updated leave with relations
+			const updatedLeave = await this.leaveRepository.findOne({
+				where: { uid: ref },
+				relations: ['owner', 'approvedBy', 'organisation', 'branch'],
+			});
+
+			if (updatedLeave && updatedLeave.owner) {
+				// Send status update emails
+				await this.leaveEmailService.sendStatusUpdateToUser(
+					updatedLeave,
+					updatedLeave.owner,
+					previousStatus
+				);
+				await this.leaveEmailService.sendStatusUpdateToAdmins(
+					updatedLeave,
+					updatedLeave.owner,
+					previousStatus
+				);
+			}
+
 			// Emit leave rejected event for notifications
 			this.eventEmitter.emit('leave.rejected', {
-				leave,
+				leave: updatedLeave,
 				rejectionReason,
 			});
 

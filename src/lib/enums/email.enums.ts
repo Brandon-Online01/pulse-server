@@ -61,4 +61,10 @@ export enum EmailType {
     WARNING_ISSUED = 'warning_issued',
     WARNING_UPDATED = 'warning_updated',
     WARNING_EXPIRED = 'warning_expired',
+    // Leave related emails
+    LEAVE_APPLICATION_CONFIRMATION = 'leave_application_confirmation',
+    LEAVE_NEW_APPLICATION_ADMIN = 'leave_new_application_admin',
+    LEAVE_STATUS_UPDATE_USER = 'leave_status_update_user',
+    LEAVE_STATUS_UPDATE_ADMIN = 'leave_status_update_admin',
+    LEAVE_DELETED_NOTIFICATION = 'leave_deleted_notification',
 } 

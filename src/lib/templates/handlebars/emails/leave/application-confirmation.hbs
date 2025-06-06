@@ -1,0 +1,158 @@
+{{#> base headerTitle="Leave Application Received" headerSubtitle="Your leave request has been submitted successfully"}}
+
+<div class="greeting">
+    Hello {{applicantName}}! ✉️
+</div>
+
+<div class="success-notice">
+    <p>🎯 <strong>Application Submitted!</strong> Your leave request has been received and is now under review.</p>
+</div>
+
+<div class="message">
+    <p>Thank you for submitting your leave application through {{appName}}. We've received your request and it's being processed according to our standard approval workflow.</p>
+</div>
+
+<div class="info-card">
+    <h3>📋 Leave Application Details</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Leave Type</span>
+            <span class="detail-value">{{leaveType}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Start Date</span>
+            <span class="detail-value">{{formatDate startDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">End Date</span>
+            <span class="detail-value">{{formatDate endDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Duration</span>
+            <span class="detail-value">{{duration}} day{{#if (gt duration 1)}}s{{/if}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Half Day</span>
+            <span class="detail-value">{{#if isHalfDay}}Yes ({{halfDayPeriod}}){{else}}No{{/if}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Reference Number</span>
+            <span class="detail-value">#{{leaveId}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Status</span>
+            <span class="detail-value">{{status}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Application Date</span>
+            <span class="detail-value">{{formatDate createdAt}}</span>
+        </div>
+    </div>
+</div>
+
+{{#if motivation}}
+<div class="info-card">
+    <h4>💬 Motivation/Reason</h4>
+    <p style="background: #f8fafc; padding: 15px; border-radius: 6px; margin: 0; color: #374151; font-style: italic;">
+        "{{motivation}}"
+    </p>
+</div>
+{{/if}}
+
+{{#if tags}}
+<div class="info-card">
+    <h4>🏷️ Tags</h4>
+    <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;">
+        {{#each tags}}
+        <span style="background: #e0f2fe; color: #0277bd; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500;">{{this}}</span>
+        {{/each}}
+    </div>
+</div>
+{{/if}}
+
+{{#if isPaid}}
+<div class="info-card">
+    <h4>💰 Compensation Details</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Paid Leave</span>
+            <span class="detail-value">Yes</span>
+        </div>
+        {{#if paidAmount}}
+        <div class="detail-item">
+            <span class="detail-label">Amount</span>
+            <span class="detail-value">{{formatCurrency paidAmount 'ZAR'}}</span>
+        </div>
+        {{/if}}
+    </div>
+</div>
+{{/if}}
+
+{{#if isDelegated}}
+<div class="info-card">
+    <h4>👥 Work Delegation</h4>
+    <p>Your work responsibilities have been delegated during your leave period to ensure business continuity.</p>
+    {{#if delegatedToName}}
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Delegated To</span>
+            <span class="detail-value">{{delegatedToName}}</span>
+        </div>
+    </div>
+    {{/if}}
+</div>
+{{/if}}
+
+<div class="info-card">
+    <h4>⏱️ What Happens Next?</h4>
+    <div style="margin-top: 15px;">
+        <div style="display: flex; align-items: flex-start; margin-bottom: 12px;">
+            <span style="background: #10b981; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; font-size: 12px; font-weight: bold; flex-shrink: 0;">1</span>
+            <div>
+                <strong>Review Process:</strong> Your application will be reviewed by the appropriate manager(s)
+            </div>
+        </div>
+        <div style="display: flex; align-items: flex-start; margin-bottom: 12px;">
+            <span style="background: #3b82f6; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; font-size: 12px; font-weight: bold; flex-shrink: 0;">2</span>
+            <div>
+                <strong>Decision Communication:</strong> You'll receive an email notification with the decision
+            </div>
+        </div>
+        <div style="display: flex; align-items: flex-start;">
+            <span style="background: #8b5cf6; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; font-size: 12px; font-weight: bold; flex-shrink: 0;">3</span>
+            <div>
+                <strong>Leave Tracking:</strong> Approved leave will be reflected in your leave balance
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="cta-section">
+    <a href="{{appUrl}}/dashboard" class="cta-button">View Dashboard</a>
+</div>
+
+<div class="message">
+    <p><strong>Important Notes:</strong></p>
+    <ul style="margin-left: 20px; color: #4b5563;">
+        <li>Keep your reference number (#{{leaveId}}) for future correspondence</li>
+        <li>You can track your application status in your dashboard</li>
+        <li>Any changes to your request should be communicated immediately</li>
+        {{#if isPublicHoliday}}
+        <li>This leave coincides with public holidays which may affect processing</li>
+        {{/if}}
+    </ul>
+</div>
+
+<div class="success-notice">
+    <p>📞 <strong>Need Help?</strong> If you have any questions about your leave application, please contact HR or your line manager. We're here to support you!</p>
+</div>
+
+<div class="message">
+    <p>Thank you for following proper leave procedures. We appreciate your planning and communication.</p>
+    
+    <p><em>Best regards,<br>
+    Human Resources<br>
+    {{appName}} 🌟</em></p>
+</div>
+
+{{/base}} 

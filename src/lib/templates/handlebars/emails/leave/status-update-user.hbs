@@ -1,0 +1,197 @@
+{{#> base headerTitle="Leave Application Update" headerSubtitle="Your leave request status has been updated"}}
+
+<div class="greeting">
+    Hello {{applicantName}}! 📬
+</div>
+
+{{#if (eq status 'APPROVED')}}
+<div class="success-notice">
+    <p>🎉 <strong>Great News!</strong> Your leave request has been approved and is now confirmed in the system.</p>
+</div>
+{{else if (eq status 'REJECTED')}}
+<div class="error-notice">
+    <p>😞 <strong>Application Update:</strong> Unfortunately, your leave request has been declined. Please see the details below.</p>
+</div>
+{{else if (eq status 'CANCELLED_BY_ADMIN')}}
+<div class="warning-notice">
+    <p>⚠️ <strong>Leave Cancelled:</strong> Your approved leave has been cancelled by management. Please see the details below.</p>
+</div>
+{{else if (eq status 'CANCELLED_BY_USER')}}
+<div class="info-notice">
+    <p>✅ <strong>Cancellation Confirmed:</strong> Your leave cancellation has been processed successfully.</p>
+</div>
+{{else}}
+<div class="info-notice">
+    <p>📋 <strong>Status Update:</strong> Your leave application status has been updated to {{status}}.</p>
+</div>
+{{/if}}
+
+<div class="message">
+    <p>We're writing to inform you about an update to your leave application submitted on {{formatDate createdAt}}. Please review the details below for important information about your request.</p>
+</div>
+
+<div class="info-card">
+    <h3>📋 Leave Application Summary</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Reference Number</span>
+            <span class="detail-value">#{{leaveId}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Leave Type</span>
+            <span class="detail-value">{{leaveType}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Start Date</span>
+            <span class="detail-value">{{formatDate startDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">End Date</span>
+            <span class="detail-value">{{formatDate endDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Duration</span>
+            <span class="detail-value">{{duration}} day{{#if (gt duration 1)}}s{{/if}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Current Status</span>
+            <span class="detail-value" style="font-weight: bold; color: {{#if (eq status 'APPROVED')}}#10b981{{else if (eq status 'REJECTED')}}#ef4444{{else if (contains status 'CANCELLED')}}#f59e0b{{else}}#3b82f6{{/if}};">{{status}}</span>
+        </div>
+    </div>
+</div>
+
+{{#if processedBy}}
+<div class="info-card">
+    <h4>👤 Processed By</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Manager/Admin</span>
+            <span class="detail-value">{{processedBy}}</span>
+        </div>
+        {{#if processedAt}}
+        <div class="detail-item">
+            <span class="detail-label">Decision Date</span>
+            <span class="detail-value">{{formatDate processedAt}}</span>
+        </div>
+        {{/if}}
+    </div>
+</div>
+{{/if}}
+
+{{#if comments}}
+<div class="info-card">
+    <h4>💬 {{#if (eq status 'APPROVED')}}Approval{{else if (eq status 'REJECTED')}}Decline{{else}}Management{{/if}} Comments</h4>
+    <p style="background: {{#if (eq status 'APPROVED')}}#f0f9ff{{else if (eq status 'REJECTED')}}#fef2f2{{else}}#f8fafc{{/if}}; padding: 15px; border-radius: 6px; margin: 0; color: #374151; font-style: italic; border-left: 4px solid {{#if (eq status 'APPROVED')}}#10b981{{else if (eq status 'REJECTED')}}#ef4444{{else}}#3b82f6{{/if}};">
+        "{{comments}}"
+    </p>
+</div>
+{{/if}}
+
+{{#if rejectionReason}}
+<div class="info-card">
+    <h4>❌ Reason for Decline</h4>
+    <p style="background: #fef2f2; padding: 15px; border-radius: 6px; margin: 0; color: #374151; font-style: italic; border-left: 4px solid #ef4444;">
+        {{rejectionReason}}
+    </p>
+</div>
+{{/if}}
+
+{{#if cancellationReason}}
+<div class="info-card">
+    <h4>🚫 Reason for Cancellation</h4>
+    <p style="background: #fefdf2; padding: 15px; border-radius: 6px; margin: 0; color: #374151; font-style: italic; border-left: 4px solid #f59e0b;">
+        {{cancellationReason}}
+    </p>
+</div>
+{{/if}}
+
+{{#if (eq status 'APPROVED')}}
+<div class="info-card">
+    <h4>✅ What This Means</h4>
+    <ul style="margin-left: 20px; color: #4b5563; margin-top: 15px;">
+        <li><strong>Leave Confirmed:</strong> Your time off has been officially approved</li>
+        <li><strong>Calendar Updated:</strong> The dates have been marked in the company calendar</li>
+        <li><strong>Balance Adjusted:</strong> Your leave balance will be updated accordingly</li>
+        {{#if isDelegated}}
+        <li><strong>Work Delegation:</strong> Your responsibilities are covered during your absence</li>
+        {{/if}}
+        <li><strong>Return Date:</strong> Please plan to return to work on {{formatDate returnDate}}</li>
+    </ul>
+</div>
+
+<div class="success-notice">
+    <p>🎯 <strong>Enjoy Your Time Off!</strong> We hope you have a wonderful and refreshing break. See you when you return!</p>
+</div>
+
+{{else if (eq status 'REJECTED')}}
+<div class="info-card">
+    <h4>🔄 Next Steps</h4>
+    <ul style="margin-left: 20px; color: #4b5563; margin-top: 15px;">
+        <li><strong>Review Feedback:</strong> Consider the reasons provided for the decline</li>
+        <li><strong>Alternative Dates:</strong> You may reapply for different dates if suitable</li>
+        <li><strong>Discuss Options:</strong> Speak with your manager about alternative arrangements</li>
+        <li><strong>Plan Accordingly:</strong> Make any necessary adjustments to your personal plans</li>
+    </ul>
+</div>
+
+<div class="warning-notice">
+    <p>💼 <strong>Need to Discuss?</strong> If you'd like to understand the decision better or explore alternatives, please schedule a meeting with your line manager.</p>
+</div>
+
+{{else if (contains status 'CANCELLED')}}
+<div class="info-card">
+    <h4>🔄 After Cancellation</h4>
+    <ul style="margin-left: 20px; color: #4b5563; margin-top: 15px;">
+        <li><strong>Calendar Updated:</strong> The leave dates have been removed from the company calendar</li>
+        <li><strong>Balance Restored:</strong> Any deducted leave days will be restored to your balance</li>
+        <li><strong>Work Schedule:</strong> You're expected to work as normal during the originally planned leave dates</li>
+        {{#if isDelegated}}
+        <li><strong>Delegation Cancelled:</strong> Work delegation arrangements have been reversed</li>
+        {{/if}}
+    </ul>
+</div>
+
+{{#if (eq status 'CANCELLED_BY_ADMIN')}}
+<div class="warning-notice">
+    <p>📞 <strong>Questions About Cancellation?</strong> If you need clarification about this cancellation, please contact your manager or HR department.</p>
+</div>
+{{/if}}
+
+{{/if}}
+
+<div class="cta-section">
+    <a href="{{appUrl}}/dashboard" class="cta-button">View Dashboard</a>
+</div>
+
+{{#if (eq status 'REJECTED')}}
+<div class="info-card">
+    <h4>📝 Want to Reapply?</h4>
+    <p>If you'd like to submit a new leave application for different dates or with additional information, you can do so through your dashboard. Consider the feedback provided when preparing your new application.</p>
+    <div style="margin-top: 15px;">
+        <a href="{{appUrl}}/dashboard/leave/new" style="background: #3b82f6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: 500;">Submit New Application</a>
+    </div>
+</div>
+{{/if}}
+
+<div class="message">
+    <p><strong>Important Reminders:</strong></p>
+    <ul style="margin-left: 20px; color: #4b5563;">
+        <li>Keep this email for your records</li>
+        <li>Check your dashboard for the most up-to-date status</li>
+        {{#if (eq status 'APPROVED')}}
+        <li>Prepare any handover notes before your leave starts</li>
+        <li>Set up out-of-office messages for the leave period</li>
+        {{/if}}
+        <li>Contact HR if you have any questions about leave policies</li>
+    </ul>
+</div>
+
+<div class="message">
+    <p>Thank you for using the proper leave application process. {{#if (eq status 'APPROVED')}}Enjoy your time off!{{else}}We appreciate your understanding.{{/if}}</p>
+    
+    <p><em>Best regards,<br>
+    Human Resources<br>
+    {{appName}} 🏢</em></p>
+</div>
+
+{{/base}} 

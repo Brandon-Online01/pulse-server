@@ -30,6 +30,11 @@ import {
   WarningIssuedEmailData,
   WarningUpdatedEmailData,
   WarningExpiredEmailData,
+  LeaveApplicationConfirmationData,
+  LeaveNewApplicationAdminData,
+  LeaveStatusUpdateUserData,
+  LeaveStatusUpdateAdminData,
+  LeaveDeletedNotificationData,
 } from '../types/email-templates.types';
 
 class EmailTemplateService {
@@ -330,6 +335,27 @@ class EmailTemplateService {
 
   warningExpired(data: WarningExpiredEmailData): string {
     return this.renderTemplate('warnings/expired.hbs', data);
+  }
+
+  // Leave Templates
+  leaveApplicationConfirmation(data: LeaveApplicationConfirmationData): string {
+    return this.renderTemplate('leave/application-confirmation.hbs', data);
+  }
+
+  leaveNewApplicationAdmin(data: LeaveNewApplicationAdminData): string {
+    return this.renderTemplate('leave/new-application-admin.hbs', data);
+  }
+
+  leaveStatusUpdateUser(data: LeaveStatusUpdateUserData): string {
+    return this.renderTemplate('leave/status-update-user.hbs', data);
+  }
+
+  leaveStatusUpdateAdmin(data: LeaveStatusUpdateAdminData): string {
+    return this.renderTemplate('leave/status-update-admin.hbs', data);
+  }
+
+  leaveDeletedNotification(data: LeaveDeletedNotificationData): string {
+    return this.renderTemplate('leave/deleted-notification.hbs', data);
   }
 }
 

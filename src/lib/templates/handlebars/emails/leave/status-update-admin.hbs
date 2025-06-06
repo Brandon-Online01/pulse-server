@@ -1,0 +1,224 @@
+{{#> base headerTitle="Leave Status Update" headerSubtitle="Leave application status has been changed"}}
+
+<div class="greeting">
+    Hello {{adminName}}! 📊
+</div>
+
+<div class="info-notice">
+    <p>📋 <strong>Status Update:</strong> A leave application has been {{#if (eq status 'APPROVED')}}approved{{else if (eq status 'REJECTED')}}declined{{else if (contains status 'CANCELLED')}}cancelled{{else}}updated{{/if}} in the system.</p>
+</div>
+
+<div class="message">
+    <p>This is a notification about a leave status change that {{#if actionTakenBy}}was processed by {{actionTakenBy}}{{else}}occurred in the system{{/if}}. The details are provided below for your records and awareness.</p>
+</div>
+
+<div class="info-card">
+    <h3>👤 Employee Information</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Employee Name</span>
+            <span class="detail-value">{{applicantName}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Email</span>
+            <span class="detail-value">{{applicantEmail}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Department</span>
+            <span class="detail-value">{{applicantDepartment}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Branch</span>
+            <span class="detail-value">{{branchName}}</span>
+        </div>
+    </div>
+</div>
+
+<div class="info-card">
+    <h3>📋 Leave Application Details</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Reference Number</span>
+            <span class="detail-value">#{{leaveId}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Leave Type</span>
+            <span class="detail-value">{{leaveType}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Start Date</span>
+            <span class="detail-value">{{formatDate startDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">End Date</span>
+            <span class="detail-value">{{formatDate endDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Duration</span>
+            <span class="detail-value">{{duration}} day{{#if (gt duration 1)}}s{{/if}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Applied On</span>
+            <span class="detail-value">{{formatDate createdAt}}</span>
+        </div>
+    </div>
+</div>
+
+<div class="info-card">
+    <h3>🔄 Status Change Information</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Previous Status</span>
+            <span class="detail-value">{{previousStatus}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Current Status</span>
+            <span class="detail-value" style="font-weight: bold; color: {{#if (eq status 'APPROVED')}}#10b981{{else if (eq status 'REJECTED')}}#ef4444{{else if (contains status 'CANCELLED')}}#f59e0b{{else}}#3b82f6{{/if}};">{{status}}</span>
+        </div>
+        {{#if actionTakenBy}}
+        <div class="detail-item">
+            <span class="detail-label">Processed By</span>
+            <span class="detail-value">{{actionTakenBy}}</span>
+        </div>
+        {{/if}}
+        <div class="detail-item">
+            <span class="detail-label">Update Time</span>
+            <span class="detail-value">{{formatDate updateTime}}</span>
+        </div>
+    </div>
+</div>
+
+{{#if comments}}
+<div class="info-card">
+    <h4>💬 Management Comments</h4>
+    <p style="background: #f8fafc; padding: 15px; border-radius: 6px; margin: 0; color: #374151; font-style: italic; border-left: 4px solid #3b82f6;">
+        "{{comments}}"
+    </p>
+</div>
+{{/if}}
+
+{{#if rejectionReason}}
+<div class="info-card">
+    <h4>❌ Reason for Decline</h4>
+    <p style="background: #fef2f2; padding: 15px; border-radius: 6px; margin: 0; color: #374151; font-style: italic; border-left: 4px solid #ef4444;">
+        {{rejectionReason}}
+    </p>
+</div>
+{{/if}}
+
+{{#if cancellationReason}}
+<div class="info-card">
+    <h4>🚫 Reason for Cancellation</h4>
+    <p style="background: #fefdf2; padding: 15px; border-radius: 6px; margin: 0; color: #374151; font-style: italic; border-left: 4px solid #f59e0b;">
+        {{cancellationReason}}
+    </p>
+</div>
+{{/if}}
+
+{{#if (eq status 'APPROVED')}}
+<div class="success-notice">
+    <p>✅ <strong>Leave Approved:</strong> The employee has been notified and the leave is now scheduled in the system.</p>
+</div>
+
+<div class="info-card">
+    <h4>📅 System Actions Taken</h4>
+    <ul style="margin-left: 20px; color: #4b5563; margin-top: 15px;">
+        <li><strong>Calendar Updated:</strong> Leave dates marked in company calendar</li>
+        <li><strong>Employee Notified:</strong> Approval confirmation sent to {{applicantEmail}}</li>
+        <li><strong>Balance Adjustment:</strong> Leave balance will be updated</li>
+        {{#if isDelegated}}
+        <li><strong>Work Delegation:</strong> Delegation arrangements are in place</li>
+        {{/if}}
+        <li><strong>Return Date:</strong> Employee expected back {{formatDate returnDate}}</li>
+    </ul>
+</div>
+
+{{else if (eq status 'REJECTED')}}
+<div class="warning-notice">
+    <p>❌ <strong>Leave Declined:</strong> The employee has been notified of the rejection with reasons provided.</p>
+</div>
+
+<div class="info-card">
+    <h4>📝 Post-Rejection Considerations</h4>
+    <ul style="margin-left: 20px; color: #4b5563; margin-top: 15px;">
+        <li><strong>Employee Communication:</strong> Consider scheduling a discussion if needed</li>
+        <li><strong>Alternative Arrangements:</strong> Explore alternative dates or arrangements</li>
+        <li><strong>Documentation:</strong> Ensure reasons are well-documented for future reference</li>
+        <li><strong>Reapplication:</strong> Employee may submit new application with different dates</li>
+    </ul>
+</div>
+
+{{else if (contains status 'CANCELLED')}}
+<div class="warning-notice">
+    <p>🚫 <strong>Leave Cancelled:</strong> {{#if (eq status 'CANCELLED_BY_USER')}}The employee cancelled their own leave{{else}}The leave was cancelled by management{{/if}}.</p>
+</div>
+
+<div class="info-card">
+    <h4>🔄 System Actions Taken</h4>
+    <ul style="margin-left: 20px; color: #4b5563; margin-top: 15px;">
+        <li><strong>Calendar Cleared:</strong> Leave dates removed from company calendar</li>
+        <li><strong>Balance Restored:</strong> Leave days returned to employee's balance</li>
+        <li><strong>Notifications Sent:</strong> Employee notified of cancellation</li>
+        {{#if isDelegated}}
+        <li><strong>Delegation Reversed:</strong> Work delegation arrangements cancelled</li>
+        {{/if}}
+        <li><strong>Schedule Updated:</strong> Employee now working during originally planned leave</li>
+    </ul>
+</div>
+{{/if}}
+
+<div class="cta-section">
+    <a href="{{appUrl}}/dashboard/leave/{{leaveId}}" class="cta-button">View Full Details</a>
+</div>
+
+<div class="info-card">
+    <h4>📊 Management Metrics</h4>
+    <div style="margin-top: 15px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #f8fafc; border-radius: 6px; margin-bottom: 8px;">
+            <span style="font-weight: 500;">Pending Applications:</span>
+            <span style="background: #fbbf24; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">{{pendingCount}}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #f8fafc; border-radius: 6px; margin-bottom: 8px;">
+            <span style="font-weight: 500;">This Month's Approvals:</span>
+            <span style="background: #10b981; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">{{monthlyApprovals}}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #f8fafc; border-radius: 6px;">
+            <span style="font-weight: 500;">Team Coverage Status:</span>
+            <span style="background: {{#if adequateCoverage}}#10b981{{else}}#ef4444{{/if}}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">{{#if adequateCoverage}}Good{{else}}Monitor{{/if}}</span>
+        </div>
+    </div>
+</div>
+
+{{#if upcomingLeaves}}
+<div class="info-card">
+    <h4>📅 Upcoming Team Leaves</h4>
+    <p style="margin-bottom: 15px;">Other scheduled leaves that may affect team capacity:</p>
+    {{#each upcomingLeaves}}
+    <div style="padding: 8px; background: #f8fafc; border-radius: 4px; margin-bottom: 8px; border-left: 3px solid #3b82f6;">
+        <strong>{{this.employeeName}}</strong> - {{formatDate this.startDate}} to {{formatDate this.endDate}} ({{this.duration}} days)
+    </div>
+    {{/each}}
+</div>
+{{/if}}
+
+<div class="message">
+    <p><strong>Administrative Notes:</strong></p>
+    <ul style="margin-left: 20px; color: #4b5563;">
+        <li>This notification is for administrative awareness and record-keeping</li>
+        <li>Employee has been automatically notified of the status change</li>
+        <li>All system calendars and balances have been updated accordingly</li>
+        <li>Maintain documentation of decisions for compliance purposes</li>
+        {{#if (eq status 'APPROVED')}}
+        <li>Monitor team capacity during the approved leave period</li>
+        {{/if}}
+    </ul>
+</div>
+
+<div class="message">
+    <p>This automated notification helps maintain transparency in leave management and ensures all stakeholders are informed of important status changes.</p>
+    
+    <p><em>Best regards,<br>
+    {{appName}} Leave Management System 🏢</em></p>
+</div>
+
+{{/base}} 

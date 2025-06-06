@@ -388,6 +388,120 @@ export interface WarningExpiredEmailData {
 	dashboardLink: string;
 }
 
+export interface LeaveApplicationConfirmationData extends BaseEmailData {
+	applicantName: string;
+	leaveId: number;
+	leaveType: string;
+	startDate: string;
+	endDate: string;
+	duration: number;
+	status: string;
+	isHalfDay: boolean;
+	halfDayPeriod?: string;
+	motivation?: string;
+	tags?: string[];
+	isPaid: boolean;
+	paidAmount?: number;
+	isDelegated?: boolean;
+	delegatedToName?: string;
+	isPublicHoliday: boolean;
+	createdAt: string;
+}
+
+export interface LeaveNewApplicationAdminData extends BaseEmailData {
+	adminName: string;
+	applicantName: string;
+	applicantEmail: string;
+	applicantDepartment?: string;
+	branchName?: string;
+	leaveId: number;
+	leaveType: string;
+	startDate: string;
+	endDate: string;
+	duration: number;
+	isHalfDay: boolean;
+	halfDayPeriod?: string;
+	motivation?: string;
+	tags?: string[];
+	isPaid: boolean;
+	paidAmount?: number;
+	isDelegated?: boolean;
+	delegatedToName?: string;
+	isPublicHoliday: boolean;
+	attachments?: string[];
+	createdAt: string;
+}
+
+export interface LeaveStatusUpdateUserData extends BaseEmailData {
+	applicantName: string;
+	leaveId: number;
+	leaveType: string;
+	startDate: string;
+	endDate: string;
+	duration: number;
+	status: string;
+	processedBy?: string;
+	processedAt?: string;
+	comments?: string;
+	rejectionReason?: string;
+	cancellationReason?: string;
+	isDelegated?: boolean;
+	returnDate?: string;
+	createdAt: string;
+}
+
+export interface LeaveStatusUpdateAdminData extends BaseEmailData {
+	adminName: string;
+	applicantName: string;
+	applicantEmail: string;
+	applicantDepartment?: string;
+	branchName?: string;
+	leaveId: number;
+	leaveType: string;
+	startDate: string;
+	endDate: string;
+	duration: number;
+	status: string;
+	previousStatus: string;
+	actionTakenBy?: string;
+	updateTime: string;
+	comments?: string;
+	rejectionReason?: string;
+	cancellationReason?: string;
+	isDelegated?: boolean;
+	returnDate?: string;
+	createdAt: string;
+	pendingCount?: number;
+	monthlyApprovals?: number;
+	adequateCoverage?: boolean;
+	upcomingLeaves?: Array<{
+		employeeName: string;
+		startDate: string;
+		endDate: string;
+		duration: number;
+	}>;
+}
+
+export interface LeaveDeletedNotificationData extends BaseEmailData {
+	recipientName: string;
+	isApplicant: boolean;
+	applicantName: string;
+	applicantEmail: string;
+	leaveId: number;
+	leaveType: string;
+	startDate: string;
+	endDate: string;
+	duration: number;
+	statusWhenDeleted: string;
+	deletedAt: string;
+	deletedBy?: string;
+	motivation?: string;
+	deletionReason?: string;
+	createdAt: string;
+	remainingPendingCount?: number;
+	adequateCoverage?: boolean;
+}
+
 export interface EmailDataMap {
 	[EmailType.SIGNUP]: SignupEmailData;
 	[EmailType.VERIFICATION]: VerificationEmailData;
@@ -439,6 +553,11 @@ export interface EmailDataMap {
 	[EmailType.WARNING_ISSUED]: WarningIssuedEmailData;
 	[EmailType.WARNING_UPDATED]: WarningUpdatedEmailData;
 	[EmailType.WARNING_EXPIRED]: WarningExpiredEmailData;
+	[EmailType.LEAVE_APPLICATION_CONFIRMATION]: LeaveApplicationConfirmationData;
+	[EmailType.LEAVE_NEW_APPLICATION_ADMIN]: LeaveNewApplicationAdminData;
+	[EmailType.LEAVE_STATUS_UPDATE_USER]: LeaveStatusUpdateUserData;
+	[EmailType.LEAVE_STATUS_UPDATE_ADMIN]: LeaveStatusUpdateAdminData;
+	[EmailType.LEAVE_DELETED_NOTIFICATION]: LeaveDeletedNotificationData;
 }
 
 export type EmailTemplateData<T extends EmailType> = T extends keyof EmailDataMap ? EmailDataMap[T] : never;
