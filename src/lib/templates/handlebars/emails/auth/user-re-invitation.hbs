@@ -1,0 +1,87 @@
+{{#> base headerTitle="We Miss You!" headerSubtitle="Come back and continue your journey with {{organizationName}}"}}
+
+<div class="greeting">
+    Hello {{userFirstName}}! 👋
+</div>
+
+<div class="message">
+    <p><strong>We hope you're doing well!</strong> We noticed it's been a while since you last accessed your {{platformName}} account at {{organizationName}}.</p>
+    
+    <p>Our platform has been updated with exciting new features and improvements, and we'd love for you to come back and explore what's new.</p>
+</div>
+
+<div class="info-notice">
+    <p>🌟 <strong>Your Account is Still Active!</strong> All your data, settings, and progress have been safely preserved.</p>
+</div>
+
+<div class="info-card">
+    <h3>📋 Your Account Information</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Email Address</span>
+            <span class="detail-value">{{userEmail}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Organization</span>
+            <span class="detail-value">{{organizationName}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Branch</span>
+            <span class="detail-value">{{branchName}}</span>
+        </div>
+    </div>
+</div>
+
+<div class="info-card">
+    <h4>🆕 What's New Since You Left</h4>
+    <ul class="feature-list">
+        <li>🎨 Enhanced user interface and improved navigation</li>
+        <li>📊 New reporting features and analytics</li>
+        <li>🔔 Better notification system to keep you updated</li>
+        <li>📱 Mobile app improvements and new features</li>
+        <li>⚡ Faster performance and reliability</li>
+        <li>🔒 Enhanced security and privacy features</li>
+    </ul>
+</div>
+
+<div class="cta-section">
+    <a href="{{loginUrl}}" class="cta-button">Welcome Back - Sign In Now</a>
+</div>
+
+<div class="info-card">
+    <h4>🚀 Ready to Jump Back In?</h4>
+    <p>Once you're back, you can continue where you left off:</p>
+    <ul class="feature-list">
+        <li>📊 Access your personalized dashboard</li>
+        <li>✅ Manage tasks and assignments</li>
+        <li>👥 Connect with your team and clients</li>
+        <li>📍 Track your field activities</li>
+        <li>💰 Work on quotations and sales</li>
+        <li>📈 Monitor your performance progress</li>
+        <li>🏆 Continue earning XP and achievements</li>
+    </ul>
+</div>
+
+<div class="info-card">
+    <h4>❓ Need Help Getting Back?</h4>
+    <p>If you've forgotten your password or need assistance logging in:</p>
+    <ol class="numbered-list">
+        <li><strong>Password Reset:</strong> Use the "Forgot Password" link on the login page</li>
+        <li><strong>Contact Support:</strong> Our team is ready to help you get back on track</li>
+        <li><strong>Fresh Start:</strong> We can help you set up your account again if needed</li>
+    </ol>
+</div>
+
+<div class="message">
+    <p>Your success is important to us, and we believe the platform can help you achieve your goals more effectively than ever.</p>
+    
+    <p>We're excited to welcome you back and support your continued growth!</p>
+</div>
+
+<div class="contact-info">
+    <p>Login: <a href="{{loginUrl}}">{{loginUrl}}</a></p>
+    <p>Support: <a href="mailto:{{supportEmail}}">{{supportEmail}}</a></p>
+    <p>Looking forward to seeing you back,<br>The {{platformName}} Team</p>
+</div>
+
+{{/base}} 

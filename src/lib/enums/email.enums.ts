@@ -71,4 +71,6 @@ export enum EmailType {
     LEAVE_STATUS_UPDATE_USER = 'leave_status_update_user',
     LEAVE_STATUS_UPDATE_ADMIN = 'leave_status_update_admin',
     LEAVE_DELETED_NOTIFICATION = 'leave_deleted_notification',
+    // User re-invitation emails
+    USER_RE_INVITATION = 'user_re_invitation',
 } 

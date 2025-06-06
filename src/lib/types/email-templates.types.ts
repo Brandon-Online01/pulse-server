@@ -392,6 +392,17 @@ export interface NewUserWelcomeData extends BaseEmailData {
 	dashboardUrl: string;
 }
 
+export interface UserReInvitationData extends BaseEmailData {
+	userEmail: string;
+	userName: string;
+	userFirstName: string;
+	platformName: string;
+	loginUrl: string;
+	supportEmail: string;
+	organizationName: string;
+	branchName: string;
+}
+
 export interface LeadConvertedClientData extends BaseEmailData {
 	clientId: number;
 	conversionDate: string;
@@ -644,6 +655,7 @@ export interface EmailDataMap {
 	[EmailType.LEAVE_STATUS_UPDATE_USER]: LeaveStatusUpdateUserData;
 	[EmailType.LEAVE_STATUS_UPDATE_ADMIN]: LeaveStatusUpdateAdminData;
 	[EmailType.LEAVE_DELETED_NOTIFICATION]: LeaveDeletedNotificationData;
+	[EmailType.USER_RE_INVITATION]: UserReInvitationData;
 }
 
 export type EmailTemplateData<T extends EmailType> = T extends keyof EmailDataMap ? EmailDataMap[T] : never;

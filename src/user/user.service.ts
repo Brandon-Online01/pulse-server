@@ -989,6 +989,149 @@ export class UserService {
 	}
 
 	/**
+	 * Re-invite all users in the organization/branch to use the Loro platform
+	 */
+	async reInviteAllUsers(scope: {
+		orgId?: string;
+		branchId?: string;
+		userId: string;
+		userRole?: string;
+	}): Promise<{ invitedCount: number; totalUsers: number; excludedCount: number }> {
+		try {
+			const queryBuilder = this.userRepository
+				.createQueryBuilder('user')
+				.leftJoinAndSelect('user.branch', 'branch')
+				.leftJoinAndSelect('user.organisation', 'organisation')
+				.where('user.isDeleted = :isDeleted', { isDeleted: false });
+
+			// Apply organization filter if provided
+			if (scope?.orgId) {
+				queryBuilder.andWhere('organisation.uid = :orgId', { orgId: parseInt(scope.orgId) });
+			}
+
+			// Apply branch filter if provided
+			if (scope?.branchId) {
+				queryBuilder.andWhere('branch.uid = :branchId', { branchId: parseInt(scope.branchId) });
+			}
+
+			// Exclude users that shouldn't receive re-invitations
+			queryBuilder.andWhere('user.status NOT IN (:...excludedStatuses)', {
+				excludedStatuses: [AccountStatus.DELETED, AccountStatus.BANNED, AccountStatus.INACTIVE],
+			});
+
+			const users = await queryBuilder.getMany();
+			const totalUsers = users.length;
+			let invitedCount = 0;
+			let excludedCount = 0;
+
+			// Send re-invitation emails to eligible users
+			for (const user of users) {
+				try {
+					await this.sendReInvitationEmail(user);
+					invitedCount++;
+				} catch (error) {
+					console.error(`Failed to send re-invitation email to user ${user.uid}:`, error);
+					excludedCount++;
+				}
+			}
+
+			return {
+				invitedCount,
+				totalUsers,
+				excludedCount,
+			};
+		} catch (error) {
+			console.error('Error re-inviting all users:', error);
+			throw error;
+		}
+	}
+
+	/**
+	 * Re-invite a specific user to use the Loro platform
+	 */
+	async reInviteUser(
+		userId: string,
+		scope: {
+			orgId?: string;
+			branchId?: string;
+			userId: string;
+			userRole?: string;
+		},
+	): Promise<{ userId: string; email: string }> {
+		try {
+			const queryBuilder = this.userRepository
+				.createQueryBuilder('user')
+				.leftJoinAndSelect('user.branch', 'branch')
+				.leftJoinAndSelect('user.organisation', 'organisation')
+				.where('user.uid = :userId', { userId: parseInt(userId) })
+				.andWhere('user.isDeleted = :isDeleted', { isDeleted: false });
+
+			// Apply organization filter if provided
+			if (scope?.orgId) {
+				queryBuilder.andWhere('organisation.uid = :orgId', { orgId: parseInt(scope.orgId) });
+			}
+
+			// Apply branch filter if provided
+			if (scope?.branchId) {
+				queryBuilder.andWhere('branch.uid = :branchId', { branchId: parseInt(scope.branchId) });
+			}
+
+			const user = await queryBuilder.getOne();
+
+			if (!user) {
+				throw new NotFoundException('User not found');
+			}
+
+			// Check if user can be re-invited
+			if ([AccountStatus.DELETED, AccountStatus.BANNED, AccountStatus.INACTIVE].includes(user.status as AccountStatus)) {
+				throw new Error('User cannot be re-invited due to account status');
+			}
+
+			// Send re-invitation email
+			await this.sendReInvitationEmail(user);
+
+			return {
+				userId: user.uid.toString(),
+				email: user.email,
+			};
+		} catch (error) {
+			console.error(`Error re-inviting user ${userId}:`, error);
+			throw error;
+		}
+	}
+
+	/**
+	 * Send re-invitation email to a user
+	 */
+	private async sendReInvitationEmail(user: User): Promise<void> {
+		try {
+			// Prepare re-invitation email data
+			const reInvitationData = {
+				userEmail: user.email,
+				userName: `${user.name} ${user.surname}`,
+				userFirstName: user.name,
+				platformName: 'Loro',
+				loginUrl: process.env.FRONTEND_URL || 'https://app.loro.com',
+				supportEmail: process.env.SUPPORT_EMAIL || 'support@loro.com',
+				organizationName: user.organisation?.name || 'your organization',
+				branchName: user.branch?.name || 'your branch',
+			};
+
+			// Emit email event for re-invitation
+			this.eventEmitter.emit('email.send', {
+				type: EmailType.USER_RE_INVITATION,
+				to: user.email,
+				data: reInvitationData,
+			});
+
+			console.log(`Re-invitation email sent to user: ${user.email}`);
+		} catch (error) {
+			console.error(`Error sending re-invitation email to ${user.email}:`, error);
+			throw error;
+		}
+	}
+
+	/**
 	 * Send welcome email to newly created user
 	 */
 	private async sendWelcomeEmail(user: User): Promise<void> {
