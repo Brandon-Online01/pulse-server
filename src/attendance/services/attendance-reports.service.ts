@@ -1,9 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, In } from 'typeorm';
+import { Repository, Between } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { startOfDay, endOfDay, format, differenceInMinutes, subDays } from 'date-fns';
+import { startOfDay, endOfDay, format, subDays, isWeekend, subBusinessDays, isValid } from 'date-fns';
 
 import { Attendance } from '../entities/attendance.entity';
 import { User } from '../../user/entities/user.entity';
@@ -15,6 +15,25 @@ import { AccessLevel } from '../../lib/enums/user.enums';
 import { EmailType } from '../../lib/enums/email.enums';
 import { AccountStatus } from '../../lib/enums/status.enums';
 import { TimeCalculatorUtil } from '../utils/time-calculator.util';
+
+/**
+ * AttendanceReportsService
+ *
+ * Automated attendance reporting system that sends daily attendance reports via email.
+ *
+ * Features:
+ * - Morning reports: Sent 5 minutes after organization opening time
+ * - Evening reports: Sent 30 minutes after organization closing time
+ * - Smart scheduling: Respects each organization's working hours and holidays
+ * - Comprehensive data: Includes attendance rates, punctuality breakdown, insights, and recommendations
+ * - Recipients: Automatically sends to OWNER, ADMIN, and HR level users
+ * - Duplicate prevention: Prevents sending multiple reports on the same day
+ * - Email templates: Uses Handlebars templates for professional report formatting
+ *
+ * Cron schedules:
+ * - Morning checks: Every minute (for accurate 5-minute timing)
+ * - Evening checks: Every 30 minutes (sufficient for 30-minute delay)
+ */
 
 interface AttendanceReportUser {
 	uid: number;
@@ -101,9 +120,10 @@ export class AttendanceReportsService {
 
 	/**
 	 * Schedule morning reports to run every 5 minutes and check if it's time to send
+	 * Reports are sent 5 minutes after each organization's opening time
 	 * This allows for dynamic scheduling based on each organization's start time
 	 */
-	@Cron('*/5 * * * *')
+	@Cron('*/1 * * * *') // Run every minute for better accuracy
 	async checkAndSendMorningReports() {
 		try {
 			const now = new Date();
@@ -121,6 +141,7 @@ export class AttendanceReportsService {
 
 	/**
 	 * Schedule evening reports to run every 30 minutes and check if it's time to send
+	 * Reports are sent 30 minutes after each organization's closing time
 	 * This allows for dynamic scheduling based on each organization's end time
 	 */
 	@Cron('*/30 * * * *')
@@ -147,14 +168,14 @@ export class AttendanceReportsService {
 				return; // Skip non-working days
 			}
 
-			// Calculate 30 minutes after start time
+			// Calculate 5 minutes after start time
 			const startTimeMinutes = TimeCalculatorUtil.timeToMinutes(workingDayInfo.startTime);
-			const reportTimeMinutes = startTimeMinutes + 30;
+			const reportTimeMinutes = startTimeMinutes + 5;
 			const currentTimeMinutes = TimeCalculatorUtil.timeToMinutes(currentTime.toTimeString().substring(0, 5));
 
-			// Check if we're within 5 minutes of the report time
+			// Check if we're within 2 minutes of the report time (more accurate with every minute checks)
 			const timeDifference = Math.abs(currentTimeMinutes - reportTimeMinutes);
-			if (timeDifference > 5) {
+			if (timeDifference > 2) {
 				return; // Not time yet or too late
 			}
 
@@ -282,13 +303,23 @@ export class AttendanceReportsService {
 			where: { uid: organizationId },
 		});
 
-		// Get working day info for organization hours
+		// Get working day info for organization hours with fallback
 		const workingDayInfo = await this.organizationHoursService.getWorkingDayInfo(organizationId, today);
 
-		// Get all users in the organization
-		const usersResponse = await this.userService.findAll({ organisationId: organizationId }, 1, 1000);
-		const allUsers = usersResponse.data;
-		const totalEmployees = allUsers.length;
+		// Ensure we have valid start time with fallback
+		const organizationStartTime = workingDayInfo.startTime || '09:00';
+
+		// Get all users in the organization with better error handling
+		let allUsers = [];
+		let totalEmployees = 0;
+
+		try {
+			const usersResponse = await this.userService.findAll({ organisationId: organizationId }, 1, 1000);
+			allUsers = usersResponse.data || [];
+			totalEmployees = allUsers.length;
+		} catch (error) {
+			this.logger.warn(`Failed to fetch users for organization ${organizationId}:`, error);
+		}
 
 		// Get today's attendance records
 		const todayAttendance = await this.attendanceRepository.find({
@@ -313,7 +344,7 @@ export class AttendanceReportsService {
 		return {
 			organizationName: organization?.name || 'Organization',
 			reportDate: format(today, 'EEEE, MMMM do, yyyy'),
-			organizationStartTime: workingDayInfo.startTime || '09:00',
+			organizationStartTime,
 			summary: {
 				totalEmployees,
 				presentCount,
@@ -330,23 +361,31 @@ export class AttendanceReportsService {
 
 	private async generateEveningReportData(organizationId: number): Promise<EveningReportData> {
 		const today = new Date();
-		const yesterday = subDays(today, 1);
 		const startOfToday = startOfDay(today);
 		const endOfToday = endOfDay(today);
-		const startOfYesterday = startOfDay(yesterday);
-		const endOfYesterday = endOfDay(yesterday);
 
 		// Get organization info
 		const organization = await this.organisationRepository.findOne({
 			where: { uid: organizationId },
 		});
 
-		// Get all users in the organization
-		const usersResponse = await this.userService.findAll({ organisationId: organizationId }, 1, 1000);
-		const allUsers = usersResponse.data;
+		// Get all users in the organization with better error handling
+		let allUsers = [];
 
-		// Get today's and yesterday's attendance records
-		const [todayAttendance, yesterdayAttendance] = await Promise.all([
+		try {
+			const usersResponse = await this.userService.findAll({ organisationId: organizationId }, 1, 1000);
+			allUsers = usersResponse.data || [];
+		} catch (error) {
+			this.logger.warn(`Failed to fetch users for organization ${organizationId}:`, error);
+		}
+
+		// Find the most recent working day for comparison (smart yesterday logic)
+		const { comparisonDate, comparisonLabel } = await this.findLastWorkingDay(organizationId, today);
+		const startOfComparison = startOfDay(comparisonDate);
+		const endOfComparison = endOfDay(comparisonDate);
+
+		// Get today's and comparison day's attendance records
+		const [todayAttendance, comparisonAttendance] = await Promise.all([
 			this.attendanceRepository.find({
 				where: {
 					organisation: { uid: organizationId },
@@ -357,18 +396,19 @@ export class AttendanceReportsService {
 			this.attendanceRepository.find({
 				where: {
 					organisation: { uid: organizationId },
-					checkIn: Between(startOfYesterday, endOfYesterday),
+					checkIn: Between(startOfComparison, endOfComparison),
 				},
 				relations: ['owner'],
 			}),
 		]);
 
-		// Generate employee metrics
+		// Generate employee metrics with improved comparison logic
 		const employeeMetrics = await this.generateEmployeeMetrics(
 			organizationId,
 			allUsers,
 			todayAttendance,
-			yesterdayAttendance,
+			comparisonAttendance,
+			comparisonLabel,
 		);
 
 		// Calculate summary statistics
@@ -417,17 +457,26 @@ export class AttendanceReportsService {
 		const lateArrivals: AttendanceReportUser[] = [];
 
 		for (const attendance of todayAttendance) {
-			if (!attendance.owner || !attendance.checkIn) continue;
+			if (!attendance.owner || !attendance.checkIn || !isValid(attendance.checkIn)) {
+				continue;
+			}
 
+			// Defensive user profile handling to prevent mix-ups
+			const owner = attendance.owner;
 			const user: AttendanceReportUser = {
-				uid: attendance.owner.uid,
-				name: attendance.owner.name,
-				email: attendance.owner.email,
-				role: attendance.owner.accessLevel,
+				uid: owner.uid,
+				name: `${owner.name || ''} ${owner.surname || ''}`.trim() || 'Unknown User',
+				email: owner.email || 'no-email@company.com',
+				role: owner.accessLevel || AccessLevel.USER,
 				userProfile: {
-					avatar: attendance.owner.photoURL,
+					avatar: owner.photoURL || null,
 				},
-				branch: attendance.owner.branch,
+				branch: owner.branch
+					? {
+							uid: owner.branch.uid,
+							name: owner.branch.name || 'Unknown Branch',
+					  }
+					: undefined,
 			};
 
 			const lateInfo = await this.organizationHoursService.isUserLate(organizationId, attendance.checkIn);
@@ -469,17 +518,18 @@ export class AttendanceReportsService {
 		organizationId: number,
 		allUsers: Omit<User, 'password'>[],
 		todayAttendance: Attendance[],
-		yesterdayAttendance: Attendance[],
+		comparisonAttendance: Attendance[],
+		comparisonLabel: string = 'yesterday',
 	): Promise<EmployeeAttendanceMetric[]> {
 		const metrics: EmployeeAttendanceMetric[] = [];
 
 		for (const user of allUsers) {
 			const todayRecord = todayAttendance.find((a) => a.owner?.uid === user.uid);
-			const yesterdayRecord = yesterdayAttendance.find((a) => a.owner?.uid === user.uid);
+			const comparisonRecord = comparisonAttendance.find((a) => a.owner?.uid === user.uid);
 
 			const todayHours = todayRecord?.duration ? this.parseDurationToMinutes(todayRecord.duration) / 60 : 0;
-			const yesterdayHours = yesterdayRecord?.duration
-				? this.parseDurationToMinutes(yesterdayRecord.duration) / 60
+			const comparisonHours = comparisonRecord?.duration
+				? this.parseDurationToMinutes(comparisonRecord.duration) / 60
 				: 0;
 
 			let isLate = false;
@@ -491,27 +541,40 @@ export class AttendanceReportsService {
 				lateMinutes = lateInfo.lateMinutes;
 			}
 
-			const hoursDifference = todayHours - yesterdayHours;
-			let comparisonText = 'Same as yesterday';
+			const hoursDifference = todayHours - comparisonHours;
+			let comparisonText = `Same as ${comparisonLabel}`;
 			let timingDifference = '→';
 
-			if (hoursDifference > 0.5) {
-				comparisonText = `${Math.round(hoursDifference * 100) / 100}h more than yesterday`;
+			// Handle zero comparison hours with intelligent messaging
+			if (comparisonHours === 0 && todayHours > 0) {
+				comparisonText = `${Math.round(todayHours * 100) / 100}h worked (no data for ${comparisonLabel})`;
+				timingDifference = '📊';
+			} else if (comparisonHours === 0 && todayHours === 0) {
+				comparisonText = `No work recorded for today or ${comparisonLabel}`;
+				timingDifference = '⭕';
+			} else if (hoursDifference > 0.5) {
+				comparisonText = `${Math.round(hoursDifference * 100) / 100}h more than ${comparisonLabel}`;
 				timingDifference = '↗️';
 			} else if (hoursDifference < -0.5) {
-				comparisonText = `${Math.round(Math.abs(hoursDifference) * 100) / 100}h less than yesterday`;
+				comparisonText = `${Math.round(Math.abs(hoursDifference) * 100) / 100}h less than ${comparisonLabel}`;
 				timingDifference = '↘️';
 			}
 
+			// Defensive user profile creation to prevent data mix-ups
 			const reportUser: AttendanceReportUser = {
 				uid: user.uid,
-				name: user.name,
-				email: user.email,
-				role: user.accessLevel,
+				name: `${user.name || ''} ${user.surname || ''}`.trim() || 'Unknown User',
+				email: user.email || 'no-email@company.com',
+				role: user.accessLevel || AccessLevel.USER,
 				userProfile: {
-					avatar: user.photoURL,
+					avatar: user.photoURL || null,
 				},
-				branch: user.branch,
+				branch: user.branch
+					? {
+							uid: user.branch.uid,
+							name: user.branch.name || 'Unknown Branch',
+					  }
+					: undefined,
 			};
 
 			metrics.push({
@@ -521,7 +584,7 @@ export class AttendanceReportsService {
 				hoursWorked: Math.round(todayHours * 100) / 100,
 				isLate,
 				lateMinutes,
-				yesterdayHours: Math.round(yesterdayHours * 100) / 100,
+				yesterdayHours: Math.round(comparisonHours * 100) / 100,
 				comparisonText,
 				timingDifference,
 			});
@@ -618,6 +681,50 @@ export class AttendanceReportsService {
 		return insights;
 	}
 
+	/**
+	 * Find the last working day for comparison, accounting for weekends and organization schedule
+	 */
+	private async findLastWorkingDay(
+		organizationId: number,
+		currentDate: Date,
+	): Promise<{
+		comparisonDate: Date;
+		comparisonLabel: string;
+	}> {
+		let comparisonDate = subDays(currentDate, 1);
+		let daysBack = 1;
+		const maxDaysBack = 7; // Limit search to avoid infinite loops
+
+		// First, try to find the last working day based on organization schedule
+		while (daysBack <= maxDaysBack) {
+			const workingDayInfo = await this.organizationHoursService.getWorkingDayInfo(
+				organizationId,
+				comparisonDate,
+			);
+
+			if (workingDayInfo.isWorkingDay) {
+				const label =
+					daysBack === 1 ? 'yesterday' : daysBack === 2 ? 'day before yesterday' : `${daysBack} days ago`;
+				return { comparisonDate, comparisonLabel: label };
+			}
+
+			daysBack++;
+			comparisonDate = subDays(currentDate, daysBack);
+		}
+
+		// Fallback to business days if organization schedule isn't available
+		try {
+			comparisonDate = subBusinessDays(currentDate, 1);
+			return { comparisonDate, comparisonLabel: 'last business day' };
+		} catch (error) {
+			// Ultimate fallback to yesterday
+			return {
+				comparisonDate: subDays(currentDate, 1),
+				comparisonLabel: 'yesterday (may not be a working day)',
+			};
+		}
+	}
+
 	private async getReportRecipients(organizationId: number): Promise<string[]> {
 		try {
 			// Get users with OWNER, ADMIN, or HR access levels for the organization
@@ -654,16 +761,75 @@ export class AttendanceReportsService {
 		}
 	}
 
+	/**
+	 * Enhanced duration parser with multiple format support and validation
+	 */
 	private parseDurationToMinutes(duration: string): number {
-		if (!duration) return 0;
+		if (!duration || typeof duration !== 'string') return 0;
 
-		// Handle format like "8h 30m" or "45m" or "2h"
-		const hourMatch = duration.match(/(\d+)h/);
-		const minuteMatch = duration.match(/(\d+)m/);
+		const trimmed = duration.trim();
+		if (trimmed === '0' || trimmed === '') return 0;
 
-		const hours = hourMatch ? parseInt(hourMatch[1]) : 0;
-		const minutes = minuteMatch ? parseInt(minuteMatch[1]) : 0;
+		try {
+			// Handle format like "8h 30m", "8 hours 30 minutes", "8:30", etc.
 
-		return hours * 60 + minutes;
+			// Format: "HH:MM:SS" or "HH:MM"
+			const timeMatch = trimmed.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+			if (timeMatch) {
+				const hours = parseInt(timeMatch[1], 10) || 0;
+				const minutes = parseInt(timeMatch[2], 10) || 0;
+				const seconds = timeMatch[3] ? parseInt(timeMatch[3], 10) || 0 : 0;
+				return hours * 60 + minutes + Math.round(seconds / 60);
+			}
+
+			// Format: "8h 30m" or "8 hours 30 minutes" (flexible)
+			const hourMinuteMatch = trimmed.match(
+				/(\d+(?:\.\d+)?)\s*h(?:ours?)?\s*(\d+(?:\.\d+)?)\s*m(?:in(?:utes?)?)?/i,
+			);
+			if (hourMinuteMatch) {
+				const hours = parseFloat(hourMinuteMatch[1]) || 0;
+				const minutes = parseFloat(hourMinuteMatch[2]) || 0;
+				return Math.round(hours * 60 + minutes);
+			}
+
+			// Format: just hours "8h" or "8 hours"
+			const hourOnlyMatch = trimmed.match(/(\d+(?:\.\d+)?)\s*h(?:ours?)?$/i);
+			if (hourOnlyMatch) {
+				const hours = parseFloat(hourOnlyMatch[1]) || 0;
+				return Math.round(hours * 60);
+			}
+
+			// Format: just minutes "45m" or "45 minutes"
+			const minuteOnlyMatch = trimmed.match(/(\d+(?:\.\d+)?)\s*m(?:in(?:utes?)?)?$/i);
+			if (minuteOnlyMatch) {
+				const minutes = parseFloat(minuteOnlyMatch[1]) || 0;
+				return Math.round(minutes);
+			}
+
+			// Format: decimal hours "8.5"
+			const decimalMatch = trimmed.match(/^(\d+(?:\.\d+)?)$/);
+			if (decimalMatch) {
+				const hours = parseFloat(decimalMatch[1]) || 0;
+				return Math.round(hours * 60);
+			}
+
+			// Fallback: try to extract any numbers and assume they're hours
+			const numbers = trimmed.match(/\d+(?:\.\d+)?/g);
+			if (numbers && numbers.length > 0) {
+				const firstNumber = parseFloat(numbers[0]) || 0;
+				// If it's a reasonable hour value (0-24), treat as hours
+				if (firstNumber <= 24) {
+					return Math.round(firstNumber * 60);
+				}
+				// Otherwise, treat as minutes
+				return Math.round(firstNumber);
+			}
+
+			this.logger.warn(`Unable to parse duration string: "${duration}"`);
+			return 0;
+		} catch (error) {
+			this.logger.error(`Error parsing duration "${duration}":`, error);
+			return 0;
+		}
 	}
 }

@@ -1,4 +1,5 @@
 import { AttendanceService } from './attendance.service';
+import { AttendanceReportsService } from './services/attendance-reports.service';
 import {
 	ApiOperation,
 	ApiTags,
@@ -142,7 +143,10 @@ export class AttendanceWithUserProfileSchema {
 @ApiUnauthorizedResponse({ description: 'Unauthorized - Invalid credentials or missing token' })
 @ApiExtraModels(UserProfileSchema, BranchSchema, OrganisationSchema, AttendanceWithUserProfileSchema)
 export class AttendanceController {
-	constructor(private readonly attendanceService: AttendanceService) {}
+	constructor(
+		private readonly attendanceService: AttendanceService,
+		private readonly attendanceReportsService: AttendanceReportsService,
+	) {}
 
 	@Post('in')
 	@Roles(
@@ -1256,5 +1260,99 @@ export class AttendanceController {
 		const branchId = req.user?.branch?.uid;
 
 		return this.attendanceService.generateOrganizationReport(queryDto, orgId, branchId);
+	}
+
+	@Post('reports/morning/send')
+	@Roles(AccessLevel.ADMIN, AccessLevel.OWNER, AccessLevel.HR)
+	@ApiOperation({
+		summary: 'Manually send morning attendance report',
+		description:
+			'Manually trigger sending of morning attendance report for the organization. Useful for testing or ad-hoc reporting.',
+	})
+	@ApiCreatedResponse({
+		description: 'Morning attendance report sent successfully',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', example: 'Morning attendance report sent successfully' },
+				recipients: { type: 'number', example: 3, description: 'Number of recipients who received the report' },
+			},
+		},
+	})
+	@ApiBadRequestResponse({
+		description: 'Bad Request - Unable to send report',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', example: 'Unable to send morning report: insufficient data' },
+			},
+		},
+	})
+	async sendMorningReport(@Req() req: AuthenticatedRequest) {
+		try {
+			const orgId = req.user?.org?.uid || req.user?.organisationRef;
+
+			if (!orgId) {
+				return { message: 'Organization not found' };
+			}
+
+			await this.attendanceReportsService.generateAndSendMorningReport(orgId);
+			return {
+				message: 'Morning attendance report sent successfully',
+				timestamp: new Date().toISOString(),
+			};
+		} catch (error) {
+			return {
+				message: `Error sending morning report: ${error.message}`,
+				timestamp: new Date().toISOString(),
+			};
+		}
+	}
+
+	@Post('reports/evening/send')
+	@Roles(AccessLevel.ADMIN, AccessLevel.OWNER, AccessLevel.HR)
+	@ApiOperation({
+		summary: 'Manually send evening attendance report',
+		description:
+			'Manually trigger sending of evening attendance report for the organization. Useful for testing or ad-hoc reporting.',
+	})
+	@ApiCreatedResponse({
+		description: 'Evening attendance report sent successfully',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', example: 'Evening attendance report sent successfully' },
+				recipients: { type: 'number', example: 3, description: 'Number of recipients who received the report' },
+			},
+		},
+	})
+	@ApiBadRequestResponse({
+		description: 'Bad Request - Unable to send report',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', example: 'Unable to send evening report: insufficient data' },
+			},
+		},
+	})
+	async sendEveningReport(@Req() req: AuthenticatedRequest) {
+		try {
+			const orgId = req.user?.org?.uid || req.user?.organisationRef;
+
+			if (!orgId) {
+				return { message: 'Organization not found' };
+			}
+
+			await this.attendanceReportsService.generateAndSendEveningReport(orgId);
+			return {
+				message: 'Evening attendance report sent successfully',
+				timestamp: new Date().toISOString(),
+			};
+		} catch (error) {
+			return {
+				message: `Error sending evening report: ${error.message}`,
+				timestamp: new Date().toISOString(),
+			};
+		}
 	}
 }
