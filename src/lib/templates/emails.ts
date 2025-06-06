@@ -13,6 +13,7 @@ import {
 	TaskEmailData,
 	TaskReminderData,
 	NewUserAdminNotificationData,
+	NewUserWelcomeData,
 	TaskCompletedEmailData,
 	LeadConvertedClientData,
 	LeadConvertedCreatorData,
@@ -1912,6 +1913,75 @@ export const TaskReminderCreator = (data: TaskReminderData): string => {
     </div>
   `;
 };
+
+export const NewUserWelcome = (data: NewUserWelcomeData): string => `
+    <div style="${BASE_STYLES.wrapper}">
+      <div style="${BASE_STYLES.container}">
+        <div style="${BASE_STYLES.header}">
+          <h1 style="margin: 16px 0 8px; font-size: 24px;">Your Account is Ready! 🎉</h1>
+          <p style="margin: 0; opacity: 0.9;">Welcome to your business management platform</p>
+        </div>
+
+        <div style="padding: 24px 20px;">
+          <div style="${BASE_STYLES.card}">
+            <h2 style="${BASE_STYLES.heading}">Hello ${data.firstName || data.name}!</h2>
+            <p style="${BASE_STYLES.text}">Great news! Your account has been successfully created and you now have access to your organization's business management platform.</p>
+            
+            <div style="${BASE_STYLES.highlight}">
+              <div style="${BASE_STYLES.flexColumn}">
+                <div style="${BASE_STYLES.flexRow}">
+                  <strong style="width: 120px;">Email:</strong>
+                  <span>${data.email}</span>
+                </div>
+                ${data.organizationName ? `
+                <div style="${BASE_STYLES.flexRow}">
+                  <strong style="width: 120px;">Organization:</strong>
+                  <span>${data.organizationName}</span>
+                </div>
+                ` : ''}
+                ${data.branchName ? `
+                <div style="${BASE_STYLES.flexRow}">
+                  <strong style="width: 120px;">Branch:</strong>
+                  <span>${data.branchName}</span>
+                </div>
+                ` : ''}
+              </div>
+            </div>
+            
+            <div style="text-align: center; margin: 24px 0;">
+              <a href="${data.loginUrl}" style="${BASE_STYLES.button}">
+                Access Login Page
+              </a>
+            </div>
+
+            <div style="${BASE_STYLES.alert}">
+              <h3 style="margin: 0 0 12px; color: #d97706;">🔐 Getting Your Login Credentials</h3>
+              <p style="margin: 0 0 8px;">If you haven't received your login credentials yet, please contact our support team who will provide you with:</p>
+              <ul style="margin: 8px 0; padding-left: 20px;">
+                <li>🔑 Your temporary password</li>
+                <li>📱 Login instructions</li>
+                <li>🎯 Getting started guidance</li>
+              </ul>
+            </div>
+
+            <div style="${BASE_STYLES.alert}">
+              <h3 style="margin: 0 0 12px; color: #059669;">📞 Contact Support</h3>
+              <p style="margin: 0 0 8px;">
+                <strong>Email:</strong> <a href="mailto:${data.supportEmail}" style="color: #059669;">${data.supportEmail}</a><br>
+                ${data.supportPhone ? `<strong>Phone:</strong> <a href="tel:${data.supportPhone}" style="color: #059669;">${data.supportPhone}</a><br>` : ''}
+                <strong>Hours:</strong> Monday - Friday, 8:00 AM - 5:00 PM (SAST)
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div style="${BASE_STYLES.footer}">
+          <p style="margin: 0;">Dashboard: <a href="${data.dashboardUrl}" style="color: #3b82f6;">${data.dashboardUrl}</a></p>
+          <p style="margin: 8px 0 0;">Welcome aboard, and we look forward to supporting your business success!</p>
+        </div>
+      </div>
+    </div>
+`;
 
 export const NewUserAdminNotification = (data: NewUserAdminNotificationData): string => `
     <div style="${BASE_STYLES.wrapper}">

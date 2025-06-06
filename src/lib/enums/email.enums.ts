@@ -43,6 +43,7 @@ export enum EmailType {
     TASK_OVERDUE_MISSED = 'task_overdue_missed',
     // User related emails
     NEW_USER_ADMIN_NOTIFICATION = 'new_user_admin_notification',
+    NEW_USER_WELCOME = 'new_user_welcome',
     // Lead related emails
     LEAD_CONVERTED_CLIENT = 'lead_converted_client',
     LEAD_CONVERTED_CREATOR = 'lead_converted_creator',

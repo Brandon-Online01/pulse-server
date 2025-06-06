@@ -16,6 +16,7 @@ import {
   TaskEmailData,
   TaskReminderData,
   NewUserAdminNotificationData,
+  NewUserWelcomeData,
   TaskCompletedEmailData,
   LeadConvertedClientData,
   LeadConvertedCreatorData,
@@ -313,6 +314,11 @@ class EmailTemplateService {
   // System Templates
   newUserAdminNotification(data: NewUserAdminNotificationData): string {
     return this.renderTemplate('system/new-user-admin-notification.hbs', data);
+  }
+
+  // User welcome template
+  newUserWelcome(data: NewUserWelcomeData): string {
+    return this.renderTemplate('auth/new-user-welcome.hbs', data);
   }
 
   // Client Templates

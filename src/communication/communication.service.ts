@@ -44,7 +44,7 @@ import {
 // Task related templates
 import { TaskReminderAssignee, TaskReminderCreator, TaskOverdueMissed } from '../lib/templates/emails';
 // User related templates
-import { NewUserAdminNotification } from '../lib/templates/emails';
+import { NewUserAdminNotification, NewUserWelcome } from '../lib/templates/emails';
 // Lead related templates
 import { LeadConvertedClient, LeadConvertedCreator, LeadReminder, LeadAssignedToUser } from '../lib/templates/emails';
 // Client auth templates
@@ -68,6 +68,7 @@ import {
 	QuotationWarehouseData,
 	QuotationData,
 	NewUserAdminNotificationData,
+	NewUserWelcomeData,
 	TaskReminderData,
 	TaskCompletedEmailData,
 	LeadConvertedClientData,
@@ -334,6 +335,11 @@ export class CommunicationService {
 				return {
 					subject: 'New User Registration Alert',
 					body: NewUserAdminNotification(data as NewUserAdminNotificationData),
+				};
+			case EmailType.NEW_USER_WELCOME:
+				return {
+					subject: 'Your Account is Ready - Welcome to the Team!',
+					body: NewUserWelcome(data as NewUserWelcomeData),
 				};
 			case EmailType.TASK_REMINDER_ASSIGNEE:
 				return {

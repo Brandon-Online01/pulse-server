@@ -22,6 +22,8 @@ import { Lead } from '../leads/entities/lead.entity';
 import { Client } from '../clients/entities/client.entity';
 import { CheckIn } from '../check-ins/entities/check-in.entity';
 import { Between } from 'typeorm';
+import { EmailType } from '../lib/enums/email.enums';
+import { NewUserWelcomeData } from '../lib/types/email-templates.types';
 
 @Injectable()
 export class UserService {
@@ -132,6 +134,9 @@ export class UserService {
 
 			// Invalidate cache after creation
 			await this.invalidateUserCache(user);
+
+			// Send welcome email to the new user
+			await this.sendWelcomeEmail(user);
 
 			const response = {
 				message: process.env.SUCCESS_MESSAGE,
@@ -327,16 +332,16 @@ export class UserService {
 
 	async findOneForAuth(searchParameter: string): Promise<{ user: User | null; message: string }> {
 		try {
-					const user = await this.userRepository.findOne({
-			where: [
-				{
-					username: searchParameter,
-					isDeleted: false,
-					status: AccountStatus.ACTIVE,
-				},
-			],
-			relations: ['branch', 'rewards', 'organisation'],
-		});
+			const user = await this.userRepository.findOne({
+				where: [
+					{
+						username: searchParameter,
+						isDeleted: false,
+						status: AccountStatus.ACTIVE,
+					},
+				],
+				relations: ['branch', 'rewards', 'organisation'],
+			});
 
 			if (!user) {
 				return {
@@ -361,10 +366,10 @@ export class UserService {
 
 	async findOneByUid(searchParameter: number): Promise<{ user: Omit<User, 'password'> | null; message: string }> {
 		try {
-					const user = await this.userRepository.findOne({
-			where: [{ uid: searchParameter, isDeleted: false }],
-			relations: ['branch', 'rewards', 'userTarget', 'organisation'],
-		});
+			const user = await this.userRepository.findOne({
+				where: [{ uid: searchParameter, isDeleted: false }],
+				relations: ['branch', 'rewards', 'userTarget', 'organisation'],
+			});
 
 			if (!user) {
 				return {
@@ -980,6 +985,35 @@ export class UserService {
 			await this.cacheManager.del(this.getCacheKey(`target_${userId}`));
 		} catch (error) {
 			return null;
+		}
+	}
+
+	/**
+	 * Send welcome email to newly created user
+	 */
+	private async sendWelcomeEmail(user: User): Promise<void> {
+		try {
+			// Get organization and branch names for the email
+			const organizationName = user.organisation?.name || process.env.COMPANY_NAME || 'Your Organization';
+			const branchName = user.branch?.name || 'Main Branch';
+
+			// Prepare email data
+			const emailData: NewUserWelcomeData = {
+				name: user.name || user.email,
+				email: user.email,
+				loginUrl: process.env.WEBSITE_DOMAIN || 'https://dashboard.loro.co.za/sign-in',
+				supportEmail: process.env.SUPPORT_EMAIL || 'support@loro.africa',
+				supportPhone: process.env.SUPPORT_PHONE || '+27 12 345 6789',
+				organizationName,
+				branchName,
+				dashboardUrl: process.env.WEBSITE_DOMAIN || 'https://dashboard.loro.co.za',
+			};
+
+			// Send the welcome email
+			this.eventEmitter.emit('send.email', EmailType.NEW_USER_WELCOME, [user.email], emailData);
+		} catch (error) {
+			console.error('Error sending welcome email to user:', error);
+			// Don't throw the error as user creation should still succeed even if email fails
 		}
 	}
 }

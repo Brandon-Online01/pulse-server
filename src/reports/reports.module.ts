@@ -47,8 +47,11 @@ import { Competitor } from '../competitors/entities/competitor.entity';
 import { MapDataReportGenerator } from './generators/map-data-report.generator';
 import { UserProfile } from 'src/user/entities/user.profile.entity';
 import { UserEmployeementProfile } from 'src/user/entities/user.employeement.profile.entity';
+import { UserTarget } from '../user/entities/user-target.entity';
 import { License } from 'src/licensing/entities/license.entity';
 import { AttendanceModule } from '../attendance/attendance.module';
+import { UserRewards } from '../rewards/entities/user-rewards.entity';
+import { XPTransaction } from '../rewards/entities/xp-transaction.entity';
 
 @Module({
 	imports: [
@@ -76,6 +79,9 @@ import { AttendanceModule } from '../attendance/attendance.module';
 			User,
 			UserProfile,
 			UserEmployeementProfile,
+			UserTarget,
+			UserRewards,
+			XPTransaction,
 			Report,
 			Attendance,
 			Claim,

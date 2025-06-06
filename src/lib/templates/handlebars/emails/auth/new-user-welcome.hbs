@@ -1,0 +1,110 @@
+{{#> base headerTitle="Your Account is Ready!" headerSubtitle="Welcome to {{organizationName}} - Your business management platform"}}
+
+<div class="greeting">
+    Hello {{#if firstName}}{{firstName}}{{else}}{{name}}{{/if}}! 🎉
+</div>
+
+<div class="message">
+    <p><strong>Great news!</strong> Your account has been successfully created and you now have access to your organization's business management platform.</p>
+    
+    <p>We're excited to welcome you to our platform where you can manage your daily activities, track progress, and collaborate with your team effectively.</p>
+</div>
+
+<div class="success-notice">
+    <p>✅ <strong>Account Successfully Created!</strong> Your profile has been set up and is ready for use.</p>
+</div>
+
+<div class="info-card">
+    <h3>📋 Your Account Details</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Email Address</span>
+            <span class="detail-value">{{email}}</span>
+        </div>
+        {{#if organizationName}}
+        <div class="detail-item">
+            <span class="detail-label">Organization</span>
+            <span class="detail-value">{{organizationName}}</span>
+        </div>
+        {{/if}}
+        {{#if branchName}}
+        <div class="detail-item">
+            <span class="detail-label">Branch</span>
+            <span class="detail-value">{{branchName}}</span>
+        </div>
+        {{/if}}
+    </div>
+</div>
+
+<div class="info-card">
+    <h4>🔐 Getting Your Login Credentials</h4>
+    <p>If you haven't received your login credentials yet, please contact our support team who will provide you with:</p>
+    <ul class="feature-list">
+        <li>🔑 Your temporary password</li>
+        <li>📱 Login instructions</li>
+        <li>🎯 Getting started guidance</li>
+        <li>💬 Platform orientation</li>
+    </ul>
+</div>
+
+<div class="info-card">
+    <h4>📞 Contact Support</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Email Support</span>
+            <span class="detail-value"><a href="mailto:{{supportEmail}}">{{supportEmail}}</a></span>
+        </div>
+        {{#if supportPhone}}
+        <div class="detail-item">
+            <span class="detail-label">Phone Support</span>
+            <span class="detail-value"><a href="tel:{{formatPhoneForTel supportPhone}}">{{supportPhone}}</a></span>
+        </div>
+        {{/if}}
+    </div>
+    <p><strong>Support Hours:</strong> Monday - Friday, 8:00 AM - 5:00 PM (SAST)</p>
+</div>
+
+<div class="cta-section">
+    <a href="{{loginUrl}}" class="cta-button">Access Login Page</a>
+</div>
+
+<div class="info-card">
+    <h4>🚀 What You Can Do</h4>
+    <p>Once you have your login credentials, you'll be able to:</p>
+    <ul class="feature-list">
+        <li>📊 View your personalized dashboard</li>
+        <li>✅ Manage your daily tasks and assignments</li>
+        <li>👥 Track leads and client interactions</li>
+        <li>📍 Log check-ins and field activities</li>
+        <li>💰 Create quotations and track sales</li>
+        <li>📈 Monitor your performance and targets</li>
+        <li>🏆 Earn XP and climb the leaderboard</li>
+        <li>📱 Access the mobile app for on-the-go updates</li>
+    </ul>
+</div>
+
+<div class="info-card">
+    <h4>💡 Getting Started Tips</h4>
+    <ol class="numbered-list">
+        <li><strong>Contact Support:</strong> Reach out to get your login credentials</li>
+        <li><strong>First Login:</strong> Change your temporary password to something secure</li>
+        <li><strong>Complete Profile:</strong> Update your profile information and preferences</li>
+        <li><strong>Explore Dashboard:</strong> Familiarize yourself with the main navigation</li>
+        <li><strong>Set Goals:</strong> Work with your manager to set performance targets</li>
+        <li><strong>Mobile Setup:</strong> Download and configure the mobile app</li>
+    </ol>
+</div>
+
+<div class="message">
+    <p>We're here to help you succeed! Don't hesitate to reach out to our support team if you have any questions or need assistance getting started.</p>
+    
+    <p>Welcome aboard, and we look forward to supporting your business success!</p>
+</div>
+
+<div class="contact-info">
+    <p>Dashboard: <a href="{{dashboardUrl}}">{{dashboardUrl}}</a></p>
+    <p>Support: <a href="mailto:{{supportEmail}}">{{supportEmail}}</a></p>
+    <p>Best regards,<br>Your Platform Team</p>
+</div>
+
+{{/base}} 

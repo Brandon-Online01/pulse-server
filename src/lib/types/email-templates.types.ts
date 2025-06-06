@@ -309,6 +309,18 @@ export interface NewUserAdminNotificationData extends BaseEmailData {
 	userDetailsLink: string;
 }
 
+export interface NewUserWelcomeData extends BaseEmailData {
+	email: string;
+	firstName?: string;
+	lastName?: string;
+	loginUrl: string;
+	supportEmail: string;
+	supportPhone?: string;
+	organizationName?: string;
+	branchName?: string;
+	dashboardUrl: string;
+}
+
 export interface LeadConvertedClientData extends BaseEmailData {
 	clientId: number;
 	conversionDate: string;
@@ -541,6 +553,7 @@ export interface EmailDataMap {
 	[EmailType.TASK_REMINDER_CREATOR]: TaskReminderData;
 	[EmailType.TASK_OVERDUE_MISSED]: TaskOverdueMissedData;
 	[EmailType.NEW_USER_ADMIN_NOTIFICATION]: NewUserAdminNotificationData;
+	[EmailType.NEW_USER_WELCOME]: NewUserWelcomeData;
 	[EmailType.LEAD_CONVERTED_CLIENT]: LeadConvertedClientData;
 	[EmailType.LEAD_CONVERTED_CREATOR]: LeadConvertedCreatorData;
 	[EmailType.LEAD_REMINDER]: LeadReminderData;
