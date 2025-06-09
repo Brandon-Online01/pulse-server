@@ -181,8 +181,14 @@ export class AttendanceController {
 			},
 		},
 	})
-	checkIn(@Body() createAttendanceDto: CreateCheckInDto) {
-		return this.attendanceService.checkIn(createAttendanceDto);
+	checkIn(
+		@Body() createAttendanceDto: CreateCheckInDto,
+		@Req() req: AuthenticatedRequest,
+	) {
+		const orgId = req.user?.org?.uid || req.user?.organisationRef;
+		const branchId = req.user?.branch?.uid;
+
+		return this.attendanceService.checkIn(createAttendanceDto, orgId, branchId);
 	}
 
 	@Post('out')
@@ -218,8 +224,13 @@ export class AttendanceController {
 			},
 		},
 	})
-	checkOut(@Body() createAttendanceDto: CreateCheckOutDto) {
-		return this.attendanceService.checkOut(createAttendanceDto);
+	checkOut(
+		@Body() createAttendanceDto: CreateCheckOutDto,
+		@Req() req: AuthenticatedRequest,
+	) {
+		const orgId = req.user?.org?.uid || req.user?.organisationRef;
+		const branchId = req.user?.branch?.uid;
+		return this.attendanceService.checkOut(createAttendanceDto, orgId, branchId);
 	}
 
 	@Post('break')

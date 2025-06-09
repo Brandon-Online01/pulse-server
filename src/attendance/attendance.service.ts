@@ -48,9 +48,13 @@ export class AttendanceService {
 	// ATTENDANCE METRICS FUNCTIONALITY
 	// ======================================================
 
-	public async checkIn(checkInDto: CreateCheckInDto): Promise<{ message: string }> {
+	public async checkIn(checkInDto: CreateCheckInDto, orgId?: number, branchId?: number): Promise<{ message: string }> {
 		try {
-			const checkIn = await this.attendanceRepository.save(checkInDto);
+			const checkIn = await this.attendanceRepository.save({
+				...checkInDto,
+				organisation: orgId ? { uid: orgId } : undefined,
+				branch: branchId ? { uid: branchId } : undefined,
+			});
 
 			if (!checkIn) {
 				throw new NotFoundException(process.env.CREATE_ERROR_MESSAGE);
@@ -81,7 +85,7 @@ export class AttendanceService {
 		}
 	}
 
-	public async checkOut(checkOutDto: CreateCheckOutDto): Promise<{ message: string; duration?: string }> {
+	public async checkOut(checkOutDto: CreateCheckOutDto, orgId?: number, branchId?: number): Promise<{ message: string; duration?: string }> {
 		try {
 			const activeShift = await this.attendanceRepository.findOne({
 				where: {
@@ -89,6 +93,8 @@ export class AttendanceService {
 					owner: checkOutDto?.owner,
 					checkIn: Not(IsNull()),
 					checkOut: IsNull(),
+					organisation: orgId ? { uid: orgId } : undefined,
+					branch: branchId ? { uid: branchId } : undefined,
 				},
 				relations: ['owner', 'owner.organisation'],
 				order: {
