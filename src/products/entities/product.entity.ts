@@ -89,7 +89,85 @@ export class Product {
 
     @Column({ type: 'varchar', default: 'unit' })
     packageUnit: string;
-    
+
+    // New columns for pack and pallet quantities
+    @Column({ type: 'int', default: 1 })
+    itemsPerPack: number;
+
+    @Column({ type: 'int', default: 1 })
+    packsPerPallet: number;
+
+    @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+    packPrice: number;
+
+    @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+    palletPrice: number;
+
+    @Column({ type: 'decimal', precision: 8, scale: 2, nullable: true })
+    packWeight: number;
+
+    @Column({ type: 'decimal', precision: 8, scale: 2, nullable: true })
+    palletWeight: number;
+
+    @Column({ type: 'varchar', nullable: true })
+    dimensions: string;
+
+    @Column({ type: 'varchar', nullable: true })
+    packDimensions: string;
+
+    @Column({ type: 'varchar', nullable: true })
+    palletDimensions: string;
+
+    @Column({ type: 'varchar', nullable: true })
+    manufacturer: string;
+
+    @Column({ type: 'varchar', nullable: true })
+    model: string;
+
+    @Column({ type: 'varchar', nullable: true })
+    color: string;
+
+    @Column({ type: 'varchar', nullable: true })
+    material: string;
+
+    @Column({ type: 'int', nullable: true })
+    warrantyPeriod: number;
+
+    @Column({ type: 'varchar', default: 'months' })
+    warrantyUnit: string;
+
+    @Column({ type: 'text', nullable: true })
+    specifications: string;
+
+    @Column({ type: 'text', nullable: true })
+    features: string;
+
+    @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true })
+    rating: number;
+
+    @Column({ type: 'int', default: 0 })
+    reviewCount: number;
+
+    @Column({ type: 'varchar', nullable: true })
+    origin: string;
+
+    @Column({ type: 'boolean', default: false })
+    isFragile: boolean;
+
+    @Column({ type: 'boolean', default: false })
+    requiresSpecialHandling: boolean;
+
+    @Column({ type: 'varchar', nullable: true })
+    storageConditions: string;
+
+    @Column({ type: 'int', nullable: true })
+    minimumOrderQuantity: number;
+
+    @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true })
+    bulkDiscountPercentage: number;
+
+    @Column({ type: 'int', nullable: true })
+    bulkDiscountMinQty: number;
 
     @CreateDateColumn()
     createdAt: Date;

@@ -353,7 +353,7 @@ export class LeadsService {
 			const oldStatus = lead.status;
 			const oldTemperature = lead.temperature;
 			const oldPriority = lead.priority;
-			
+
 			// Ensure changeHistory is treated as an array of LeadStatusHistoryEntry
 			const changeHistoryArray: LeadStatusHistoryEntry[] = Array.isArray(lead.changeHistory)
 				? lead.changeHistory
@@ -399,9 +399,9 @@ export class LeadsService {
 			// EVENT-DRIVEN AUTOMATION: Post-update actions
 			const updatedLead = await this.leadsRepository.findOne({
 				where: { uid: ref },
-				relations: ['owner', 'organisation', 'branch', 'interactions']
+				relations: ['owner', 'organisation', 'branch', 'interactions'],
 			});
-			
+
 			if (updatedLead) {
 				await this.handleLeadUpdatedEvents(updatedLead, {
 					statusChanged: oldStatus !== updateLeadDto.status,
@@ -571,13 +571,13 @@ export class LeadsService {
 			// Send notification about reactivation
 			const updatedLead = await this.leadsRepository.findOne({
 				where: { uid: ref },
-				relations: ['owner', 'assignees']
+				relations: ['owner', 'assignees'],
 			});
 
 			if (updatedLead) {
 				const userIds = [
 					updatedLead.owner?.uid,
-					...(updatedLead.assignees?.map((a: any) => a.uid) || [])
+					...(updatedLead.assignees?.map((a: any) => a.uid) || []),
 				].filter(Boolean);
 
 				if (userIds.length > 0) {
@@ -590,8 +590,8 @@ export class LeadsService {
 							status: newStatus,
 						},
 						{
-							priority: NotificationPriority.MEDIUM
-						}
+							priority: NotificationPriority.MEDIUM,
+						},
 					);
 				}
 			}
@@ -615,13 +615,13 @@ export class LeadsService {
 	@Cron('0 0 * * * *') // Every hour
 	async hourlyLeadScoring(): Promise<void> {
 		this.logger.log('Starting hourly lead scoring...');
-		
+
 		try {
 			// Process lead scoring in batches to prevent memory issues
 			const batchSize = 50;
 			let offset = 0;
 			let processedCount = 0;
-			
+
 			while (true) {
 				const leads = await this.leadsRepository.find({
 					where: {
@@ -646,11 +646,13 @@ export class LeadsService {
 							this.logger.error(`Failed to score lead ${lead.uid}: ${error.message}`);
 							return null;
 						}
-					})
+					}),
 				);
 
 				// Count successful operations
-				const successful = results.filter(result => result.status === 'fulfilled' && result.value !== null).length;
+				const successful = results.filter(
+					(result) => result.status === 'fulfilled' && result.value !== null,
+				).length;
 				processedCount += successful;
 
 				offset += batchSize;
@@ -668,7 +670,7 @@ export class LeadsService {
 	@Cron('0 */30 * * * *') // Every 30 minutes
 	async checkOverdueFollowUps(): Promise<void> {
 		this.logger.log('Checking for overdue follow-ups...');
-		
+
 		try {
 			const now = new Date();
 			const overdueLeads = await this.leadsRepository.find({
@@ -680,13 +682,14 @@ export class LeadsService {
 				relations: ['owner'], // Removed 'assignees' since it's not a proper relation
 			});
 
+			this.logger.log(`Found ${overdueLeads.length} overdue leads to process`);
+
 			for (const lead of overdueLeads) {
 				try {
 					// Notify assigned users about overdue follow-up
-					const userIds = [
-						lead.owner?.uid,
-						...(lead.assignees?.map((a: any) => a.uid) || [])
-					].filter(Boolean);
+					const userIds = [lead.owner?.uid, ...(lead.assignees?.map((a: any) => a.uid) || [])].filter(
+						Boolean,
+					);
 
 					if (userIds.length > 0) {
 						await this.unifiedNotificationService.sendTemplatedNotification(
@@ -695,20 +698,24 @@ export class LeadsService {
 							{
 								leadId: lead.uid,
 								leadName: lead.name || `Lead #${lead.uid}`,
-								daysOverdue: Math.floor((now.getTime() - lead.nextFollowUpDate!.getTime()) / (24 * 60 * 60 * 1000)),
+								daysOverdue: Math.floor(
+									(now.getTime() - lead.nextFollowUpDate!.getTime()) / (24 * 60 * 60 * 1000),
+								),
 							},
 							{
-								priority: NotificationPriority.HIGH
-							}
+								priority: NotificationPriority.HIGH,
+							},
 						);
 					}
 
 					// Update priority if significantly overdue
-					const daysOverdue = Math.floor((now.getTime() - lead.nextFollowUpDate!.getTime()) / (24 * 60 * 60 * 1000));
+					const daysOverdue = Math.floor(
+						(now.getTime() - lead.nextFollowUpDate!.getTime()) / (24 * 60 * 60 * 1000),
+					);
 					if (daysOverdue > 7 && lead.priority !== LeadPriority.CRITICAL) {
-						await this.leadsRepository.update(lead.uid, { 
+						await this.leadsRepository.update(lead.uid, {
 							priority: LeadPriority.HIGH,
-							daysSinceLastResponse: daysOverdue 
+							daysSinceLastResponse: daysOverdue,
 						});
 					}
 				} catch (error) {
@@ -1313,18 +1320,16 @@ export class LeadsService {
 				owner: lead.owner,
 			};
 
-			const recipients = [
-				AccessLevel.ADMIN,
-				AccessLevel.MANAGER,
-				AccessLevel.OWNER,
-				AccessLevel.SUPERVISOR,
-			];
+			const recipients = [AccessLevel.ADMIN, AccessLevel.MANAGER, AccessLevel.OWNER, AccessLevel.SUPERVISOR];
 
 			this.eventEmitter.emit('send.notification', notification, recipients);
 
 			this.logger.log(`Lead creation events completed for lead ${lead.uid}`);
 		} catch (error) {
-			this.logger.error(`Failed to handle lead creation events for lead ${lead.uid}: ${error.message}`, error.stack);
+			this.logger.error(
+				`Failed to handle lead creation events for lead ${lead.uid}: ${error.message}`,
+				error.stack,
+			);
 		}
 	}
 
@@ -1332,13 +1337,13 @@ export class LeadsService {
 	 * Handle events triggered after lead updates
 	 */
 	private async handleLeadUpdatedEvents(
-		lead: Lead, 
+		lead: Lead,
 		changes: {
 			statusChanged: boolean;
 			temperatureChanged: boolean;
 			priorityChanged: boolean;
 			assigneesChanged: boolean;
-		}
+		},
 	): Promise<void> {
 		try {
 			// 1. Recalculate lead score if significant changes
@@ -1364,7 +1369,10 @@ export class LeadsService {
 
 			this.logger.log(`Lead update events completed for lead ${lead.uid}`);
 		} catch (error) {
-			this.logger.error(`Failed to handle lead update events for lead ${lead.uid}: ${error.message}`, error.stack);
+			this.logger.error(
+				`Failed to handle lead update events for lead ${lead.uid}: ${error.message}`,
+				error.stack,
+			);
 		}
 	}
 
@@ -1376,7 +1384,7 @@ export class LeadsService {
 			// Send conversion notifications
 			const allUserIds = [
 				lead.owner?.uid,
-				...(lead.assignees?.map((assignee: any) => assignee.uid) || [])
+				...(lead.assignees?.map((assignee: any) => assignee.uid) || []),
 			].filter(Boolean);
 
 			if (allUserIds.length > 0) {
@@ -1389,8 +1397,8 @@ export class LeadsService {
 						convertedBy: 'System',
 					},
 					{
-						priority: NotificationPriority.HIGH
-					}
+						priority: NotificationPriority.HIGH,
+					},
 				);
 			}
 
@@ -1442,8 +1450,8 @@ export class LeadsService {
 							leadCreatorName: creatorName,
 							leadDetails: populatedLead.notes,
 							leadLink: `${this.configService.get<string>('DASHBOARD_URL')}/leads/${populatedLead.uid}`,
-						}
-					}
+						},
+					},
 				);
 			} catch (error) {
 				this.logger.error(`Failed to send assignment notifications: ${error.message}`);
@@ -1474,7 +1482,9 @@ export class LeadsService {
 		// Only update if temperature actually changed
 		if (newTemperature !== lead.temperature) {
 			await this.leadsRepository.update(leadId, { temperature: newTemperature });
-			this.logger.log(`Updated temperature for lead ${leadId} from ${lead.temperature} to ${newTemperature} based on score ${lead.leadScore}`);
+			this.logger.log(
+				`Updated temperature for lead ${leadId} from ${lead.temperature} to ${newTemperature} based on score ${lead.leadScore}`,
+			);
 		}
 	}
 
@@ -1505,7 +1515,7 @@ export class LeadsService {
 		customMessage?: string,
 		tone?: any,
 		orgId?: number,
-		branchId?: number
+		branchId?: number,
 	): Promise<{
 		success: boolean;
 		email?: {
@@ -1526,11 +1536,11 @@ export class LeadsService {
 
 			// Get the lead with all related data
 			const lead = await this.leadsRepository.findOne({
-				where: { 
-					uid: leadId, 
+				where: {
+					uid: leadId,
 					isDeleted: false,
 					organisation: { uid: orgId },
-					...(branchId && { branch: { uid: branchId } })
+					...(branchId && { branch: { uid: branchId } }),
 				},
 				relations: ['owner', 'organisation', 'branch', 'interactions'],
 			});
@@ -1550,7 +1560,7 @@ export class LeadsService {
 				phone: lead.phone,
 				companyName: lead.companyName,
 				jobTitle: lead.jobTitle,
-				
+
 				// Lead qualification and scoring
 				status: lead.status,
 				intent: lead.intent,
@@ -1559,7 +1569,7 @@ export class LeadsService {
 				leadScore: lead.leadScore,
 				userQualityRating: lead.userQualityRating,
 				lifecycleStage: lead.lifecycleStage,
-				
+
 				// Business context
 				industry: lead.industry,
 				businessSize: lead.businessSize,
@@ -1567,7 +1577,7 @@ export class LeadsService {
 				budgetRange: lead.budgetRange,
 				purchaseTimeline: lead.purchaseTimeline,
 				estimatedValue: lead.estimatedValue,
-				
+
 				// Communication and behavior
 				source: lead.source,
 				preferredCommunication: lead.preferredCommunication,
@@ -1578,7 +1588,7 @@ export class LeadsService {
 				daysSinceLastResponse: lead.daysSinceLastResponse,
 				lastContactDate: lead.lastContactDate?.toISOString(),
 				nextFollowUpDate: lead.nextFollowUpDate?.toISOString(),
-				
+
 				// Business intelligence
 				painPoints: lead.painPoints ? JSON.parse(lead.painPoints) : [],
 				competitorInfo: lead.competitorInfo,
@@ -1587,11 +1597,11 @@ export class LeadsService {
 				utmSource: lead.utmSource,
 				utmMedium: lead.utmMedium,
 				utmCampaign: lead.utmCampaign,
-				
+
 				// Activity and engagement data
 				scoringData: lead.scoringData,
 				activityData: lead.activityData,
-				
+
 				// Additional context
 				notes: lead.notes,
 				assignee: lead.owner?.name,
@@ -1651,7 +1661,6 @@ export class LeadsService {
 				},
 				message: 'Email generated successfully',
 			};
-
 		} catch (error) {
 			this.logger.error(`Error generating intelligent email for lead ${leadId}: ${error.message}`, error.stack);
 			return {
@@ -1667,8 +1676,9 @@ export class LeadsService {
 	private selectOptimalTone(leadData: any): string {
 		// High-score or hot leads get more confident approach
 		if (leadData.temperature === 'HOT' || (leadData.leadScore && leadData.leadScore > 80)) {
-			return leadData.decisionMakerRole === 'CEO' || leadData.decisionMakerRole === 'OWNER' 
-				? 'authoritative' : 'results-driven';
+			return leadData.decisionMakerRole === 'CEO' || leadData.decisionMakerRole === 'OWNER'
+				? 'authoritative'
+				: 'results-driven';
 		}
 
 		// Technical decision makers prefer consultative approach
@@ -1709,40 +1719,42 @@ export class LeadsService {
 			TECHNOLOGY: [
 				'Digital transformation acceleration in SA market',
 				'Cybersecurity and data protection priorities',
-				'Cloud adoption and skills shortage challenges'
+				'Cloud adoption and skills shortage challenges',
 			],
 			HEALTHCARE: [
 				'Healthcare digitization trends',
 				'Telemedicine and patient data security',
-				'Cost optimization and efficiency improvements'
+				'Cost optimization and efficiency improvements',
 			],
 			FINANCE: [
 				'Fintech disruption and digital banking',
 				'Regulatory compliance (POPIA, Basel III)',
-				'Customer experience transformation'
+				'Customer experience transformation',
 			],
 			RETAIL: [
 				'Omnichannel retail evolution',
 				'Supply chain optimization',
-				'Customer data analytics and personalization'
+				'Customer data analytics and personalization',
 			],
 			MANUFACTURING: [
 				'Industry 4.0 and smart manufacturing',
 				'Supply chain resilience',
-				'Sustainability and carbon reduction'
+				'Sustainability and carbon reduction',
 			],
 			MINING: [
 				'Safety technology and compliance',
 				'Operational efficiency optimization',
-				'Environmental impact management'
-			]
+				'Environmental impact management',
+			],
 		};
 
-		return insights[industry as string] || [
-			'Digital transformation opportunities',
-			'Operational efficiency improvements',
-			'Competitive advantage enhancement'
-		];
+		return (
+			insights[industry as string] || [
+				'Digital transformation opportunities',
+				'Operational efficiency improvements',
+				'Competitive advantage enhancement',
+			]
+		);
 	}
 
 	/**
@@ -1786,7 +1798,7 @@ export class LeadsService {
 			TECHNOLOGY: ['Digital acceleration', 'Cybersecurity concerns'],
 			FINANCE: ['Regulatory changes', 'Digital disruption'],
 			HEALTHCARE: ['Healthcare transformation', 'Cost pressures'],
-			MINING: ['Commodity price volatility', 'Environmental regulations']
+			MINING: ['Commodity price volatility', 'Environmental regulations'],
 		};
 
 		return conditions[industry as string] || ['Economic uncertainty', 'Digital transformation pressure'];
@@ -1810,11 +1822,11 @@ export class LeadsService {
 	 * Enhanced with status validation and velocity-based scoring
 	 */
 	async updateLeadStatus(
-		id: number, 
-		status: LeadStatus, 
+		id: number,
+		status: LeadStatus,
 		reason?: string,
 		description?: string,
-		nextStep?: string
+		nextStep?: string,
 	): Promise<Lead> {
 		const result = await this.findOne(id);
 		if (!result.lead) {
@@ -1848,8 +1860,8 @@ export class LeadsService {
 		if (previousStatus !== status || previousTemperature !== lead.temperature) {
 			this.logger.log(
 				`Lead ${id} status updated: ${previousStatus} → ${status}, ` +
-				`temperature: ${previousTemperature} → ${lead.temperature}, ` +
-				`score: ${lead.leadScore || 0}`
+					`temperature: ${previousTemperature} → ${lead.temperature}, ` +
+					`score: ${lead.leadScore || 0}`,
 			);
 		}
 
@@ -1862,9 +1874,10 @@ export class LeadsService {
 	private async updateTemperatureBasedOnStatus(lead: Lead, previousStatus?: LeadStatus): Promise<void> {
 		const currentScore = lead.leadScore || 0;
 		const now = new Date();
-		const statusChangeTime = previousStatus && previousStatus !== lead.status ? 
-			(now.getTime() - new Date(lead.updatedAt).getTime()) / (1000 * 60 * 60) : // Hours since last update
-			0;
+		const statusChangeTime =
+			previousStatus && previousStatus !== lead.status
+				? (now.getTime() - new Date(lead.updatedAt).getTime()) / (1000 * 60 * 60) // Hours since last update
+				: 0;
 
 		// Status-based temperature rules with velocity intelligence
 		switch (lead.status) {
@@ -1872,14 +1885,16 @@ export class LeadsService {
 				// APPROVED leads cannot be COLD or FROZEN
 				if (lead.temperature === LeadTemperature.COLD || lead.temperature === LeadTemperature.FROZEN) {
 					// Determine new temperature based on score and velocity
-					if (currentScore >= 70 || statusChangeTime <= 24) { // High score or fast progression
+					if (currentScore >= 70 || statusChangeTime <= 24) {
+						// High score or fast progression
 						lead.temperature = LeadTemperature.HOT;
 					} else {
 						lead.temperature = LeadTemperature.WARM;
 					}
 				}
 				// If already HOT/WARM, maintain or upgrade based on velocity
-				else if (statusChangeTime <= 6) { // Very fast approval (within 6 hours)
+				else if (statusChangeTime <= 6) {
+					// Very fast approval (within 6 hours)
 					lead.temperature = LeadTemperature.HOT;
 				}
 				break;
@@ -1904,11 +1919,16 @@ export class LeadsService {
 
 			case LeadStatus.PENDING:
 				// PENDING leads get temperature based on score and velocity
-				if (statusChangeTime > 0) { // Status just changed
-					if (statusChangeTime <= 2) { // Very recent activity
-						lead.temperature = lead.temperature && lead.temperature > LeadTemperature.COLD ? 
-							lead.temperature : LeadTemperature.WARM;
-					} else if (statusChangeTime > 168) { // Over a week old
+				if (statusChangeTime > 0) {
+					// Status just changed
+					if (statusChangeTime <= 2) {
+						// Very recent activity
+						lead.temperature =
+							lead.temperature && lead.temperature > LeadTemperature.COLD
+								? lead.temperature
+								: LeadTemperature.WARM;
+					} else if (statusChangeTime > 168) {
+						// Over a week old
 						lead.temperature = LeadTemperature.COLD;
 					}
 				}
@@ -1958,11 +1978,11 @@ export class LeadsService {
 	private async applyVelocityBasedTemperatureAdjustments(lead: Lead, statusChangeTime: number): Promise<void> {
 		// Get recent interactions for velocity analysis
 		const recentInteractions = await this.interactionRepository.find({
-			where: { 
+			where: {
 				lead: { uid: lead.uid },
-				createdAt: MoreThan(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)) // Last 7 days
+				createdAt: MoreThan(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)), // Last 7 days
 			},
-			order: { createdAt: 'DESC' }
+			order: { createdAt: 'DESC' },
 		});
 
 		const interactionVelocity = recentInteractions.length;
@@ -1982,8 +2002,10 @@ export class LeadsService {
 		}
 
 		// Very slow progression (status unchanged for too long) = cooling down
-		const daysSinceUpdate = Math.floor((new Date().getTime() - new Date(lead.updatedAt).getTime()) / (24 * 60 * 60 * 1000));
-		
+		const daysSinceUpdate = Math.floor(
+			(new Date().getTime() - new Date(lead.updatedAt).getTime()) / (24 * 60 * 60 * 1000),
+		);
+
 		if (daysSinceUpdate > 14 && lead.temperature === LeadTemperature.HOT) {
 			lead.temperature = LeadTemperature.WARM;
 		} else if (daysSinceUpdate > 30 && lead.temperature === LeadTemperature.WARM) {
@@ -2008,20 +2030,20 @@ export class LeadsService {
 		for (const lead of leads) {
 			try {
 				const originalTemperature = lead.temperature;
-				
+
 				// Recalculate score first
 				await this.leadScoringService.calculateLeadScore(lead.uid);
-				
+
 				// Update temperature based on current status and score
 				await this.updateTemperatureBasedOnStatus(lead);
-				
+
 				if (originalTemperature !== lead.temperature) {
 					await this.leadsRepository.save(lead);
 					updated++;
-					
+
 					this.logger.debug(
 						`Lead ${lead.uid} temperature updated: ${originalTemperature} → ${lead.temperature} ` +
-						`(Status: ${lead.status}, Score: ${lead.leadScore || 0})`
+							`(Status: ${lead.status}, Score: ${lead.leadScore || 0})`,
 					);
 				}
 			} catch (error) {
@@ -2056,10 +2078,10 @@ export class LeadsService {
 
 		// Get velocity metrics
 		const daysSinceCreation = Math.floor(
-			(new Date().getTime() - new Date(updatedLead.lead.createdAt).getTime()) / (24 * 60 * 60 * 1000)
+			(new Date().getTime() - new Date(updatedLead.lead.createdAt).getTime()) / (24 * 60 * 60 * 1000),
 		);
 		const daysSinceUpdate = Math.floor(
-			(new Date().getTime() - new Date(updatedLead.lead.updatedAt).getTime()) / (24 * 60 * 60 * 1000)
+			(new Date().getTime() - new Date(updatedLead.lead.updatedAt).getTime()) / (24 * 60 * 60 * 1000),
 		);
 
 		switch (updatedLead.lead.status) {
@@ -2103,16 +2125,14 @@ export class LeadsService {
 		// Apply status update if needed
 		if (shouldUpdateStatus) {
 			await this.updateLeadStatus(
-				leadId, 
-				newStatus, 
+				leadId,
+				newStatus,
 				autoReason,
 				`Automated processing based on score ${currentScore} and velocity analysis`,
-				this.getAutomatedNextStep(newStatus, currentScore)
+				this.getAutomatedNextStep(newStatus, currentScore),
 			);
-			
-			this.logger.log(
-				`Lead ${leadId} auto-processed: ${updatedLead.lead.status} → ${newStatus}. ${autoReason}`
-			);
+
+			this.logger.log(`Lead ${leadId} auto-processed: ${updatedLead.lead.status} → ${newStatus}. ${autoReason}`);
 		} else {
 			// Even if status doesn't change, update temperature based on current score
 			await this.updateTemperatureBasedOnStatus(updatedLead.lead);
@@ -2128,13 +2148,13 @@ export class LeadsService {
 	private getAutomatedNextStep(status: LeadStatus, score: number): string {
 		switch (status) {
 			case LeadStatus.REVIEW:
-				return score >= 80 ? 
-					'Priority review - consider for immediate approval' : 
-					'Standard review process - validate lead quality';
+				return score >= 80
+					? 'Priority review - consider for immediate approval'
+					: 'Standard review process - validate lead quality';
 			case LeadStatus.APPROVED:
-				return score >= 85 ? 
-					'Immediate outreach - high-priority prospect' : 
-					'Schedule follow-up within 48 hours';
+				return score >= 85
+					? 'Immediate outreach - high-priority prospect'
+					: 'Schedule follow-up within 48 hours';
 			case LeadStatus.DECLINED:
 				return 'Lead declined due to low engagement - consider for nurture campaign';
 			default:
@@ -2149,9 +2169,9 @@ export class LeadsService {
 		this.logger.log('Starting enhanced batch lead processing...');
 
 		const leads = await this.leadsRepository.find({
-			where: { 
+			where: {
 				isDeleted: false,
-				status: In([LeadStatus.PENDING, LeadStatus.REVIEW, LeadStatus.APPROVED])
+				status: In([LeadStatus.PENDING, LeadStatus.REVIEW, LeadStatus.APPROVED]),
 			},
 			order: { leadScore: 'DESC' }, // Process highest-scoring leads first
 		});
