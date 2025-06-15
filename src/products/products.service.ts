@@ -192,7 +192,7 @@ export class ProductsService {
 				.createQueryBuilder('product')
 				.select([
 					'product.uid',
-					'product.name', 
+					'product.name',
 					'product.description',
 					'product.price',
 					'product.category',
@@ -217,7 +217,7 @@ export class ProductsService {
 					'product.packageUnit',
 					'product.createdAt',
 					'product.updatedAt',
-					'product.isDeleted'
+					'product.isDeleted',
 				])
 				.leftJoin('product.organisation', 'organisation')
 				.leftJoin('product.branch', 'branch')
@@ -260,7 +260,7 @@ export class ProductsService {
 				.createQueryBuilder('product')
 				.select([
 					'product.uid',
-					'product.name', 
+					'product.name',
 					'product.description',
 					'product.price',
 					'product.category',
@@ -285,7 +285,7 @@ export class ProductsService {
 					'product.packageUnit',
 					'product.createdAt',
 					'product.updatedAt',
-					'product.isDeleted'
+					'product.isDeleted',
 				])
 				.leftJoin('product.organisation', 'organisation')
 				.leftJoin('product.branch', 'branch')
@@ -358,7 +358,7 @@ export class ProductsService {
 				.createQueryBuilder('product')
 				.select([
 					'product.uid',
-					'product.name', 
+					'product.name',
 					'product.description',
 					'product.price',
 					'product.category',
@@ -383,7 +383,7 @@ export class ProductsService {
 					'product.packageUnit',
 					'product.createdAt',
 					'product.updatedAt',
-					'product.isDeleted'
+					'product.isDeleted',
 				])
 				.leftJoin('product.organisation', 'organisation')
 				.leftJoin('product.branch', 'branch')
@@ -433,7 +433,7 @@ export class ProductsService {
 				.createQueryBuilder('product')
 				.select([
 					'product.uid',
-					'product.name', 
+					'product.name',
 					'product.description',
 					'product.price',
 					'product.category',
@@ -458,7 +458,7 @@ export class ProductsService {
 					'product.packageUnit',
 					'product.createdAt',
 					'product.updatedAt',
-					'product.isDeleted'
+					'product.isDeleted',
 				])
 				.leftJoin('product.organisation', 'organisation')
 				.leftJoin('product.branch', 'branch')

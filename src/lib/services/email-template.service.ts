@@ -45,8 +45,34 @@ class EmailTemplateService {
 	private compiledTemplates: Map<string, HandlebarsTemplateDelegate> = new Map();
 
 	constructor() {
-		this.templatesPath = join(__dirname, '../templates/handlebars');
+		// Try multiple potential template paths for maximum deployment compatibility
+		const potentialPaths = [
+			// Primary: Relative to project root (works for most deployments)
+			join(process.cwd(), 'dist', 'lib', 'templates', 'handlebars'),
+			// Fallback: Relative to current service file location
+			join(__dirname, '../templates/handlebars'),
+			// Alternative: Direct relative to source in case dist structure differs
+			join(process.cwd(), 'src', 'lib', 'templates', 'handlebars')
+		];
+
+		this.templatesPath = this.findValidTemplatesPath(potentialPaths);
 		this.initializeHandlebars();
+	}
+
+	private findValidTemplatesPath(paths: string[]): string {
+		const { existsSync } = require('fs');
+		
+		for (const path of paths) {
+			if (existsSync(path)) {
+				console.log(`Using templates path: ${path}`);
+				return path;
+			}
+		}
+		
+		// If no valid path found, log all attempted paths and use the first one
+		console.warn('No valid templates path found. Attempted paths:', paths);
+		console.warn('Using first path as fallback:', paths[0]);
+		return paths[0];
 	}
 
 	private initializeHandlebars() {
@@ -124,13 +150,23 @@ class EmailTemplateService {
 
 		try {
 			const fullPath = join(this.templatesPath, 'emails', templatePath);
+			console.log(`Attempting to load template from: ${fullPath}`);
+			
+			const { existsSync } = require('fs');
+			if (!existsSync(fullPath)) {
+				console.error(`Template file does not exist: ${fullPath}`);
+				console.error(`Templates base path: ${this.templatesPath}`);
+				console.error(`Requested template path: ${templatePath}`);
+				throw new Error(`Template file not found: ${fullPath}`);
+			}
+			
 			const templateContent = readFileSync(fullPath, 'utf8');
 			const compiled = Handlebars.compile(templateContent);
 			this.compiledTemplates.set(templatePath, compiled);
 			return compiled;
 		} catch (error) {
 			console.error(`Error loading template ${templatePath}:`, error);
-			throw new Error(`Template not found: ${templatePath}`);
+			throw new Error(`Template not found: ${templatePath} - ${error.message}`);
 		}
 	}
 
