@@ -46,6 +46,8 @@ class EmailTemplateService {
 	private compiledTemplates: Map<string, HandlebarsTemplateDelegate> = new Map();
 
 	constructor() {
+		console.log('Initializing Email Template Service...');
+		
 		// Try multiple potential template paths for maximum deployment compatibility
 		const potentialPaths = [
 			// Primary: Relative to project root (works for most deployments)
@@ -58,6 +60,8 @@ class EmailTemplateService {
 
 		this.templatesPath = this.findValidTemplatesPath(potentialPaths);
 		this.initializeHandlebars();
+		
+		console.log('Email Template Service initialization completed successfully');
 	}
 
 	private findValidTemplatesPath(paths: string[]): string {
@@ -77,11 +81,17 @@ class EmailTemplateService {
 	}
 
 	private initializeHandlebars() {
+		// Clear any existing compiled templates to ensure fresh compilation
+		this.compiledTemplates.clear();
+		
 		// Register partials
 		this.registerPartials();
 
 		// Register helpers
 		this.registerHelpers();
+		
+		// Preload all email templates
+		this.preloadAllTemplates();
 	}
 
 	private registerPartials() {
@@ -89,15 +99,35 @@ class EmailTemplateService {
 		const layoutsPath = join(this.templatesPath, 'layouts');
 
 		try {
-			// Register base layout - templates use {{#> base}} so we register as 'base'
+			// Register base layout with proper layout functionality
 			const baseLayoutPath = join(layoutsPath, 'base.hbs');
 			console.log(`Attempting to load base layout from: ${baseLayoutPath}`);
 			
 			const { existsSync } = require('fs');
 			if (existsSync(baseLayoutPath)) {
 				const baseLayout = readFileSync(baseLayoutPath, 'utf8');
+				
+				// Register as both a partial and a block helper for layout functionality
 				Handlebars.registerPartial('base', baseLayout);
-				console.log('Successfully registered base layout');
+				
+				// Register a custom block helper for layout support
+				Handlebars.registerHelper('base', function(options: any) {
+					try {
+						// The content between {{#base}} and {{/base}} is available in options.fn(this)
+						const content = options.fn(this);
+						const layoutData = { ...this, body: content };
+						const template = Handlebars.compile(baseLayout);
+						const result = template(layoutData);
+						console.log('Layout helper successfully rendered content');
+						return new Handlebars.SafeString(result);
+					} catch (error) {
+						console.error('Error in base layout helper:', error);
+						// Return the content without layout as fallback
+						return new Handlebars.SafeString(options.fn(this));
+					}
+				});
+				
+				console.log('Successfully registered base layout and helper');
 			} else {
 				console.error(`Base layout not found at: ${baseLayoutPath}`);
 				throw new Error(`Base layout file not found: ${baseLayoutPath}`);
@@ -442,6 +472,83 @@ class EmailTemplateService {
 
 	attendanceEveningReport(data: EveningReportData): string {
 		return this.renderTemplate('attendance/evening-report.hbs', data);
+	}
+
+	/**
+	 * Clear the compiled template cache and reinitialize Handlebars
+	 * Useful for development or when templates are updated
+	 */
+	public clearCache(): void {
+		console.log('Clearing email template cache and reinitializing...');
+		this.compiledTemplates.clear();
+		this.initializeHandlebars();
+		console.log('Email template service refreshed');
+	}
+
+	private preloadAllTemplates(): void {
+		console.log('Preloading all email templates...');
+		
+		// List of all email templates
+		const templates = [
+			'auth/signup.hbs',
+			'auth/verification.hbs',
+			'auth/password-reset.hbs',
+			'auth/password-changed.hbs',
+			'quotations/client-new.hbs',
+			'quotations/internal-new.hbs',
+			'quotations/reseller-new.hbs',
+			'quotations/status-update.hbs',
+			'quotations/warehouse-fulfillment.hbs',
+			'business/invoice.hbs',
+			'business/order-received-client.hbs',
+			'tasks/new-task.hbs',
+			'tasks/updated.hbs',
+			'tasks/completed.hbs',
+			'tasks/reminder-assignee.hbs',
+			'tasks/reminder-creator.hbs',
+			'tasks/flag-created.hbs',
+			'tasks/flag-updated.hbs',
+			'tasks/flag-resolved.hbs',
+			'tasks/feedback-added.hbs',
+			'tasks/overdue-missed.hbs',
+			'leads/reminder.hbs',
+			'leads/converted-client.hbs',
+			'leads/converted-creator.hbs',
+			'leads/assigned-to-user.hbs',
+			'licenses/created.hbs',
+			'licenses/updated.hbs',
+			'licenses/renewed.hbs',
+			'licenses/activated.hbs',
+			'licenses/suspended.hbs',
+			'licenses/limit-reached.hbs',
+			'licenses/transferred-from.hbs',
+			'licenses/transferred-to.hbs',
+			'reports/daily-report.hbs',
+			'reports/user-daily-report.hbs',
+			'system/new-user-admin-notification.hbs',
+			'auth/new-user-welcome.hbs',
+			'client/password-reset.hbs',
+			'client/password-changed.hbs',
+			'warnings/issued.hbs',
+			'warnings/updated.hbs',
+			'warnings/expired.hbs',
+			'leave/application-confirmation.hbs',
+			'leave/new-application-admin.hbs',
+			'leave/status-update-user.hbs',
+			'leave/status-update-admin.hbs',
+			'leave/deleted-notification.hbs',
+			'attendance/morning-report.hbs',
+			'attendance/evening-report.hbs',
+		];
+
+		templates.forEach((template) => {
+			try {
+				this.getTemplate(template);
+				console.log(`Successfully preloaded template: ${template}`);
+			} catch (error) {
+				console.error(`Failed to preload template: ${template}`, error);
+			}
+		});
 	}
 }
 
