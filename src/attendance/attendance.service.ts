@@ -10,7 +10,7 @@ import { CreateCheckOutDto } from './dto/create-attendance-check-out.dto';
 import { CreateBreakDto } from './dto/create-attendance-break.dto';
 import { OrganizationReportQueryDto } from './dto/organization-report-query.dto';
 import { isToday } from 'date-fns';
-import { differenceInMinutes, differenceInMilliseconds, startOfMonth, endOfMonth, startOfDay, endOfDay, differenceInDays, format, parseISO } from 'date-fns';
+import { differenceInMinutes, startOfMonth, endOfMonth, startOfDay, endOfDay, differenceInDays, format, parseISO } from 'date-fns';
 import { UserService } from '../user/user.service';
 import { RewardsService } from '../rewards/rewards.service';
 import { XP_VALUES_TYPES } from '../lib/constants/constants';

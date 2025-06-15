@@ -1022,7 +1022,7 @@ export class TasksService {
 
 	async findOneSubTask(
 		ref: number,
-		organisationRef?: string,
+		orgId?: number,
 		branchId?: number,
 	): Promise<{ tasks: SubTask | null; message: string }> {
 		try {
@@ -1039,20 +1039,20 @@ export class TasksService {
 				};
 			}
 
-			// If we have organization or branch filters, verify the parent task belongs to them
-			if (organisationRef || branchId) {
-				const taskWhere: any = {
-					uid: subtask.task.uid,
-					isDeleted: false,
-				};
+					// If we have organization or branch filters, verify the parent task belongs to them
+		if (orgId || branchId) {
+			const taskWhere: any = {
+				uid: subtask.task.uid,
+				isDeleted: false,
+			};
 
-				if (organisationRef) {
-					taskWhere.organisation = { ref: organisationRef };
-				}
+			if (orgId) {
+				taskWhere.organisation = { uid: orgId };
+			}
 
-				if (branchId) {
-					taskWhere.branch = { uid: branchId };
-				}
+			if (branchId) {
+				taskWhere.branch = { uid: branchId };
+			}
 
 				// Check if the parent task matches the org/branch criteria
 				const parentTask = await this.taskRepository.findOne({

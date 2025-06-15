@@ -133,6 +133,8 @@ export class LicenseUsageService {
                 // Check if limit is valid and greater than zero to prevent Infinity values
                 if (!limit || limit <= 0) {
                     this.logger.warn(`Invalid API call limit (${limit}) for license ${licenseId}. Skipping usage update.`);
+                    // Clear buffer even if we skip to prevent memory leaks
+                    this.usageBuffer.set(key, []);
                     continue;
                 }
                 
@@ -149,7 +151,7 @@ export class LicenseUsageService {
                 });
 
                 const saved = await this.usageRepository.save(usage);
-                this.usageBuffer.set(key, []); // Clear buffer after processing
+                this.usageBuffer.set(key, []);
 
                 if (utilizationPercentage >= this.ALERT_THRESHOLD * 100) {
                     await this.createLimitExceededEvent(license, MetricType.API_CALLS, totalCalls, limit);

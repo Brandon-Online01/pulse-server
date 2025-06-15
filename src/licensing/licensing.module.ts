@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, Logger } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule } from '@nestjs/throttler';
@@ -31,6 +31,10 @@ import { LicenseAuditService } from './lib/audit.service';
         LicenseUsageService,
         LicenseAuditService,
         LicenseRateLimitGuard,
+        {
+            provide: Logger,
+            useValue: new Logger('LicensingModule'),
+        },
         {
             provide: 'APP_FILTER',
             useClass: LicenseExceptionFilter,

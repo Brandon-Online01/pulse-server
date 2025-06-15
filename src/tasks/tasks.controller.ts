@@ -276,7 +276,7 @@ export class TasksController {
 		return this.tasksService.tasksByUser(ref, orgId, branchId);
 	}
 
-	@Get('subtask/:ref')
+	@Get('sub-task/:ref')
 	@Roles(
 		AccessLevel.ADMIN,
 		AccessLevel.MANAGER,

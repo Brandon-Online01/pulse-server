@@ -25,17 +25,19 @@ export class LicensingService {
 		private readonly licenseRepository: Repository<License>,
 		private readonly eventEmitter: EventEmitter2,
 		@Inject(CACHE_MANAGER) private cacheManager: Cache,
+		private readonly logger: Logger,
 	) {}
 
-	//TODO: Remove this cron job after testing and proper setup
-	@Cron(CronExpression.EVERY_10_MINUTES)
+	//TODO: Remove this cron job after testing and proper setup - THIS IS DANGEROUS
+	// @Cron(CronExpression.EVERY_10_MINUTES) // COMMENTED OUT - causes "Empty criteria" error
 	async resetAllLicensesToActive(): Promise<void> {
-		await this.licenseRepository.update(
-			{}, // empty condition to match all records
-			{
-				status: LicenseStatus.ACTIVE,
-			},
-		);
+		// This method should not run in production as it updates ALL records without criteria
+		// If needed, add proper where conditions:
+		// await this.licenseRepository.update(
+		// 	{ status: Not(LicenseStatus.ACTIVE) }, // Only update non-active licenses
+		// 	{ status: LicenseStatus.ACTIVE }
+		// );
+		this.logger.warn('resetAllLicensesToActive is disabled - would update all records without criteria');
 	}
 
 	private generateLicenseKey(): string {

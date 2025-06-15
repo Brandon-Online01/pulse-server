@@ -610,45 +610,53 @@ export class LeadsService {
 	}
 
 	/**
-	 * AUTOMATED SCORING: Runs every hour to update lead scores
+	 * AUTOMATED LEAD SCORING: Update lead scores every hour
 	 */
 	@Cron('0 0 * * * *') // Every hour
 	async hourlyLeadScoring(): Promise<void> {
-		this.logger.log('Starting hourly lead scoring update...');
+		this.logger.log('Starting hourly lead scoring...');
 		
 		try {
-			// Get leads that need scoring (either never scored or score older than 4 hours)
-			const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000);
+			// Process lead scoring in batches to prevent memory issues
+			const batchSize = 50;
+			let offset = 0;
+			let processedCount = 0;
 			
-			const leadsToScore = await this.leadsRepository
-				.createQueryBuilder('lead')
-				.where('lead.isDeleted = false')
-				.andWhere(
-					'(lead.scoringData IS NULL OR ' +
-					'CAST(lead.scoringData->>\'lastCalculated\' AS timestamp) < :fourHoursAgo)',
-					{ fourHoursAgo }
-				)
-				.limit(500) // Process 500 leads per hour to avoid overload
-				.getMany();
+			while (true) {
+				const leads = await this.leadsRepository.find({
+					where: {
+						isDeleted: false,
+						status: In([LeadStatus.PENDING, LeadStatus.REVIEW]),
+					},
+					take: batchSize,
+					skip: offset,
+					select: ['uid'], // Only select the ID to minimize memory usage
+				});
 
-			this.logger.log(`Processing ${leadsToScore.length} leads for scoring update`);
-
-			let processed = 0;
-			for (const lead of leadsToScore) {
-				try {
-					await this.leadScoringService.calculateLeadScore(lead.uid);
-					await this.leadScoringService.updateActivityData(lead.uid);
-					
-					// Update temperature based on new score
-					await this.updateTemperatureBasedOnScore(lead.uid);
-					
-					processed++;
-				} catch (error) {
-					this.logger.error(`Failed to process lead ${lead.uid}: ${error.message}`);
+				if (leads.length === 0) {
+					break; // No more leads to process
 				}
+
+				// Process each lead individually with error handling
+				const results = await Promise.allSettled(
+					leads.map(async (lead) => {
+						try {
+							return await this.leadScoringService.calculateLeadScore(lead.uid);
+						} catch (error) {
+							this.logger.error(`Failed to score lead ${lead.uid}: ${error.message}`);
+							return null;
+						}
+					})
+				);
+
+				// Count successful operations
+				const successful = results.filter(result => result.status === 'fulfilled' && result.value !== null).length;
+				processedCount += successful;
+
+				offset += batchSize;
 			}
 
-			this.logger.log(`Hourly lead scoring completed. Processed ${processed}/${leadsToScore.length} leads.`);
+			this.logger.log(`Hourly lead scoring completed: ${processedCount} leads processed`);
 		} catch (error) {
 			this.logger.error(`Hourly lead scoring failed: ${error.message}`, error.stack);
 		}
@@ -669,7 +677,7 @@ export class LeadsService {
 					nextFollowUpDate: Between(new Date('2020-01-01'), now), // Overdue
 					status: In([LeadStatus.PENDING, LeadStatus.REVIEW]),
 				},
-				relations: ['owner', 'assignees'],
+				relations: ['owner'], // Removed 'assignees' since it's not a proper relation
 			});
 
 			for (const lead of overdueLeads) {

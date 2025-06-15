@@ -7,6 +7,11 @@ export class AppController {
 
   @Query(() => String)
   healthCheck(): string {
-    return this.appService.healthCheck();
+    return 'Welcome to the API Playground, everything is working fine!';
+  }
+
+  @Query(() => String)
+  hello(): string {
+    return this.appService.getHello();
   }
 }
