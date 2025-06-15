@@ -33,11 +33,20 @@ import { Branch } from '../branch/entities/branch.entity';
 import { NotificationsService } from '../notifications/notifications.service';
 import { UnifiedNotificationService } from '../lib/services/unified-notification.service';
 import { NotificationEvent, NotificationPriority } from '../lib/types/unified-notification.types';
+import { AccountStatus } from '../lib/enums/status.enums';
 
 @Injectable()
 export class TasksService {
 	private readonly CACHE_TTL: number;
 	private readonly CACHE_PREFIX = 'task:';
+
+	// Define inactive user statuses that should not receive notifications
+	private readonly INACTIVE_USER_STATUSES = [
+		AccountStatus.INACTIVE,
+		AccountStatus.DELETED,
+		AccountStatus.BANNED,
+		AccountStatus.DECLINED,
+	];
 
 	constructor(
 		@InjectRepository(Task)
@@ -63,6 +72,36 @@ export class TasksService {
 		private readonly unifiedNotificationService: UnifiedNotificationService,
 	) {
 		this.CACHE_TTL = this.configService.get<number>('CACHE_EXPIRATION_TIME') || 30;
+	}
+
+	/**
+	 * Check if a user is active and should receive notifications
+	 */
+	private isUserActive(user: User): boolean {
+		return !this.INACTIVE_USER_STATUSES.includes(user.status as AccountStatus);
+	}
+
+	/**
+	 * Filter active users from a list of users
+	 */
+	private async filterActiveUsers(userIds: number[]): Promise<number[]> {
+		if (userIds.length === 0) return [];
+
+		const users = await this.userRepository.find({
+			where: { uid: In(userIds) },
+			select: ['uid', 'status'],
+		});
+
+		const activeUserIds = users
+			.filter(user => this.isUserActive(user))
+			.map(user => user.uid);
+
+		const filteredCount = userIds.length - activeUserIds.length;
+		if (filteredCount > 0) {
+			console.log(`🚫 Filtered out ${filteredCount} inactive users from task notifications`);
+		}
+
+		return activeUserIds;
 	}
 
 	private getCacheKey(key: string | number): string {
@@ -1180,14 +1219,17 @@ export class TasksService {
 					const assigneeIds = task.assignees?.map((assignee) => assignee.uid) || [];
 					const allRecipientIds = [creatorId, ...assigneeIds].filter(Boolean);
 
-					if (allRecipientIds.length > 0) {
+					// Filter out inactive users before sending notifications
+					const activeRecipientIds = await this.filterActiveUsers(allRecipientIds);
+
+					if (activeRecipientIds.length > 0) {
 						// Find who completed the task - for now, we don't have user context, so we'll use "System"
 						const completedBy = 'Team Member'; // This could be enhanced to pass user context
 
 						// Use unified notification service for both email and push
 						await this.unifiedNotificationService.sendTemplatedNotification(
 							NotificationEvent.TASK_COMPLETED,
-							allRecipientIds,
+							activeRecipientIds,
 							{
 								taskId: task.uid,
 								taskTitle: task.title,
@@ -1216,9 +1258,12 @@ export class TasksService {
 				};
 
 				const recipients = [task.creator[0]?.uid, ...(task.assignees?.map((assignee) => assignee.uid) || [])];
-
 				const uniqueRecipients = [...new Set(recipients)];
-				uniqueRecipients.forEach((recipientId) => {
+				
+				// Filter out inactive users before sending internal notifications
+				const activeInternalRecipients = await this.filterActiveUsers(uniqueRecipients);
+				
+				activeInternalRecipients.forEach((recipientId) => {
 					this.eventEmitter.emit(
 						'send.notification',
 						{
@@ -1845,42 +1890,39 @@ export class TasksService {
 	): Promise<void> {
 		try {
 			const recipients = new Set<string>();
+			const userIds = new Set<number>();
 
-			// Get full creator details
-			const taskCreator =
-				task.creator &&
-				(await this.userRepository.findOne({
-					where: { uid: task.creator.uid },
-					select: ['email'],
-				}));
-			if (taskCreator?.email) {
-				recipients.add(taskCreator.email);
+			// Collect all user IDs first
+			if (task.creator?.uid) {
+				userIds.add(task.creator.uid);
 			}
 
-			// Get full assignee details
 			const assigneeIds = task.assignees?.map((a) => a.uid) || [];
-			if (assigneeIds.length > 0) {
-				const assignees = await this.userRepository.find({
-					where: { uid: In(assigneeIds) },
-					select: ['email'],
-				});
-				assignees.forEach((assignee) => {
-					if (assignee.email) {
-						recipients.add(assignee.email);
-					}
-				});
+			assigneeIds.forEach(id => userIds.add(id));
+
+			if (taskFlag.createdBy?.uid) {
+				userIds.add(taskFlag.createdBy.uid);
 			}
 
-			// Get flag creator details
-			const flagCreator =
-				taskFlag.createdBy?.uid &&
-				(await this.userRepository.findOne({
-					where: { uid: taskFlag.createdBy.uid },
-					select: ['email'],
-				}));
-			if (flagCreator?.email) {
-				recipients.add(flagCreator.email);
+			// Filter out inactive users
+			const activeUserIds = await this.filterActiveUsers(Array.from(userIds));
+
+			if (activeUserIds.length === 0) {
+				console.log(`No active users found for task flag notification on task ${task.uid}`);
+				return;
 			}
+
+			// Get email addresses for active users only
+			const activeUsers = await this.userRepository.find({
+				where: { uid: In(activeUserIds) },
+				select: ['uid', 'email'],
+			});
+
+			activeUsers.forEach((activeUser) => {
+				if (activeUser.email) {
+					recipients.add(activeUser.email);
+				}
+			});
 
 			// Convert Set to Array and filter out empty emails
 			const emailRecipients = Array.from(recipients).filter((email) => email);
@@ -2028,42 +2070,39 @@ export class TasksService {
 				setTimeout(async () => {
 					try {
 						const recipients = new Set<string>();
+						const userIds = new Set<number>();
 
-						// Get full creator details
-						const taskCreator =
-							taskFlag.task.creator &&
-							(await this.userRepository.findOne({
-								where: { uid: taskFlag.task.creator.uid },
-								select: ['email'],
-							}));
-						if (taskCreator?.email) {
-							recipients.add(taskCreator.email);
+						// Collect all user IDs first
+						if (taskFlag.task.creator?.uid) {
+							userIds.add(taskFlag.task.creator.uid);
 						}
 
-						// Get full assignee details
 						const assigneeIds = taskFlag.task.assignees?.map((a) => a.uid) || [];
-						if (assigneeIds.length > 0) {
-							const assignees = await this.userRepository.find({
-								where: { uid: In(assigneeIds) },
-								select: ['email'],
-							});
-							assignees.forEach((assignee) => {
-								if (assignee.email) {
-									recipients.add(assignee.email);
-								}
-							});
+						assigneeIds.forEach(id => userIds.add(id));
+
+						if (taskFlag.createdBy?.uid) {
+							userIds.add(taskFlag.createdBy.uid);
 						}
 
-						// Get flag creator details
-						const flagCreator =
-							taskFlag.createdBy?.uid &&
-							(await this.userRepository.findOne({
-								where: { uid: taskFlag.createdBy.uid },
-								select: ['email'],
-							}));
-						if (flagCreator?.email) {
-							recipients.add(flagCreator.email);
+						// Filter out inactive users
+						const activeUserIds = await this.filterActiveUsers(Array.from(userIds));
+
+						if (activeUserIds.length === 0) {
+							console.log(`No active users found for task flag update notification on task ${taskFlag.task.uid}`);
+							return;
 						}
+
+						// Get email addresses for active users only
+						const activeUsers = await this.userRepository.find({
+							where: { uid: In(activeUserIds) },
+							select: ['uid', 'email'],
+						});
+
+						activeUsers.forEach((activeUser) => {
+							if (activeUser.email) {
+								recipients.add(activeUser.email);
+							}
+						});
 
 						const emailRecipients = Array.from(recipients).filter((email) => email);
 
@@ -2084,7 +2123,7 @@ export class TasksService {
 								flagDeadline: taskFlag.deadline?.toISOString(),
 								createdBy: {
 									name: `${taskFlag.createdBy.name} ${taskFlag.createdBy.surname}`,
-									email: flagCreator?.email || '',
+									email: taskFlag.createdBy.email || '',
 								},
 								items: taskFlag.items?.map((item) => ({
 									title: item.title,
@@ -2150,42 +2189,41 @@ export class TasksService {
 
 					// Send email notification when flag is resolved
 					const recipients = new Set<string>();
+					const userIds = new Set<number>();
 
-					// Get full creator details
-					const taskCreator =
-						flagItem.taskFlag.task.creator &&
-						(await this.userRepository.findOne({
-							where: { uid: flagItem.taskFlag.task.creator.uid },
-							select: ['email'],
-						}));
-					if (taskCreator?.email) {
-						recipients.add(taskCreator.email);
+					// Collect all user IDs first
+					if (flagItem.taskFlag.task.creator?.uid) {
+						userIds.add(flagItem.taskFlag.task.creator.uid);
 					}
 
-					// Get full assignee details
 					const assigneeIds = flagItem.taskFlag.task.assignees?.map((a) => a.uid) || [];
-					if (assigneeIds.length > 0) {
-						const assignees = await this.userRepository.find({
-							where: { uid: In(assigneeIds) },
-							select: ['email'],
-						});
-						assignees.forEach((assignee) => {
-							if (assignee.email) {
-								recipients.add(assignee.email);
-							}
-						});
+					assigneeIds.forEach(id => userIds.add(id));
+
+					if (flagItem.taskFlag.createdBy?.uid) {
+						userIds.add(flagItem.taskFlag.createdBy.uid);
 					}
 
-					// Get flag creator details
-					const flagCreator =
-						flagItem.taskFlag.createdBy?.uid &&
-						(await this.userRepository.findOne({
-							where: { uid: flagItem.taskFlag.createdBy.uid },
-							select: ['email'],
-						}));
-					if (flagCreator?.email) {
-						recipients.add(flagCreator.email);
+					// Filter out inactive users
+					const activeUserIds = await this.filterActiveUsers(Array.from(userIds));
+
+					if (activeUserIds.length === 0) {
+						console.log(`No active users found for task flag resolution notification on task ${flagItem.taskFlag.task.uid}`);
+						return {
+							message: 'Task flag item updated successfully',
+						};
 					}
+
+					// Get email addresses for active users only
+					const activeUsers = await this.userRepository.find({
+						where: { uid: In(activeUserIds) },
+						select: ['uid', 'email'],
+					});
+
+					activeUsers.forEach((activeUser) => {
+						if (activeUser.email) {
+							recipients.add(activeUser.email);
+						}
+					});
 
 					const emailRecipients = Array.from(recipients).filter((email) => email);
 
@@ -2201,7 +2239,7 @@ export class TasksService {
 							flagDeadline: flagItem.taskFlag.deadline?.toISOString(),
 							createdBy: {
 								name: `${flagItem.taskFlag.createdBy.name} ${flagItem.taskFlag.createdBy.surname}`,
-								email: flagCreator?.email || '',
+								email: flagItem.taskFlag.createdBy.email || '',
 							},
 							items: flagItem.taskFlag.items?.map((item) => ({
 								title: item.title,

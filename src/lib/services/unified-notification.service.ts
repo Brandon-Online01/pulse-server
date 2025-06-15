@@ -14,10 +14,19 @@ import {
 	NotificationRecipient,
 } from '../types/unified-notification.types';
 import { EmailType } from '../enums/email.enums';
+import { AccountStatus } from '../enums/status.enums';
 
 @Injectable()
 export class UnifiedNotificationService {
 	private readonly logger = new Logger(UnifiedNotificationService.name);
+
+	// Define inactive user statuses that should not receive notifications
+	private readonly INACTIVE_USER_STATUSES = [
+		AccountStatus.INACTIVE,
+		AccountStatus.DELETED,
+		AccountStatus.BANNED,
+		AccountStatus.DECLINED,
+	];
 
 	// Pre-defined notification templates
 	private readonly templates: Map<NotificationEvent, NotificationTemplate> = new Map([
@@ -355,7 +364,15 @@ export class UnifiedNotificationService {
 	}
 
 	/**
+	 * Check if a user is active and should receive notifications
+	 */
+	private isUserActive(user: User): boolean {
+		return !this.INACTIVE_USER_STATUSES.includes(user.status as AccountStatus);
+	}
+
+	/**
 	 * Enrich recipients with email addresses and push tokens from database
+	 * Filters out inactive users (suspended, deleted, banned, etc.)
 	 */
 	private async enrichRecipients(recipients: NotificationRecipient[]): Promise<NotificationRecipient[]> {
 		const userIds = recipients.map((r) => r.userId).filter(Boolean);
@@ -366,20 +383,36 @@ export class UnifiedNotificationService {
 
 		const users = await this.userRepository.find({
 			where: { uid: In(userIds) },
-			select: ['uid', 'email', 'expoPushToken', 'name', 'surname', 'username'],
+			select: ['uid', 'email', 'expoPushToken', 'name', 'surname', 'username', 'status'],
 		});
 
-		return recipients.map((recipient) => {
-			const user = users.find((u) => u.uid === recipient.userId);
-			if (!user) return recipient;
+		// Filter out inactive users and enrich remaining recipients
+		const enrichedRecipients = recipients
+			.map((recipient) => {
+				const user = users.find((u) => u.uid === recipient.userId);
+				if (!user) return null; // User not found
+				
+				// Skip inactive users
+				if (!this.isUserActive(user)) {
+					this.logger.debug(`Skipping notification for inactive user ${user.uid} (status: ${user.status})`);
+					return null;
+				}
 
-			return {
-				...recipient,
-				email: recipient.email || user.email,
-				pushToken: recipient.pushToken || user.expoPushToken,
-				name: recipient.name || `${user.name || ''} ${user.surname || ''}`.trim() || user.username,
-			};
-		});
+				return {
+					...recipient,
+					email: recipient.email || user.email,
+					pushToken: recipient.pushToken || user.expoPushToken,
+					name: recipient.name || `${user.name || ''} ${user.surname || ''}`.trim() || user.username,
+				};
+			})
+			.filter(Boolean); // Remove null entries
+
+		const filteredCount = recipients.length - enrichedRecipients.length;
+		if (filteredCount > 0) {
+			this.logger.log(`🚫 Filtered out ${filteredCount} inactive users from notifications`);
+		}
+
+		return enrichedRecipients;
 	}
 
 	/**

@@ -27,10 +27,19 @@ import { NotificationEvent, NotificationPriority } from '../lib/types/unified-no
 import { LeadScoringService } from './lead-scoring.service';
 import { Cron } from '@nestjs/schedule';
 import { Interaction } from '../interactions/entities/interaction.entity';
+import { AccountStatus } from '../lib/enums/status.enums';
 
 @Injectable()
 export class LeadsService {
 	private readonly logger = new Logger(LeadsService.name);
+
+	// Define inactive user statuses that should not receive notifications
+	private readonly INACTIVE_USER_STATUSES = [
+		AccountStatus.INACTIVE,
+		AccountStatus.DELETED,
+		AccountStatus.BANNED,
+		AccountStatus.DECLINED,
+	];
 
 	constructor(
 		@InjectRepository(Lead)
@@ -580,10 +589,13 @@ export class LeadsService {
 					...(updatedLead.assignees?.map((a: any) => a.uid) || []),
 				].filter(Boolean);
 
-				if (userIds.length > 0) {
+				// Filter out inactive users before sending notifications
+				const activeUserIds = await this.filterActiveUsers(userIds);
+
+				if (activeUserIds.length > 0) {
 					await this.unifiedNotificationService.sendTemplatedNotification(
 						NotificationEvent.LEAD_UPDATED,
-						userIds,
+						activeUserIds,
 						{
 							leadId: updatedLead.uid,
 							leadName: updatedLead.name || `Lead #${updatedLead.uid}`,
@@ -691,10 +703,13 @@ export class LeadsService {
 						Boolean,
 					);
 
-					if (userIds.length > 0) {
+					// Filter out inactive users before sending notifications
+					const activeUserIds = await this.filterActiveUsers(userIds);
+
+					if (activeUserIds.length > 0) {
 						await this.unifiedNotificationService.sendTemplatedNotification(
 							NotificationEvent.LEAD_FOLLOW_UP_OVERDUE,
-							userIds,
+							activeUserIds,
 							{
 								leadId: lead.uid,
 								leadName: lead.name || `Lead #${lead.uid}`,
@@ -1421,17 +1436,56 @@ export class LeadsService {
 	/**
 	 * Send assignment notifications
 	 */
+	/**
+	 * Check if a user is active and should receive notifications
+	 */
+	private isUserActive(user: User): boolean {
+		return !this.INACTIVE_USER_STATUSES.includes(user.status as AccountStatus);
+	}
+
+	/**
+	 * Filter active users from a list of users
+	 */
+	private async filterActiveUsers(userIds: number[]): Promise<number[]> {
+		if (userIds.length === 0) return [];
+
+		const users = await this.userRepository.find({
+			where: { uid: In(userIds) },
+			select: ['uid', 'status'],
+		});
+
+		const activeUserIds = users
+			.filter(user => this.isUserActive(user))
+			.map(user => user.uid);
+
+		const filteredCount = userIds.length - activeUserIds.length;
+		if (filteredCount > 0) {
+			this.logger.debug(`🚫 Filtered out ${filteredCount} inactive users from lead notifications`);
+		}
+
+		return activeUserIds;
+	}
+
 	private async sendAssignmentNotifications(lead: Lead, action: 'assigned' | 'updated'): Promise<void> {
 		const populatedLead = await this.populateLeadRelations(lead);
 
 		if (populatedLead.assignees && populatedLead.assignees.length > 0) {
 			const assigneeIds = populatedLead.assignees.map((assignee: User) => assignee.uid);
+			
+			// Filter out inactive users before sending notifications
+			const activeAssigneeIds = await this.filterActiveUsers(assigneeIds);
+			
+			if (activeAssigneeIds.length === 0) {
+				this.logger.debug(`No active assignees found for lead ${populatedLead.uid}, skipping notifications`);
+				return;
+			}
+
 			const creatorName = populatedLead.owner?.name || populatedLead.owner?.username || 'System';
 
 			try {
 				await this.unifiedNotificationService.sendTemplatedNotification(
 					action === 'assigned' ? NotificationEvent.LEAD_ASSIGNED : NotificationEvent.LEAD_UPDATED,
-					assigneeIds,
+					activeAssigneeIds,
 					{
 						leadId: populatedLead.uid,
 						leadName: populatedLead.name,

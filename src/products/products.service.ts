@@ -187,11 +187,43 @@ export class ProductsService {
 
 	async restoreProduct(ref: number): Promise<{ message: string }> {
 		try {
-			// Find the deleted product
-			const product = await this.productRepository.findOne({
-				where: { uid: ref, isDeleted: true },
-				relations: ['organisation', 'branch'],
-			});
+			// Find the deleted product using queryBuilder to avoid column errors
+			const product = await this.productRepository
+				.createQueryBuilder('product')
+				.select([
+					'product.uid',
+					'product.name', 
+					'product.description',
+					'product.price',
+					'product.category',
+					'product.status',
+					'product.imageUrl',
+					'product.sku',
+					'product.warehouseLocation',
+					'product.stockQuantity',
+					'product.productRef',
+					'product.productReferenceCode',
+					'product.reorderPoint',
+					'product.salePrice',
+					'product.discount',
+					'product.barcode',
+					'product.brand',
+					'product.packageQuantity',
+					'product.weight',
+					'product.isOnPromotion',
+					'product.packageDetails',
+					'product.promotionStartDate',
+					'product.promotionEndDate',
+					'product.packageUnit',
+					'product.createdAt',
+					'product.updatedAt',
+					'product.isDeleted'
+				])
+				.leftJoin('product.organisation', 'organisation')
+				.leftJoin('product.branch', 'branch')
+				.where('product.uid = :uid', { uid: ref })
+				.andWhere('product.isDeleted = :isDeleted', { isDeleted: true })
+				.getOne();
 
 			if (!product) {
 				throw new NotFoundException('Product not found');
@@ -223,11 +255,41 @@ export class ProductsService {
 		branchId?: number,
 	): Promise<PaginatedResponse<Product>> {
 		try {
+			// Only select fields that exist in the database to avoid column errors
 			const queryBuilder = this.productRepository
 				.createQueryBuilder('product')
-				.leftJoinAndSelect('product.organisation', 'organisation')
-				.leftJoinAndSelect('product.branch', 'branch')
-				.leftJoinAndSelect('product.analytics', 'analytics')
+				.select([
+					'product.uid',
+					'product.name', 
+					'product.description',
+					'product.price',
+					'product.category',
+					'product.status',
+					'product.imageUrl',
+					'product.sku',
+					'product.warehouseLocation',
+					'product.stockQuantity',
+					'product.productRef',
+					'product.productReferenceCode',
+					'product.reorderPoint',
+					'product.salePrice',
+					'product.discount',
+					'product.barcode',
+					'product.brand',
+					'product.packageQuantity',
+					'product.weight',
+					'product.isOnPromotion',
+					'product.packageDetails',
+					'product.promotionStartDate',
+					'product.promotionEndDate',
+					'product.packageUnit',
+					'product.createdAt',
+					'product.updatedAt',
+					'product.isDeleted'
+				])
+				.leftJoin('product.organisation', 'organisation')
+				.leftJoin('product.branch', 'branch')
+				.leftJoin('product.analytics', 'analytics')
 				.where('product.isDeleted = :isDeleted', { isDeleted: false });
 
 			// Filter by organization if provided
@@ -291,26 +353,56 @@ export class ProductsService {
 		branchId?: number,
 	): Promise<{ product: Product | null; message: string }> {
 		try {
-			// Build where conditions
-			const whereConditions: any = {
-				uid: ref,
-				isDeleted: false,
-			};
+			// Use queryBuilder to only select existing columns
+			const queryBuilder = this.productRepository
+				.createQueryBuilder('product')
+				.select([
+					'product.uid',
+					'product.name', 
+					'product.description',
+					'product.price',
+					'product.category',
+					'product.status',
+					'product.imageUrl',
+					'product.sku',
+					'product.warehouseLocation',
+					'product.stockQuantity',
+					'product.productRef',
+					'product.productReferenceCode',
+					'product.reorderPoint',
+					'product.salePrice',
+					'product.discount',
+					'product.barcode',
+					'product.brand',
+					'product.packageQuantity',
+					'product.weight',
+					'product.isOnPromotion',
+					'product.packageDetails',
+					'product.promotionStartDate',
+					'product.promotionEndDate',
+					'product.packageUnit',
+					'product.createdAt',
+					'product.updatedAt',
+					'product.isDeleted'
+				])
+				.leftJoin('product.organisation', 'organisation')
+				.leftJoin('product.branch', 'branch')
+				.leftJoin('product.analytics', 'analytics')
+				.leftJoin('product.reseller', 'reseller')
+				.where('product.uid = :uid', { uid: ref })
+				.andWhere('product.isDeleted = :isDeleted', { isDeleted: false });
 
 			// Add org filter if provided
 			if (orgId) {
-				whereConditions.organisation = { uid: orgId };
+				queryBuilder.andWhere('organisation.uid = :orgId', { orgId });
 			}
 
 			// Add branch filter if provided
 			if (branchId) {
-				whereConditions.branch = { uid: branchId };
+				queryBuilder.andWhere('branch.uid = :branchId', { branchId });
 			}
 
-			const product = await this.productRepository.findOne({
-				where: whereConditions,
-				relations: ['organisation', 'branch', 'analytics', 'reseller'],
-			});
+			const product = await queryBuilder.getOne();
 
 			if (!product) {
 				throw new NotFoundException('Product not found');
@@ -336,10 +428,40 @@ export class ProductsService {
 		branchId?: number,
 	): Promise<PaginatedResponse<Product>> {
 		try {
+			// Only select fields that exist in the database to avoid column errors
 			const queryBuilder = this.productRepository
 				.createQueryBuilder('product')
-				.leftJoinAndSelect('product.organisation', 'organisation')
-				.leftJoinAndSelect('product.branch', 'branch')
+				.select([
+					'product.uid',
+					'product.name', 
+					'product.description',
+					'product.price',
+					'product.category',
+					'product.status',
+					'product.imageUrl',
+					'product.sku',
+					'product.warehouseLocation',
+					'product.stockQuantity',
+					'product.productRef',
+					'product.productReferenceCode',
+					'product.reorderPoint',
+					'product.salePrice',
+					'product.discount',
+					'product.barcode',
+					'product.brand',
+					'product.packageQuantity',
+					'product.weight',
+					'product.isOnPromotion',
+					'product.packageDetails',
+					'product.promotionStartDate',
+					'product.promotionEndDate',
+					'product.packageUnit',
+					'product.createdAt',
+					'product.updatedAt',
+					'product.isDeleted'
+				])
+				.leftJoin('product.organisation', 'organisation')
+				.leftJoin('product.branch', 'branch')
 				.where('product.isDeleted = :isDeleted', { isDeleted: false });
 
 			// Filter by organization if provided

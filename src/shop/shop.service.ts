@@ -194,8 +194,38 @@ export class ShopService {
 	): Promise<{ products: Product[] | null }> {
 		try {
 			// Build query with orgId and branchId as optional filters
+			// Only select fields that exist in the database to avoid column errors
 			const query = this.productRepository
 				.createQueryBuilder('product')
+				.select([
+					'product.uid',
+					'product.name', 
+					'product.description',
+					'product.price',
+					'product.category',
+					'product.status',
+					'product.imageUrl',
+					'product.sku',
+					'product.warehouseLocation',
+					'product.stockQuantity',
+					'product.productRef',
+					'product.productReferenceCode',
+					'product.reorderPoint',
+					'product.salePrice',
+					'product.discount',
+					'product.barcode',
+					'product.brand',
+					'product.packageQuantity',
+					'product.weight',
+					'product.isOnPromotion',
+					'product.packageDetails',
+					'product.promotionStartDate',
+					'product.promotionEndDate',
+					'product.packageUnit',
+					'product.createdAt',
+					'product.updatedAt',
+					'product.isDeleted'
+				])
 				.where('product.status = :status', { status });
 
 			// Only add org filter if orgId is provided

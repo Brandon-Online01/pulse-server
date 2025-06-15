@@ -221,8 +221,10 @@ export class Product {
     @AfterInsert()
     async updateSKUWithCorrectUid() {
         const repository = getRepository(Product);
-        this.sku = Product.generateSKU(this.category, this.name, this.uid, this.reseller);
-        await repository.save(this);
+        const newSku = Product.generateSKU(this.category, this.name, this.uid, this.reseller);
+        // Only update the SKU field to avoid column errors
+        await repository.update(this.uid, { sku: newSku });
+        this.sku = newSku;
     }
 }
 
