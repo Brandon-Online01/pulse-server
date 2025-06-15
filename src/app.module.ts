@@ -173,7 +173,7 @@ import { ClientCommunicationSchedule } from './clients/entities/client-communica
 					Warning,
 					ClientCommunicationSchedule,
 				],
-				synchronize: false,
+				synchronize: true,
 				logging: false,
 				extra: {
 					connectionLimit: 10,
