@@ -1,73 +1,73 @@
-{{#> base headerTitle="Daily Attendance Morning Report" headerSubtitle="Attendance overview for {{reportDate}}"}}
+{{#> base headerTitle="Daily Attendance Morning Report" headerSubtitle="Comprehensive attendance overview for {{reportDate}}"}}
 
 <div class="greeting">
     Good morning {{recipientName}}! ⏰
 </div>
 
 <div class="message">
-    <p>Here's your daily attendance overview for {{reportDate}}. This report shows employee attendance status as of 30 minutes after the standard start time ({{organizationStartTime}}).</p>
+    <p>Here's your comprehensive daily attendance overview for <strong>{{reportDate}}</strong>. This report provides detailed employee attendance status and punctuality insights as of 30 minutes after the standard start time ({{organizationStartTime}}).</p>
 </div>
 
-<!-- Attendance Summary -->
+<!-- Attendance Overview Summary -->
 <div class="info-card">
-    <h3>📊 Attendance Summary</h3>
+    <h3>📊 Attendance Overview</h3>
     <div class="detail-grid">
         <div class="detail-item">
             <span class="detail-label">Total Employees</span>
-            <span class="detail-value">{{totalEmployees}}</span>
+            <span class="detail-value" style="font-weight: 700; color: #7c2d92; font-size: 17px;">{{totalEmployees}}</span>
         </div>
         <div class="detail-item">
             <span class="detail-label">Present Today</span>
-            <span class="detail-value" style="color: #10b981;">{{presentCount}}</span>
+            <span class="detail-value" style="font-weight: 700; color: #22c55e; font-size: 17px;">{{presentCount}}</span>
         </div>
         <div class="detail-item">
             <span class="detail-label">Absent Today</span>
-            <span class="detail-value" style="color: #ef4444;">{{absentCount}}</span>
+            <span class="detail-value" style="font-weight: 700; color: #ef4444; font-size: 17px;">{{absentCount}}</span>
         </div>
         <div class="detail-item">
             <span class="detail-label">Attendance Rate</span>
-            <span class="detail-value" style="font-weight: 700; font-size: 18px; color: {{#if (gte attendanceRate 90)}}#10b981{{else if (gte attendanceRate 75)}}#f59e0b{{else}}#ef4444{{/if}};">{{attendanceRate}}%</span>
+            <span class="detail-value" style="font-weight: 700; font-size: 18px; color: {{#if (gte attendanceRate 90)}}#22c55e{{else if (gte attendanceRate 75)}}#f59e0b{{else}}#ef4444{{/if}};">{{attendanceRate}}%</span>
         </div>
     </div>
 </div>
 
-<!-- Punctuality Breakdown -->
+<!-- Punctuality Performance -->
 <div class="info-card">
-    <h3>🕐 Punctuality Breakdown</h3>
+    <h3>🕐 Punctuality Performance</h3>
     <div class="detail-grid">
         <div class="detail-item">
             <span class="detail-label">Early Arrivals</span>
-            <span class="detail-value" style="color: #10b981; font-weight: 600;">{{earlyCount}} employees</span>
+            <span class="detail-value" style="color: #22c55e; font-weight: 700; font-size: 16px;">{{earlyCount}} employees</span>
         </div>
         <div class="detail-item">
             <span class="detail-label">On Time</span>
-            <span class="detail-value" style="color: #059669; font-weight: 600;">{{onTimeCount}} employees</span>
+            <span class="detail-value" style="color: #0ea5e9; font-weight: 700; font-size: 16px;">{{onTimeCount}} employees</span>
         </div>
         <div class="detail-item">
             <span class="detail-label">Late Arrivals</span>
-            <span class="detail-value" style="color: #dc2626; font-weight: 600;">{{lateCount}} employees</span>
+            <span class="detail-value" style="color: #ef4444; font-weight: 700; font-size: 16px;">{{lateCount}} employees</span>
         </div>
         <div class="detail-item">
             <span class="detail-label">Punctuality Rate</span>
-            <span class="detail-value" style="font-weight: 700; color: {{#if (gte punctualityRate 90)}}#10b981{{else if (gte punctualityRate 75)}}#f59e0b{{else}}#ef4444{{/if}};">{{punctualityRate}}%</span>
+            <span class="detail-value" style="font-weight: 700; font-size: 18px; color: {{#if (gte punctualityRate 90)}}#22c55e{{else if (gte punctualityRate 75)}}#f59e0b{{else}}#ef4444{{/if}};">{{punctualityRate}}%</span>
         </div>
     </div>
 </div>
 
-<!-- Early Arrivals -->
+<!-- Early Arrivals Recognition -->
 {{#if earlyArrivals}}
-<div class="info-card" style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border-left-color: #10b981;">
-    <h4 style="color: #065f46;">🌅 Early Arrivals ({{earlyArrivals.length}})</h4>
-    <div style="display: grid; gap: 8px; margin-top: 16px;">
+<div class="success-notice">
+    <h4 style="color: #15803d; margin-bottom: 16px;">🌅 Early Arrivals - Outstanding Dedication ({{earlyArrivals.length}})</h4>
+    <div style="display: grid; gap: 12px;">
         {{#each earlyArrivals}}
-        <div style="display: flex; align-items: center; padding: 12px; background: rgba(16, 185, 129, 0.1); border-radius: 8px; border-left: 3px solid #10b981;">
+        <div style="display: flex; align-items: center; padding: 16px; background: rgba(34, 197, 94, 0.1); border-radius: 12px; border-left: 4px solid #22c55e;">
             <div style="flex: 1;">
-                <div style="font-weight: 600; color: #065f46;">{{name}} {{surname}}</div>
-                <div style="font-size: 14px; color: #059669;">{{role}} {{#if branch.name}}• {{branch.name}}{{/if}}</div>
+                <div style="font-weight: 700; color: #15803d; font-size: 15px;">{{name}} {{surname}}</div>
+                <div style="font-size: 14px; color: #16a34a; margin-top: 2px;">{{role}}{{#if branch.name}} • {{branch.name}}{{/if}}</div>
             </div>
             <div style="text-align: right;">
-                <div style="font-weight: 600; color: #065f46;">{{checkInTime}}</div>
-                <div style="font-size: 12px; color: #059669;">{{earlyMinutes}} min early</div>
+                <div style="font-weight: 700; color: #15803d; font-size: 16px;">{{checkInTime}}</div>
+                <div style="font-size: 12px; color: #16a34a; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">{{earlyMinutes}} min early</div>
             </div>
         </div>
         {{/each}}
@@ -78,16 +78,17 @@
 <!-- On Time Arrivals -->
 {{#if onTimeArrivals}}
 <div class="info-card" style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-left-color: #22c55e;">
-    <h4 style="color: #166534;">✅ On Time Arrivals ({{onTimeArrivals.length}})</h4>
-    <div style="display: grid; gap: 8px; margin-top: 16px;">
+    <h4 style="color: #166534;">✅ On Time Arrivals - Excellent Punctuality ({{onTimeArrivals.length}})</h4>
+    <div style="display: grid; gap: 12px; margin-top: 16px;">
         {{#each onTimeArrivals}}
-        <div style="display: flex; align-items: center; padding: 12px; background: rgba(34, 197, 94, 0.1); border-radius: 8px; border-left: 3px solid #22c55e;">
+        <div style="display: flex; align-items: center; padding: 16px; background: rgba(34, 197, 94, 0.05); border-radius: 12px; border-left: 3px solid #22c55e;">
             <div style="flex: 1;">
-                <div style="font-weight: 600; color: #166534;">{{name}} {{surname}}</div>
-                <div style="font-size: 14px; color: #16a34a;">{{role}} {{#if branch.name}}• {{branch.name}}{{/if}}</div>
+                <div style="font-weight: 700; color: #166534; font-size: 15px;">{{name}} {{surname}}</div>
+                <div style="font-size: 14px; color: #16a34a; margin-top: 2px;">{{role}}{{#if branch.name}} • {{branch.name}}{{/if}}</div>
             </div>
             <div style="text-align: right;">
-                <div style="font-weight: 600; color: #166534;">{{checkInTime}}</div>
+                <div style="font-weight: 700; color: #166534; font-size: 16px;">{{checkInTime}}</div>
+                <div style="font-size: 12px; color: #16a34a; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Perfect Timing</div>
             </div>
         </div>
         {{/each}}
@@ -98,17 +99,19 @@
 <!-- Late Arrivals -->
 {{#if lateArrivals}}
 <div class="info-card" style="background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%); border-left-color: #ef4444;">
-    <h4 style="color: #991b1b;">⚠️ Late Arrivals ({{lateArrivals.length}})</h4>
-    <div style="display: grid; gap: 8px; margin-top: 16px;">
+    <h4 style="color: #991b1b;">⚠️ Late Arrivals - Requires Attention ({{lateArrivals.length}})</h4>
+    <div style="display: grid; gap: 12px; margin-top: 16px;">
         {{#each lateArrivals}}
-        <div style="display: flex; align-items: center; padding: 12px; background: rgba(239, 68, 68, 0.1); border-radius: 8px; border-left: 3px solid #ef4444;">
+        <div style="display: flex; align-items: center; padding: 16px; background: rgba(239, 68, 68, 0.05); border-radius: 12px; border-left: 3px solid #ef4444;">
             <div style="flex: 1;">
-                <div style="font-weight: 600; color: #991b1b;">{{name}} {{surname}}</div>
-                <div style="font-size: 14px; color: #dc2626;">{{role}} {{#if branch.name}}• {{branch.name}}{{/if}}</div>
+                <div style="font-weight: 700; color: #991b1b; font-size: 15px;">{{name}} {{surname}}</div>
+                <div style="font-size: 14px; color: #dc2626; margin-top: 2px;">{{role}}{{#if branch.name}} • {{branch.name}}{{/if}}</div>
             </div>
             <div style="text-align: right;">
-                <div style="font-weight: 600; color: #991b1b;">{{checkInTime}}</div>
-                <div style="font-size: 12px; color: #dc2626;">{{lateMinutes}} min late</div>
+                <div style="font-weight: 700; color: #991b1b; font-size: 16px;">{{checkInTime}}</div>
+                <div style="font-size: 12px; color: #dc2626; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">
+                    {{lateMinutes}}min Delay
+                </div>
             </div>
         </div>
         {{/each}}
@@ -119,16 +122,17 @@
 <!-- Absent Employees -->
 {{#if absentEmployees}}
 <div class="info-card" style="background: linear-gradient(135deg, #fafafa 0%, #f4f4f5 100%); border-left-color: #71717a;">
-    <h4 style="color: #52525b;">❌ Absent Employees ({{absentEmployees.length}})</h4>
-    <div style="display: grid; gap: 8px; margin-top: 16px;">
+    <h4 style="color: #52525b;">❌ Absent Employees - Follow-up Needed ({{absentEmployees.length}})</h4>
+    <div style="display: grid; gap: 12px; margin-top: 16px;">
         {{#each absentEmployees}}
-        <div style="display: flex; align-items: center; padding: 12px; background: rgba(113, 113, 122, 0.1); border-radius: 8px; border-left: 3px solid #71717a;">
+        <div style="display: flex; align-items: center; padding: 16px; background: rgba(113, 113, 122, 0.05); border-radius: 12px; border-left: 3px solid #71717a;">
             <div style="flex: 1;">
-                <div style="font-weight: 600; color: #52525b;">{{name}} {{surname}}</div>
-                <div style="font-size: 14px; color: #71717a;">{{role}} {{#if branch.name}}• {{branch.name}}{{/if}}</div>
+                <div style="font-weight: 700; color: #52525b; font-size: 15px;">{{name}} {{surname}}</div>
+                <div style="font-size: 14px; color: #71717a; margin-top: 2px;">{{role}}{{#if branch.name}} • {{branch.name}}{{/if}}</div>
             </div>
             <div style="text-align: right;">
-                <div style="font-size: 12px; color: #71717a;">No check-in</div>
+                <div style="font-size: 14px; color: #71717a; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">No Check-in</div>
+                <div style="font-size: 12px; color: #71717a; font-weight: 500;">Requires Contact</div>
             </div>
         </div>
         {{/each}}
@@ -138,13 +142,39 @@
 
 <!-- Key Insights -->
 <div class="info-card">
-    <h4>💡 Key Insights</h4>
-    <ul style="margin-left: 20px; color: #4b5563; line-height: 1.8;">
-        <li><strong>Best Performance:</strong> {{#if (gt earlyCount 0)}}{{earlyCount}} early arrivals showing excellent dedication{{else}}All present employees arrived on time or close to it{{/if}}</li>
-        <li><strong>Attendance Trend:</strong> {{#if (gte attendanceRate 90)}}Excellent attendance rate of {{attendanceRate}}%{{else if (gte attendanceRate 75)}}Good attendance rate of {{attendanceRate}}%, room for improvement{{else}}Attendance rate of {{attendanceRate}}% needs attention{{/if}}</li>
-        <li><strong>Punctuality Focus:</strong> {{#if (gt lateCount 0)}}{{lateCount}} late arrivals - consider following up with affected employees{{else}}Perfect punctuality today!{{/if}}</li>
+    <h4 style="color: #7c2d92; margin-bottom: 16px;">💡 Key Insights & Performance Highlights</h4>
+    <ul style="margin-left: 20px; color: #4b5563; line-height: 1.8; font-size: 15px;">
+        <li style="margin-bottom: 8px;">
+            <strong style="color: #374151;">Outstanding Performance:</strong> 
+            {{#if (gt earlyCount 0)}}
+                {{earlyCount}} employees arrived early, demonstrating excellent dedication and commitment 🌟
+            {{else}}
+                All present employees showed great punctuality arriving on time or close to schedule ⭐
+            {{/if}}
+        </li>
+        <li style="margin-bottom: 8px;">
+            <strong style="color: #374151;">Attendance Health:</strong> 
+            {{#if (gte attendanceRate 90)}}
+                Outstanding attendance rate of {{attendanceRate}}% - your team is highly engaged! 🎯
+            {{else if (gte attendanceRate 75)}}
+                Solid attendance rate of {{attendanceRate}}% with opportunity for improvement 📈
+            {{else}}
+                Attendance rate of {{attendanceRate}}% requires immediate attention and intervention 🚨
+            {{/if}}
+        </li>
+        <li style="margin-bottom: 8px;">
+            <strong style="color: #374151;">Punctuality Status:</strong> 
+            {{#if (gt lateCount 0)}}
+                {{lateCount}} late arrivals today - recommend personal check-ins to address potential barriers 🕐
+            {{else}}
+                Perfect punctuality across all attendees - exceptional team discipline! 🎉
+            {{/if}}
+        </li>
         {{#if (gt absentCount 0)}}
-        <li><strong>Follow-up Required:</strong> {{absentCount}} employees absent - verify reasons and provide support if needed</li>
+        <li style="margin-bottom: 8px;">
+            <strong style="color: #374151;">Wellness Check:</strong> 
+            {{absentCount}} employees absent - prioritize personal contact to ensure wellbeing and provide support 🤝
+        </li>
         {{/if}}
     </ul>
 </div>
@@ -152,18 +182,35 @@
 <!-- Action Items -->
 {{#if (or (gt lateCount 0) (gt absentCount 0))}}
 <div class="warning-notice">
-    <p>📋 <strong>Recommended Actions:</strong></p>
-    <ul style="margin-left: 20px; margin-top: 10px;">
+    <p style="font-size: 16px; font-weight: 700; color: #7c2d92;">📋 Strategic Action Plan</p>
+    <ul style="margin-left: 20px; margin-top: 16px; line-height: 1.8; font-size: 15px;">
         {{#if (gt lateCount 0)}}
-        <li>Follow up with late arrivals to understand any underlying issues</li>
-        <li>Consider implementing tardiness tracking for patterns</li>
+        <li style="margin-bottom: 8px;">
+            <strong>Punctuality Support:</strong> Schedule individual conversations with late arrivals to identify barriers and provide flexible solutions
+        </li>
+        <li style="margin-bottom: 8px;">
+            <strong>Pattern Analysis:</strong> Monitor tardiness trends over the next week to identify systemic issues vs. individual challenges
+        </li>
         {{/if}}
         {{#if (gt absentCount 0)}}
-        <li>Contact absent employees to verify their status and wellbeing</li>
-        <li>Review attendance policies if patterns emerge</li>
+        <li style="margin-bottom: 8px;">
+            <strong>Wellness Outreach:</strong> Contact absent employees within 2 hours to ensure safety and offer assistance if needed
+        </li>
+        <li style="margin-bottom: 8px;">
+            <strong>Policy Review:</strong> Evaluate current attendance expectations and support systems for realistic adjustments
+        </li>
         {{/if}}
-        <li>Recognize and appreciate early arrivals and consistent performers</li>
+        <li style="margin-bottom: 8px;">
+            <strong>Recognition Program:</strong> Acknowledge early arrivals and consistent performers with personalized appreciation or team shout-outs 🏆
+        </li>
     </ul>
+</div>
+{{else}}
+<div class="success-notice">
+    <p style="font-size: 16px; font-weight: 700; color: #15803d;">🎉 Exceptional Performance Today!</p>
+    <p style="margin-top: 12px; font-size: 15px; line-height: 1.6;">
+        Perfect attendance and punctuality across your team. Consider celebrating this achievement and using it as momentum for continued excellence.
+    </p>
 </div>
 {{/if}}
 

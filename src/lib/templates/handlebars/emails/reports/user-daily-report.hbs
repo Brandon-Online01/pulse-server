@@ -1,242 +1,266 @@
-{{#> base headerTitle="Your Daily Activity Report" headerSubtitle="Personal performance summary for {{date}}"}}
+{{#> base headerTitle="Your Daily Activity Report" headerSubtitle="Personal performance insights for {{date}}"}}
 
 <div class="greeting">
     Hello {{name}}! 📊
 </div>
 
 <div class="message">
-    <p>Here's your comprehensive daily activity summary for {{date}}. This report highlights your accomplishments, progress, and target achievements.</p>
+    <p>Here's your comprehensive daily activity summary for <strong>{{date}}</strong>. This personalized report highlights your accomplishments, progress, and performance metrics to help you track your professional growth.</p>
 </div>
 
+<!-- Work Status Summary -->
 {{#if metrics.attendance.status}}
 <div class="success-notice">
-    <p>⏰ <strong>Work Summary:</strong> You worked {{metrics.attendance.duration}} today{{#if metrics.attendance.startTime}} ({{metrics.attendance.startTime}} - {{#if metrics.attendance.endTime}}{{metrics.attendance.endTime}}{{else}}Currently Working{{/if}}){{/if}}!</p>
+    <h4 style="color: #15803d; margin-bottom: 8px;">⏰ Today's Work Summary</h4>
+    <p style="color: #15803d; margin: 0; font-size: 16px;">
+        You worked <strong>{{metrics.attendance.duration}}</strong> today{{#if metrics.attendance.startTime}} 
+        ({{metrics.attendance.startTime}}{{#if metrics.attendance.endTime}} - {{metrics.attendance.endTime}}{{else}} - Currently Working{{/if}}){{/if}}! 
+        Great commitment to your professional goals. 🎯
+    </p>
 </div>
 {{/if}}
 
-<!-- Core Metrics Section -->
+<!-- Today's Performance Metrics -->
 <div class="info-card">
-    <h3>📈 Today's Performance</h3>
+    <h3>📈 Today's Performance Overview</h3>
     <div class="detail-grid">
         <div class="detail-item">
             <span class="detail-label">Tasks Completed</span>
-            <span class="detail-value">{{metrics.userSpecific.todayTasks}}</span>
+            <span class="detail-value" style="font-weight: 700; color: {{#if (gte metrics.userSpecific.todayTasks 5)}}#22c55e{{else if (gte metrics.userSpecific.todayTasks 3)}}#f59e0b{{else}}#ef4444{{/if}}; font-size: 17px;">{{metrics.userSpecific.todayTasks}}</span>
         </div>
         <div class="detail-item">
             <span class="detail-label">Hours Worked</span>
-            <span class="detail-value">{{metrics.userSpecific.hoursWorked}}h</span>
+            <span class="detail-value" style="font-weight: 700; color: {{#if (gte metrics.userSpecific.hoursWorked 8)}}#22c55e{{else if (gte metrics.userSpecific.hoursWorked 6)}}#f59e0b{{else}}#ef4444{{/if}}; font-size: 17px;">{{metrics.userSpecific.hoursWorked}}h</span>
         </div>
         <div class="detail-item">
-            <span class="detail-label">New Leads</span>
-            <span class="detail-value">{{metrics.userSpecific.todayLeads}}</span>
+            <span class="detail-label">New Leads Generated</span>
+            <span class="detail-value" style="font-weight: 600; color: {{#if (gte metrics.userSpecific.todayLeads 3)}}#22c55e{{else if (gte metrics.userSpecific.todayLeads 1)}}#f59e0b{{else}}#6b7280{{/if}};">{{metrics.userSpecific.todayLeads}}</span>
         </div>
         <div class="detail-item">
             <span class="detail-label">Quotations Created</span>
-            <span class="detail-value">{{metrics.userSpecific.todayQuotations}}</span>
+            <span class="detail-value" style="font-weight: 600; color: {{#if (gte metrics.userSpecific.todayQuotations 2)}}#22c55e{{else if (gte metrics.userSpecific.todayQuotations 1)}}#f59e0b{{else}}#6b7280{{/if}};">{{metrics.userSpecific.todayQuotations}}</span>
         </div>
         <div class="detail-item">
             <span class="detail-label">Revenue Generated</span>
-            <span class="detail-value">{{metrics.totalRevenue}}</span>
+            <span class="detail-value" style="font-weight: 700; color: #7c2d92; font-size: 16px;">{{metrics.totalRevenue}}</span>
         </div>
         <div class="detail-item">
             <span class="detail-label">Claims Processed</span>
-            <span class="detail-value">{{metrics.userSpecific.todayClaims}}</span>
+            <span class="detail-value" style="font-weight: 600; color: {{#if (gte metrics.userSpecific.todayClaims 5)}}#22c55e{{else if (gte metrics.userSpecific.todayClaims 2)}}#f59e0b{{else}}#6b7280{{/if}};">{{metrics.userSpecific.todayClaims}}</span>
         </div>
     </div>
 </div>
 
-<!-- XP and Leaderboard Section -->
+<!-- Experience & Gamification -->
 {{#if metrics.userSpecific.xpEarned}}
-<div class="info-card">
-    <h4>🏆 Experience & Rank</h4>
+<div class="info-card" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left-color: #f59e0b;">
+    <h4 style="color: #92400e;">🏆 Experience & Achievement Level</h4>
     <div class="detail-grid">
         <div class="detail-item">
             <span class="detail-label">XP Earned Today</span>
-            <span class="detail-value">+{{metrics.userSpecific.xpEarned}} XP</span>
+            <span class="detail-value" style="font-weight: 700; color: #d97706; font-size: 16px;">+{{metrics.userSpecific.xpEarned}} XP</span>
         </div>
         <div class="detail-item">
             <span class="detail-label">Current Level</span>
-            <span class="detail-value">Level {{metrics.userSpecific.currentLevel}}</span>
+            <span class="detail-value" style="font-weight: 700; color: #92400e;">Level {{metrics.userSpecific.currentLevel}}</span>
         </div>
         <div class="detail-item">
-            <span class="detail-label">Current Rank</span>
-            <span class="detail-value">{{metrics.userSpecific.currentRank}}</span>
+            <span class="detail-label">Team Ranking</span>
+            <span class="detail-value" style="font-weight: 700; color: #92400e;">{{metrics.userSpecific.currentRank}}</span>
         </div>
     </div>
 </div>
 {{/if}}
 
-<!-- Targets Progress Section -->
+<!-- Target Progress Tracking -->
 {{#if metrics.targets.hasTargets}}
 <div class="info-card">
-    <h4>🎯 Target Progress ({{metrics.targets.targetPeriod}})</h4>
+    <h4>🎯 Target Progress - {{metrics.targets.targetPeriod}}</h4>
     <div class="detail-grid">
         {{#if metrics.targets.salesTarget}}
         <div class="detail-item">
             <span class="detail-label">Sales Progress</span>
-            <span class="detail-value">{{metrics.targets.salesTarget.formatted}} / {{metrics.targets.salesTarget.targetFormatted}} ({{metrics.targets.targetProgress.sales.progress}}%)</span>
+            <span class="detail-value" style="font-weight: 600; color: {{#if (gte metrics.targets.targetProgress.sales.progress 80)}}#22c55e{{else if (gte metrics.targets.targetProgress.sales.progress 60)}}#f59e0b{{else}}#ef4444{{/if}};">
+                {{metrics.targets.salesTarget.formatted}} / {{metrics.targets.salesTarget.targetFormatted}} 
+                ({{metrics.targets.targetProgress.sales.progress}}%)
+            </span>
         </div>
         {{/if}}
         {{#if metrics.targets.hoursTarget}}
         <div class="detail-item">
             <span class="detail-label">Hours Progress</span>
-            <span class="detail-value">{{metrics.targets.hoursTarget.current}}h / {{metrics.targets.hoursTarget.target}}h ({{metrics.targets.targetProgress.hours.progress}}%)</span>
+            <span class="detail-value" style="font-weight: 600; color: {{#if (gte metrics.targets.targetProgress.hours.progress 80)}}#22c55e{{else if (gte metrics.targets.targetProgress.hours.progress 60)}}#f59e0b{{else}}#ef4444{{/if}};">
+                {{metrics.targets.hoursTarget.current}}h / {{metrics.targets.hoursTarget.target}}h 
+                ({{metrics.targets.targetProgress.hours.progress}}%)
+            </span>
         </div>
         {{/if}}
         {{#if metrics.targets.leadsTarget}}
         <div class="detail-item">
             <span class="detail-label">Leads Progress</span>
-            <span class="detail-value">{{metrics.targets.leadsTarget.current}} / {{metrics.targets.leadsTarget.target}} ({{metrics.targets.targetProgress.leads.progress}}%)</span>
+            <span class="detail-value" style="font-weight: 600; color: {{#if (gte metrics.targets.targetProgress.leads.progress 80)}}#22c55e{{else if (gte metrics.targets.targetProgress.leads.progress 60)}}#f59e0b{{else}}#ef4444{{/if}};">
+                {{metrics.targets.leadsTarget.current}} / {{metrics.targets.leadsTarget.target}} 
+                ({{metrics.targets.targetProgress.leads.progress}}%)
+            </span>
         </div>
         {{/if}}
         {{#if metrics.targets.clientsTarget}}
         <div class="detail-item">
             <span class="detail-label">New Clients Progress</span>
-            <span class="detail-value">{{metrics.targets.clientsTarget.current}} / {{metrics.targets.clientsTarget.target}} ({{metrics.targets.targetProgress.clients.progress}}%)</span>
+            <span class="detail-value" style="font-weight: 600; color: {{#if (gte metrics.targets.targetProgress.clients.progress 80)}}#22c55e{{else if (gte metrics.targets.targetProgress.clients.progress 60)}}#f59e0b{{else}}#ef4444{{/if}};">
+                {{metrics.targets.clientsTarget.current}} / {{metrics.targets.clientsTarget.target}} 
+                ({{metrics.targets.targetProgress.clients.progress}}%)
+            </span>
         </div>
         {{/if}}
         {{#if metrics.targets.checkInsTarget}}
         <div class="detail-item">
             <span class="detail-label">Check-ins Progress</span>
-            <span class="detail-value">{{metrics.targets.checkInsTarget.current}} / {{metrics.targets.checkInsTarget.target}} ({{metrics.targets.targetProgress.checkIns.progress}}%)</span>
+            <span class="detail-value" style="font-weight: 600; color: {{#if (gte metrics.targets.targetProgress.checkIns.progress 80)}}#22c55e{{else if (gte metrics.targets.targetProgress.checkIns.progress 60)}}#f59e0b{{else}}#ef4444{{/if}};">
+                {{metrics.targets.checkInsTarget.current}} / {{metrics.targets.checkInsTarget.target}} 
+                ({{metrics.targets.targetProgress.checkIns.progress}}%)
+            </span>
         </div>
         {{/if}}
     </div>
 </div>
 {{/if}}
 
-<!-- Attendance Details -->
+<!-- Attendance & Time Management -->
 {{#if metrics.attendance.startTime}}
 <div class="info-card">
-    <h4>⏰ Attendance Details</h4>
+    <h4>⏰ Attendance & Time Management</h4>
     <div class="detail-grid">
         <div class="detail-item">
-            <span class="detail-label">Status</span>
-            <span class="detail-value">{{metrics.attendance.status}}</span>
+            <span class="detail-label">Work Status</span>
+            <span class="detail-value" style="font-weight: 600; color: {{#if (eq metrics.attendance.status 'Perfect')}}#22c55e{{else if (eq metrics.attendance.status 'On Time')}}#0ea5e9{{else if (eq metrics.attendance.status 'Late')}}#f59e0b{{else}}#ef4444{{/if}};">{{metrics.attendance.status}}</span>
         </div>
         <div class="detail-item">
             <span class="detail-label">Start Time</span>
-            <span class="detail-value">{{metrics.attendance.startTime}}</span>
+            <span class="detail-value" style="font-weight: 600; color: #4b5563;">{{metrics.attendance.startTime}}</span>
         </div>
         {{#if metrics.attendance.endTime}}
         <div class="detail-item">
             <span class="detail-label">End Time</span>
-            <span class="detail-value">{{metrics.attendance.endTime}}</span>
+            <span class="detail-value" style="font-weight: 600; color: #4b5563;">{{metrics.attendance.endTime}}</span>
         </div>
         {{/if}}
         <div class="detail-item">
             <span class="detail-label">Total Duration</span>
-            <span class="detail-value">{{metrics.attendance.duration}}</span>
+            <span class="detail-value" style="font-weight: 700; color: #7c2d92;">{{metrics.attendance.duration}}</span>
         </div>
     </div>
     {{#if metrics.attendance.checkInLocation}}
-    <p><strong>Check-in Location:</strong> {{metrics.attendance.checkInLocation.latitude}}, {{metrics.attendance.checkInLocation.longitude}}</p>
+    <div style="margin-top: 16px; padding: 12px; background: rgba(168, 85, 247, 0.05); border-radius: 8px; border-left: 3px solid #A855F7;">
+        <div style="font-size: 14px; color: #4b5563;">
+            <strong style="color: #7c2d92;">Check-in Location:</strong> 
+            {{metrics.attendance.checkInLocation.latitude}}, {{metrics.attendance.checkInLocation.longitude}}
+        </div>
+    </div>
     {{/if}}
 </div>
 {{/if}}
 
-<!-- Growth Metrics -->
+<!-- Performance Growth Trends -->
 <div class="info-card">
-    <h4>📊 Growth vs Yesterday</h4>
+    <h4>📊 Performance Growth vs Yesterday</h4>
     <div class="detail-grid">
         <div class="detail-item">
             <span class="detail-label">Quotations Growth</span>
-            <span class="detail-value">{{metrics.quotationGrowth}} {{#if (startsWith metrics.quotationGrowth "+")}}📈{{else}}{{#unless (eq metrics.quotationGrowth "0%")}}📉{{else}}➡️{{/unless}}{{/if}}</span>
+            <span class="detail-value" style="font-weight: 700; color: {{#if (startsWith metrics.quotationGrowth "+")}}#22c55e{{else}}{{#unless (eq metrics.quotationGrowth "0%")}}#ef4444{{else}}#6b7280{{/unless}}{{/if}};">
+                {{#if (startsWith metrics.quotationGrowth "+")}}📈{{else}}{{#unless (eq metrics.quotationGrowth "0%")}}📉{{else}}➡️{{/unless}}{{/if}} {{metrics.quotationGrowth}}
+            </span>
         </div>
         <div class="detail-item">
             <span class="detail-label">Revenue Growth</span>
-            <span class="detail-value">{{metrics.revenueGrowth}} {{#if (startsWith metrics.revenueGrowth "+")}}📈{{else}}{{#unless (eq metrics.revenueGrowth "0%")}}📉{{else}}➡️{{/unless}}{{/if}}</span>
+            <span class="detail-value" style="font-weight: 700; color: {{#if (startsWith metrics.revenueGrowth "+")}}#22c55e{{else}}{{#unless (eq metrics.revenueGrowth "0%")}}#ef4444{{else}}#6b7280{{/unless}}{{/if}};">
+                {{#if (startsWith metrics.revenueGrowth "+")}}📈{{else}}{{#unless (eq metrics.revenueGrowth "0%")}}📉{{else}}➡️{{/unless}}{{/if}} {{metrics.revenueGrowth}}
+            </span>
         </div>
         <div class="detail-item">
             <span class="detail-label">Customer Growth</span>
-            <span class="detail-value">{{metrics.customerGrowth}} {{#if (startsWith metrics.customerGrowth "+")}}📈{{else}}{{#unless (eq metrics.customerGrowth "0%")}}📉{{else}}➡️{{/unless}}{{/if}}</span>
+            <span class="detail-value" style="font-weight: 700; color: {{#if (startsWith metrics.customerGrowth "+")}}#22c55e{{else}}{{#unless (eq metrics.customerGrowth "0%")}}#ef4444{{else}}#6b7280{{/unless}}{{/if}};">
+                {{#if (startsWith metrics.customerGrowth "+")}}📈{{else}}{{#unless (eq metrics.customerGrowth "0%")}}📉{{else}}➡️{{/unless}}{{/if}} {{metrics.customerGrowth}}
+            </span>
         </div>
         <div class="detail-item">
-            <span class="detail-label">New Customers</span>
-            <span class="detail-value">{{metrics.newCustomers}}</span>
+            <span class="detail-label">New Customers Today</span>
+            <span class="detail-value" style="font-weight: 600; color: {{#if (gt metrics.newCustomers 2)}}#22c55e{{else if (gte metrics.newCustomers 1)}}#f59e0b{{else}}#6b7280{{/if}};">{{metrics.newCustomers}}</span>
         </div>
     </div>
 </div>
 
-<!-- Tracking Summary -->
+<!-- Location & Travel Summary -->
 {{#if tracking.totalDistance}}
 <div class="info-card">
-    <h4>🗺️ Location & Travel</h4>
+    <h4>🗺️ Location & Travel Activity</h4>
     <div class="detail-grid">
         <div class="detail-item">
             <span class="detail-label">Total Distance</span>
-            <span class="detail-value">{{tracking.totalDistance}}</span>
+            <span class="detail-value" style="font-weight: 700; color: #7c2d92; font-size: 16px;">{{tracking.totalDistance}}</span>
         </div>
-                 <div class="detail-item">
-             <span class="detail-label">Locations Visited</span>
-             <span class="detail-value">{{length tracking.locations}}</span>
-         </div>
+        <div class="detail-item">
+            <span class="detail-label">Locations Visited</span>
+            <span class="detail-value" style="font-weight: 600; color: #0ea5e9;">{{#each tracking.locations}}{{#if @first}}{{@root.tracking.locations.length}}{{/if}}{{/each}}</span>
+        </div>
         <div class="detail-item">
             <span class="detail-label">Avg Time Per Location</span>
-            <span class="detail-value">{{tracking.averageTimePerLocation}}</span>
+            <span class="detail-value" style="font-weight: 600; color: #8b5cf6;">{{tracking.averageTimePerLocation}}</span>
         </div>
     </div>
     {{#if tracking.locations}}
-    <div style="margin-top: 15px;">
-        <strong>Key Locations:</strong>
-        <ul style="margin-top: 5px; margin-left: 20px;">
+    <div style="margin-top: 16px; padding: 16px; background: rgba(168, 85, 247, 0.05); border-radius: 12px; border-left: 4px solid #A855F7;">
+        <h5 style="color: #7c2d92; margin: 0 0 12px 0; font-size: 15px; font-weight: 600;">📍 Key Locations Today</h5>
+        <div class="feature-list" style="list-style: none; padding: 0; margin: 0;">
             {{#each tracking.locations}}
-            {{#if @index < 5}}
-            <li>{{address}} - {{timeSpent}}</li>
-            {{/if}}
+            {{#unless (gt @index 4)}}
+            <li style="padding: 6px 0; color: #4b5563; padding-left: 25px; position: relative; font-size: 14px; line-height: 1.5; {{#unless @last}}border-bottom: 1px solid rgba(168, 85, 247, 0.1);{{/unless}}">
+                <span style="position: absolute; left: 0; top: 6px; color: #A855F7; font-weight: bold; font-size: 12px;">📍</span>
+                <strong>{{address}}</strong> - {{timeSpent}}
+            </li>
+            {{/unless}}
             {{/each}}
-        </ul>
+        </div>
     </div>
     {{/if}}
 </div>
 {{/if}}
 
+<!-- Quick Dashboard Access -->
 <div class="cta-section">
-    <a href="{{dashboardUrl}}" class="cta-button">View Full Dashboard</a>
+    <a href="{{dashboardUrl}}" class="cta-button">View Full Personal Dashboard</a>
 </div>
 
-<!-- Performance Tips -->
+<!-- Performance Insights & Tips -->
 <div class="info-card">
-    <h4>💡 Performance Insights</h4>
-    <ul class="feature-list">
-        {{#if (gt metrics.userSpecific.xpEarned 50)}}
-        <li><strong>Great XP Day!</strong> You earned {{metrics.userSpecific.xpEarned}} XP today - keep up the momentum!</li>
-        {{/if}}
-        {{#if (gt metrics.userSpecific.todayQuotations 0)}}
-        <li><strong>Sales Activity:</strong> {{metrics.userSpecific.todayQuotations}} quotation{{#if (gt metrics.userSpecific.todayQuotations 1)}}s{{/if}} created worth {{metrics.totalRevenue}}</li>
-        {{/if}}
-        {{#if (gt metrics.userSpecific.todayLeads 0)}}
-        <li><strong>Lead Generation:</strong> Added {{metrics.userSpecific.todayLeads}} new lead{{#if (gt metrics.userSpecific.todayLeads 1)}}s{{/if}} to your pipeline</li>
-        {{/if}}
-        {{#if (gt metrics.userSpecific.hoursWorked 8)}}
-        <li><strong>Dedication:</strong> You worked {{metrics.userSpecific.hoursWorked}} hours today - excellent commitment!</li>
-        {{/if}}
-                 {{#if tracking.totalDistance}}
-         <li><strong>Field Work:</strong> Covered {{tracking.totalDistance}} visiting customers and prospects</li>
-         {{/if}}
-    </ul>
+    <h4>💡 Performance Insights & Growth Tips</h4>
+    <div class="feature-list" style="list-style: none; padding: 0; margin: 16px 0;">
+        <li style="padding: 12px 0; color: #4b5563; padding-left: 35px; position: relative; font-size: 15px; line-height: 1.6; border-bottom: 1px solid rgba(168, 85, 247, 0.1);">
+            <span style="position: absolute; left: 0; top: 12px; color: #22c55e; font-weight: bold; font-size: 14px; width: 20px; height: 20px; background: #dcfce7; border-radius: 50%; display: flex; align-items: center; justify-content: center;">💪</span>
+            <strong>Productivity:</strong> {{#if (gte metrics.userSpecific.hoursWorked 8)}}Excellent work commitment today! Keep maintaining this strong momentum.{{else if (gte metrics.userSpecific.hoursWorked 6)}}Good work balance. Consider extending focus time for even better results.{{else}}Focus on increasing dedicated work time to boost your productivity metrics.{{/if}}
+        </li>
+        <li style="padding: 12px 0; color: #4b5563; padding-left: 35px; position: relative; font-size: 15px; line-height: 1.6; border-bottom: 1px solid rgba(168, 85, 247, 0.1);">
+            <span style="position: absolute; left: 0; top: 12px; color: #22c55e; font-weight: bold; font-size: 14px; width: 20px; height: 20px; background: #dcfce7; border-radius: 50%; display: flex; align-items: center; justify-content: center;">🎯</span>
+            <strong>Goal Achievement:</strong> {{#if metrics.targets.hasTargets}}{{#if (gte metrics.targets.targetProgress.sales.progress 80)}}Outstanding progress toward your targets! You're on track for exceptional results.{{else if (gte metrics.targets.targetProgress.sales.progress 60)}}Good progress on targets. Focus on key activities to reach excellence.{{else}}Accelerate efforts toward your targets. Consistency is key to breakthrough results.{{/if}}{{else}}Set clear daily targets to track and improve your performance systematically.{{/if}}
+        </li>
+        <li style="padding: 12px 0; color: #4b5563; padding-left: 35px; position: relative; font-size: 15px; line-height: 1.6; border-bottom: 1px solid rgba(168, 85, 247, 0.1);">
+            <span style="position: absolute; left: 0; top: 12px; color: #22c55e; font-weight: bold; font-size: 14px; width: 20px; height: 20px; background: #dcfce7; border-radius: 50%; display: flex; align-items: center; justify-content: center;">📈</span>
+            <strong>Growth Trend:</strong> {{#if (startsWith metrics.revenueGrowth "+")}}Your revenue growth shows positive momentum! Continue leveraging successful strategies.{{else}}Focus on revenue-generating activities and client relationship building to improve growth trajectory.{{/if}}
+        </li>
+        <li style="padding: 12px 0; color: #4b5563; padding-left: 35px; position: relative; font-size: 15px; line-height: 1.6;">
+            <span style="position: absolute; left: 0; top: 12px; color: #22c55e; font-weight: bold; font-size: 14px; width: 20px; height: 20px; background: #dcfce7; border-radius: 50%; display: flex; align-items: center; justify-content: center;">🚀</span>
+            <strong>Tomorrow's Opportunity:</strong> Build on today's achievements by focusing on high-impact activities and maintaining consistent performance standards.
+        </li>
+    </div>
 </div>
 
-<!-- Quick Actions -->
-<div class="info-card">
-    <h4>🚀 Tomorrow's Focus</h4>
-    <ul class="feature-list">
-        <li><strong>Review Pipeline:</strong> Check your leads and follow up on active prospects</li>
-        <li><strong>Target Progress:</strong> Focus on areas where you can improve target achievement</li>
-        <li><strong>Task Planning:</strong> Plan tomorrow's priorities based on deadlines and importance</li>
-        {{#if (lt metrics.userSpecific.xpEarned 30)}}
-        <li><strong>Boost XP:</strong> Complete more tasks and activities to earn additional experience points</li>
-        {{/if}}
-        {{#if metrics.targets.hasTargets}}
-        {{#if (lt metrics.targets.targetProgress.sales.progress 50)}}
-        <li><strong>Sales Focus:</strong> Your sales target needs attention - consider more quotation activities</li>
-        {{/if}}
-        {{/if}}
-    </ul>
-</div>
-
+<!-- Motivational Closing -->
 <div class="success-notice">
-    <p>🌟 <strong>Excellent Work Today!</strong> Your consistent effort contributes to team success. {{#if metrics.userSpecific.currentRank}}You're currently ranked as {{metrics.userSpecific.currentRank}} {{#if metrics.userSpecific.currentLevel}}at Level {{metrics.userSpecific.currentLevel}}{{/if}}!{{/if}}</p>
+    <h4 style="color: #15803d; margin-bottom: 12px;">🌟 Your Professional Journey</h4>
+    <p style="color: #15803d; margin: 0; font-size: 16px; line-height: 1.6;">
+        Every day brings new opportunities for growth and achievement. Your dedication and consistent effort are building toward remarkable professional success. 
+        Keep pushing boundaries and celebrating each milestone! 🎉
+    </p>
 </div>
 
 {{/base}}

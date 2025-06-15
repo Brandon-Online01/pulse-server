@@ -1,6 +1,7 @@
-import Handlebars from 'handlebars';
+import * as Handlebars from 'handlebars';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import * as juice from 'juice';
 import {
 	SignupEmailData,
 	VerificationEmailData,
@@ -88,29 +89,44 @@ class EmailTemplateService {
 		const layoutsPath = join(this.templatesPath, 'layouts');
 
 		try {
-			// Register layout
-			const baseLayout = readFileSync(join(layoutsPath, 'base.hbs'), 'utf8');
-			Handlebars.registerPartial('layouts/base', baseLayout);
+			// Register base layout - templates use {{#> base}} so we register as 'base'
+			const baseLayoutPath = join(layoutsPath, 'base.hbs');
+			console.log(`Attempting to load base layout from: ${baseLayoutPath}`);
+			
+			const { existsSync } = require('fs');
+			if (existsSync(baseLayoutPath)) {
+				const baseLayout = readFileSync(baseLayoutPath, 'utf8');
+				Handlebars.registerPartial('base', baseLayout);
+				console.log('Successfully registered base layout');
+			} else {
+				console.error(`Base layout not found at: ${baseLayoutPath}`);
+				throw new Error(`Base layout file not found: ${baseLayoutPath}`);
+			}
 
-			// Register partials
+			// Register additional partials if they exist
 			const partials = ['header', 'footer', 'button', 'card', 'alert'];
 			partials.forEach((partial) => {
 				try {
-					const content = readFileSync(join(partialsPath, `${partial}.hbs`), 'utf8');
-					Handlebars.registerPartial(`partials/${partial}`, content);
+					const partialPath = join(partialsPath, `${partial}.hbs`);
+					if (existsSync(partialPath)) {
+						const content = readFileSync(partialPath, 'utf8');
+						Handlebars.registerPartial(partial, content);
+						console.log(`Registered partial: ${partial}`);
+					}
 				} catch (error) {
 					console.warn(`Could not load partial: ${partial}`, error.message);
 				}
 			});
 		} catch (error) {
-			console.warn('Could not load some partials:', error.message);
+			console.error('Critical error in registerPartials:', error.message);
+			throw error; // Re-throw since base layout is critical for email templates
 		}
 	}
 
 	private registerHelpers() {
 		// Import and register all helpers
 		try {
-			require('../templates/handlebars/helpers');
+			require('../templates/handlebars/helpers/index');
 		} catch (error) {
 			console.warn('Could not load Handlebars helpers:', error.message);
 
@@ -171,38 +187,52 @@ class EmailTemplateService {
 	}
 
 	private renderTemplate(templatePath: string, data: any): string {
-		const template = this.getTemplate(templatePath);
+		try {
+			const template = this.getTemplate(templatePath);
 
-		// Inject environment-based global variables into template context
-		const enrichedData = {
-			...data,
-			// Global environment variables
-			appName: process.env.APP_NAME || 'LORO',
-			appUrl: process.env.APP_URL || 'https://loro.co.za/landing-page',
-			supportEmail: process.env.SUPPORT_EMAIL || 'support@loro.africa',
-			supportPhone: process.env.SUPPORT_PHONE || '+27 12 345 6789',
-			companyName: process.env.COMPANY_NAME || 'LORO',
-			companyReg: process.env.COMPANY_REG || '2023/123456/07',
-			vatNumber: process.env.VAT_NUMBER || '4567890123',
-			headerTagline: process.env.HEADER_TAGLINE || 'Empowering African Business',
-			currentYear: new Date().getFullYear(),
-			// Social media links from environment
-			socialLinks: {
-				linkedin: process.env.SOCIAL_LINKEDIN_URL || '#',
-				twitter: process.env.SOCIAL_TWITTER_URL || '#',
-				facebook: process.env.SOCIAL_FACEBOOK_URL || '#',
-				instagram: process.env.SOCIAL_INSTAGRAM_URL || '#',
-			},
-			// Legal links from environment
-			privacyPolicyUrl:
-				process.env.PRIVACY_POLICY_URL || `${process.env.APP_URL || 'https://loro.co.za/landing-page'}/privacy`,
-			termsUrl: process.env.TERMS_URL || `${process.env.APP_URL || 'https://loro.co.za/landing-page'}/terms`,
-			unsubscribeUrl:
-				process.env.UNSUBSCRIBE_URL ||
-				`${process.env.APP_URL || 'https://loro.co.za/landing-page'}/unsubscribe`,
-		};
+			// Inject environment-based global variables into template context
+			const enrichedData = {
+				...data,
+				// Global environment variables
+				appName: process.env.APP_NAME || 'LORO',
+				appUrl: process.env.APP_URL || 'https://loro.co.za/landing-page',
+				supportEmail: process.env.SUPPORT_EMAIL || 'support@loro.africa',
+				supportPhone: process.env.SUPPORT_PHONE || '+27 12 345 6789',
+				companyName: process.env.COMPANY_NAME || 'LORO',
+				companyReg: process.env.COMPANY_REG || '2023/123456/07',
+				vatNumber: process.env.VAT_NUMBER || '4567890123',
+				headerTagline: process.env.HEADER_TAGLINE || 'Empowering African Business',
+				currentYear: new Date().getFullYear(),
+				// Social media links from environment
+				socialLinks: {
+					linkedin: process.env.SOCIAL_LINKEDIN_URL || '#',
+					twitter: process.env.SOCIAL_TWITTER_URL || '#',
+					facebook: process.env.SOCIAL_FACEBOOK_URL || '#',
+					instagram: process.env.SOCIAL_INSTAGRAM_URL || '#',
+				},
+				// Legal links from environment
+				privacyPolicyUrl:
+					process.env.PRIVACY_POLICY_URL || `${process.env.APP_URL || 'https://loro.co.za/landing-page'}/privacy`,
+				termsUrl: process.env.TERMS_URL || `${process.env.APP_URL || 'https://loro.co.za/landing-page'}/terms`,
+				unsubscribeUrl:
+					process.env.UNSUBSCRIBE_URL ||
+					`${process.env.APP_URL || 'https://loro.co.za/landing-page'}/unsubscribe`,
+			};
 
-		return template(enrichedData);
+			console.log(`Rendering template: ${templatePath}`);
+			const renderedTemplate = template(enrichedData);
+			
+			// Inline CSS for email client compatibility
+			console.log(`Inlining CSS for template: ${templatePath}`);
+			const inlinedTemplate = juice(renderedTemplate);
+			
+			console.log(`Successfully rendered and inlined template: ${templatePath}`);
+			return inlinedTemplate;
+		} catch (error) {
+			console.error(`Error rendering template ${templatePath}:`, error);
+			console.error('Template data:', JSON.stringify(data, null, 2));
+			throw new Error(`Template rendering failed: ${templatePath} - ${error.message}`);
+		}
 	}
 
 	// Auth Templates

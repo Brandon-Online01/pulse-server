@@ -1,4 +1,4 @@
-import Handlebars from 'handlebars';
+import * as Handlebars from 'handlebars';
 
 // Phone number formatting helper for tel: links
 Handlebars.registerHelper('formatPhoneForTel', function(phone: string) {

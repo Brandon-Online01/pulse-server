@@ -23,6 +23,90 @@ import { RoleGuard } from '../guards/role.guard';
 export class CheckInsController {
 	constructor(private readonly checkInsService: CheckInsService) {}
 
+	@Get()
+	@ApiOperation({
+		summary: 'Get all check-ins',
+		description: 'Retrieves all check-in records, optionally filtered by organization',
+	})
+	@ApiOkResponse({
+		description: 'Check-ins retrieved successfully',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', example: 'Success' },
+				checkIns: {
+					type: 'array',
+					items: {
+						type: 'object',
+						properties: {
+							uid: { type: 'number' },
+							checkInTime: { type: 'string', format: 'date-time' },
+							checkOutTime: { type: 'string', format: 'date-time', nullable: true },
+							duration: { type: 'string', nullable: true },
+							checkInLocation: { type: 'string' },
+							checkOutLocation: { type: 'string', nullable: true },
+							owner: { type: 'object' },
+							client: { type: 'object', nullable: true },
+							branch: { type: 'object' },
+						},
+					},
+				},
+			},
+		},
+	})
+	getAllCheckIns(@Query('organizationUid') organizationUid?: string) {
+		return this.checkInsService.getAllCheckIns(organizationUid);
+	}
+
+	@Get('user/:userUid')
+	@ApiOperation({
+		summary: 'Get check-ins for specific user',
+		description: 'Retrieves check-in records for a specific user, optionally filtered by organization',
+	})
+	@ApiParam({ name: 'userUid', description: 'User UID', type: 'number' })
+	@ApiOkResponse({
+		description: 'User check-ins retrieved successfully',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', example: 'Success' },
+				checkIns: {
+					type: 'array',
+					items: {
+						type: 'object',
+						properties: {
+							uid: { type: 'number' },
+							checkInTime: { type: 'string', format: 'date-time' },
+							checkOutTime: { type: 'string', format: 'date-time', nullable: true },
+							duration: { type: 'string', nullable: true },
+							checkInLocation: { type: 'string' },
+							checkOutLocation: { type: 'string', nullable: true },
+							owner: { type: 'object' },
+							client: { type: 'object', nullable: true },
+							branch: { type: 'object' },
+						},
+					},
+				},
+				user: { type: 'object' },
+			},
+		},
+	})
+	@ApiNotFoundResponse({
+		description: 'User not found or no check-ins found',
+		schema: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', example: 'User not found' },
+			},
+		},
+	})
+	getUserCheckIns(
+		@Param('userUid') userUid: number,
+		@Query('organizationUid') organizationUid?: string
+	) {
+		return this.checkInsService.getUserCheckIns(userUid, organizationUid);
+	}
+
 	@Post()
 	@ApiOperation({
 		summary: 'Record check-in',

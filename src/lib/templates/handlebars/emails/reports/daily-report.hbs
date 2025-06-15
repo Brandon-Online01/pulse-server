@@ -1,147 +1,187 @@
-{{#> base headerTitle="Daily Business Report" headerSubtitle="Your daily performance summary and insights"}}
+{{#> base headerTitle="Daily Business Report" headerSubtitle="Comprehensive performance insights for {{reportDate}}"}}
 
 <div class="greeting">
     Hello {{recipientName}}! 📊
 </div>
 
 <div class="message">
-    <p>Here's your comprehensive daily business report for {{reportDate}}. This summary provides key insights into your business performance and highlights important metrics.</p>
-    </div>
+    <p>Here's your comprehensive daily business report for <strong>{{reportDate}}</strong>. This summary provides key insights into your business performance and highlights important metrics to help drive growth and success.</p>
+</div>
 
+<!-- Key Performance Indicators -->
 <div class="info-card">
     <h3>📈 Key Performance Indicators</h3>
     <div class="detail-grid">
         <div class="detail-item">
             <span class="detail-label">Total Revenue</span>
-            <span class="detail-value">{{currency}} {{totalRevenue}}</span>
-    </div>
+            <span class="detail-value" style="font-weight: 700; color: #7c2d92; font-size: 17px;">{{currency}} {{totalRevenue}}</span>
+        </div>
         <div class="detail-item">
             <span class="detail-label">New Leads</span>
-            <span class="detail-value">{{newLeads}}</span>
-    </div>
+            <span class="detail-value" style="font-weight: 600; color: #22c55e;">{{newLeads}}</span>
+        </div>
         <div class="detail-item">
             <span class="detail-label">Tasks Completed</span>
-            <span class="detail-value">{{completedTasks}}</span>
-  </div>
+            <span class="detail-value" style="font-weight: 600; color: #0ea5e9;">{{completedTasks}}</span>
+        </div>
         <div class="detail-item">
             <span class="detail-label">Active Users</span>
-            <span class="detail-value">{{activeUsers}}</span>
-    </div>
+            <span class="detail-value" style="font-weight: 600; color: #8b5cf6;">{{activeUsers}}</span>
+        </div>
         <div class="detail-item">
             <span class="detail-label">Conversion Rate</span>
-            <span class="detail-value">{{conversionRate}}%</span>
-    </div>
+            <span class="detail-value" style="font-weight: 700; color: {{#if (gte conversionRate 15)}}#22c55e{{else if (gte conversionRate 10)}}#f59e0b{{else}}#ef4444{{/if}};">{{conversionRate}}%</span>
+        </div>
         <div class="detail-item">
             <span class="detail-label">Customer Satisfaction</span>
-            <span class="detail-value">{{customerSatisfaction}}/10</span>
+            <span class="detail-value" style="font-weight: 700; color: {{#if (gte customerSatisfaction 8)}}#22c55e{{else if (gte customerSatisfaction 6)}}#f59e0b{{else}}#ef4444{{/if}};">{{customerSatisfaction}}/10</span>
+        </div>
     </div>
-    </div>
-  </div>
+</div>
 
+<!-- Sales Performance Section -->
 <div class="info-card">
-    <h4>💰 Sales Performance</h4>
+    <h4>💰 Sales Performance Overview</h4>
     <div class="detail-grid">
         <div class="detail-item">
             <span class="detail-label">Daily Sales</span>
-            <span class="detail-value">{{currency}} {{dailySales}}</span>
+            <span class="detail-value" style="font-weight: 700; color: #7c2d92; font-size: 17px;">{{currency}} {{dailySales}}</span>
         </div>
         <div class="detail-item">
             <span class="detail-label">Monthly Target</span>
-            <span class="detail-value">{{currency}} {{monthlyTarget}}</span>
+            <span class="detail-value" style="font-weight: 600; color: #4b5563;">{{currency}} {{monthlyTarget}}</span>
         </div>
         <div class="detail-item">
             <span class="detail-label">Progress to Target</span>
-            <span class="detail-value">{{targetProgress}}%</span>
-    </div>
+            <span class="detail-value" style="font-weight: 700; color: {{#if (gte targetProgress 80)}}#22c55e{{else if (gte targetProgress 60)}}#f59e0b{{else}}#ef4444{{/if}};">{{targetProgress}}%</span>
+        </div>
         <div class="detail-item">
             <span class="detail-label">Top Performer</span>
-            <span class="detail-value">{{topPerformer}}</span>
+            <span class="detail-value" style="font-weight: 600; color: #7c2d92;">{{topPerformer}}</span>
+        </div>
     </div>
-    </div>
-  </div>
+</div>
 
+<!-- Task & Project Management -->
 <div class="info-card">
-    <h4>📋 Task & Project Updates</h4>
+    <h4>📋 Task & Project Management</h4>
     <div class="detail-grid">
         <div class="detail-item">
             <span class="detail-label">Tasks Due Today</span>
-            <span class="detail-value">{{tasksDueToday}}</span>
-    </div>
+            <span class="detail-value" style="font-weight: 600; color: {{#if (gte tasksDueToday 10)}}#ef4444{{else if (gte tasksDueToday 5)}}#f59e0b{{else}}#22c55e{{/if}};">{{tasksDueToday}}</span>
+        </div>
         <div class="detail-item">
             <span class="detail-label">Overdue Tasks</span>
-            <span class="detail-value">{{overdueTasks}}</span>
-    </div>
+            <span class="detail-value" style="font-weight: 600; color: {{#if (gte overdueTasks 5)}}#ef4444{{else if (gte overdueTasks 1)}}#f59e0b{{else}}#22c55e{{/if}};">{{overdueTasks}}</span>
+        </div>
         <div class="detail-item">
             <span class="detail-label">Projects On Track</span>
-            <span class="detail-value">{{projectsOnTrack}}</span>
-    </div>
+            <span class="detail-value" style="font-weight: 600; color: #22c55e;">{{projectsOnTrack}}</span>
+        </div>
         <div class="detail-item">
             <span class="detail-label">Team Productivity</span>
-            <span class="detail-value">{{teamProductivity}}%</span>
+            <span class="detail-value" style="font-weight: 700; color: {{#if (gte teamProductivity 85)}}#22c55e{{else if (gte teamProductivity 70)}}#f59e0b{{else}}#ef4444{{/if}};">{{teamProductivity}}%</span>
+        </div>
     </div>
-    </div>
-  </div>
+</div>
 
+<!-- Performance Trends Analysis -->
+<div class="info-card">
+    <h4>📊 Performance Trends vs Yesterday</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Revenue Change</span>
+            <span class="detail-value" style="font-weight: 700; color: {{#if (gte revenueChange 0)}}#22c55e{{else}}#ef4444{{/if}};">
+                {{#if (gte revenueChange 0)}}📈 +{{revenueChange}}%{{else}}📉 {{revenueChange}}%{{/if}}
+            </span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Lead Generation</span>
+            <span class="detail-value" style="font-weight: 700; color: {{#if (gte leadChange 0)}}#22c55e{{else}}#ef4444{{/if}};">
+                {{#if (gte leadChange 0)}}📈 +{{leadChange}}%{{else}}📉 {{leadChange}}%{{/if}}
+            </span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Task Completion</span>
+            <span class="detail-value" style="font-weight: 700; color: {{#if (gte taskCompletionChange 0)}}#22c55e{{else}}#ef4444{{/if}};">
+                {{#if (gte taskCompletionChange 0)}}📈 +{{taskCompletionChange}}%{{else}}📉 {{taskCompletionChange}}%{{/if}}
+            </span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">User Engagement</span>
+            <span class="detail-value" style="font-weight: 700; color: {{#if (gte engagementChange 0)}}#22c55e{{else}}#ef4444{{/if}};">
+                {{#if (gte engagementChange 0)}}📈 +{{engagementChange}}%{{else}}📉 {{engagementChange}}%{{/if}}
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Action Dashboard -->
 <div class="cta-section">
     <a href="{{dashboardUrl}}" class="cta-button">View Full Dashboard</a>
 </div>
 
+<!-- Alerts & Warnings -->
 {{#if alerts}}
 <div class="warning-notice">
-    <p>⚠️ <strong>Attention Required:</strong></p>
-    <ul style="margin-left: 20px; margin-top: 10px;">
+    <h4 style="color: #92400e; margin-bottom: 16px;">⚠️ Attention Required</h4>
+    <div class="feature-list" style="list-style: none; padding: 0; margin: 0;">
         {{#each alerts}}
-        <li>{{this}}</li>
+        <li style="padding: 8px 0; color: #92400e; padding-left: 35px; position: relative; font-size: 15px; line-height: 1.6; {{#unless @last}}border-bottom: 1px solid rgba(245, 158, 11, 0.2);{{/unless}}">
+            <span style="position: absolute; left: 0; top: 8px; color: #f59e0b; font-weight: bold; font-size: 16px;">⚠️</span>
+            {{this}}
+        </li>
         {{/each}}
-    </ul>
+    </div>
 </div>
 {{/if}}
 
+<!-- Today's Achievements -->
 {{#if achievements}}
 <div class="success-notice">
-    <p>🏆 <strong>Today's Achievements:</strong></p>
-    <ul style="margin-left: 20px; margin-top: 10px;">
+    <h4 style="color: #15803d; margin-bottom: 16px;">🏆 Today's Achievements</h4>
+    <div class="feature-list" style="list-style: none; padding: 0; margin: 0;">
         {{#each achievements}}
-        <li>{{this}}</li>
+        <li style="padding: 8px 0; color: #15803d; padding-left: 35px; position: relative; font-size: 15px; line-height: 1.6; {{#unless @last}}border-bottom: 1px solid rgba(34, 197, 94, 0.2);{{/unless}}">
+            <span style="position: absolute; left: 0; top: 8px; color: #22c55e; font-weight: bold; font-size: 14px; width: 20px; height: 20px; background: #dcfce7; border-radius: 50%; display: flex; align-items: center; justify-content: center;">🏆</span>
+            {{this}}
+        </li>
         {{/each}}
-    </ul>
+    </div>
 </div>
 {{/if}}
 
+<!-- Tomorrow's Focus Areas -->
 <div class="info-card">
-    <h4>📊 Trend Analysis</h4>
-    <div class="detail-grid">
-        <div class="detail-item">
-            <span class="detail-label">Revenue vs Yesterday</span>
-            <span class="detail-value">{{revenueChange}}%</span>
-        </div>
-        <div class="detail-item">
-            <span class="detail-label">Lead Generation</span>
-            <span class="detail-value">{{leadChange}}%</span>
-        </div>
-        <div class="detail-item">
-            <span class="detail-label">Task Completion</span>
-            <span class="detail-value">{{taskCompletionChange}}%</span>
-        </div>
-        <div class="detail-item">
-            <span class="detail-label">User Engagement</span>
-            <span class="detail-value">{{engagementChange}}%</span>
+    <h4>🎯 Tomorrow's Strategic Focus</h4>
+    <div class="feature-list" style="list-style: none; padding: 0; margin: 16px 0;">
+        <li style="padding: 12px 0; color: #4b5563; padding-left: 35px; position: relative; font-size: 15px; line-height: 1.6; border-bottom: 1px solid rgba(168, 85, 247, 0.1);">
+            <span style="position: absolute; left: 0; top: 12px; color: #22c55e; font-weight: bold; font-size: 14px; width: 20px; height: 20px; background: #dcfce7; border-radius: 50%; display: flex; align-items: center; justify-content: center;">📞</span>
+            <strong>Lead Management:</strong> Follow up on {{pendingLeads}} pending leads to maximize conversion opportunities
+        </li>
+        <li style="padding: 12px 0; color: #4b5563; padding-left: 35px; position: relative; font-size: 15px; line-height: 1.6; border-bottom: 1px solid rgba(168, 85, 247, 0.1);">
+            <span style="position: absolute; left: 0; top: 12px; color: #22c55e; font-weight: bold; font-size: 14px; width: 20px; height: 20px; background: #dcfce7; border-radius: 50%; display: flex; align-items: center; justify-content: center;">✅</span>
+            <strong>Task Execution:</strong> Complete {{priorityTasks}} high-priority tasks to maintain project momentum
+        </li>
+        <li style="padding: 12px 0; color: #4b5563; padding-left: 35px; position: relative; font-size: 15px; line-height: 1.6; border-bottom: 1px solid rgba(168, 85, 247, 0.1);">
+            <span style="position: absolute; left: 0; top: 12px; color: #22c55e; font-weight: bold; font-size: 14px; width: 20px; height: 20px; background: #dcfce7; border-radius: 50%; display: flex; align-items: center; justify-content: center;">📊</span>
+            <strong>Project Review:</strong> Review {{projectsNeedingAttention}} projects requiring immediate attention
+        </li>
+        <li style="padding: 12px 0; color: #4b5563; padding-left: 35px; position: relative; font-size: 15px; line-height: 1.6;">
+            <span style="position: absolute; left: 0; top: 12px; color: #22c55e; font-weight: bold; font-size: 14px; width: 20px; height: 20px; background: #dcfce7; border-radius: 50%; display: flex; align-items: center; justify-content: center;">🤝</span>
+            <strong>Client Relations:</strong> Schedule {{upcomingMeetings}} upcoming client meetings to strengthen partnerships
+        </li>
     </div>
-    </div>
-    </div>
+</div>
 
-<div class="message">
-    <p><strong>Tomorrow's Focus Areas:</strong></p>
-    <ul style="margin-left: 20px; color: #4b5563;">
-        <li>Follow up on {{pendingLeads}} pending leads</li>
-        <li>Complete {{priorityTasks}} high-priority tasks</li>
-        <li>Review {{projectsNeedingAttention}} projects needing attention</li>
-        <li>Schedule {{upcomingMeetings}} upcoming client meetings</li>
-    </ul>
-  </div>
-
+<!-- Motivational Closing -->
 <div class="success-notice">
-    <p>📈 <strong>Keep Up the Great Work!</strong> Your business is showing positive momentum. Stay focused on your goals and continue building on today's success.</p>
+    <h4 style="color: #15803d; margin-bottom: 12px;">📈 Excellence in Motion</h4>
+    <p style="color: #15803d; margin: 0; font-size: 16px; line-height: 1.6;">
+        Your business is demonstrating strong momentum and positive growth trajectory. 
+        Continue building on today's achievements while focusing on strategic priorities. 
+        Success is a journey of consistent daily improvements! 🚀
+    </p>
 </div>
 
 {{/base}} 

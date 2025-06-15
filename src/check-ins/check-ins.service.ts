@@ -188,4 +188,84 @@ export class CheckInsService {
 			return response;
 		}
 	}
+
+	async getAllCheckIns(organizationUid?: string): Promise<any> {
+		try {
+			const whereCondition: any = {};
+			
+			if (organizationUid) {
+				whereCondition.organization = { uid: organizationUid };
+			}
+
+			const checkIns = await this.checkInRepository.find({
+				where: whereCondition,
+				order: {
+					checkInTime: 'DESC',
+				},
+				relations: ['owner', 'client', 'branch', 'organization'],
+			});
+
+			const response = {
+				message: process.env.SUCCESS_MESSAGE,
+				checkIns,
+			};
+
+			return response;
+		} catch (error) {
+			const response = {
+				message: error?.message,
+				checkIns: [],
+			};
+
+			return response;
+		}
+	}
+
+	async getUserCheckIns(userUid: number, organizationUid?: string): Promise<any> {
+		try {
+			const whereCondition: any = {
+				owner: { uid: userUid }
+			};
+			
+			if (organizationUid) {
+				whereCondition.organization = { uid: organizationUid };
+			}
+
+			const checkIns = await this.checkInRepository.find({
+				where: whereCondition,
+				order: {
+					checkInTime: 'DESC',
+				},
+				relations: ['owner', 'client', 'branch', 'organization'],
+			});
+
+			if (!checkIns || checkIns.length === 0) {
+				const response = {
+					message: process.env.SUCCESS_MESSAGE,
+					checkIns: [],
+					user: null,
+				};
+				return response;
+			}
+
+			// Get user info from the first check-in record
+			const userInfo = checkIns[0]?.owner || null;
+
+			const response = {
+				message: process.env.SUCCESS_MESSAGE,
+				checkIns,
+				user: userInfo,
+			};
+
+			return response;
+		} catch (error) {
+			const response = {
+				message: error?.message,
+				checkIns: [],
+				user: null,
+			};
+
+			return response;
+		}
+	}
 }
