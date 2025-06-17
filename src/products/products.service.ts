@@ -525,6 +525,110 @@ export class ProductsService {
 		}
 	}
 
+	async productsByCategory(
+		category: string,
+		page: number = 1,
+		limit: number = 20,
+		search: string = '',
+		orgId?: number,
+		branchId?: number,
+	): Promise<PaginatedResponse<Product>> {
+		try {
+			// Only select fields that exist in the database to avoid column errors
+			const queryBuilder = this.productRepository
+				.createQueryBuilder('product')
+				.select([
+					'product.uid',
+					'product.name',
+					'product.description',
+					'product.price',
+					'product.category',
+					'product.status',
+					'product.imageUrl',
+					'product.sku',
+					'product.warehouseLocation',
+					'product.stockQuantity',
+					'product.productRef',
+					'product.productReferenceCode',
+					'product.reorderPoint',
+					'product.salePrice',
+					'product.discount',
+					'product.barcode',
+					'product.brand',
+					'product.packageQuantity',
+					'product.weight',
+					'product.isOnPromotion',
+					'product.packageDetails',
+					'product.promotionStartDate',
+					'product.promotionEndDate',
+					'product.packageUnit',
+					'product.createdAt',
+					'product.updatedAt',
+					'product.isDeleted',
+				])
+				.leftJoin('product.organisation', 'organisation')
+				.leftJoin('product.branch', 'branch')
+				.where('product.isDeleted = :isDeleted', { isDeleted: false })
+				.andWhere('product.status != :inactive', { inactive: ProductStatus.INACTIVE });
+
+			// Filter by organization if provided
+			if (orgId) {
+				queryBuilder.andWhere('organisation.uid = :orgId', { orgId });
+			}
+
+			// Filter by branch if provided
+			if (branchId) {
+				queryBuilder.andWhere('branch.uid = :branchId', { branchId });
+			}
+
+			// Filter by category (exact match or partial match)
+			queryBuilder.andWhere('LOWER(product.category) LIKE LOWER(:category)', {
+				category: `%${category}%`,
+			});
+
+			// Apply additional search term if provided
+			if (search && search.trim()) {
+				queryBuilder.andWhere(
+					'(LOWER(product.name) LIKE LOWER(:search) OR LOWER(product.description) LIKE LOWER(:search) OR LOWER(product.sku) LIKE LOWER(:search) OR LOWER(product.barcode) LIKE LOWER(:search) OR LOWER(product.brand) LIKE LOWER(:search))',
+					{ search: `%${search.trim()}%` },
+				);
+			}
+
+			// Add pagination and ordering
+			queryBuilder
+				.skip((page - 1) * limit)
+				.take(limit)
+				.orderBy('product.isOnPromotion', 'DESC') // Show promoted products first
+				.addOrderBy('product.stockQuantity', 'DESC') // Show in-stock products first
+				.addOrderBy('product.createdAt', 'DESC'); // Then by newest
+
+			const [products, total] = await queryBuilder.getManyAndCount();
+
+			return {
+				data: products,
+				meta: {
+					total,
+					page,
+					limit,
+					totalPages: Math.ceil(total / limit),
+				},
+				message: products.length > 0 ? process.env.SUCCESS_MESSAGE : 'No products found in this category',
+			};
+		} catch (error) {
+			this.logger.error(`Error fetching products by category: ${error.message}`);
+			return {
+				data: [],
+				meta: {
+					total: 0,
+					page,
+					limit,
+					totalPages: 0,
+				},
+				message: error.message || 'Error fetching products by category',
+			};
+		}
+	}
+
 	// Analytics methods don't need org/branch filtering since they operate on products
 	// that have already been filtered by the getProductByref method
 

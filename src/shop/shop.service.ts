@@ -259,25 +259,158 @@ export class ShopService {
 	}
 
 	async getBestSellers(orgId?: number, branchId?: number): Promise<{ products: Product[] | null; message: string }> {
-		const result = await this.getProductsByStatus(ProductStatus.BEST_SELLER, orgId, branchId);
+		try {
+			// Get products based on actual sales analytics or fallback to status
+			const query = this.productRepository
+				.createQueryBuilder('product')
+				.leftJoin('product.analytics', 'analytics')
+				.select([
+					'product.uid',
+					'product.name', 
+					'product.description',
+					'product.price',
+					'product.category',
+					'product.status',
+					'product.imageUrl',
+					'product.sku',
+					'product.warehouseLocation',
+					'product.stockQuantity',
+					'product.productRef',
+					'product.productReferenceCode',
+					'product.reorderPoint',
+					'product.salePrice',
+					'product.discount',
+					'product.barcode',
+					'product.brand',
+					'product.packageQuantity',
+					'product.weight',
+					'product.isOnPromotion',
+					'product.packageDetails',
+					'product.promotionStartDate',
+					'product.promotionEndDate',
+					'product.packageUnit',
+					'product.createdAt',
+					'product.updatedAt',
+					'product.isDeleted'
+				])
+				.where('product.isDeleted = :isDeleted', { isDeleted: false })
+				.andWhere('product.stockQuantity > 0') // Only show products in stock
+				.andWhere('product.status != :inactive', { inactive: ProductStatus.INACTIVE });
 
-		const response = {
-			products: result.products,
-			message: process.env.SUCCESS_MESSAGE,
-		};
+			// Only add org filter if orgId is provided
+			if (orgId) {
+				query.andWhere('product.organisationUid = :orgId', { orgId });
+			}
 
-		return response;
+			// Only add branch filter if branchId is provided
+			if (branchId) {
+				query.andWhere('product.branchUid = :branchId', { branchId });
+			}
+
+			// Order by sales analytics first, then by status, then by creation date
+			query
+				.addSelect('COALESCE(analytics.totalUnitsSold, 0)', 'totalSold')
+				.addSelect('COALESCE(analytics.salesCount, 0)', 'salesCount')
+				.orderBy('COALESCE(analytics.totalUnitsSold, 0)', 'DESC')
+				.addOrderBy('CASE WHEN product.status = :bestSeller THEN 1 ELSE 2 END', 'ASC')
+				.addOrderBy('product.createdAt', 'DESC')
+				.setParameter('bestSeller', ProductStatus.BEST_SELLER)
+				.limit(20); // Limit to 20 best sellers
+
+			const products = await query.getMany();
+
+			const response = {
+				products: products ?? [],
+				message: process.env.SUCCESS_MESSAGE,
+			};
+
+			return response;
+		} catch (error) {
+			this.logger.warn(`Error fetching best sellers: ${error?.message}`);
+			return {
+				products: [],
+				message: 'Error fetching best sellers',
+			};
+		}
 	}
 
 	async getNewArrivals(orgId?: number, branchId?: number): Promise<{ products: Product[] | null; message: string }> {
-		const result = await this.getProductsByStatus(ProductStatus.NEW, orgId, branchId);
+		try {
+			// Get the most recently added products (within last 30 days or newest 20)
+			const thirtyDaysAgo = new Date();
+			thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-		const response = {
-			products: result.products,
-			message: process.env.SUCCESS_MESSAGE,
-		};
+			const query = this.productRepository
+				.createQueryBuilder('product')
+				.select([
+					'product.uid',
+					'product.name', 
+					'product.description',
+					'product.price',
+					'product.category',
+					'product.status',
+					'product.imageUrl',
+					'product.sku',
+					'product.warehouseLocation',
+					'product.stockQuantity',
+					'product.productRef',
+					'product.productReferenceCode',
+					'product.reorderPoint',
+					'product.salePrice',
+					'product.discount',
+					'product.barcode',
+					'product.brand',
+					'product.packageQuantity',
+					'product.weight',
+					'product.isOnPromotion',
+					'product.packageDetails',
+					'product.promotionStartDate',
+					'product.promotionEndDate',
+					'product.packageUnit',
+					'product.createdAt',
+					'product.updatedAt',
+					'product.isDeleted'
+				])
+				.where('product.isDeleted = :isDeleted', { isDeleted: false })
+				.andWhere('product.stockQuantity > 0') // Only show products in stock
+				.andWhere('product.status != :inactive', { inactive: ProductStatus.INACTIVE })
+				.andWhere('(product.createdAt >= :thirtyDaysAgo OR product.status = :newStatus)', {
+					thirtyDaysAgo,
+					newStatus: ProductStatus.NEW
+				});
 
-		return response;
+			// Only add org filter if orgId is provided
+			if (orgId) {
+				query.andWhere('product.organisationUid = :orgId', { orgId });
+			}
+
+			// Only add branch filter if branchId is provided
+			if (branchId) {
+				query.andWhere('product.branchUid = :branchId', { branchId });
+			}
+
+			// Order by creation date (newest first), prioritizing NEW status
+			query
+				.orderBy('CASE WHEN product.status = :newStatus THEN 1 ELSE 2 END', 'ASC')
+				.addOrderBy('product.createdAt', 'DESC')
+				.setParameter('newStatus', ProductStatus.NEW)
+				.limit(20); // Limit to 20 new arrivals
+
+			const products = await query.getMany();
+
+			const response = {
+				products: products ?? [],
+				message: process.env.SUCCESS_MESSAGE,
+			};
+
+			return response;
+		} catch (error) {
+			this.logger.warn(`Error fetching new arrivals: ${error?.message}`);
+			return {
+				products: [],
+				message: 'Error fetching new arrivals',
+			};
+		}
 	}
 
 	async getHotDeals(orgId?: number, branchId?: number): Promise<{ products: Product[] | null; message: string }> {

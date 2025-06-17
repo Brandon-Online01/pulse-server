@@ -20,9 +20,9 @@ import { AuthGuard } from '../guards/auth.guard';
 import { AccessLevel } from '../lib/enums/user.enums';
 import { UpdateSubtaskDto } from './dto/update-subtask.dto';
 import { EnterpriseOnly } from '../decorators/enterprise-only.decorator';
-import { TaskStatus, TaskPriority, JobStatus } from '../lib/enums/task.enums';
+import { TaskStatus, TaskPriority } from '../lib/enums/task.enums';
 import { OptimizedRoute } from './interfaces/route.interface';
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, Request, ParseIntPipe } from '@nestjs/common';
 import { CreateTaskFlagDto } from './dto/create-task-flag.dto';
 import { UpdateTaskFlagDto } from './dto/update-task-flag.dto';
 import { UpdateTaskFlagItemDto } from './dto/update-task-flag-item.dto';
@@ -224,7 +224,7 @@ export class TasksController {
 			},
 		},
 	})
-	findOne(@Param('ref') ref: number, @Request() req?: any) {
+	findOne(@Param('ref', ParseIntPipe) ref: number, @Request() req?: any) {
 		const orgId = req.user?.org?.uid || req.user?.organisation?.uid || req.organization?.ref;
 		const branchId = req.user?.branch?.uid || req.branch?.uid;
 		
@@ -269,7 +269,7 @@ export class TasksController {
 			},
 		},
 	})
-	tasksByUser(@Param('ref') ref: number, @Request() req?: any) {
+	tasksByUser(@Param('ref', ParseIntPipe) ref: number, @Request() req?: any) {
 		const orgId = req.user?.org?.uid || req.user?.organisation?.uid || req.organization?.ref;
 		const branchId = req.user?.branch?.uid || req.branch?.uid;
 		
@@ -290,7 +290,7 @@ export class TasksController {
 		summary: 'Get subtask by reference code',
 		description: 'Retrieves detailed information about a specific subtask by its reference code',
 	})
-	findOneSubTask(@Param('ref') ref: number, @Request() req?: any) {
+	findOneSubTask(@Param('ref', ParseIntPipe) ref: number, @Request() req?: any) {
 		const orgId = req.user?.org?.uid || req.user?.organisation?.uid || req.organization?.ref;
 		const branchId = req.user?.branch?.uid || req.branch?.uid;
 		
@@ -331,7 +331,7 @@ export class TasksController {
 			},
 		},
 	})
-	update(@Param('ref') ref: number, @Body() updateTaskDto: UpdateTaskDto, @Request() req?: any) {
+	update(@Param('ref', ParseIntPipe) ref: number, @Body() updateTaskDto: UpdateTaskDto, @Request() req?: any) {
 		const orgId = req.user?.org?.uid || req.user?.organisation?.uid || req.organization?.ref;
 		const branchId = req.user?.branch?.uid || req.branch?.uid;
 		
@@ -381,7 +381,7 @@ export class TasksController {
 			},
 		},
 	})
-	updateSubTask(@Param('ref') ref: number, @Body() updateSubTaskDto: UpdateSubtaskDto) {
+	updateSubTask(@Param('ref', ParseIntPipe) ref: number, @Body() updateSubTaskDto: UpdateSubtaskDto) {
 		return this.tasksService.updateSubTask(ref, updateSubTaskDto);
 	}
 
@@ -418,7 +418,7 @@ export class TasksController {
 			},
 		},
 	})
-	completeSubTask(@Param('ref') ref: number) {
+	completeSubTask(@Param('ref', ParseIntPipe) ref: number) {
 		return this.tasksService.completeSubTask(ref);
 	}
 
@@ -455,7 +455,7 @@ export class TasksController {
 			},
 		},
 	})
-	deleteSubTask(@Param('ref') ref: number) {
+	deleteSubTask(@Param('ref', ParseIntPipe) ref: number) {
 		return this.tasksService.deleteSubTask(ref);
 	}
 
@@ -492,7 +492,7 @@ export class TasksController {
 			},
 		},
 	})
-	remove(@Param('ref') ref: number, @Request() req?: any) {
+	remove(@Param('ref', ParseIntPipe) ref: number, @Request() req?: any) {
 		const orgId = req.user?.org?.uid || req.user?.organisation?.uid || req.organization?.ref;
 		const branchId = req.user?.branch?.uid || req.branch?.uid;
 		
@@ -655,8 +655,9 @@ export class TasksController {
 			},
 		},
 	})
-	addComment(@Param('flagId') flagId: number, @Body() commentDto: AddCommentDto, @Request() req: any) {
-		return this.tasksService.addComment(flagId, commentDto, req.user.uid);
+	addComment(@Param('flagId', ParseIntPipe) flagId: number, @Body() commentDto: AddCommentDto, @Request() req: any) {
+		const userId = req.user?.uid;
+		return this.tasksService.addComment(flagId, commentDto, userId);
 	}
 
 	@Get('tasks/:taskId/flags')
@@ -681,7 +682,7 @@ export class TasksController {
 		required: false,
 		description: 'Number of records per page, defaults to 10',
 	})
-	getTaskFlags(@Param('taskId') taskId: number, @Query('page') page?: string, @Query('limit') limit?: string) {
+	getTaskFlags(@Param('taskId', ParseIntPipe) taskId: number, @Query('page') page?: string, @Query('limit') limit?: string) {
 		const pageNum = page ? parseInt(page, 10) : 1;
 		const limitNum = limit ? parseInt(limit, 10) : 10;
 		return this.tasksService.getTaskFlags(taskId, pageNum, limitNum);
@@ -702,7 +703,7 @@ export class TasksController {
 		description: 'Retrieves detailed information about a specific task flag',
 	})
 	@ApiParam({ name: 'flagId', description: 'Flag ID', type: 'number' })
-	getTaskFlag(@Param('flagId') flagId: number) {
+	getTaskFlag(@Param('flagId', ParseIntPipe) flagId: number) {
 		return this.tasksService.getTaskFlag(flagId);
 	}
 
@@ -721,7 +722,7 @@ export class TasksController {
 		description: 'Updates the details of an existing task flag',
 	})
 	@ApiParam({ name: 'flagId', description: 'Flag ID', type: 'number' })
-	updateTaskFlag(@Param('flagId') flagId: number, @Body() updateTaskFlagDto: UpdateTaskFlagDto) {
+	updateTaskFlag(@Param('flagId', ParseIntPipe) flagId: number, @Body() updateTaskFlagDto: UpdateTaskFlagDto) {
 		return this.tasksService.updateTaskFlag(flagId, updateTaskFlagDto);
 	}
 
@@ -740,7 +741,7 @@ export class TasksController {
 		description: 'Updates the status or details of a task flag checklist item',
 	})
 	@ApiParam({ name: 'itemId', description: 'Flag Item ID', type: 'number' })
-	updateTaskFlagItem(@Param('itemId') itemId: number, @Body() updateTaskFlagItemDto: UpdateTaskFlagItemDto) {
+	updateTaskFlagItem(@Param('itemId', ParseIntPipe) itemId: number, @Body() updateTaskFlagItemDto: UpdateTaskFlagItemDto) {
 		return this.tasksService.updateTaskFlagItem(itemId, updateTaskFlagItemDto);
 	}
 
@@ -759,7 +760,7 @@ export class TasksController {
 		description: 'Soft deletes a task flag',
 	})
 	@ApiParam({ name: 'flagId', description: 'Flag ID', type: 'number' })
-	deleteTaskFlag(@Param('flagId') flagId: number) {
+	deleteTaskFlag(@Param('flagId', ParseIntPipe) flagId: number) {
 		return this.tasksService.deleteTaskFlag(flagId);
 	}
 

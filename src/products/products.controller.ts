@@ -212,15 +212,23 @@ export class ProductsController {
 	)
 	@ApiOperation({
 		summary: 'Get a list of products by category',
-		description: 'Retrieves a list of products that belong to a specific category',
+		description: 'Retrieves a paginated list of products that belong to a specific category',
 	})
 	@ApiParam({ name: 'category', description: 'Category name or ID', type: 'string' })
+	@ApiQuery({ name: 'page', type: Number, required: false, description: 'Page number, defaults to 1' })
+	@ApiQuery({
+		name: 'limit',
+		type: Number,
+		required: false,
+		description: 'Number of records per page, defaults to 20',
+	})
+	@ApiQuery({ name: 'search', type: String, required: false, description: 'Search term for filtering products' })
 	@ApiOkResponse({
 		description: 'Products retrieved successfully',
 		schema: {
 			type: 'object',
 			properties: {
-				products: {
+				data: {
 					type: 'array',
 					items: {
 						type: 'object',
@@ -232,7 +240,20 @@ export class ProductsController {
 							sku: { type: 'string' },
 							imageUrl: { type: 'string' },
 							category: { type: 'string' },
+							brand: { type: 'string' },
+							stockQuantity: { type: 'number' },
+							isOnPromotion: { type: 'boolean' },
+							salePrice: { type: 'number' },
 						},
+					},
+				},
+				meta: {
+					type: 'object',
+					properties: {
+						total: { type: 'number', example: 100 },
+						page: { type: 'number', example: 1 },
+						limit: { type: 'number', example: 20 },
+						totalPages: { type: 'number', example: 5 },
 					},
 				},
 				message: { type: 'string', example: 'Success' },
@@ -245,14 +266,29 @@ export class ProductsController {
 			type: 'object',
 			properties: {
 				message: { type: 'string', example: 'No products found in this category' },
-				products: { type: 'array', items: {}, example: [] },
+				data: { type: 'array', items: {}, example: [] },
+				meta: {
+					type: 'object',
+					properties: {
+						total: { type: 'number', example: 0 },
+						page: { type: 'number', example: 1 },
+						limit: { type: 'number', example: 20 },
+						totalPages: { type: 'number', example: 0 },
+					},
+				},
 			},
 		},
 	})
-	productsBySearchTerm(@Param('category') category: string, @Req() req: AuthenticatedRequest) {
+	productsByCategory(
+		@Param('category') category: string,
+		@Query('page') page: number = 1,
+		@Query('limit') limit: number = 20,
+		@Query('search') search: string = '',
+		@Req() req: AuthenticatedRequest,
+	) {
 		const orgId = req.user?.org?.uid;
 		const branchId = req.user?.branch?.uid;
-		return this.productsService.productsBySearchTerm(category, 1, 10, orgId, branchId);
+		return this.productsService.productsByCategory(category, page, limit, search, orgId, branchId);
 	}
 
 	@Patch(':ref')

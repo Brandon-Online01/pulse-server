@@ -92,9 +92,7 @@ export class TasksService {
 			select: ['uid', 'status'],
 		});
 
-		const activeUserIds = users
-			.filter(user => this.isUserActive(user))
-			.map(user => user.uid);
+		const activeUserIds = users.filter((user) => this.isUserActive(user)).map((user) => user.uid);
 
 		const filteredCount = userIds.length - activeUserIds.length;
 		if (filteredCount > 0) {
@@ -521,9 +519,9 @@ export class TasksService {
 								taskType: savedTask.taskType,
 								status: savedTask.status,
 								assignedBy: creatorName,
-								clients: []
-							}
-						}
+								clients: [],
+							},
+						},
 					);
 
 					console.log('✅ Task assignment notifications sent successfully');
@@ -812,10 +810,6 @@ export class TasksService {
 		orgId?: number,
 		branchId?: number,
 	): Promise<{ message: string }> {
-		if (typeof ref !== 'number' || isNaN(ref)) {
-			throw new BadRequestException('Invalid task reference for update.');
-		}
-
 		try {
 			if (!orgId) {
 				throw new BadRequestException('Organization ID is required');
@@ -833,15 +827,17 @@ export class TasksService {
 
 			const task = await this.taskRepository.findOne({
 				where: whereClause,
-				relations: ['organisation', 'branch', 'creator', 'assignees'],
+				relations: ['organisation', 'branch', 'creator'],
 			});
 
 			if (!task) {
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
-			// Track original assignees for comparison
-			const originalAssigneeIds = task.assignees?.map((assignee) => assignee.uid) || [];
+			// Track original assignees for comparison (defensive null checking)
+			const originalAssigneeIds = Array.isArray(task.assignees)
+				? task.assignees.map((assignee) => assignee?.uid).filter(Boolean)
+				: [];
 
 			// Check if task is being marked as completed
 			const isCompletingTask =
@@ -861,9 +857,9 @@ export class TasksService {
 			await this.taskRepository.update(ref, updateTaskDto);
 
 			// Send push notifications to new assignees if assignees were updated
-			if (updateTaskDto.assignees?.length > 0 && task.creator) {
+			if (Array.isArray(updateTaskDto.assignees) && updateTaskDto.assignees.length > 0 && task.creator) {
 				try {
-					const newAssigneeIds = updateTaskDto.assignees.map((assignee) => assignee.uid);
+					const newAssigneeIds = updateTaskDto.assignees.map((assignee) => assignee?.uid).filter(Boolean);
 					const addedAssigneeIds = newAssigneeIds.filter((id) => !originalAssigneeIds.includes(id));
 
 					if (addedAssigneeIds.length > 0) {
@@ -898,9 +894,9 @@ export class TasksService {
 									taskType: task.taskType,
 									status: task.status,
 									assignedBy: creatorName,
-									clients: []
-								}
-							}
+									clients: [],
+								},
+							},
 						);
 					}
 				} catch (notificationError) {
@@ -936,10 +932,11 @@ export class TasksService {
 
 			// Reload the task to get the updated data
 			let updatedTask = task;
+
 			if (isCompletingTask) {
 				updatedTask = await this.taskRepository.findOne({
 					where: whereClause,
-					relations: ['organisation', 'branch', 'creator', 'clients'],
+					relations: ['organisation', 'branch', 'creator'],
 				});
 
 				if (updatedTask) {
@@ -1078,20 +1075,20 @@ export class TasksService {
 				};
 			}
 
-					// If we have organization or branch filters, verify the parent task belongs to them
-		if (orgId || branchId) {
-			const taskWhere: any = {
-				uid: subtask.task.uid,
-				isDeleted: false,
-			};
+			// If we have organization or branch filters, verify the parent task belongs to them
+			if (orgId || branchId) {
+				const taskWhere: any = {
+					uid: subtask.task.uid,
+					isDeleted: false,
+				};
 
-			if (orgId) {
-				taskWhere.organisation = { uid: orgId };
-			}
+				if (orgId) {
+					taskWhere.organisation = { uid: orgId };
+				}
 
-			if (branchId) {
-				taskWhere.branch = { uid: branchId };
-			}
+				if (branchId) {
+					taskWhere.branch = { uid: branchId };
+				}
 
 				// Check if the parent task matches the org/branch criteria
 				const parentTask = await this.taskRepository.findOne({
@@ -1239,8 +1236,8 @@ export class TasksService {
 								completionDate: task.completionDate?.toISOString() || now.toISOString(),
 							},
 							{
-								priority: NotificationPriority.NORMAL
-							}
+								priority: NotificationPriority.NORMAL,
+							},
 						);
 					}
 				} catch (notificationError) {
@@ -1259,10 +1256,10 @@ export class TasksService {
 
 				const recipients = [task.creator[0]?.uid, ...(task.assignees?.map((assignee) => assignee.uid) || [])];
 				const uniqueRecipients = [...new Set(recipients)];
-				
+
 				// Filter out inactive users before sending internal notifications
 				const activeInternalRecipients = await this.filterActiveUsers(uniqueRecipients);
-				
+
 				activeInternalRecipients.forEach((recipientId) => {
 					this.eventEmitter.emit(
 						'send.notification',
@@ -1281,6 +1278,9 @@ export class TasksService {
 				// Send email notifications to clients
 				await this.sendClientCompletionNotifications(task);
 			}
+
+			// Clear cache after progress update
+			await this.clearTaskCache(ref);
 
 			return {
 				message: process.env.SUCCESS_MESSAGE,
@@ -1685,7 +1685,13 @@ export class TasksService {
 				previousStatus: task.jobStatus,
 			});
 
-			await this.clearTaskCache();
+			// Enhanced cache invalidation - clear both general cache and specific task cache
+			await this.clearTaskCache(taskId);
+
+			// Also clear any task flag cache if task has flags
+			if (savedTask.flags?.length > 0) {
+				await this.clearTaskFlagCache(taskId);
+			}
 
 			// Return the task with relevant fields
 			return {
@@ -1898,7 +1904,7 @@ export class TasksService {
 			}
 
 			const assigneeIds = task.assignees?.map((a) => a.uid) || [];
-			assigneeIds.forEach(id => userIds.add(id));
+			assigneeIds.forEach((id) => userIds.add(id));
 
 			if (taskFlag.createdBy?.uid) {
 				userIds.add(taskFlag.createdBy.uid);
@@ -2078,7 +2084,7 @@ export class TasksService {
 						}
 
 						const assigneeIds = taskFlag.task.assignees?.map((a) => a.uid) || [];
-						assigneeIds.forEach(id => userIds.add(id));
+						assigneeIds.forEach((id) => userIds.add(id));
 
 						if (taskFlag.createdBy?.uid) {
 							userIds.add(taskFlag.createdBy.uid);
@@ -2088,7 +2094,9 @@ export class TasksService {
 						const activeUserIds = await this.filterActiveUsers(Array.from(userIds));
 
 						if (activeUserIds.length === 0) {
-							console.log(`No active users found for task flag update notification on task ${taskFlag.task.uid}`);
+							console.log(
+								`No active users found for task flag update notification on task ${taskFlag.task.uid}`,
+							);
 							return;
 						}
 
@@ -2197,7 +2205,7 @@ export class TasksService {
 					}
 
 					const assigneeIds = flagItem.taskFlag.task.assignees?.map((a) => a.uid) || [];
-					assigneeIds.forEach(id => userIds.add(id));
+					assigneeIds.forEach((id) => userIds.add(id));
 
 					if (flagItem.taskFlag.createdBy?.uid) {
 						userIds.add(flagItem.taskFlag.createdBy.uid);
@@ -2207,7 +2215,9 @@ export class TasksService {
 					const activeUserIds = await this.filterActiveUsers(Array.from(userIds));
 
 					if (activeUserIds.length === 0) {
-						console.log(`No active users found for task flag resolution notification on task ${flagItem.taskFlag.task.uid}`);
+						console.log(
+							`No active users found for task flag resolution notification on task ${flagItem.taskFlag.task.uid}`,
+						);
 						return {
 							message: 'Task flag item updated successfully',
 						};
