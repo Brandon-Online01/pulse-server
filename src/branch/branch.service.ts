@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { CreateBranchDto } from './dto/create-branch.dto';
 import { UpdateBranchDto } from './dto/update-branch.dto';
 import { Repository } from 'typeorm';
@@ -35,9 +35,18 @@ export class BranchService {
 		}
 	}
 
-	async create(createBranchDto: CreateBranchDto): Promise<{ message: string }> {
+	async create(createBranchDto: CreateBranchDto, orgId?: number, branchId?: number): Promise<{ message: string }> {
 		try {
-			const branch = await this.branchRepository.save(createBranchDto);
+			if (!orgId) {
+				throw new BadRequestException('Organization ID is required');
+			}
+
+			const branchData = {
+				...createBranchDto,
+				organisation: { uid: orgId },
+			};
+
+			const branch = await this.branchRepository.save(branchData);
 
 			if (!branch) {
 				throw new NotFoundException(process.env.CREATE_ERROR_MESSAGE);
@@ -56,10 +65,17 @@ export class BranchService {
 		}
 	}
 
-	async findAll(): Promise<{ branches: Branch[] | null; message: string }> {
+	async findAll(orgId?: number, branchId?: number): Promise<{ branches: Branch[] | null; message: string }> {
 		try {
+			if (!orgId) {
+				throw new BadRequestException('Organization ID is required');
+			}
+
+			// Create org-specific cache key
+			const cacheKey = `${this.ALL_BRANCHES_CACHE_KEY}:org:${orgId}${branchId ? `:branch:${branchId}` : ''}`;
+			
 			// Try to get from cache first
-			const cachedBranches = await this.cacheManager.get<Branch[]>(this.ALL_BRANCHES_CACHE_KEY);
+			const cachedBranches = await this.cacheManager.get<Branch[]>(cacheKey);
 			
 			if (cachedBranches) {
 				return {
@@ -68,17 +84,30 @@ export class BranchService {
 				};
 			}
 
+			const whereClause: any = {
+				isDeleted: false,
+				organisation: { uid: orgId },
+			};
+
+			if (branchId) {
+				whereClause.uid = branchId;
+			}
+
 			// If not in cache, fetch from database
 			const branches = await this.branchRepository.find({
-				where: { isDeleted: false },
+				where: whereClause,
+				relations: ['organisation'],
 			});
 
-			if (!branches) {
-				throw new NotFoundException(process.env.SEARCH_ERROR_MESSAGE);
+			if (!branches || branches.length === 0) {
+				return {
+					branches: [],
+					message: 'No branches found for this organization',
+				};
 			}
 
 			// Store in cache
-			await this.cacheManager.set(this.ALL_BRANCHES_CACHE_KEY, branches, {
+			await this.cacheManager.set(cacheKey, branches, {
 				ttl: this.DEFAULT_CACHE_TTL
 			});
 
@@ -94,10 +123,14 @@ export class BranchService {
 		}
 	}
 
-	async findOne(ref: string): Promise<{ branch: Branch | null; message: string }> {
+	async findOne(ref: string, orgId?: number, branchId?: number): Promise<{ branch: Branch | null; message: string }> {
 		try {
-			// Try to get from cache first
-			const cacheKey = this.getBranchCacheKey(ref);
+			if (!orgId) {
+				throw new BadRequestException('Organization ID is required');
+			}
+
+			// Create org-specific cache key
+			const cacheKey = `${this.getBranchCacheKey(ref)}:org:${orgId}`;
 			const cachedBranch = await this.cacheManager.get<Branch>(cacheKey);
 			
 			if (cachedBranch) {
@@ -107,14 +140,23 @@ export class BranchService {
 				};
 			}
 
+			const whereClause: any = {
+				ref,
+				isDeleted: false,
+				organisation: { uid: orgId },
+			};
+
 			// If not in cache, fetch from database
 			const branch = await this.branchRepository.findOne({
-				where: { ref, isDeleted: false },
+				where: whereClause,
 				relations: ['news', 'docs', 'assets', 'organisation', 'trackings', 'banners', 'routes', 'users', 'leaves'],
 			});
 
 			if (!branch) {
-				throw new NotFoundException(process.env.SEARCH_ERROR_MESSAGE);
+				return {
+					branch: null,
+					message: 'Branch not found or does not belong to your organization',
+				};
 			}
 
 			// Store in cache
@@ -134,12 +176,28 @@ export class BranchService {
 		}
 	}
 
-	async update(ref: string, updateBranchDto: UpdateBranchDto): Promise<{ message: string }> {
+	async update(ref: string, updateBranchDto: UpdateBranchDto, orgId?: number, branchId?: number): Promise<{ message: string }> {
 		try {
+			if (!orgId) {
+				throw new BadRequestException('Organization ID is required');
+			}
+
+			// First verify the branch belongs to the org
+			const existingBranch = await this.findOne(ref, orgId, branchId);
+			if (!existingBranch.branch) {
+				return {
+					message: 'Branch not found or does not belong to your organization',
+				};
+			}
+
 			await this.branchRepository.update({ ref }, updateBranchDto);
 
 			const updatedBranch = await this.branchRepository.findOne({
-				where: { ref, isDeleted: false },
+				where: { 
+					ref, 
+					isDeleted: false,
+					organisation: { uid: orgId },
+				},
 			});
 
 			if (!updatedBranch) {
@@ -159,10 +217,26 @@ export class BranchService {
 		}
 	}
 
-	async remove(ref: string): Promise<{ message: string }> {
+	async remove(ref: string, orgId?: number, branchId?: number): Promise<{ message: string }> {
 		try {
+			if (!orgId) {
+				throw new BadRequestException('Organization ID is required');
+			}
+
+			// First verify the branch belongs to the org
+			const existingBranch = await this.findOne(ref, orgId, branchId);
+			if (!existingBranch.branch) {
+				return {
+					message: 'Branch not found or does not belong to your organization',
+				};
+			}
+
 			const branch = await this.branchRepository.findOne({
-				where: { ref, isDeleted: false },
+				where: { 
+					ref, 
+					isDeleted: false,
+					organisation: { uid: orgId },
+				},
 			});
 
 			if (!branch) {

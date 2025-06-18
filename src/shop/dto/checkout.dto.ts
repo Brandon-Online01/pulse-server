@@ -1,6 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsNotEmpty, ValidateNested, IsNumber, IsString } from 'class-validator';
+import { IsArray, IsNotEmpty, ValidateNested, IsNumber, IsString, IsEnum, IsOptional } from 'class-validator';
 import { Type } from 'class-transformer';
+
+export enum PurchaseMode {
+	ITEM = 'item',
+	PALETTE = 'palette',
+}
 
 export class OrderItemDto {
 	@IsNumber()
@@ -14,7 +19,7 @@ export class OrderItemDto {
 	@IsNumber()
 	@IsNotEmpty()
 	@ApiProperty({
-		description: 'Quantity of the product',
+		description: 'Quantity of the product/palette',
 		example: 1,
 	})
 	quantity: number;
@@ -22,10 +27,44 @@ export class OrderItemDto {
 	@IsNumber()
 	@IsNotEmpty()
 	@ApiProperty({
-		description: 'Total price for this item',
+		description: 'Unit price for this item (based on purchase mode)',
+		example: 4.99,
+	})
+	unitPrice: number;
+
+	@IsNumber()
+	@IsNotEmpty()
+	@ApiProperty({
+		description: 'Total price for this item (unitPrice * quantity)',
 		example: 4.99,
 	})
 	totalPrice: number;
+
+	@IsEnum(PurchaseMode)
+	@IsNotEmpty()
+	@ApiProperty({
+		description: 'Purchase mode - individual item or palette',
+		enum: PurchaseMode,
+		example: PurchaseMode.ITEM,
+	})
+	purchaseMode: PurchaseMode;
+
+	@IsNumber()
+	@IsNotEmpty()
+	@ApiProperty({
+		description: 'Number of individual items per unit (1 for items, palette count for palettes)',
+		example: 1,
+	})
+	itemsPerUnit: number;
+
+	@IsString()
+	@IsOptional()
+	@ApiProperty({
+		description: 'SKU used for this purchase (item SKU or palette SKU)',
+		example: 'ABC-DEF-001-000001',
+		required: false,
+	})
+	sku?: string;
 }
 
 export class CheckoutDto {
@@ -57,24 +96,25 @@ export class CheckoutDto {
 	@IsString()
 	@IsNotEmpty()
 	@ApiProperty({
-		description: 'ref code of the owner',
-		example: '123456',
+		description: 'Total amount for the order',
+		example: '123.45',
 	})
 	totalAmount: string;
 
 	@IsString()
 	@IsNotEmpty()
 	@ApiProperty({
-		description: 'ref code of the owner',
-		example: '123456',
+		description: 'Total number of individual items',
+		example: '15',
 	})
 	totalItems: string;
 
 	@IsString()
-	@IsNotEmpty()
+	@IsOptional()
 	@ApiProperty({
-		description: 'ref code of the owner',
-		example: '123456',
+		description: 'Promotional code if applied',
+		example: 'SUMMER2024',
+		required: false,
 	})
-	promoCode: string;
+	promoCode?: string;
 }

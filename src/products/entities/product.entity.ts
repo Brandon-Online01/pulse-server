@@ -17,6 +17,7 @@ import { Column, Entity, OneToMany, PrimaryGeneratedColumn, CreateDateColumn, Up
 @Index(['barcode']) // Barcode scanning
 @Index(['brand', 'category']) // Brand categorization
 @Index(['reseller', 'status']) // Reseller product management
+@Index(['palletAvailable']) // Palette availability filtering
 export class Product {
     @PrimaryGeneratedColumn()
     uid: number;
@@ -90,7 +91,7 @@ export class Product {
     @Column({ type: 'varchar', default: 'unit' })
     packageUnit: string;
 
-    // New columns for pack and pallet quantities
+    // Enhanced pack and pallet quantities
     @Column({ type: 'int', default: 1 })
     itemsPerPack: number;
 
@@ -108,6 +109,53 @@ export class Product {
 
     @Column({ type: 'decimal', precision: 8, scale: 2, nullable: true })
     palletWeight: number;
+
+    // NEW: Enhanced palette support fields
+    @Column({ type: 'boolean', default: false })
+    palletAvailable: boolean;
+
+    @Column({ type: 'int', default: 0 })
+    palletStockQuantity: number;
+
+    @Column({ type: 'int', default: 1 })
+    palletReorderPoint: number;
+
+    @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true })
+    palletDiscount: number;
+
+    @Column({ type: 'varchar', nullable: true })
+    palletSku: string;
+
+    @Column({ type: 'varchar', nullable: true })
+    palletBarcode: string;
+
+    @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+    palletSalePrice: number;
+
+    @Column({ type: 'boolean', default: false })
+    palletOnPromotion: boolean;
+
+    @Column({ type: 'timestamp', nullable: true })
+    palletPromotionStartDate: Date;
+
+    @Column({ type: 'timestamp', nullable: true })
+    palletPromotionEndDate: Date;
+
+    @Column({ type: 'text', nullable: true })
+    palletDescription: string;
+
+    @Column({ type: 'varchar', nullable: true })
+    palletImageUrl: string;
+
+    // Minimum order quantities for palette
+    @Column({ type: 'int', default: 1 })
+    minimumPalletOrderQuantity: number;
+
+    @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true })
+    palletBulkDiscountPercentage: number;
+
+    @Column({ type: 'int', nullable: true })
+    palletBulkDiscountMinQty: number;
 
     @Column({ type: 'varchar', nullable: true })
     dimensions: string;
@@ -194,6 +242,32 @@ export class Product {
     @OneToOne(() => ProductAnalytics, analytics => analytics?.product, { cascade: true })
     analytics: ProductAnalytics;
 
+    // Helper methods for palette calculations
+    getPalletItemCount(): number {
+        return this.itemsPerPack * this.packsPerPallet;
+    }
+
+    getPalletEffectivePrice(): number {
+        if (this.palletOnPromotion && this.palletSalePrice) {
+            return this.palletSalePrice;
+        }
+        return this.palletPrice || 0;
+    }
+
+    getPricePerItemFromPallet(): number {
+        const totalItems = this.getPalletItemCount();
+        const effectivePrice = this.getPalletEffectivePrice();
+        return totalItems > 0 ? effectivePrice / totalItems : 0;
+    }
+
+    isPalletDiscountActive(): boolean {
+        if (!this.palletOnPromotion) return false;
+        const now = new Date();
+        const startValid = !this.palletPromotionStartDate || now >= this.palletPromotionStartDate;
+        const endValid = !this.palletPromotionEndDate || now <= this.palletPromotionEndDate;
+        return startValid && endValid;
+    }
+
     static generateSKU(category: string, name: string, uid: number, reseller: Reseller): string {
         // Get first 3 letters of category (uppercase)
         const categoryCode = (category || 'XXX').slice(0, 3).toUpperCase();
@@ -211,10 +285,19 @@ export class Product {
         return `${categoryCode}-${nameCode}-${resellerCode}-${paddedUid}`;
     }
 
+    static generatePalletSKU(baseSku: string): string {
+        return `${baseSku}-PLT`;
+    }
+
     @BeforeInsert()
     async generateSKUBeforeInsert() {
         if (!this.sku && this.category && this.name) {
             this.sku = Product.generateSKU(this.category, this.name, 0, this.reseller);
+        }
+        
+        // Auto-generate pallet SKU if palette is available
+        if (this.palletAvailable && !this.palletSku && this.sku) {
+            this.palletSku = Product.generatePalletSKU(this.sku);
         }
     }
 
@@ -222,9 +305,16 @@ export class Product {
     async updateSKUWithCorrectUid() {
         const repository = getRepository(Product);
         const newSku = Product.generateSKU(this.category, this.name, this.uid, this.reseller);
-        // Only update the SKU field to avoid column errors
-        await repository.update(this.uid, { sku: newSku });
+        const newPalletSku = this.palletAvailable ? Product.generatePalletSKU(newSku) : this.palletSku;
+        
+        // Update both SKU and pallet SKU
+        await repository.update(this.uid, { 
+            sku: newSku,
+            palletSku: newPalletSku
+        });
+        
         this.sku = newSku;
+        this.palletSku = newPalletSku;
     }
 }
 

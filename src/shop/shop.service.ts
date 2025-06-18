@@ -289,6 +289,32 @@ export class ShopService {
 					'product.promotionStartDate',
 					'product.promotionEndDate',
 					'product.packageUnit',
+					'product.itemsPerPack',
+					'product.packsPerPallet',
+					'product.packPrice',
+					'product.palletPrice',
+					'product.packWeight',
+					'product.palletWeight',
+					'product.dimensions',
+					'product.packDimensions',
+					'product.palletDimensions',
+					'product.manufacturer',
+					'product.model',
+					'product.color',
+					'product.material',
+					'product.warrantyPeriod',
+					'product.warrantyUnit',
+					'product.specifications',
+					'product.features',
+					'product.rating',
+					'product.reviewCount',
+					'product.origin',
+					'product.isFragile',
+					'product.requiresSpecialHandling',
+					'product.storageConditions',
+					'product.minimumOrderQuantity',
+					'product.bulkDiscountPercentage',
+					'product.bulkDiscountMinQty',
 					'product.createdAt',
 					'product.updatedAt',
 					'product.isDeleted'
@@ -367,6 +393,32 @@ export class ShopService {
 					'product.promotionStartDate',
 					'product.promotionEndDate',
 					'product.packageUnit',
+					'product.itemsPerPack',
+					'product.packsPerPallet',
+					'product.packPrice',
+					'product.palletPrice',
+					'product.packWeight',
+					'product.palletWeight',
+					'product.dimensions',
+					'product.packDimensions',
+					'product.palletDimensions',
+					'product.manufacturer',
+					'product.model',
+					'product.color',
+					'product.material',
+					'product.warrantyPeriod',
+					'product.warrantyUnit',
+					'product.specifications',
+					'product.features',
+					'product.rating',
+					'product.reviewCount',
+					'product.origin',
+					'product.isFragile',
+					'product.requiresSpecialHandling',
+					'product.storageConditions',
+					'product.minimumOrderQuantity',
+					'product.bulkDiscountPercentage',
+					'product.bulkDiscountMinQty',
 					'product.createdAt',
 					'product.updatedAt',
 					'product.isDeleted'
@@ -502,17 +554,23 @@ export class ShopService {
 				currency: orgCurrency.code,
 				quotationItems: quotationData?.items?.map((item) => {
 					const product = products.flat().find((p) => p.uid === item.uid);
+					// Use the pricing from the frontend which already calculated palette vs item pricing
+					const unitPrice = Number(item?.unitPrice || product?.price || 0);
+					const totalPrice = Number(item?.totalPrice || (item?.quantity * unitPrice));
+					
 					return {
 						quantity: Number(item?.quantity),
 						product: {
 							uid: item?.uid,
 							name: product?.name,
-							sku: product?.sku,
+							sku: item?.sku || product?.sku, // Use SKU from item (might be palette SKU)
 							productRef: product?.productRef,
 							price: product?.price,
 						},
-						unitPrice: Number(product?.price || 0),
-						totalPrice: Number(item?.totalPrice),
+						unitPrice: unitPrice,
+						totalPrice: totalPrice,
+						purchaseMode: item?.purchaseMode || 'item', // Track the purchase mode
+						itemsPerUnit: Number(item?.itemsPerUnit || 1), // Track actual items
 						createdAt: new Date(),
 						updatedAt: new Date(),
 					};
@@ -586,6 +644,9 @@ export class ShopService {
 				priority: 'high', // Add default priority for internal notification
 				quotationItems: quotationData?.items?.map((item) => {
 					const product = products.flat().find((p) => p.uid === item.uid);
+					const purchaseMode = item?.purchaseMode || 'item';
+					const itemsPerUnit = Number(item?.itemsPerUnit || 1);
+					
 					return {
 						quantity: Number(item?.quantity),
 						product: {
@@ -594,6 +655,9 @@ export class ShopService {
 							code: product?.productRef || 'N/A',
 						},
 						totalPrice: Number(item?.totalPrice),
+						purchaseMode: purchaseMode,
+						itemsPerUnit: itemsPerUnit,
+						actualItems: Number(item?.quantity) * itemsPerUnit, // Total individual items
 					};
 				}),
 			};

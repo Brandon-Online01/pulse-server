@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req } from '@nestjs/common';
 import { BranchService } from './branch.service';
 import { CreateBranchDto } from './dto/create-branch.dto';
 import { UpdateBranchDto } from './dto/update-branch.dto';
+import { AuthenticatedRequest } from '../lib/interfaces/authenticated-request.interface';
 import {
 	ApiOperation,
 	ApiTags,
@@ -12,6 +13,7 @@ import {
 	ApiBadRequestResponse,
 	ApiNotFoundResponse,
 	ApiUnauthorizedResponse,
+	ApiBearerAuth,
 } from '@nestjs/swagger';
 import { RoleGuard } from '../guards/role.guard';
 import { AuthGuard } from '../guards/auth.guard';
@@ -20,6 +22,7 @@ import { Roles } from '../decorators/role.decorator';
 import { isPublic } from '../decorators/public.decorator';
 import { Branch } from './entities/branch.entity';
 
+@ApiBearerAuth('JWT-auth')
 @ApiTags('branch')
 @Controller('branch')
 @UseGuards(AuthGuard, RoleGuard)
@@ -61,8 +64,10 @@ export class BranchController {
 			},
 		},
 	})
-	create(@Body() createBranchDto: CreateBranchDto) {
-		return this.branchService.create(createBranchDto);
+	create(@Body() createBranchDto: CreateBranchDto, @Req() req: AuthenticatedRequest) {
+		const orgId = req.user?.org?.uid;
+		const branchId = req.user?.branch?.uid;
+		return this.branchService.create(createBranchDto, orgId, branchId);
 	}
 
 	@Get()
@@ -101,8 +106,10 @@ export class BranchController {
 			},
 		},
 	})
-	findAll() {
-		return this.branchService.findAll();
+	findAll(@Req() req: AuthenticatedRequest) {
+		const orgId = req.user?.org?.uid;
+		const branchId = req.user?.branch?.uid;
+		return this.branchService.findAll(orgId, branchId);
 	}
 
 	@Get(':ref')
@@ -149,8 +156,10 @@ export class BranchController {
 			},
 		},
 	})
-	findOne(@Param('ref') ref: string) {
-		return this.branchService.findOne(ref);
+	findOne(@Param('ref') ref: string, @Req() req: AuthenticatedRequest) {
+		const orgId = req.user?.org?.uid;
+		const branchId = req.user?.branch?.uid;
+		return this.branchService.findOne(ref, orgId, branchId);
 	}
 
 	@Patch(':ref')
@@ -196,8 +205,10 @@ export class BranchController {
 			},
 		},
 	})
-	update(@Param('ref') ref: string, @Body() updateBranchDto: UpdateBranchDto) {
-		return this.branchService.update(ref, updateBranchDto);
+	update(@Param('ref') ref: string, @Body() updateBranchDto: UpdateBranchDto, @Req() req: AuthenticatedRequest) {
+		const orgId = req.user?.org?.uid;
+		const branchId = req.user?.branch?.uid;
+		return this.branchService.update(ref, updateBranchDto, orgId, branchId);
 	}
 
 	@Delete(':ref')
@@ -233,7 +244,9 @@ export class BranchController {
 			},
 		},
 	})
-	remove(@Param('ref') ref: string) {
-		return this.branchService.remove(ref);
+	remove(@Param('ref') ref: string, @Req() req: AuthenticatedRequest) {
+		const orgId = req.user?.org?.uid;
+		const branchId = req.user?.branch?.uid;
+		return this.branchService.remove(ref, orgId, branchId);
 	}
 }
