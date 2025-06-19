@@ -39,6 +39,7 @@ import {
 	LeaveDeletedNotificationData,
 	MorningReportData,
 	EveningReportData,
+	UserReInvitationData,
 } from '../types/email-templates.types';
 
 class EmailTemplateService {
@@ -422,6 +423,11 @@ class EmailTemplateService {
 		return this.renderTemplate('auth/new-user-welcome.hbs', data);
 	}
 
+	// User re-invitation template
+	userReInvitation(data: UserReInvitationData): string {
+		return this.renderTemplate('auth/user-re-invitation.hbs', data);
+	}
+
 	// Client Templates
 	clientPasswordReset(data: PasswordResetData): string {
 		return this.renderTemplate('client/password-reset.hbs', data);
@@ -527,6 +533,7 @@ class EmailTemplateService {
 			'reports/user-daily-report.hbs',
 			'system/new-user-admin-notification.hbs',
 			'auth/new-user-welcome.hbs',
+			'auth/user-re-invitation.hbs',
 			'client/password-reset.hbs',
 			'client/password-changed.hbs',
 			'warnings/issued.hbs',

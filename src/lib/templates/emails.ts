@@ -36,6 +36,7 @@ import {
 	LeaveDeletedNotificationData,
 	MorningReportData,
 	EveningReportData,
+	UserReInvitationData,
 } from '../types/email-templates.types';
 
 // Auth Templates
@@ -192,6 +193,10 @@ export const NewUserAdminNotification = (data: NewUserAdminNotificationData): st
 
 export const NewUserWelcome = (data: NewUserWelcomeData): string => {
 	return emailTemplateService.newUserWelcome(data);
+};
+
+export const UserReInvitation = (data: UserReInvitationData): string => {
+	return emailTemplateService.userReInvitation(data);
 };
 
 // Client Templates
