@@ -38,7 +38,10 @@ import { TimeCalculatorUtil } from '../utils/time-calculator.util';
 interface AttendanceReportUser {
 	uid: number;
 	name: string;
+	surname: string;
+	fullName: string;
 	email: string;
+	phone?: string;
 	role: AccessLevel;
 	userProfile?: {
 		avatar?: string;
@@ -83,16 +86,21 @@ interface MorningReportData {
 	organizationStartTime: string;
 	summary: AttendanceSummary;
 	punctuality: PunctualityBreakdown;
+	presentEmployees: AttendanceReportUser[];
+	absentEmployees: AttendanceReportUser[];
 	insights: string[];
 	recommendations: string[];
 	generatedAt: string;
 	dashboardUrl: string;
+	hasEmployees: boolean;
 }
 
 interface EveningReportData {
 	organizationName: string;
 	reportDate: string;
 	employeeMetrics: EmployeeAttendanceMetric[];
+	presentEmployees: AttendanceReportUser[];
+	absentEmployees: AttendanceReportUser[];
 	summary: {
 		totalEmployees: number;
 		completedShifts: number;
@@ -100,6 +108,7 @@ interface EveningReportData {
 		totalOvertimeMinutes: number;
 	};
 	insights: string[];
+	hasEmployees: boolean;
 }
 
 @Injectable()
@@ -123,7 +132,7 @@ export class AttendanceReportsService {
 	 * Reports are sent 5 minutes after each organization's opening time
 	 * This allows for dynamic scheduling based on each organization's start time
 	 */
-	@Cron('*/1 * * * *') // Run every minute for better accuracy
+	@Cron('*/5 * * * *') // Run every 5 minutes for optimal balance of accuracy and performance
 	async checkAndSendMorningReports() {
 		try {
 			const now = new Date();
@@ -173,9 +182,9 @@ export class AttendanceReportsService {
 			const reportTimeMinutes = startTimeMinutes + 5;
 			const currentTimeMinutes = TimeCalculatorUtil.timeToMinutes(currentTime.toTimeString().substring(0, 5));
 
-			// Check if we're within 2 minutes of the report time (more accurate with every minute checks)
+			// Check if we're within 5 minutes of the report time (sufficient with 5-minute intervals)
 			const timeDifference = Math.abs(currentTimeMinutes - reportTimeMinutes);
-			if (timeDifference > 2) {
+			if (timeDifference > 5) {
 				return; // Not time yet or too late
 			}
 
@@ -334,10 +343,60 @@ export class AttendanceReportsService {
 		const absentCount = totalEmployees - presentCount;
 		const attendanceRate = totalEmployees > 0 ? (presentCount / totalEmployees) * 100 : 0;
 
+		// Create present employees list
+		const presentEmployees: AttendanceReportUser[] = todayAttendance.map(attendance => {
+			const owner = attendance.owner;
+			const fullName = `${owner.name || ''} ${owner.surname || ''}`.trim();
+			return {
+				uid: owner.uid,
+				name: owner.name || 'Unknown',
+				surname: owner.surname || 'User',
+				fullName: fullName || 'Unknown User',
+				email: owner.email || 'no-email@company.com',
+				phone: owner.phone || undefined,
+				role: owner.accessLevel || AccessLevel.USER,
+				userProfile: {
+					avatar: owner.photoURL || null,
+				},
+				branch: owner.branch
+					? {
+							uid: owner.branch.uid,
+							name: owner.branch.name || 'Unknown Branch',
+					  }
+					: undefined,
+			};
+		});
+
+		// Create absent employees list
+		const presentUserIds = new Set(todayAttendance.map(att => att.owner?.uid));
+		const absentEmployees: AttendanceReportUser[] = allUsers
+			.filter(user => !presentUserIds.has(user.uid))
+			.map(user => {
+				const fullName = `${user.name || ''} ${user.surname || ''}`.trim();
+				return {
+					uid: user.uid,
+					name: user.name || 'Unknown',
+					surname: user.surname || 'User',
+					fullName: fullName || 'Unknown User',
+					email: user.email || 'no-email@company.com',
+					phone: user.phone || undefined,
+					role: user.accessLevel || AccessLevel.USER,
+					userProfile: {
+						avatar: user.photoURL || null,
+					},
+					branch: user.branch
+						? {
+								uid: user.branch.uid,
+								name: user.branch.name || 'Unknown Branch',
+						  }
+						: undefined,
+				};
+			});
+
 		// Generate punctuality breakdown
 		const punctuality = await this.generatePunctualityBreakdown(organizationId, todayAttendance);
 
-		// Generate insights and recommendations
+		// Generate insights and recommendations with enhanced logic for no employees
 		const insights = this.generateMorningInsights(attendanceRate, punctuality, presentCount, totalEmployees);
 		const recommendations = this.generateMorningRecommendations(punctuality, attendanceRate);
 
@@ -352,10 +411,13 @@ export class AttendanceReportsService {
 				attendanceRate: Math.round(attendanceRate * 100) / 100,
 			},
 			punctuality,
+			presentEmployees,
+			absentEmployees,
 			insights,
 			recommendations,
 			generatedAt: format(today, 'yyyy-MM-dd HH:mm:ss'),
 			dashboardUrl: process.env.APP_URL || 'https://loro.co.za',
+			hasEmployees: totalEmployees > 0,
 		};
 	}
 
@@ -402,6 +464,56 @@ export class AttendanceReportsService {
 			}),
 		]);
 
+		// Create present employees list
+		const presentEmployees: AttendanceReportUser[] = todayAttendance.map(attendance => {
+			const owner = attendance.owner;
+			const fullName = `${owner.name || ''} ${owner.surname || ''}`.trim();
+			return {
+				uid: owner.uid,
+				name: owner.name || 'Unknown',
+				surname: owner.surname || 'User',
+				fullName: fullName || 'Unknown User',
+				email: owner.email || 'no-email@company.com',
+				phone: owner.phone || undefined,
+				role: owner.accessLevel || AccessLevel.USER,
+				userProfile: {
+					avatar: owner.photoURL || null,
+				},
+				branch: owner.branch
+					? {
+							uid: owner.branch.uid,
+							name: owner.branch.name || 'Unknown Branch',
+					  }
+					: undefined,
+			};
+		});
+
+		// Create absent employees list
+		const presentUserIds = new Set(todayAttendance.map(att => att.owner?.uid));
+		const absentEmployees: AttendanceReportUser[] = allUsers
+			.filter(user => !presentUserIds.has(user.uid))
+			.map(user => {
+				const fullName = `${user.name || ''} ${user.surname || ''}`.trim();
+				return {
+					uid: user.uid,
+					name: user.name || 'Unknown',
+					surname: user.surname || 'User',
+					fullName: fullName || 'Unknown User',
+					email: user.email || 'no-email@company.com',
+					phone: user.phone || undefined,
+					role: user.accessLevel || AccessLevel.USER,
+					userProfile: {
+						avatar: user.photoURL || null,
+					},
+					branch: user.branch
+						? {
+								uid: user.branch.uid,
+								name: user.branch.name || 'Unknown Branch',
+						  }
+						: undefined,
+				};
+			});
+
 		// Generate employee metrics with improved comparison logic
 		const employeeMetrics = await this.generateEmployeeMetrics(
 			organizationId,
@@ -438,6 +550,8 @@ export class AttendanceReportsService {
 			organizationName: organization?.name || 'Organization',
 			reportDate: format(today, 'EEEE, MMMM do, yyyy'),
 			employeeMetrics,
+			presentEmployees,
+			absentEmployees,
 			summary: {
 				totalEmployees: allUsers.length,
 				completedShifts,
@@ -445,6 +559,7 @@ export class AttendanceReportsService {
 				totalOvertimeMinutes: Math.round(totalOvertimeMinutes),
 			},
 			insights,
+			hasEmployees: allUsers.length > 0,
 		};
 	}
 
@@ -463,10 +578,14 @@ export class AttendanceReportsService {
 
 			// Defensive user profile handling to prevent mix-ups
 			const owner = attendance.owner;
+			const fullName = `${owner.name || ''} ${owner.surname || ''}`.trim();
 			const user: AttendanceReportUser = {
 				uid: owner.uid,
-				name: `${owner.name || ''} ${owner.surname || ''}`.trim() || 'Unknown User',
+				name: owner.name || 'Unknown',
+				surname: owner.surname || 'User',
+				fullName: fullName || 'Unknown User',
 				email: owner.email || 'no-email@company.com',
+				phone: owner.phone || undefined,
 				role: owner.accessLevel || AccessLevel.USER,
 				userProfile: {
 					avatar: owner.photoURL || null,
@@ -561,10 +680,14 @@ export class AttendanceReportsService {
 			}
 
 			// Defensive user profile creation to prevent data mix-ups
+			const fullName = `${user.name || ''} ${user.surname || ''}`.trim();
 			const reportUser: AttendanceReportUser = {
 				uid: user.uid,
-				name: `${user.name || ''} ${user.surname || ''}`.trim() || 'Unknown User',
+				name: user.name || 'Unknown',
+				surname: user.surname || 'User',
+				fullName: fullName || 'Unknown User',
 				email: user.email || 'no-email@company.com',
+				phone: user.phone || undefined,
 				role: user.accessLevel || AccessLevel.USER,
 				userProfile: {
 					avatar: user.photoURL || null,
@@ -602,6 +725,19 @@ export class AttendanceReportsService {
 	): string[] {
 		const insights: string[] = [];
 
+		// Special handling for no employees scenario
+		if (totalEmployees === 0) {
+			insights.push('No employees are registered in the system for this organization.');
+			return insights;
+		}
+
+		// Special handling for no present employees
+		if (presentCount === 0) {
+			insights.push('No employees have checked in yet today. Consider following up with your team.');
+			insights.push('This could indicate a system issue, public holiday, or scheduling changes.');
+			return insights;
+		}
+
 		if (attendanceRate >= 90) {
 			insights.push('Excellent attendance rate - team showing strong commitment!');
 		} else if (attendanceRate >= 75) {
@@ -628,16 +764,30 @@ export class AttendanceReportsService {
 	private generateMorningRecommendations(punctuality: PunctualityBreakdown, attendanceRate: number): string[] {
 		const recommendations: string[] = [];
 
+		// Special handling for zero attendance
+		if (attendanceRate === 0) {
+			recommendations.push('Investigate why no employees have checked in today.');
+			recommendations.push('Consider reaching out to team leaders to confirm work schedule.');
+			recommendations.push('Check if there are any system issues preventing check-ins.');
+			return recommendations;
+		}
+
 		if (punctuality.latePercentage > 20) {
 			recommendations.push('Consider sending reminders about punctuality expectations.');
+			recommendations.push('Review if start times are clearly communicated to all team members.');
 		}
 
 		if (attendanceRate < 80) {
 			recommendations.push('Follow up with absent team members to ensure they are okay.');
+			recommendations.push('Consider implementing an absence notification system.');
 		}
 
 		if (punctuality.onTimePercentage > 80) {
 			recommendations.push('Recognize punctual team members for their consistency.');
+		}
+
+		if (punctuality.earlyPercentage > 30) {
+			recommendations.push('Consider if early arrivals indicate scheduling issues or exceptional dedication.');
 		}
 
 		if (recommendations.length === 0) {
@@ -654,9 +804,22 @@ export class AttendanceReportsService {
 	): string[] {
 		const insights: string[] = [];
 
+		// Special handling for no employees
+		if (employeeMetrics.length === 0) {
+			insights.push('No employee data available for this organization.');
+			return insights;
+		}
+
 		const lateEmployees = employeeMetrics.filter((m) => m.isLate).length;
 		const highPerformers = employeeMetrics.filter((m) => m.hoursWorked > avgHours + 1).length;
 		const noCheckOut = employeeMetrics.filter((m) => m.todayCheckIn && !m.todayCheckOut).length;
+
+		// Special handling for no attendance
+		if (completedShifts === 0 && employeeMetrics.every(m => !m.todayCheckIn)) {
+			insights.push('No employees checked in today. Consider following up with your team.');
+			insights.push('This could indicate a system issue, public holiday, or scheduling changes.');
+			return insights;
+		}
 
 		if (completedShifts > 0) {
 			insights.push(`${completedShifts} employees completed their shifts today.`);
