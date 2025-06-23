@@ -236,7 +236,7 @@ export class CheckInsService {
 				order: {
 					checkInTime: 'DESC',
 				},
-				relations: ['owner', 'client', 'branch', 'organization'],
+				relations: ['owner', 'client', 'branch'],
 			});
 
 			if (!checkIns || checkIns.length === 0) {
