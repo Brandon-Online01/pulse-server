@@ -27,6 +27,9 @@ import { RoleGuard } from '../guards/role.guard';
 import { EnterpriseOnly } from '../decorators/enterprise-only.decorator';
 import { AuthenticatedRequest } from '../lib/interfaces/authenticated-request.interface';
 import { Attendance } from './entities/attendance.entity';
+import { CurrentUser } from '../decorators/current-user.decorator';
+import { User } from '../user/entities/user.entity';
+import { OvertimeReminderService } from './services/overtime-reminder.service';
 
 // Reusable Schema Definitions for Swagger Documentation
 export class UserProfileSchema {
@@ -146,6 +149,7 @@ export class AttendanceController {
 	constructor(
 		private readonly attendanceService: AttendanceService,
 		private readonly attendanceReportsService: AttendanceReportsService,
+		private readonly overtimeReminderService: OvertimeReminderService,
 	) {}
 
 	@Post('in')
@@ -1365,5 +1369,13 @@ export class AttendanceController {
 				timestamp: new Date().toISOString(),
 			};
 		}
+	}
+
+	@Post('manual-overtime-check')
+	@UseGuards(AuthGuard, RoleGuard)
+	@Roles(AccessLevel.ADMIN, AccessLevel.OWNER, AccessLevel.MANAGER)
+	async triggerOvertimeCheck(@CurrentUser() user: User): Promise<{ message: string; processed: number }> {
+		// Optional manual trigger for testing overtime reminders
+		return this.overtimeReminderService.triggerOvertimeCheck();
 	}
 }

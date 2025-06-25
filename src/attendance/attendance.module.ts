@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { CacheModule } from '@nestjs/cache-manager';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Attendance } from './entities/attendance.entity';
+import { CheckIn } from '../check-ins/entities/check-in.entity';
 import { User } from '../user/entities/user.entity';
 import { Organisation } from '../organisation/entities/organisation.entity';
 import { UserModule } from '../user/user.module';
@@ -14,11 +15,12 @@ import { OrganisationHours } from '../organisation/entities/organisation-hours.e
 import { OrganizationHoursService } from './services/organization-hours.service';
 import { AttendanceCalculatorService } from './services/attendance-calculator.service';
 import { AttendanceReportsService } from './services/attendance-reports.service';
+import { OvertimeReminderService } from './services/overtime-reminder.service';
 
 @Module({
 	imports: [
 		LicensingModule,
-		TypeOrmModule.forFeature([Attendance, User, Organisation, OrganisationHours]),
+		TypeOrmModule.forFeature([Attendance, CheckIn, User, Organisation, OrganisationHours]),
 		UserModule,
 		RewardsModule,
 		CacheModule.registerAsync({
@@ -35,7 +37,19 @@ import { AttendanceReportsService } from './services/attendance-reports.service'
 		}),
 	],
 	controllers: [AttendanceController],
-	providers: [AttendanceService, OrganizationHoursService, AttendanceCalculatorService, AttendanceReportsService],
-	exports: [AttendanceService, OrganizationHoursService, AttendanceCalculatorService, AttendanceReportsService],
+	providers: [
+		AttendanceService, 
+		OrganizationHoursService, 
+		AttendanceCalculatorService, 
+		AttendanceReportsService,
+		OvertimeReminderService,
+	],
+	exports: [
+		AttendanceService, 
+		OrganizationHoursService, 
+		AttendanceCalculatorService, 
+		AttendanceReportsService,
+		OvertimeReminderService,
+	],
 })
 export class AttendanceModule {}

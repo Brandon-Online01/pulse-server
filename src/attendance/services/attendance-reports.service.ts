@@ -3,7 +3,7 @@ import { Cron } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { startOfDay, endOfDay, format, subDays, isWeekend, subBusinessDays, isValid } from 'date-fns';
+import { startOfDay, endOfDay, format, subDays, subBusinessDays, isValid } from 'date-fns';
 
 import { Attendance } from '../entities/attendance.entity';
 import { User } from '../../user/entities/user.entity';
@@ -112,10 +112,35 @@ interface MorningReportData {
 	};
 }
 
+interface TemplateEmployeeMetric {
+	uid: number;
+	name: string;
+	surname: string;
+	email: string;
+	role: string;
+	branch?: {
+		uid: number;
+		name: string;
+	};
+	checkInTime: string | null;
+	checkOutTime: string | null;
+	hoursWorked: number;
+	isLate: boolean;
+	lateMinutes: number;
+	status: string;
+	yesterdayComparison: {
+		hoursChange: number;
+		punctualityChange: string;
+	};
+	avatar: string | null;
+}
+
 interface EveningReportData {
 	organizationName: string;
 	reportDate: string;
-	employeeMetrics: EmployeeAttendanceMetric[];
+	organizationStartTime: string;
+	organizationCloseTime: string;
+	employeeMetrics: TemplateEmployeeMetric[];
 	presentEmployees: AttendanceReportUser[];
 	absentEmployees: AttendanceReportUser[];
 	summary: {
@@ -132,6 +157,35 @@ interface EveningReportData {
 		averageLateMinutes: number;
 		punctualityTrend: string;
 	};
+	totalEmployees: number;
+	workedTodayCount: number;
+	totalHoursWorked: number;
+	averageHoursWorked: number;
+	attendanceChange: number;
+	hoursChange: number;
+	punctualityChange: number;
+	performanceTrend: string;
+	attendanceRate: number;
+	yesterdayAttendanceRate: number;
+	punctualityRate: number;
+	overallPerformance: {
+		description: string;
+	};
+	topPerformers: Array<{
+		name: string;
+		surname: string;
+		hoursWorked: number;
+		achievement: string;
+		metric: string;
+	}> | null;
+	improvementAreas: Array<{
+		area: string;
+		description: string;
+		count: number;
+	}> | null;
+	tomorrowActions: string[];
+	generatedAt: string;
+	dashboardUrl: string;
 }
 
 @Injectable()
@@ -367,7 +421,7 @@ export class AttendanceReportsService {
 		const attendanceRate = totalEmployees > 0 ? (presentCount / totalEmployees) * 100 : 0;
 
 		// Create present employees list
-		const presentEmployees: AttendanceReportUser[] = todayAttendance.map(attendance => {
+		const presentEmployees: AttendanceReportUser[] = todayAttendance.map((attendance) => {
 			const owner = attendance.owner;
 			const fullName = `${owner.name || ''} ${owner.surname || ''}`.trim();
 			return {
@@ -395,10 +449,10 @@ export class AttendanceReportsService {
 		});
 
 		// Create absent employees list
-		const presentUserIds = new Set(todayAttendance.map(att => att.owner?.uid));
+		const presentUserIds = new Set(todayAttendance.map((att) => att.owner?.uid));
 		const absentEmployees: AttendanceReportUser[] = allUsers
-			.filter(user => !presentUserIds.has(user.uid))
-			.map(user => {
+			.filter((user) => !presentUserIds.has(user.uid))
+			.map((user) => {
 				const fullName = `${user.name || ''} ${user.surname || ''}`.trim();
 				return {
 					uid: user.uid,
@@ -429,19 +483,23 @@ export class AttendanceReportsService {
 
 		// Calculate comprehensive lateness summary
 		const allLateEmployees = [...punctuality.lateArrivals, ...punctuality.veryLateArrivals];
-		const worstLateArrival = allLateEmployees.length > 0 
-			? allLateEmployees.reduce((worst, emp) => 
-				(emp.lateMinutes || 0) > (worst.lateMinutes || 0) ? emp : worst
-			) : null;
+		const worstLateArrival =
+			allLateEmployees.length > 0
+				? allLateEmployees.reduce((worst, emp) =>
+						(emp.lateMinutes || 0) > (worst.lateMinutes || 0) ? emp : worst,
+				  )
+				: null;
 
 		const latenessSummary = {
 			totalLateEmployees: allLateEmployees.length,
 			totalLateMinutes: punctuality.totalLateMinutes,
 			averageLateMinutes: punctuality.averageLateMinutes,
-			worstLateArrival: worstLateArrival ? {
-				employee: worstLateArrival.fullName,
-				minutes: worstLateArrival.lateMinutes || 0
-			} : null,
+			worstLateArrival: worstLateArrival
+				? {
+						employee: worstLateArrival.fullName,
+						minutes: worstLateArrival.lateMinutes || 0,
+				  }
+				: null,
 		};
 
 		// Generate insights and recommendations with enhanced logic for no employees
@@ -480,6 +538,11 @@ export class AttendanceReportsService {
 			where: { uid: organizationId },
 		});
 
+		// Get working day info for organization hours with fallback
+		const workingDayInfo = await this.organizationHoursService.getWorkingDayInfo(organizationId, today);
+		const organizationStartTime = workingDayInfo.startTime || '09:00';
+		const organizationCloseTime = workingDayInfo.endTime || '17:00';
+
 		// Get all users in the organization with better error handling
 		let allUsers = [];
 
@@ -514,7 +577,7 @@ export class AttendanceReportsService {
 		]);
 
 		// Create present employees list
-		const presentEmployees: AttendanceReportUser[] = todayAttendance.map(attendance => {
+		const presentEmployees: AttendanceReportUser[] = todayAttendance.map((attendance) => {
 			const owner = attendance.owner;
 			const fullName = `${owner.name || ''} ${owner.surname || ''}`.trim();
 			return {
@@ -542,10 +605,10 @@ export class AttendanceReportsService {
 		});
 
 		// Create absent employees list
-		const presentUserIds = new Set(todayAttendance.map(att => att.owner?.uid));
+		const presentUserIds = new Set(todayAttendance.map((att) => att.owner?.uid));
 		const absentEmployees: AttendanceReportUser[] = allUsers
-			.filter(user => !presentUserIds.has(user.uid))
-			.map(user => {
+			.filter((user) => !presentUserIds.has(user.uid))
+			.map((user) => {
 				const fullName = `${user.name || ''} ${user.surname || ''}`.trim();
 				return {
 					uid: user.uid,
@@ -580,6 +643,45 @@ export class AttendanceReportsService {
 			comparisonLabel,
 		);
 
+		// Map employee metrics to template format
+		const templateEmployeeMetrics = employeeMetrics.map((metric) => {
+			// Determine employee status
+			let status = 'Absent';
+			if (metric.todayCheckIn) {
+				if (metric.isLate) {
+					status = 'Late';
+				} else {
+					status = 'On Time';
+				}
+				if (metric.todayCheckOut) {
+					status = 'Completed';
+				}
+			}
+
+			// Create yesterday comparison object
+			const yesterdayComparison = {
+				hoursChange: Math.round((metric.hoursWorked - metric.yesterdayHours) * 100) / 100,
+				punctualityChange: metric.isLate ? 'worse' : metric.yesterdayHours === 0 ? 'new' : 'same',
+			};
+
+			return {
+				uid: metric.user.uid,
+				name: metric.user.name || 'Unknown',
+				surname: metric.user.surname || 'User',
+				email: metric.user.email || 'no-email@company.com',
+				role: metric.user.role || 'Staff',
+				branch: metric.user.branch,
+				checkInTime: metric.todayCheckIn || null,
+				checkOutTime: metric.todayCheckOut || null,
+				hoursWorked: metric.hoursWorked || 0,
+				isLate: metric.isLate || false,
+				lateMinutes: metric.lateMinutes || 0,
+				status,
+				yesterdayComparison,
+				avatar: metric.user.userProfile?.avatar || null,
+			};
+		});
+
 		// Calculate summary statistics
 		const completedShifts = todayAttendance.filter((a) => a.status === AttendanceStatus.COMPLETED).length;
 		const totalHours = todayAttendance.reduce((sum, attendance) => {
@@ -591,7 +693,6 @@ export class AttendanceReportsService {
 		}, 0);
 		const avgHours = completedShifts > 0 ? totalHours / completedShifts : 0;
 
-		const workingDayInfo = await this.organizationHoursService.getWorkingDayInfo(organizationId, today);
 		const standardMinutes = workingDayInfo.expectedWorkMinutes;
 		const totalOvertimeMinutes = todayAttendance.reduce((sum, attendance) => {
 			if (attendance.duration) {
@@ -602,14 +703,18 @@ export class AttendanceReportsService {
 		}, 0);
 
 		// Calculate comprehensive lateness summary for evening report
-		const lateEmployeesToday = employeeMetrics.filter(metric => metric.isLate);
+		const lateEmployeesToday = employeeMetrics.filter((metric) => metric.isLate);
 		const totalLateMinutesToday = lateEmployeesToday.reduce((sum, metric) => sum + metric.lateMinutes, 0);
-		const averageLateMinutesToday = lateEmployeesToday.length > 0 ? Math.round((totalLateMinutesToday / lateEmployeesToday.length) * 100) / 100 : 0;
-		
+		const averageLateMinutesToday =
+			lateEmployeesToday.length > 0
+				? Math.round((totalLateMinutesToday / lateEmployeesToday.length) * 100) / 100
+				: 0;
+
 		// Determine punctuality trend
 		let punctualityTrend = 'stable';
-		const latePercentageToday = employeeMetrics.length > 0 ? (lateEmployeesToday.length / employeeMetrics.length) * 100 : 0;
-		
+		const latePercentageToday =
+			employeeMetrics.length > 0 ? (lateEmployeesToday.length / employeeMetrics.length) * 100 : 0;
+
 		if (latePercentageToday === 0) {
 			punctualityTrend = 'excellent - no late arrivals';
 		} else if (latePercentageToday < 10) {
@@ -627,12 +732,79 @@ export class AttendanceReportsService {
 			punctualityTrend,
 		};
 
+		// Calculate performance comparison with yesterday
+		const workedTodayCount = presentEmployees.length;
+		const comparisonWorkedCount = comparisonAttendance.length;
+		const attendanceChange =
+			comparisonWorkedCount > 0
+				? Math.round(((workedTodayCount - comparisonWorkedCount) / comparisonWorkedCount) * 100)
+				: 0;
+
+		const comparisonTotalHours = comparisonAttendance.reduce((sum, attendance) => {
+			if (attendance.duration) {
+				const minutes = this.parseDurationToMinutes(attendance.duration);
+				return sum + minutes / 60;
+			}
+			return sum;
+		}, 0);
+		const hoursChange = Math.round((totalHours - comparisonTotalHours) * 100) / 100;
+
+		// Calculate punctuality change
+		const comparisonLateCount = comparisonAttendance.filter((att) => {
+			// Simple late check for comparison - could be enhanced
+			return att.checkIn && new Date(att.checkIn).getHours() >= 9;
+		}).length;
+		const todayLateCount = lateEmployeesToday.length;
+		const punctualityChange =
+			comparisonAttendance.length > 0
+				? Math.round(((comparisonLateCount - todayLateCount) / comparisonAttendance.length) * 100)
+				: 0;
+
+		// Determine performance trend
+		let performanceTrend = 'stable';
+		if (attendanceChange > 5 && hoursChange > 0) {
+			performanceTrend = 'improving';
+		} else if (attendanceChange < -5 || hoursChange < -2) {
+			performanceTrend = 'declining';
+		}
+
+		// Generate insights with enhanced feedback
 		const insights = this.generateEveningInsights(employeeMetrics, completedShifts, avgHours);
+
+		// Generate tomorrow's action items
+		const tomorrowActions = [];
+		if (lateEmployeesToday.length > 0) {
+			tomorrowActions.push(`Follow up with ${lateEmployeesToday.length} employees who arrived late today`);
+		}
+		if (absentEmployees.length > 0) {
+			tomorrowActions.push(`Check in with ${absentEmployees.length} absent employees to ensure they're okay`);
+		}
+		if (avgHours < 6) {
+			tomorrowActions.push('Review scheduling and workload distribution to improve productivity');
+		}
+		if (tomorrowActions.length === 0) {
+			tomorrowActions.push('Continue maintaining excellent team performance and punctuality');
+		}
+
+		// Generate top performers
+		const topPerformers = templateEmployeeMetrics
+			.filter((emp) => emp.hoursWorked > 0)
+			.sort((a, b) => b.hoursWorked - a.hoursWorked)
+			.slice(0, 3)
+			.map((emp) => ({
+				name: emp.name,
+				surname: emp.surname,
+				hoursWorked: emp.hoursWorked,
+				achievement: emp.hoursWorked >= 8 ? 'Full day completed' : 'Good performance',
+				metric: 'hours',
+			}));
 
 		return {
 			organizationName: organization?.name || 'Organization',
 			reportDate: format(today, 'EEEE, MMMM do, yyyy'),
-			employeeMetrics,
+			organizationStartTime,
+			organizationCloseTime,
+			employeeMetrics: templateEmployeeMetrics, // Use the properly mapped metrics
 			presentEmployees,
 			absentEmployees,
 			summary: {
@@ -644,6 +816,43 @@ export class AttendanceReportsService {
 			insights,
 			hasEmployees: allUsers.length > 0,
 			latenessSummary,
+			// Add missing template fields
+			totalEmployees: allUsers.length,
+			workedTodayCount,
+			totalHoursWorked: Math.round(totalHours * 100) / 100,
+			averageHoursWorked: Math.round(avgHours * 100) / 100,
+			attendanceChange,
+			hoursChange,
+			punctualityChange,
+			performanceTrend,
+			attendanceRate: Math.round((workedTodayCount / Math.max(allUsers.length, 1)) * 100),
+			yesterdayAttendanceRate: Math.round((comparisonWorkedCount / Math.max(allUsers.length, 1)) * 100),
+			punctualityRate:
+				employeeMetrics.length > 0
+					? Math.round(((employeeMetrics.length - lateEmployeesToday.length) / employeeMetrics.length) * 100)
+					: 100,
+			overallPerformance: {
+				description:
+					performanceTrend === 'improving'
+						? 'Team performance is trending upward with good attendance and productivity'
+						: performanceTrend === 'declining'
+						? 'Performance needs attention - consider team check-ins and support'
+						: 'Team performance is stable and consistent',
+			},
+			topPerformers: topPerformers.length > 0 ? topPerformers : null,
+			improvementAreas:
+				lateEmployeesToday.length > 0
+					? [
+							{
+								area: 'Punctuality',
+								description: `${lateEmployeesToday.length} employees arrived late today`,
+								count: lateEmployeesToday.length,
+							},
+					  ]
+					: null,
+			tomorrowActions,
+			generatedAt: format(today, 'PPpp'),
+			dashboardUrl: process.env.DASHBOARD_URL || 'https://dashboard.loro.com',
 		};
 	}
 
@@ -672,11 +881,13 @@ export class AttendanceReportsService {
 			let lateMinutes = 0;
 			let earlyMinutes = 0;
 			let lateStatus: 'on-time' | 'late' | 'very-late' | 'extremely-late' = 'on-time';
-			
+
 			if (workingDayInfo.startTime) {
-				const checkInMinutes = TimeCalculatorUtil.timeToMinutes(attendance.checkIn.toTimeString().substring(0, 5));
+				const checkInMinutes = TimeCalculatorUtil.timeToMinutes(
+					attendance.checkIn.toTimeString().substring(0, 5),
+				);
 				const expectedStartMinutes = TimeCalculatorUtil.timeToMinutes(workingDayInfo.startTime);
-				
+
 				if (lateInfo.isLate) {
 					lateMinutes = lateInfo.lateMinutes;
 					// Categorize lateness severity
@@ -742,7 +953,8 @@ export class AttendanceReportsService {
 		const total = todayAttendance.length;
 		const allLateArrivals = [...lateArrivals, ...veryLateArrivals];
 		const totalLateMinutes = allLateArrivals.reduce((sum, emp) => sum + (emp.lateMinutes || 0), 0);
-		const averageLateMinutes = allLateArrivals.length > 0 ? Math.round((totalLateMinutes / allLateArrivals.length) * 100) / 100 : 0;
+		const averageLateMinutes =
+			allLateArrivals.length > 0 ? Math.round((totalLateMinutes / allLateArrivals.length) * 100) / 100 : 0;
 
 		return {
 			earlyArrivals,
@@ -880,15 +1092,21 @@ export class AttendanceReportsService {
 		const totalLatePercentage = punctuality.latePercentage + punctuality.veryLatePercentage;
 		if (totalLatePercentage > 0) {
 			if (punctuality.veryLatePercentage > 0) {
-				insights.push(`${totalLatePercentage}% of employees arrived late today (${punctuality.latePercentage}% moderately late, ${punctuality.veryLatePercentage}% very late). Average delay: ${punctuality.averageLateMinutes} minutes.`);
+				insights.push(
+					`${totalLatePercentage}% of employees arrived late today (${punctuality.latePercentage}% moderately late, ${punctuality.veryLatePercentage}% very late). Average delay: ${punctuality.averageLateMinutes} minutes.`,
+				);
 			} else {
-				insights.push(`${punctuality.latePercentage}% of employees arrived late today with an average delay of ${punctuality.averageLateMinutes} minutes.`);
+				insights.push(
+					`${punctuality.latePercentage}% of employees arrived late today with an average delay of ${punctuality.averageLateMinutes} minutes.`,
+				);
 			}
 		}
 
 		// Specific insights for severe lateness
 		if (punctuality.veryLatePercentage > 10) {
-			insights.push(`Critical: ${punctuality.veryLatePercentage}% of employees were very late (30+ minutes) - immediate intervention needed.`);
+			insights.push(
+				`Critical: ${punctuality.veryLatePercentage}% of employees were very late (30+ minutes) - immediate intervention needed.`,
+			);
 		}
 
 		if (punctuality.earlyPercentage > 50) {
@@ -956,7 +1174,7 @@ export class AttendanceReportsService {
 		const noCheckOut = employeeMetrics.filter((m) => m.todayCheckIn && !m.todayCheckOut).length;
 
 		// Special handling for no attendance
-		if (completedShifts === 0 && employeeMetrics.every(m => !m.todayCheckIn)) {
+		if (completedShifts === 0 && employeeMetrics.every((m) => !m.todayCheckIn)) {
 			insights.push('No employees checked in today. Consider following up with your team.');
 			insights.push('This could indicate a system issue, public holiday, or scheduling changes.');
 			return insights;
@@ -971,9 +1189,11 @@ export class AttendanceReportsService {
 		}
 
 		if (lateEmployees > 0) {
-			const totalLateMinutes = employeeMetrics.filter(m => m.isLate).reduce((sum, m) => sum + m.lateMinutes, 0);
+			const totalLateMinutes = employeeMetrics.filter((m) => m.isLate).reduce((sum, m) => sum + m.lateMinutes, 0);
 			const avgLateMinutes = totalLateMinutes / lateEmployees;
-			insights.push(`${lateEmployees} employees arrived late today, averaging ${Math.round(avgLateMinutes)} minutes late.`);
+			insights.push(
+				`${lateEmployees} employees arrived late today, averaging ${Math.round(avgLateMinutes)} minutes late.`,
+			);
 		}
 
 		if (highPerformers > 0) {

@@ -51,6 +51,7 @@ import {
 	JournalEmailData,
 	JournalUpdatedEmailData,
 	JournalDeletedEmailData,
+	OvertimeReminderData,
 } from '../types/email-templates.types';
 
 // Auth Templates
@@ -263,6 +264,10 @@ export const AttendanceMorningReport = (data: MorningReportData): string => {
 
 export const AttendanceEveningReport = (data: EveningReportData): string => {
 	return emailTemplateService.attendanceEveningReport(data);
+};
+
+export const OvertimeReminder = (data: OvertimeReminderData): string => {
+	return emailTemplateService.overtimeReminder(data);
 };
 
 // Asset Templates

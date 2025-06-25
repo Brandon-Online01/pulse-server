@@ -138,12 +138,120 @@ export interface MorningReportData extends BaseEmailData {
 	organizationName: string;
 	reportDate: string;
 	organizationStartTime: string;
-	summary: AttendanceSummary;
-	punctuality: PunctualityBreakdown;
+	summary: {
+		totalEmployees: number;
+		presentCount: number;
+		absentCount: number;
+		attendanceRate: number;
+	};
+	punctuality: {
+		earlyArrivals: Array<{
+			uid: number;
+			name: string;
+			surname: string;
+			fullName: string;
+			email: string;
+			role: string;
+			branch?: {
+				uid: number;
+				name: string;
+			};
+			checkInTime?: string;
+			earlyMinutes?: number;
+		}>;
+		onTimeArrivals: Array<{
+			uid: number;
+			name: string;
+			surname: string;
+			fullName: string;
+			email: string;
+			role: string;
+			branch?: {
+				uid: number;
+				name: string;
+			};
+			checkInTime?: string;
+		}>;
+		lateArrivals: Array<{
+			uid: number;
+			name: string;
+			surname: string;
+			fullName: string;
+			email: string;
+			role: string;
+			branch?: {
+				uid: number;
+				name: string;
+			};
+			checkInTime?: string;
+			lateMinutes?: number;
+		}>;
+		veryLateArrivals: Array<{
+			uid: number;
+			name: string;
+			surname: string;
+			fullName: string;
+			email: string;
+			role: string;
+			branch?: {
+				uid: number;
+				name: string;
+			};
+			checkInTime?: string;
+			lateMinutes?: number;
+		}>;
+		earlyPercentage: number;
+		onTimePercentage: number;
+		latePercentage: number;
+		veryLatePercentage: number;
+		averageLateMinutes: number;
+		totalLateMinutes: number;
+	};
+	presentEmployees: Array<{
+		uid: number;
+		name: string;
+		surname: string;
+		fullName: string;
+		email: string;
+		role: string;
+		branch?: {
+			uid: number;
+			name: string;
+		};
+		checkInTime?: string;
+		userProfile?: {
+			avatar?: string;
+		};
+	}>;
+	absentEmployees: Array<{
+		uid: number;
+		name: string;
+		surname: string;
+		fullName: string;
+		email: string;
+		role: string;
+		branch?: {
+			uid: number;
+			name: string;
+		};
+		userProfile?: {
+			avatar?: string;
+		};
+	}>;
 	insights: string[];
 	recommendations: string[];
 	generatedAt: string;
 	dashboardUrl: string;
+	hasEmployees: boolean;
+	latenessSummary: {
+		totalLateEmployees: number;
+		totalLateMinutes: number;
+		averageLateMinutes: number;
+		worstLateArrival: {
+			employee: string;
+			minutes: number;
+		} | null;
+	};
 }
 
 export interface EveningReportData extends BaseEmailData {
@@ -151,7 +259,28 @@ export interface EveningReportData extends BaseEmailData {
 	reportDate: string;
 	organizationStartTime: string;
 	organizationCloseTime: string;
-	employeeMetrics: EmployeeAttendanceMetric[];
+	employeeMetrics: Array<{
+		uid: number;
+		name: string;
+		surname: string;
+		email: string;
+		role: string;
+		branch?: {
+			uid: number;
+			name: string;
+		};
+		checkInTime: string | null;
+		checkOutTime: string | null;
+		hoursWorked: number;
+		isLate: boolean;
+		lateMinutes: number;
+		status: string;
+		yesterdayComparison: {
+			hoursChange: number;
+			punctualityChange: string;
+		};
+		avatar: string | null;
+	}>;
 	summary: {
 		totalEmployees: number;
 		completedShifts: number;
@@ -159,8 +288,61 @@ export interface EveningReportData extends BaseEmailData {
 		totalOvertimeMinutes: number;
 	};
 	insights: string[];
+	hasEmployees: boolean;
+	latenessSummary: {
+		totalLateEmployees: number;
+		totalLateMinutes: number;
+		averageLateMinutes: number;
+		punctualityTrend: string;
+	};
+	// Additional template fields
+	totalEmployees: number;
+	workedTodayCount: number;
+	totalHoursWorked: number;
+	averageHoursWorked: number;
+	attendanceChange: number;
+	hoursChange: number;
+	punctualityChange: number;
+	performanceTrend: string;
+	attendanceRate: number;
+	yesterdayAttendanceRate?: number;
+	punctualityRate: number;
+	overallPerformance: {
+		description: string;
+	};
+	topPerformers?: Array<{
+		name: string;
+		surname: string;
+		hoursWorked: number;
+		achievement: string;
+		metric: string;
+	}> | null;
+	improvementAreas?: Array<{
+		area: string;
+		description: string;
+		count: number;
+	}> | null;
+	tomorrowActions: string[];
 	generatedAt: string;
 	dashboardUrl: string;
+}
+
+export interface OvertimeReminderData extends BaseEmailData {
+	employeeName: string;
+	employeeEmail: string;
+	checkInTime: string;
+	organizationCloseTime: string;
+	currentTime: string;
+	minutesOvertime: number;
+	overtimeDuration: string;
+	shiftDuration: string;
+	organizationName: string;
+	clockOutUrl: string;
+	dashboardUrl: string;
+	breakDetails?: {
+		totalBreakTime: string;
+		breakCount: number;
+	};
 }
 
 export interface QuotationData extends BaseEmailData {
@@ -825,6 +1007,8 @@ export interface EmailDataMap {
 	[EmailType.DAILY_REPORT]: DailyReportData;
 	[EmailType.ATTENDANCE_MORNING_REPORT]: MorningReportData;
 	[EmailType.ATTENDANCE_EVENING_REPORT]: EveningReportData;
+	// Overtime email mappings
+	[EmailType.OVERTIME_REMINDER]: OvertimeReminderData;
 	// Quotation email mappings
 	[EmailType.NEW_QUOTATION_CLIENT]: QuotationData;
 	[EmailType.NEW_QUOTATION_INTERNAL]: QuotationInternalData;

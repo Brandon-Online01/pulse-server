@@ -54,6 +54,7 @@ import {
 	JournalEmailData,
 	JournalUpdatedEmailData,
 	JournalDeletedEmailData,
+	OvertimeReminderData,
 } from '../types/email-templates.types';
 
 class EmailTemplateService {
@@ -494,6 +495,10 @@ class EmailTemplateService {
 		return this.renderTemplate('attendance/evening-report.hbs', data);
 	}
 
+	overtimeReminder(data: OvertimeReminderData): string {
+		return this.renderTemplate('attendance/overtime-reminder.hbs', data);
+	}
+
 	// Asset related email templates
 	assetAssigned(data: AssetEmailData): string {
 		return this.renderTemplate('assets/asset-assigned.hbs', data);
@@ -649,6 +654,7 @@ class EmailTemplateService {
 			'leave/deleted-notification.hbs',
 			'attendance/morning-report.hbs',
 			'attendance/evening-report.hbs',
+			'attendance/overtime-reminder.hbs',
 			// Claims templates
 			'claims/created.hbs',
 			'claims/status-update.hbs',
