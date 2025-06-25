@@ -433,10 +433,14 @@ export interface TaskEmailData extends BaseEmailData {
 	estimatedTime?: string;
 	taskUrl?: string;
 	projectManager?: string;
+	projectManagerEmail?: string;
 	supportEmail?: string;
 	updatedBy?: string;
+	updatedByEmail?: string;
 	updateDate?: string;
 	currentStatus?: string;
+	taskCreator?: string;
+	taskCreatorEmail?: string;
 	changes?: Array<{field: string, oldValue: string, newValue: string}>;
 	subtasks?: Array<{
 		title: string;
@@ -453,6 +457,21 @@ export interface TaskEmailData extends BaseEmailData {
 	}>;
 	dependencies?: string[];
 	successCriteria?: string[];
+	// Additional fields for update templates
+	updateNotes?: string;
+	newDescription?: string;
+	dueDateChanged?: boolean;
+	dueDateExtended?: boolean;
+	oldDueDate?: string;
+	newDueDate?: string;
+	priorityChanged?: boolean;
+	oldPriority?: string;
+	newPriority?: string;
+	assigneeChanged?: boolean;
+	previousAssignee?: string;
+	newAssignee?: string;
+	reassignmentReason?: string;
+	impactOnOtherTasks?: number;
 }
 
 export interface TaskCompletedEmailData extends TaskEmailData {
@@ -561,6 +580,54 @@ export interface TaskFlagEmailData extends BaseEmailData {
 		createdAt: string;
 		createdBy: { name: string };
 	}>;
+	// Additional fields for templates
+	assigneeName?: string;
+	flaggedBy?: string;
+	flaggedByEmail?: string;
+	flagDate?: string;
+	flagPriority?: string;
+	flagType?: string;
+	flagCategory?: string;
+	projectName?: string;
+	taskUrl?: string;
+	suggestedActions?: string[];
+	impactLevel?: string;
+	deadline?: string;
+	projectManager?: string;
+	projectManagerEmail?: string;
+	teamLead?: string;
+	teamLeadEmail?: string;
+	supportEmail?: string;
+	escalationPath?: string[];
+	// Resolution fields
+	resolvedBy?: string;
+	resolvedByEmail?: string;
+	resolvedDate?: string;
+	resolutionTime?: string;
+	resolutionNotes?: string;
+	actionsTaken?: string[];
+	qualityImprovement?: string[];
+	lessonsLearned?: string[];
+	preventiveMeasures?: string[];
+	// Update fields
+	updatedBy?: string;
+	updatedByEmail?: string;
+	updateDate?: string;
+	newPriority?: string;
+	oldPriority?: string;
+	changes?: Array<{field: string, oldValue: string, newValue: string}>;
+	updateReason?: string;
+	newDescription?: string;
+	priorityChanged?: boolean;
+	deadlineChanged?: boolean;
+	deadlineExtended?: boolean;
+	oldDeadline?: string;
+	newDeadline?: string;
+	additionalResources?: string[];
+	impactAssessment?: string[];
+	escalationNote?: string;
+	originalFlaggedBy?: string;
+	originalFlaggedByEmail?: string;
 }
 
 export interface TaskFeedbackEmailData extends BaseEmailData {
@@ -573,6 +640,28 @@ export interface TaskFeedbackEmailData extends BaseEmailData {
 		email: string;
 	};
 	submittedAt: string;
+	// Additional fields for templates
+	assigneeName?: string;
+	feedbackBy?: string;
+	feedbackByEmail?: string;
+	feedbackDate?: string;
+	projectName?: string;
+	taskStatus?: string;
+	taskUrl?: string;
+	feedbackSummary?: string;
+	positivePoints?: string[];
+	improvementAreas?: string[];
+	actionItems?: string[];
+	feedbackType?: string;
+	qualityScore?: number;
+	timeliness?: string;
+	communication?: string;
+	projectManager?: string;
+	projectManagerEmail?: string;
+	hrContact?: string;
+	hrEmail?: string;
+	supportEmail?: string;
+	nextReviewDate?: string;
 }
 
 export interface NewUserAdminNotificationData extends BaseEmailData {

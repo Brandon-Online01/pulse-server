@@ -3,7 +3,7 @@ import { SubTask } from '../entities/subtask.entity';
 import { TaskFlag } from '../entities/task-flag.entity';
 import { User } from '../../user/entities/user.entity';
 import { Client } from '../../clients/entities/client.entity';
-import { TaskEmailData, TaskCompletedEmailData, TaskFlagEmailData } from '../../lib/types/email-templates.types';
+import { TaskEmailData, TaskCompletedEmailData, TaskFlagEmailData, TaskFeedbackEmailData } from '../../lib/types/email-templates.types';
 
 export class TaskEmailDataMapper {
   
@@ -56,7 +56,12 @@ export class TaskEmailDataMapper {
       updatedBy: updatedBy,
       updateDate: this.formatDate(new Date()),
       currentStatus: task.status,
-      changes: changes
+      changes: changes,
+      // Additional template variables for updates
+      taskCreator: this.getCreatorName(task.creator),
+      taskCreatorEmail: this.getCreatorEmail(task.creator),
+      projectManagerEmail: process.env.PROJECT_MANAGER_EMAIL || 'pm@loro.com',
+      updatedByEmail: process.env.UPDATED_BY_EMAIL || 'admin@loro.com'
     };
   }
 
@@ -133,11 +138,74 @@ export class TaskEmailDataMapper {
   }
 
   /**
+   * Map data for task reminder emails (assignee)
+   */
+  static mapTaskReminderAssigneeData(task: Task, assignee: User): any {
+    const now = new Date();
+    const deadline = task.deadline ? new Date(task.deadline) : null;
+    const isOverdue = deadline ? deadline < now : false;
+    const daysDifference = deadline ? Math.ceil(Math.abs((deadline.getTime() - now.getTime()) / (1000 * 3600 * 24))) : 0;
+
+    return {
+      name: assignee.name || assignee.username || 'Team Member',
+      assigneeName: assignee.name || assignee.username || 'Team Member',
+      taskTitle: task.title,
+      taskDescription: task.description || 'No description provided',
+      projectName: this.getProjectName(task.clients),
+      dueDate: this.formatDate(task.deadline),
+      priority: task.priority,
+      taskStatus: task.status,
+      isOverdue: isOverdue,
+      daysDifference: daysDifference,
+      taskUrl: this.generateTaskUrl(task.uid),
+      taskCreator: this.getCreatorName(task.creator),
+      projectManager: this.getCreatorName(task.creator),
+      supportEmail: process.env.SUPPORT_EMAIL || 'support@loro.com'
+    };
+  }
+
+  /**
+   * Map data for task reminder emails (creator)
+   */
+  static mapTaskReminderCreatorData(task: Task, creator: User, assignees: User[]): any {
+    const now = new Date();
+    const deadline = task.deadline ? new Date(task.deadline) : null;
+    const isOverdue = deadline ? deadline < now : false;
+    const daysDifference = deadline ? Math.ceil(Math.abs((deadline.getTime() - now.getTime()) / (1000 * 3600 * 24))) : 0;
+
+    return {
+      name: creator.name || creator.username || 'Team Member',
+      creatorName: creator.name || creator.username || 'Team Member',
+      taskTitle: task.title,
+      taskDescription: task.description || 'No description provided',
+      assigneeName: assignees.map(a => a.name || a.username).join(', '),
+      projectName: this.getProjectName(task.clients),
+      dueDate: this.formatDate(task.deadline),
+      priority: task.priority,
+      taskStatus: task.status,
+      isOverdue: isOverdue,
+      daysDifference: daysDifference,
+      taskUrl: this.generateTaskUrl(task.uid),
+      lastUpdate: task.updatedAt ? {
+        date: this.formatDate(task.updatedAt),
+        by: 'System',
+        notes: 'Last system update'
+      } : null,
+      assigneeEmail: assignees.length > 0 ? assignees[0].email : '',
+      supportEmail: process.env.SUPPORT_EMAIL || 'support@loro.com',
+      appName: 'Loro'
+    };
+  }
+
+  /**
    * Map data for task flag emails
    */
   static mapTaskFlagData(taskFlag: TaskFlag, task: Task, user: User, recipientName: string = 'Team Member'): TaskFlagEmailData {
+    const flaggedByName = `${user.name || ''} ${user.surname || ''}`.trim() || user.username || 'System';
+    
     return {
       name: recipientName,
+      assigneeName: recipientName,
       taskId: task.uid,
       taskTitle: task.title,
       flagId: taskFlag.uid,
@@ -146,7 +214,7 @@ export class TaskEmailDataMapper {
       flagStatus: taskFlag.status,
       flagDeadline: taskFlag.deadline?.toISOString(),
       createdBy: {
-        name: `${user.name || ''} ${user.surname || ''}`.trim() || user.username || 'System',
+        name: flaggedByName,
         email: user.email || ''
       },
       items: taskFlag.items?.map(item => ({
@@ -155,7 +223,97 @@ export class TaskEmailDataMapper {
         status: item.status
       })) || [],
       attachments: taskFlag.attachments || [],
-      comments: this.transformCommentsForEmail(taskFlag.comments || [])
+      comments: this.transformCommentsForEmail(taskFlag.comments || []),
+      
+      // Additional template fields
+      flaggedBy: flaggedByName,
+      flaggedByEmail: user.email || '',
+      flagDate: this.formatDate(taskFlag.createdAt),
+      flagPriority: 'medium', // Default priority, should be dynamic based on flag data
+      flagType: 'Quality Control',
+      flagCategory: 'quality',
+      projectName: this.getProjectName(task.clients),
+      taskUrl: this.generateTaskUrl(task.uid),
+      suggestedActions: [
+        'Review the flagged concern thoroughly',
+        'Contact the flag creator for clarification',
+        'Create a resolution action plan',
+        'Implement necessary improvements'
+      ],
+      impactLevel: 'medium',
+      deadline: this.formatDate(taskFlag.deadline),
+      projectManager: this.getCreatorName(task.creator),
+      projectManagerEmail: this.getCreatorEmail(task.creator),
+      teamLead: this.getCreatorName(task.creator),
+      teamLeadEmail: this.getCreatorEmail(task.creator),
+      supportEmail: process.env.SUPPORT_EMAIL || 'support@loro.com',
+      escalationPath: [
+        'Contact the project manager',
+        'Escalate to team lead',
+        'Involve senior management if needed'
+      ]
+    };
+  }
+
+  /**
+   * Map data for task feedback emails
+   */
+  static mapTaskFeedbackData(
+    taskId: number, 
+    taskTitle: string, 
+    feedbackContent: string, 
+    submittedBy: User, 
+    recipientName: string = 'Team Member',
+    task?: Task,
+    rating?: number
+  ): TaskFeedbackEmailData {
+    const feedbackByName = `${submittedBy.name || ''} ${submittedBy.surname || ''}`.trim() || submittedBy.username || 'System';
+    
+    return {
+      name: recipientName,
+      assigneeName: recipientName,
+      taskId: taskId,
+      taskTitle: taskTitle,
+      feedbackContent: feedbackContent,
+      rating: rating,
+      submittedBy: {
+        name: feedbackByName,
+        email: submittedBy.email || ''
+      },
+      submittedAt: new Date().toISOString(),
+      
+      // Additional template fields
+      feedbackBy: feedbackByName,
+      feedbackByEmail: submittedBy.email || '',
+      feedbackDate: this.formatDate(new Date()),
+      projectName: task ? this.getProjectName(task.clients) : 'General Task',
+      taskStatus: task ? task.status : 'In Progress',
+      taskUrl: this.generateTaskUrl(taskId),
+      feedbackSummary: feedbackContent.length > 200 ? feedbackContent.substring(0, 200) + '...' : feedbackContent,
+      positivePoints: [
+        'Task completion within deadline',
+        'Quality of work meets standards',
+        'Good communication during execution'
+      ],
+      improvementAreas: [
+        'Documentation could be more detailed',
+        'Consider more frequent progress updates'
+      ],
+      actionItems: [
+        'Implement suggested improvements',
+        'Apply learnings to future tasks',
+        'Schedule follow-up review'
+      ],
+      feedbackType: 'Performance Review',
+      qualityScore: rating ? Math.min(rating * 2, 10) : undefined,
+      timeliness: 'On time',
+      communication: 'Good',
+      projectManager: task ? this.getCreatorName(task.creator) : 'Project Manager',
+      projectManagerEmail: task ? this.getCreatorEmail(task.creator) : 'pm@loro.com',
+      hrContact: 'HR Team',
+      hrEmail: process.env.HR_EMAIL || 'hr@loro.com',
+      supportEmail: process.env.SUPPORT_EMAIL || 'support@loro.com',
+      nextReviewDate: this.formatDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)) // 30 days from now
     };
   }
 
@@ -232,6 +390,29 @@ export class TaskEmailDataMapper {
     
     // Handle single object format
     return `${creator.name || ''} ${creator.surname || ''}`.trim() || creator.username || 'System';
+  }
+
+  private static getCreatorEmail(creator: any): string {
+    if (!creator) return '';
+    
+    // Handle array format
+    if (Array.isArray(creator) && creator[0]) {
+      const user = creator[0];
+      return user.email || '';
+    }
+    
+    // Handle single object format
+    return creator.email || '';
+  }
+
+  private static getProjectName(clients?: any[]): string {
+    if (!clients || !Array.isArray(clients) || clients.length === 0) {
+      return 'General Task';
+    }
+    
+    // If there's a client, use the client name as project name
+    const primaryClient = clients[0];
+    return primaryClient.name || 'Client Project';
   }
 
   private static generateTaskUrl(taskId: number): string {

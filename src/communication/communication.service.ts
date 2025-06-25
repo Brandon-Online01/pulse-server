@@ -165,12 +165,20 @@ export class CommunicationService {
 	@OnEvent('send.email')
 	async sendEmail<T extends EmailType>(emailType: T, recipientsEmails: string[], data: EmailTemplateData<T>) {
 		try {
-			if (!recipientsEmails) {
+			console.log(`📧 [EmailService] Email event received: ${emailType}`);
+			console.log(`📧 [EmailService] Recipients (${recipientsEmails?.length || 0}): ${recipientsEmails?.join(', ')}`);
+			
+			if (!recipientsEmails || recipientsEmails.length === 0) {
+				console.log('❌ [EmailService] ERROR: No recipients provided for email');
 				throw new NotFoundException(process.env.NOT_FOUND_MESSAGE);
 			}
 
+			console.log(`📧 [EmailService] Generating template for: ${emailType}`);
 			const template = this.getEmailTemplate(emailType, data);
+			console.log(`📧 [EmailService] Template generated successfully for: ${emailType}`);
+			console.log(`📧 [EmailService] Subject: "${template.subject}"`);
 
+			console.log(`📧 [EmailService] Sending email via SMTP...`);
 			const result = await this.emailService.sendMail({
 				from: this.configService.get<string>('SMTP_FROM'),
 				to: recipientsEmails,
@@ -178,6 +186,11 @@ export class CommunicationService {
 				html: template.body,
 			});
 
+			console.log(`✅ [EmailService] Email sent successfully!`);
+			console.log(`📧 [EmailService] MessageId: ${result.messageId}`);
+			console.log(`📧 [EmailService] Accepted: ${result.accepted?.length || 0}, Rejected: ${result.rejected?.length || 0}`);
+
+			// Log the communication to database
 			await this.communicationLogRepository.save({
 				emailType,
 				recipientEmails: recipientsEmails,
@@ -191,16 +204,40 @@ export class CommunicationService {
 				envelope: result.envelope,
 			});
 
+			console.log(`📧 Email log saved for ${emailType}`);
 			return result;
 		} catch (error) {
+			console.error(`❌ [EmailService] ERROR sending ${emailType} email:`, error.message);
+			console.error(`❌ [EmailService] Failed recipients: ${recipientsEmails?.join(', ')}`);
+			
 			const smtpHost = this.configService.get<string>('SMTP_HOST');
 			const smtpUser = this.configService.get<string>('SMTP_USER');
 			const smtpFrom = this.configService.get<string>('SMTP_FROM');
-			console.error('Email service error:', error.message, {
+			console.error('❌ [EmailService] SMTP Configuration:', {
 				SMTP_HOST: smtpHost,
 				SMTP_USER: smtpUser,
 				SMTP_FROM: smtpFrom,
 			});
+			
+			// Log failed email attempt
+			try {
+				await this.communicationLogRepository.save({
+					emailType,
+					recipientEmails: recipientsEmails,
+					accepted: [],
+					rejected: recipientsEmails,
+					messageId: null,
+					messageSize: null,
+					envelopeTime: null,
+					messageTime: null,
+					response: `Error: ${error.message}`,
+					createdAt: new Date(),
+				});
+				console.log(`📊 [EmailService] Error logged to database for ${emailType}`);
+			} catch (logError) {
+				console.error(`❌ [EmailService] Failed to log error:`, logError.message);
+			}
+			
 			throw error;
 		}
 	}

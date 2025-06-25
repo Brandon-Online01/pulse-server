@@ -1,104 +1,156 @@
-{{#base headerTitle="Task Overdue" headerSubtitle="Immediate attention required for overdue task"}}
+{{#base headerTitle="Overdue & Missed Tasks Alert" headerSubtitle="Multiple tasks require immediate attention"}}
 
 <div class="greeting">
-    Hello {{assigneeName}}! 🚨
+    Hello {{name}}! 🚨
 </div>
 
 <div class="error-notice">
-    <p>🚨 <strong>URGENT: Task Overdue!</strong> The task "{{taskTitle}}" was due on {{dueDate}} and is now {{daysOverdue}} day{{#if (gt daysOverdue 1)}}s{{/if}} overdue.</p>
+    <p>🚨 <strong>URGENT: You have {{overdueMissedCount.total}} tasks that need immediate attention!</strong></p>
+    <p>{{overdueMissedCount.overdue}} overdue task{{#if (gt overdueMissedCount.overdue 1)}}s{{/if}} and {{overdueMissedCount.missed}} missed task{{#if (gt overdueMissedCount.missed 1)}}s{{/if}} require your immediate action.</p>
 </div>
 
 <div class="message">
-    <p>This task requires immediate attention. Overdue tasks can impact project timelines and team productivity. Please review this task and take action as soon as possible.</p>
+    <p>These tasks are impacting project timelines and team productivity. Please review each task and take action as soon as possible.</p>
 </div>
 
+{{#if overdueTasks}}
+{{#if (gt overdueTasks.length 0)}}
 <div class="info-card">
-    <h3>📋 Overdue Task Details</h3>
-    <div class="detail-grid">
-        <div class="detail-item">
-            <span class="detail-label">Task Title</span>
-            <span class="detail-value">{{taskTitle}}</span>
-        </div>
-        <div class="detail-item">
-            <span class="detail-label">Project</span>
-            <span class="detail-value">{{projectName}}</span>
-        </div>
-        <div class="detail-item">
-            <span class="detail-label">Original Due Date</span>
-            <span class="detail-value">{{dueDate}}</span>
-        </div>
-        <div class="detail-item">
-            <span class="detail-label">Days Overdue</span>
-            <span class="detail-value">{{daysOverdue}}</span>
-        </div>
-        <div class="detail-item">
-            <span class="detail-label">Priority</span>
-            <span class="detail-value">{{priority}}</span>
-        </div>
-        <div class="detail-item">
-            <span class="detail-label">Created By</span>
-            <span class="detail-value">{{taskCreator}}</span>
+    <h3>⏰ Overdue Tasks ({{overdueTasks.length}})</h3>
+    {{#each overdueTasks}}
+    <div class="task-item" style="border-left: 4px solid #ef4444; padding: 15px; margin: 10px 0; background: #fef2f2;">
+        <div class="detail-grid">
+            <div class="detail-item">
+                <span class="detail-label">Task</span>
+                <span class="detail-value"><strong>{{this.title}}</strong></span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Due Date</span>
+                <span class="detail-value">{{this.deadline}}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Days Overdue</span>
+                <span class="detail-value" style="color: #dc2626; font-weight: bold;">{{this.daysOverdue}} day{{#if (gt this.daysOverdue 1)}}s{{/if}}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Priority</span>
+                <span class="detail-value">{{this.priority}}</span>
+            </div>
+            {{#if this.description}}
+            <div class="detail-item full-width">
+                <span class="detail-label">Description</span>
+                <span class="detail-value">{{this.description}}</span>
+            </div>
+            {{/if}}
         </div>
     </div>
+    {{/each}}
 </div>
+{{/if}}
+{{/if}}
+
+{{#if missedTasks}}
+{{#if (gt missedTasks.length 0)}}
+<div class="info-card">
+    <h3>❌ Missed Tasks ({{missedTasks.length}})</h3>
+    {{#each missedTasks}}
+    <div class="task-item" style="border-left: 4px solid #b91c1c; padding: 15px; margin: 10px 0; background: #fef2f2;">
+        <div class="detail-grid">
+            <div class="detail-item">
+                <span class="detail-label">Task</span>
+                <span class="detail-value"><strong>{{this.title}}</strong></span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Due Date</span>
+                <span class="detail-value">{{this.deadline}}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Days Past Due</span>
+                <span class="detail-value" style="color: #991b1b; font-weight: bold;">{{this.daysOverdue}} day{{#if (gt this.daysOverdue 1)}}s{{/if}}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Priority</span>
+                <span class="detail-value">{{this.priority}}</span>
+            </div>
+            {{#if this.description}}
+            <div class="detail-item full-width">
+                <span class="detail-label">Description</span>
+                <span class="detail-value">{{this.description}}</span>
+            </div>
+            {{/if}}
+        </div>
+    </div>
+    {{/each}}
+</div>
+{{/if}}
+{{/if}}
 
 <div class="cta-section">
-    <a href="{{taskUrl}}" class="cta-button">Complete Task Now</a>
+    <a href="{{dashboardLink}}" class="cta-button">View All Tasks</a>
 </div>
-
-{{#if taskDescription}}
-<div class="info-card">
-    <h4>📝 Task Description</h4>
-    <p>{{taskDescription}}</p>
-</div>
-{{/if}}
-
-{{#if impactLevel}}
-<div class="warning-notice">
-    <p>⚠️ <strong>Project Impact:</strong> This overdue task has {{impactLevel}} impact on project delivery. {{#if dependentTasks}}{{dependentTasks}} dependent task{{#if (gt dependentTasks 1)}}s are{{else}} is{{/if}} blocked.{{/if}}</p>
-</div>
-{{/if}}
 
 <div class="info-card">
-    <h4>🚀 Next Steps</h4>
+    <h4>🚀 Immediate Action Required</h4>
     <ul class="feature-list">
-        <li><strong>Immediate Action:</strong> Complete the task or provide a status update</li>
+        <li><strong>Prioritize:</strong> Address the highest priority tasks first</li>
+        <li><strong>Update Status:</strong> Mark tasks as completed or provide status updates</li>
         <li><strong>Communicate Issues:</strong> Report any blockers or challenges immediately</li>
         <li><strong>Request Help:</strong> Reach out if you need additional resources or support</li>
-        <li><strong>Update Timeline:</strong> Provide a realistic completion estimate</li>
-        <li><strong>Prevent Recurrence:</strong> Identify what caused the delay to avoid future issues</li>
+        <li><strong>Set New Deadlines:</strong> Provide realistic completion estimates for remaining work</li>
     </ul>
+</div>
+
+<div class="warning-notice">
+    <p>⚠️ <strong>Impact Assessment:</strong> These overdue tasks may affect project delivery and team performance. Please take immediate action to minimize further delays.</p>
 </div>
 
 <div class="message">
-    <p><strong>Need immediate assistance?</strong> Contact these people right away:</p>
-    <ul style="margin-left: 20px; color: #4b5563;">
-        <li><strong>Task Creator:</strong> {{taskCreator}} ({{taskCreatorEmail}})</li>
-        <li><strong>Project Manager:</strong> {{projectManager}} ({{projectManagerEmail}})</li>
-        <li><strong>Team Lead:</strong> {{teamLead}} ({{teamLeadEmail}})</li>
-        <li><strong>Support:</strong> {{supportEmail}}</li>
-    </ul>
+    <p><strong>Need immediate assistance?</strong> Contact support at <a href="mailto:support@loro.com">support@loro.com</a> or reach out to your project manager.</p>
 </div>
-
-{{#if escalationLevel}}
-<div class="error-notice">
-    <p>🔥 <strong>Escalation Level {{escalationLevel}}:</strong> This task has been escalated due to extended delay. Senior management has been notified and immediate resolution is required.</p>
-</div>
-{{/if}}
 
 <div class="info-card">
-    <h4>📊 Quick Recovery Tips</h4>
+    <h4>📊 Performance Tips</h4>
     <ul class="feature-list">
-        <li><strong>Focus First:</strong> Prioritize this task above other non-critical work</li>
-        <li><strong>Time Block:</strong> Dedicate uninterrupted time to complete this task</li>
-        <li><strong>Break It Down:</strong> If large, split into smaller immediate actions</li>
-        <li><strong>Get Help:</strong> Don't struggle alone - ask team members for assistance</li>
-        <li><strong>Communicate Openly:</strong> Keep stakeholders informed of your progress</li>
+        <li><strong>Time Management:</strong> Block dedicated time for overdue tasks</li>
+        <li><strong>Break Down Tasks:</strong> Split large tasks into manageable chunks</li>
+        <li><strong>Eliminate Distractions:</strong> Focus on completing these critical items</li>
+        <li><strong>Regular Updates:</strong> Keep stakeholders informed of your progress</li>
+        <li><strong>Learn & Improve:</strong> Identify what caused delays to prevent future issues</li>
     </ul>
 </div>
 
-<div class="warning-notice">
-    <p>⏱️ <strong>Response Required:</strong> Please respond to this email within 2 hours with your action plan, even if the task isn't complete yet.</p>
+<div class="error-notice">
+    <p>⏱️ <strong>Response Required:</strong> Please respond within 4 hours with your action plan and updated timelines.</p>
 </div>
+
+<style>
+.task-item {
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+.detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+.detail-item {
+    display: flex;
+    flex-direction: column;
+}
+.detail-item.full-width {
+    grid-column: 1 / -1;
+}
+.detail-label {
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: 500;
+    margin-bottom: 2px;
+}
+.detail-value {
+    font-size: 14px;
+    color: #1f2937;
+    font-weight: 500;
+}
+</style>
 
 {{/base}}

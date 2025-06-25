@@ -8,7 +8,8 @@ import { CommunicationService } from '../communication/communication.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { EmailType } from '../lib/enums/email.enums';
 import { TaskStatus } from '../lib/enums/task.enums';
-import { NotificationType, NotificationStatus } from '../lib/enums/notification.enums';
+import { NotificationType } from '../lib/enums/notification.enums';
+import { TaskEmailDataMapper } from './helpers/email-data-mapper';
 
 @Injectable()
 export class TaskReminderService {
@@ -48,17 +49,17 @@ export class TaskReminderService {
 	@Cron(CronExpression.EVERY_DAY_AT_8AM)
 	async checkOverdueAndMissedTasks() {
 		this.logger.log('Starting overdue and missed tasks check...');
-		
+
 		const now = new Date();
-		
+
 		try {
 			// Get all users
 			const users = await this.userRepository.find();
-			
+
 			for (const user of users) {
 				await this.processUserOverdueAndMissedTasks(user);
 			}
-			
+
 			this.logger.log('Overdue and missed tasks check completed');
 		} catch (error) {
 			this.logger.error('Error checking overdue and missed tasks', error.stack);
@@ -67,36 +68,36 @@ export class TaskReminderService {
 
 	private async processUserOverdueAndMissedTasks(user: User) {
 		const now = new Date();
-		
+
 		try {
 			// Find overdue tasks (tasks with status OVERDUE)
 			const overdueTasks = await this.taskRepository.find({
 				where: {
 					status: TaskStatus.OVERDUE,
 					isDeleted: false,
-					assignees: { uid: user.uid }
+					assignees: { uid: user.uid },
 				},
-				order: { deadline: 'ASC' }
+				order: { deadline: 'ASC' },
 			});
-			
+
 			// Find missed tasks (tasks with status MISSED or tasks with deadline in past and not completed)
 			const missedTasks = await this.taskRepository.find({
 				where: [
 					{
 						status: TaskStatus.MISSED,
 						isDeleted: false,
-						assignees: { uid: user.uid }
+						assignees: { uid: user.uid },
 					},
 					{
 						deadline: LessThan(now),
 						status: Not(In([TaskStatus.COMPLETED, TaskStatus.CANCELLED, TaskStatus.OVERDUE])),
 						isDeleted: false,
-						assignees: { uid: user.uid }
-					}
+						assignees: { uid: user.uid },
+					},
 				],
-				order: { deadline: 'ASC' }
+				order: { deadline: 'ASC' },
 			});
-			
+
 			// If there are any overdue or missed tasks, send an email notification
 			if (overdueTasks.length > 0 || missedTasks.length > 0) {
 				await this.sendOverdueAndMissedTasksReminder(user, overdueTasks, missedTasks);
@@ -109,49 +110,57 @@ export class TaskReminderService {
 	private async sendOverdueAndMissedTasksReminder(user: User, overdueTasks: Task[], missedTasks: Task[]) {
 		try {
 			const now = new Date();
-			
+
 			// Format overdue tasks for the email
-			const formattedOverdueTasks = overdueTasks.map(task => {
+			const formattedOverdueTasks = overdueTasks.map((task) => {
 				const deadlineDate = task.deadline ? new Date(task.deadline) : null;
-				const daysOverdue = deadlineDate ? Math.ceil((now.getTime() - deadlineDate.getTime()) / (1000 * 3600 * 24)) : 0;
-				
+				const daysOverdue = deadlineDate
+					? Math.ceil((now.getTime() - deadlineDate.getTime()) / (1000 * 3600 * 24))
+					: 0;
+
 				return {
 					uid: task.uid,
 					title: task.title,
 					description: task.description,
-					deadline: deadlineDate ? deadlineDate.toLocaleDateString('en-US', {
-						year: 'numeric',
-						month: 'short',
-						day: 'numeric'
-					}) : 'No deadline',
+					deadline: deadlineDate
+						? deadlineDate.toLocaleDateString('en-US', {
+								year: 'numeric',
+								month: 'short',
+								day: 'numeric',
+						  })
+						: 'No deadline',
 					priority: task.priority,
 					status: task.status,
 					progress: task.progress,
-					daysOverdue
+					daysOverdue,
 				};
 			});
-			
+
 			// Format missed tasks for the email
-			const formattedMissedTasks = missedTasks.map(task => {
+			const formattedMissedTasks = missedTasks.map((task) => {
 				const deadlineDate = task.deadline ? new Date(task.deadline) : null;
-				const daysOverdue = deadlineDate ? Math.ceil((now.getTime() - deadlineDate.getTime()) / (1000 * 3600 * 24)) : 0;
-				
+				const daysOverdue = deadlineDate
+					? Math.ceil((now.getTime() - deadlineDate.getTime()) / (1000 * 3600 * 24))
+					: 0;
+
 				return {
 					uid: task.uid,
 					title: task.title,
 					description: task.description,
-					deadline: deadlineDate ? deadlineDate.toLocaleDateString('en-US', {
-						year: 'numeric',
-						month: 'short',
-						day: 'numeric'
-					}) : 'No deadline',
+					deadline: deadlineDate
+						? deadlineDate.toLocaleDateString('en-US', {
+								year: 'numeric',
+								month: 'short',
+								day: 'numeric',
+						  })
+						: 'No deadline',
 					priority: task.priority,
 					status: task.status,
 					progress: task.progress,
-					daysOverdue
+					daysOverdue,
 				};
 			});
-			
+
 			// Prepare email data
 			const emailData = {
 				name: user.name || 'Team Member',
@@ -160,26 +169,22 @@ export class TaskReminderService {
 				overdueMissedCount: {
 					overdue: formattedOverdueTasks.length,
 					missed: formattedMissedTasks.length,
-					total: formattedOverdueTasks.length + formattedMissedTasks.length
+					total: formattedOverdueTasks.length + formattedMissedTasks.length,
 				},
-				dashboardLink: `${process.env.DASHBOARD_URL}/tasks`
+				dashboardLink: `${process.env.DASHBOARD_URL}/tasks`,
 			};
-			
+
 			// Send email notification
-			await this.communicationService.sendEmail(
-				EmailType.TASK_OVERDUE_MISSED,
-				[user.email],
-				emailData
-			);
-			
+			await this.communicationService.sendEmail(EmailType.TASK_OVERDUE_MISSED, [user.email], emailData);
+
 			// Create in-app notification
 			await this.notificationsService.create({
 				title: 'Overdue & Missed Tasks',
 				message: `You have ${emailData.overdueMissedCount.total} task(s) that need attention (${emailData.overdueMissedCount.overdue} overdue, ${emailData.overdueMissedCount.missed} missed)`,
 				type: NotificationType.TASK_REMINDER,
-				owner: user
+				owner: user,
 			});
-			
+
 			this.logger.log(`Sent overdue/missed tasks reminder to user ${user.uid} (${user.email})`);
 		} catch (error) {
 			this.logger.error(`Error sending overdue/missed tasks reminder to user ${user.uid}`, error.stack);
@@ -192,49 +197,36 @@ export class TaskReminderService {
 			uid: In(task.assignees.map((a) => a.uid)),
 		});
 
-		// Prepare common task data
-		const taskData = {
-			uid: task.uid,
-			title: task.title,
-			description: task.description,
-			deadline: task.deadline.toLocaleString(),
-			priority: task.priority,
-			status: task.status,
-			progress: task.progress,
-			creator: {
-				name: `${task.creator.name} ${task.creator.surname}`,
-				email: task.creator.email,
-			},
-			assignees: assignees.map((a) => ({
-				name: `${a.name} ${a.surname}`,
-				email: a.email,
-			})),
-			subtasks: task.subtasks?.map((st) => ({
-				title: st.title,
-				status: st.status,
-			})),
-		};
-
-		// Send to creator
-		await this.communicationService.sendEmail(EmailType.TASK_REMINDER_CREATOR, [task.creator.email], {
-			name: `${task.creator.name} ${task.creator.surname}`,
-			task: taskData,
+		// Get the creator
+		const creator = await this.userRepository.findOne({
+			where: { uid: task.creator[0]?.uid || task.creator.uid },
 		});
+
+		if (!creator) {
+			this.logger.error(`Creator not found for task ${task.uid}`);
+			return;
+		}
+
+		// Send to creator with proper data mapping
+		const creatorEmailData = TaskEmailDataMapper.mapTaskReminderCreatorData(task, creator, assignees);
+		await this.communicationService.sendEmail(EmailType.TASK_REMINDER_CREATOR, [creator.email], creatorEmailData);
 
 		// Create notification for creator
 		await this.notificationsService.create({
 			title: 'Task Deadline Alert',
 			message: `Your created task "${task.title}" is due in 30 minutes`,
 			type: NotificationType.TASK_REMINDER,
-			owner: task.creator,
+			owner: creator,
 		});
 
-		// Send to each assignee
+		// Send to each assignee with proper data mapping
 		for (const assignee of assignees) {
-			await this.communicationService.sendEmail(EmailType.TASK_REMINDER_ASSIGNEE, [assignee.email], {
-				name: `${assignee.name} ${assignee.surname}`,
-				task: taskData,
-			});
+			const assigneeEmailData = TaskEmailDataMapper.mapTaskReminderAssigneeData(task, assignee);
+			await this.communicationService.sendEmail(
+				EmailType.TASK_REMINDER_ASSIGNEE,
+				[assignee.email],
+				assigneeEmailData,
+			);
 
 			// Create notification for assignee
 			await this.notificationsService.create({
