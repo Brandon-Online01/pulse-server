@@ -79,6 +79,9 @@
                     <div style="font-weight: 500; color: {{#if isLate}}#dc2626{{else if isEarly}}#059669{{else}}#374151{{/if}};">
                         {{#if checkInTime}}{{checkInTime}}{{else}}--{{/if}}
                     </div>
+                    {{#if isLate}}
+                        <div style="font-size: 10px; color: #dc2626; font-weight: 500;">{{lateMinutes}}min late</div>
+                    {{/if}}
                 </div>
                 <div>
                     <div style="font-size: 12px; color: #6b7280; text-transform: uppercase; font-weight: 600;">Check Out</div>
@@ -140,6 +143,9 @@
                     <td style="padding: 16px 12px; text-align: center;">
                         {{#if checkInTime}}
                             <div style="font-weight: 600; color: {{#if isLate}}#dc2626{{else if isEarly}}#059669{{else}}#374151{{/if}}; font-size: 14px;">{{checkInTime}}</div>
+                            {{#if isLate}}
+                                <div style="font-size: 11px; color: #dc2626; font-weight: 500; margin-top: 2px;">{{lateMinutes}}min late</div>
+                            {{/if}}
                         {{else}}
                             <div style="color: #9ca3af; font-style: italic; font-size: 14px;">--</div>
                         {{/if}}
@@ -223,6 +229,31 @@
             </div>
         </div>
         {{/each}}
+    </div>
+</div>
+{{/if}}
+
+<!-- Lateness Summary -->
+{{#if latenessSummary.totalLateEmployees}}
+<div class="warning-notice">
+    <h4 style="color: #d97706; margin-bottom: 16px;">📊 Daily Lateness Summary</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Late Employees Today</span>
+            <span class="detail-value" style="color: #dc2626; font-weight: 700;">{{latenessSummary.totalLateEmployees}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Total Late Minutes</span>
+            <span class="detail-value" style="color: #dc2626; font-weight: 700;">{{latenessSummary.totalLateMinutes}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Average Late Minutes</span>
+            <span class="detail-value" style="color: #dc2626; font-weight: 700;">{{latenessSummary.averageLateMinutes}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Punctuality Trend</span>
+            <span class="detail-value" style="color: {{#if (eq latenessSummary.punctualityTrend 'excellent - no late arrivals')}}#22c55e{{else if (eq latenessSummary.punctualityTrend 'good - minimal late arrivals')}}#16a34a{{else if (eq latenessSummary.punctualityTrend 'concerning - moderate late arrivals')}}#f59e0b{{else}}#dc2626{{/if}}; font-weight: 700; text-transform: capitalize;">{{latenessSummary.punctualityTrend}}</span>
+        </div>
     </div>
 </div>
 {{/if}}

@@ -50,6 +50,10 @@ interface AttendanceReportUser {
 		uid: number;
 		name: string;
 	};
+	lateMinutes?: number;
+	earlyMinutes?: number;
+	checkInTime?: string;
+	lateStatus?: 'on-time' | 'late' | 'very-late' | 'extremely-late';
 }
 
 interface AttendanceSummary {
@@ -63,9 +67,13 @@ interface PunctualityBreakdown {
 	earlyArrivals: AttendanceReportUser[];
 	onTimeArrivals: AttendanceReportUser[];
 	lateArrivals: AttendanceReportUser[];
+	veryLateArrivals: AttendanceReportUser[];
 	earlyPercentage: number;
 	onTimePercentage: number;
 	latePercentage: number;
+	veryLatePercentage: number;
+	averageLateMinutes: number;
+	totalLateMinutes: number;
 }
 
 interface EmployeeAttendanceMetric {
@@ -93,6 +101,15 @@ interface MorningReportData {
 	generatedAt: string;
 	dashboardUrl: string;
 	hasEmployees: boolean;
+	latenessSummary: {
+		totalLateEmployees: number;
+		totalLateMinutes: number;
+		averageLateMinutes: number;
+		worstLateArrival: {
+			employee: string;
+			minutes: number;
+		} | null;
+	};
 }
 
 interface EveningReportData {
@@ -109,6 +126,12 @@ interface EveningReportData {
 	};
 	insights: string[];
 	hasEmployees: boolean;
+	latenessSummary: {
+		totalLateEmployees: number;
+		totalLateMinutes: number;
+		averageLateMinutes: number;
+		punctualityTrend: string;
+	};
 }
 
 @Injectable()
@@ -364,6 +387,10 @@ export class AttendanceReportsService {
 							name: owner.branch.name || 'Unknown Branch',
 					  }
 					: undefined,
+				lateMinutes: undefined,
+				earlyMinutes: undefined,
+				checkInTime: attendance.checkIn ? format(attendance.checkIn, 'HH:mm') : undefined,
+				lateStatus: undefined,
 			};
 		});
 
@@ -390,11 +417,32 @@ export class AttendanceReportsService {
 								name: user.branch.name || 'Unknown Branch',
 						  }
 						: undefined,
+					lateMinutes: undefined,
+					earlyMinutes: undefined,
+					checkInTime: undefined,
+					lateStatus: undefined,
 				};
 			});
 
 		// Generate punctuality breakdown
 		const punctuality = await this.generatePunctualityBreakdown(organizationId, todayAttendance);
+
+		// Calculate comprehensive lateness summary
+		const allLateEmployees = [...punctuality.lateArrivals, ...punctuality.veryLateArrivals];
+		const worstLateArrival = allLateEmployees.length > 0 
+			? allLateEmployees.reduce((worst, emp) => 
+				(emp.lateMinutes || 0) > (worst.lateMinutes || 0) ? emp : worst
+			) : null;
+
+		const latenessSummary = {
+			totalLateEmployees: allLateEmployees.length,
+			totalLateMinutes: punctuality.totalLateMinutes,
+			averageLateMinutes: punctuality.averageLateMinutes,
+			worstLateArrival: worstLateArrival ? {
+				employee: worstLateArrival.fullName,
+				minutes: worstLateArrival.lateMinutes || 0
+			} : null,
+		};
 
 		// Generate insights and recommendations with enhanced logic for no employees
 		const insights = this.generateMorningInsights(attendanceRate, punctuality, presentCount, totalEmployees);
@@ -418,6 +466,7 @@ export class AttendanceReportsService {
 			generatedAt: format(today, 'yyyy-MM-dd HH:mm:ss'),
 			dashboardUrl: process.env.APP_URL || 'https://loro.co.za',
 			hasEmployees: totalEmployees > 0,
+			latenessSummary,
 		};
 	}
 
@@ -485,6 +534,10 @@ export class AttendanceReportsService {
 							name: owner.branch.name || 'Unknown Branch',
 					  }
 					: undefined,
+				lateMinutes: undefined,
+				earlyMinutes: undefined,
+				checkInTime: attendance.checkIn ? format(attendance.checkIn, 'HH:mm') : undefined,
+				lateStatus: undefined,
 			};
 		});
 
@@ -511,6 +564,10 @@ export class AttendanceReportsService {
 								name: user.branch.name || 'Unknown Branch',
 						  }
 						: undefined,
+					lateMinutes: undefined,
+					earlyMinutes: undefined,
+					checkInTime: undefined,
+					lateStatus: undefined,
 				};
 			});
 
@@ -544,6 +601,32 @@ export class AttendanceReportsService {
 			return sum;
 		}, 0);
 
+		// Calculate comprehensive lateness summary for evening report
+		const lateEmployeesToday = employeeMetrics.filter(metric => metric.isLate);
+		const totalLateMinutesToday = lateEmployeesToday.reduce((sum, metric) => sum + metric.lateMinutes, 0);
+		const averageLateMinutesToday = lateEmployeesToday.length > 0 ? Math.round((totalLateMinutesToday / lateEmployeesToday.length) * 100) / 100 : 0;
+		
+		// Determine punctuality trend
+		let punctualityTrend = 'stable';
+		const latePercentageToday = employeeMetrics.length > 0 ? (lateEmployeesToday.length / employeeMetrics.length) * 100 : 0;
+		
+		if (latePercentageToday === 0) {
+			punctualityTrend = 'excellent - no late arrivals';
+		} else if (latePercentageToday < 10) {
+			punctualityTrend = 'good - minimal late arrivals';
+		} else if (latePercentageToday < 25) {
+			punctualityTrend = 'concerning - moderate late arrivals';
+		} else {
+			punctualityTrend = 'critical - high rate of late arrivals';
+		}
+
+		const latenessSummary = {
+			totalLateEmployees: lateEmployeesToday.length,
+			totalLateMinutes: totalLateMinutesToday,
+			averageLateMinutes: averageLateMinutesToday,
+			punctualityTrend,
+		};
+
 		const insights = this.generateEveningInsights(employeeMetrics, completedShifts, avgHours);
 
 		return {
@@ -560,6 +643,7 @@ export class AttendanceReportsService {
 			},
 			insights,
 			hasEmployees: allUsers.length > 0,
+			latenessSummary,
 		};
 	}
 
@@ -570,10 +654,42 @@ export class AttendanceReportsService {
 		const earlyArrivals: AttendanceReportUser[] = [];
 		const onTimeArrivals: AttendanceReportUser[] = [];
 		const lateArrivals: AttendanceReportUser[] = [];
+		const veryLateArrivals: AttendanceReportUser[] = [];
 
 		for (const attendance of todayAttendance) {
 			if (!attendance.owner || !attendance.checkIn || !isValid(attendance.checkIn)) {
 				continue;
+			}
+
+			// Get late information and working day info
+			const lateInfo = await this.organizationHoursService.isUserLate(organizationId, attendance.checkIn);
+			const workingDayInfo = await this.organizationHoursService.getWorkingDayInfo(
+				organizationId,
+				attendance.checkIn,
+			);
+
+			// Calculate early/late minutes
+			let lateMinutes = 0;
+			let earlyMinutes = 0;
+			let lateStatus: 'on-time' | 'late' | 'very-late' | 'extremely-late' = 'on-time';
+			
+			if (workingDayInfo.startTime) {
+				const checkInMinutes = TimeCalculatorUtil.timeToMinutes(attendance.checkIn.toTimeString().substring(0, 5));
+				const expectedStartMinutes = TimeCalculatorUtil.timeToMinutes(workingDayInfo.startTime);
+				
+				if (lateInfo.isLate) {
+					lateMinutes = lateInfo.lateMinutes;
+					// Categorize lateness severity
+					if (lateMinutes >= 60) {
+						lateStatus = 'extremely-late';
+					} else if (lateMinutes >= 30) {
+						lateStatus = 'very-late';
+					} else {
+						lateStatus = 'late';
+					}
+				} else if (checkInMinutes < expectedStartMinutes) {
+					earlyMinutes = expectedStartMinutes - checkInMinutes;
+				}
 			}
 
 			// Defensive user profile handling to prevent mix-ups
@@ -596,13 +712,11 @@ export class AttendanceReportsService {
 							name: owner.branch.name || 'Unknown Branch',
 					  }
 					: undefined,
+				lateMinutes: lateMinutes > 0 ? lateMinutes : undefined,
+				earlyMinutes: earlyMinutes > 0 ? earlyMinutes : undefined,
+				checkInTime: attendance.checkIn ? format(attendance.checkIn, 'HH:mm') : undefined,
+				lateStatus,
 			};
-
-			const lateInfo = await this.organizationHoursService.isUserLate(organizationId, attendance.checkIn);
-			const workingDayInfo = await this.organizationHoursService.getWorkingDayInfo(
-				organizationId,
-				attendance.checkIn,
-			);
 
 			if (!workingDayInfo.startTime) {
 				onTimeArrivals.push(user);
@@ -613,7 +727,11 @@ export class AttendanceReportsService {
 			const expectedStartMinutes = TimeCalculatorUtil.timeToMinutes(workingDayInfo.startTime);
 
 			if (lateInfo.isLate) {
-				lateArrivals.push(user);
+				if (lateMinutes >= 30) {
+					veryLateArrivals.push(user);
+				} else {
+					lateArrivals.push(user);
+				}
 			} else if (checkInMinutes < expectedStartMinutes) {
 				earlyArrivals.push(user);
 			} else {
@@ -622,14 +740,21 @@ export class AttendanceReportsService {
 		}
 
 		const total = todayAttendance.length;
+		const allLateArrivals = [...lateArrivals, ...veryLateArrivals];
+		const totalLateMinutes = allLateArrivals.reduce((sum, emp) => sum + (emp.lateMinutes || 0), 0);
+		const averageLateMinutes = allLateArrivals.length > 0 ? Math.round((totalLateMinutes / allLateArrivals.length) * 100) / 100 : 0;
 
 		return {
 			earlyArrivals,
 			onTimeArrivals,
 			lateArrivals,
+			veryLateArrivals,
 			earlyPercentage: total > 0 ? Math.round((earlyArrivals.length / total) * 100) : 0,
 			onTimePercentage: total > 0 ? Math.round((onTimeArrivals.length / total) * 100) : 0,
 			latePercentage: total > 0 ? Math.round((lateArrivals.length / total) * 100) : 0,
+			veryLatePercentage: total > 0 ? Math.round((veryLateArrivals.length / total) * 100) : 0,
+			averageLateMinutes,
+			totalLateMinutes,
 		};
 	}
 
@@ -698,6 +823,10 @@ export class AttendanceReportsService {
 							name: user.branch.name || 'Unknown Branch',
 					  }
 					: undefined,
+				lateMinutes: undefined,
+				earlyMinutes: undefined,
+				checkInTime: undefined,
+				lateStatus: undefined,
 			};
 
 			metrics.push({
@@ -738,6 +867,7 @@ export class AttendanceReportsService {
 			return insights;
 		}
 
+		// Enhanced attendance rate insights
 		if (attendanceRate >= 90) {
 			insights.push('Excellent attendance rate - team showing strong commitment!');
 		} else if (attendanceRate >= 75) {
@@ -746,8 +876,19 @@ export class AttendanceReportsService {
 			insights.push('Attendance rate needs attention - consider checking in with absent team members.');
 		}
 
-		if (punctuality.latePercentage > 25) {
-			insights.push(`${punctuality.latePercentage}% of employees arrived late today.`);
+		// Enhanced late arrival insights with comprehensive data
+		const totalLatePercentage = punctuality.latePercentage + punctuality.veryLatePercentage;
+		if (totalLatePercentage > 0) {
+			if (punctuality.veryLatePercentage > 0) {
+				insights.push(`${totalLatePercentage}% of employees arrived late today (${punctuality.latePercentage}% moderately late, ${punctuality.veryLatePercentage}% very late). Average delay: ${punctuality.averageLateMinutes} minutes.`);
+			} else {
+				insights.push(`${punctuality.latePercentage}% of employees arrived late today with an average delay of ${punctuality.averageLateMinutes} minutes.`);
+			}
+		}
+
+		// Specific insights for severe lateness
+		if (punctuality.veryLatePercentage > 10) {
+			insights.push(`Critical: ${punctuality.veryLatePercentage}% of employees were very late (30+ minutes) - immediate intervention needed.`);
 		}
 
 		if (punctuality.earlyPercentage > 50) {
@@ -830,7 +971,9 @@ export class AttendanceReportsService {
 		}
 
 		if (lateEmployees > 0) {
-			insights.push(`${lateEmployees} employees arrived late today.`);
+			const totalLateMinutes = employeeMetrics.filter(m => m.isLate).reduce((sum, m) => sum + m.lateMinutes, 0);
+			const avgLateMinutes = totalLateMinutes / lateEmployees;
+			insights.push(`${lateEmployees} employees arrived late today, averaging ${Math.round(avgLateMinutes)} minutes late.`);
 		}
 
 		if (highPerformers > 0) {
