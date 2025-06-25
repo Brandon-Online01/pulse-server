@@ -5,7 +5,6 @@ import { ConfigService } from '@nestjs/config';
 import { EmailType } from '../lib/enums/email.enums';
 import { EmailTemplate } from '../lib/interfaces/email.interface';
 import { UserService } from '../user/user.service';
-import { User } from '../user/entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CommunicationLog } from './entities/communication-log.entity';

@@ -12,11 +12,8 @@ export class OrderNotificationsService {
         private readonly configService: ConfigService
     ) { }
 
-    private async sendEmail<T>(type: EmailType, data: T): Promise<void> {
-        this.eventEmitter.emit('email.send', {
-            type,
-            data
-        });
+    private async sendEmail<T>(type: EmailType, recipients: string[], data: T): Promise<void> {
+        this.eventEmitter.emit('send.email', type, recipients, data);
     }
 
     private getCustomerPriority(quotation: Quotation): 'low' | 'medium' | 'high' {
@@ -54,7 +51,7 @@ export class OrderNotificationsService {
         };
 
         // 1. Send customer order confirmation
-        await this.sendEmail(EmailType.NEW_QUOTATION_CLIENT, baseOrderData);
+        await this.sendEmail(EmailType.NEW_QUOTATION_CLIENT, [quotation.client?.email || ''], baseOrderData);
 
         // 2. Send reseller notification if applicable
         if (quotation.reseller) {
@@ -63,7 +60,7 @@ export class OrderNotificationsService {
                 resellerCommission: Number(quotation.resellerCommission) || 0,
                 resellerCode: String(quotation.reseller?.uid),
             };
-            await this.sendEmail(EmailType.NEW_QUOTATION_RESELLER, resellerData);
+            await this.sendEmail(EmailType.NEW_QUOTATION_RESELLER, [quotation.reseller?.email || ''], resellerData);
         }
 
         // 3. Send internal team notification
@@ -73,7 +70,8 @@ export class OrderNotificationsService {
             priority: this.getCustomerPriority(quotation),
             notes: quotation.notes
         };
-        await this.sendEmail(EmailType.NEW_QUOTATION_INTERNAL, internalData);
+        const internalEmail = this.configService.get<string>('INTERNAL_EMAIL') || 'internal@company.com';
+        await this.sendEmail(EmailType.NEW_QUOTATION_INTERNAL, [internalEmail], internalData);
 
         // 4. Send warehouse fulfillment request
         const warehouseData: QuotationWarehouseData = {
@@ -87,6 +85,7 @@ export class OrderNotificationsService {
                 location: item.product.warehouseLocation
             }))
         };
-        await this.sendEmail(EmailType.NEW_QUOTATION_WAREHOUSE_FULFILLMENT, warehouseData);
+        const warehouseEmail = this.configService.get<string>('WAREHOUSE_EMAIL') || 'warehouse@company.com';
+        await this.sendEmail(EmailType.NEW_QUOTATION_WAREHOUSE_FULFILLMENT, [warehouseEmail], warehouseData);
     }
 } 

@@ -1757,11 +1757,7 @@ export class UserService {
 
 			this.logger.debug(`Emitting re-invitation email event for user: ${user.email}`);
 			// Emit email event for re-invitation
-			this.eventEmitter.emit('email.send', {
-				type: EmailType.USER_RE_INVITATION,
-				to: user.email,
-				data: reInvitationData,
-			});
+			this.eventEmitter.emit('send.email', EmailType.USER_RE_INVITATION, [user.email], reInvitationData);
 
 			const executionTime = Date.now() - startTime;
 			this.logger.log(`Re-invitation email sent to user: ${user.email} in ${executionTime}ms`);
