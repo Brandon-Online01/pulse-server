@@ -1,0 +1,56 @@
+{{#base headerTitle="Journal Entry Updated" headerSubtitle="A journal entry has been modified"}}
+
+<div class="greeting">
+    Hello {{name}},
+</div>
+
+<div class="message">
+    <p>The journal entry "{{title}}" has been updated with new information.</p>
+</div>
+
+<!-- Journal Details -->
+<div class="info-card">
+    <h3>📝 Updated Journal Entry</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Entry ID</span>
+            <span class="detail-value">#{{journalId}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Title</span>
+            <span class="detail-value" style="font-weight: 700; color: #7c2d92;">{{title}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Updated By</span>
+            <span class="detail-value">{{updatedBy.name}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Updated Date</span>
+            <span class="detail-value">{{updatedAt}}</span>
+        </div>
+        {{#if previousStatus}}
+        <div class="detail-item">
+            <span class="detail-label">Status Change</span>
+            <span class="detail-value">{{previousStatus}} → {{status}}</span>
+        </div>
+        {{/if}}
+    </div>
+</div>
+
+{{#if updatedFields}}
+<div class="info-card">
+    <h4 style="color: #7c2d92;">🔄 Fields Updated</h4>
+    <ul style="margin-left: 20px; color: #4b5563; line-height: 1.8;">
+        {{#each updatedFields}}
+        <li style="margin-bottom: 4px;">{{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+{{/if}}
+
+<!-- CTA Section -->
+<div class="cta-section">
+    <a href="{{dashboardLink}}/journals/{{journalId}}" class="cta-button">View Updated Entry</a>
+</div>
+
+{{/base}} 

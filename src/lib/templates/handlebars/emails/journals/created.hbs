@@ -1,0 +1,62 @@
+{{#base headerTitle="New Journal Entry Created" headerSubtitle="A journal entry has been successfully created"}}
+
+<div class="greeting">
+    Hello {{name}}! 📝
+</div>
+
+<div class="message">
+    <p>A new journal entry has been created in your {{organization.name}} workspace.</p>
+</div>
+
+<!-- Journal Details -->
+<div class="info-card">
+    <h3>📖 Journal Entry Details</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Entry ID</span>
+            <span class="detail-value">#{{journalId}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Title</span>
+            <span class="detail-value" style="font-weight: 700; color: #7c2d92;">{{title}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Status</span>
+            <span class="detail-value" style="color: #22c55e; font-weight: 600; text-transform: uppercase;">{{status}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Created Date</span>
+            <span class="detail-value">{{createdAt}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Created By</span>
+            <span class="detail-value">{{createdBy.name}}</span>
+        </div>
+        {{#if branch.name}}
+        <div class="detail-item">
+            <span class="detail-label">Branch</span>
+            <span class="detail-value">{{branch.name}}</span>
+        </div>
+        {{/if}}
+    </div>
+</div>
+
+{{#if content}}
+<div class="info-card">
+    <h4 style="color: #4b5563;">📄 Content Preview</h4>
+    <p style="background: #f9fafb; padding: 16px; border-radius: 8px; border-left: 4px solid #7c2d92; margin-top: 12px; line-height: 1.6;">
+        {{#if (gt content.length 200)}}
+            {{substring content 0 200}}...
+        {{else}}
+            {{content}}
+        {{/if}}
+    </p>
+</div>
+{{/if}}
+
+<!-- CTA Section -->
+<div class="cta-section">
+    <a href="{{dashboardLink}}/journals/{{journalId}}" class="cta-button">View Journal Entry</a>
+</div>
+
+{{/base}} 

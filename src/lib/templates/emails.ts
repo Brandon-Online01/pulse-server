@@ -44,6 +44,13 @@ import {
 	AssetAdminNotificationEmailData,
 	LoginNotificationEmailData,
 	EmailVerifiedEmailData,
+	ClaimEmailData,
+	ClaimStatusUpdateEmailData,
+	LeadCreatedEmailData,
+	LeadStatusUpdateEmailData,
+	JournalEmailData,
+	JournalUpdatedEmailData,
+	JournalDeletedEmailData,
 } from '../types/email-templates.types';
 
 // Auth Templates
@@ -302,4 +309,47 @@ export const ClientLoginNotification = (data: LoginNotificationEmailData): strin
 
 export const EmailVerified = (data: EmailVerifiedEmailData): string => {
 	return emailTemplateService.emailVerified(data);
+};
+
+// Claims Templates
+export const ClaimCreated = (data: ClaimEmailData): string => {
+	return emailTemplateService.claimCreated(data);
+};
+
+export const ClaimStatusUpdate = (data: ClaimStatusUpdateEmailData): string => {
+	return emailTemplateService.claimStatusUpdate(data);
+};
+
+export const ClaimApproved = (data: ClaimStatusUpdateEmailData): string => {
+	return emailTemplateService.claimApproved(data);
+};
+
+export const ClaimRejected = (data: ClaimStatusUpdateEmailData): string => {
+	return emailTemplateService.claimRejected(data);
+};
+
+export const ClaimPaid = (data: ClaimStatusUpdateEmailData): string => {
+	return emailTemplateService.claimPaid(data);
+};
+
+// Additional Lead Templates
+export const LeadCreated = (data: LeadCreatedEmailData): string => {
+	return emailTemplateService.leadCreated(data);
+};
+
+export const LeadStatusUpdate = (data: LeadStatusUpdateEmailData): string => {
+	return emailTemplateService.leadStatusUpdate(data);
+};
+
+// Journal Templates
+export const JournalCreated = (data: JournalEmailData): string => {
+	return emailTemplateService.journalCreated(data);
+};
+
+export const JournalUpdated = (data: JournalUpdatedEmailData): string => {
+	return emailTemplateService.journalUpdated(data);
+};
+
+export const JournalDeleted = (data: JournalDeletedEmailData): string => {
+	return emailTemplateService.journalDeleted(data);
 };

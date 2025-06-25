@@ -86,4 +86,17 @@ export enum EmailType {
     LOGIN_NOTIFICATION = 'login_notification',
     CLIENT_LOGIN_NOTIFICATION = 'client_login_notification',
     EMAIL_VERIFIED = 'email_verified',
+    // Claims related emails
+    CLAIM_CREATED = 'claim_created',
+    CLAIM_STATUS_UPDATE = 'claim_status_update',
+    CLAIM_APPROVED = 'claim_approved',
+    CLAIM_REJECTED = 'claim_rejected',
+    CLAIM_PAID = 'claim_paid',
+    // Additional lead emails
+    LEAD_CREATED = 'lead_created',
+    LEAD_STATUS_UPDATE = 'lead_status_update',
+    // Journal related emails
+    JOURNAL_CREATED = 'journal_created',
+    JOURNAL_UPDATED = 'journal_updated',
+    JOURNAL_DELETED = 'journal_deleted',
 } 

@@ -692,6 +692,130 @@ export interface EmailVerifiedEmailData extends BaseEmailData {
 	loginUrl: string;
 }
 
+// Claims related email data
+export interface ClaimEmailData extends BaseEmailData {
+	claimId: number;
+	amount: string;
+	category: string;
+	status: string;
+	comments?: string;
+	submittedDate: string;
+	submittedBy: {
+		name: string;
+		email: string;
+	};
+	branch?: {
+		name: string;
+	};
+	organization: {
+		name: string;
+	};
+	dashboardLink: string;
+}
+
+export interface ClaimStatusUpdateEmailData extends ClaimEmailData {
+	previousStatus: string;
+	processedBy?: {
+		name: string;
+		email: string;
+	};
+	processedAt?: string;
+	rejectionReason?: string;
+	approvalNotes?: string;
+}
+
+// Lead creation and update email data
+export interface LeadCreatedEmailData extends BaseEmailData {
+	leadId: number;
+	leadName: string;
+	leadEmail?: string;
+	leadPhone?: string;
+	leadCompany?: string;
+	leadSource?: string;
+	priority: string;
+	temperature: string;
+	score?: number;
+	createdBy: {
+		name: string;
+		email: string;
+	};
+	assignees?: Array<{
+		name: string;
+		email: string;
+	}>;
+	notes?: string;
+	branch?: {
+		name: string;
+	};
+	organization: {
+		name: string;
+	};
+	dashboardLink: string;
+}
+
+export interface LeadStatusUpdateEmailData extends BaseEmailData {
+	leadId: number;
+	leadName: string;
+	leadEmail?: string;
+	leadPhone?: string;
+	leadCompany?: string;
+	newStatus: string;
+	previousStatus: string;
+	statusReason?: string;
+	nextSteps?: string;
+	updatedBy: {
+		name: string;
+		email: string;
+	};
+	updatedAt: string;
+	assignees?: Array<{
+		name: string;
+		email: string;
+	}>;
+	dashboardLink: string;
+}
+
+// Journal related email data
+export interface JournalEmailData extends BaseEmailData {
+	journalId: number;
+	title: string;
+	content?: string;
+	status: string;
+	category?: string;
+	tags?: string[];
+	createdBy: {
+		name: string;
+		email: string;
+	};
+	createdAt: string;
+	branch?: {
+		name: string;
+	};
+	organization: {
+		name: string;
+	};
+	dashboardLink: string;
+}
+
+export interface JournalUpdatedEmailData extends JournalEmailData {
+	updatedFields: string[];
+	updatedBy: {
+		name: string;
+		email: string;
+	};
+	updatedAt: string;
+	previousStatus?: string;
+}
+
+export interface JournalDeletedEmailData extends JournalEmailData {
+	deletedBy: {
+		name: string;
+		email: string;
+	};
+	deletedAt: string;
+	deletionReason?: string;
+}
+
 export interface EmailDataMap {
 	[EmailType.SIGNUP]: SignupEmailData;
 	[EmailType.VERIFICATION]: VerificationEmailData;
@@ -701,6 +825,7 @@ export interface EmailDataMap {
 	[EmailType.DAILY_REPORT]: DailyReportData;
 	[EmailType.ATTENDANCE_MORNING_REPORT]: MorningReportData;
 	[EmailType.ATTENDANCE_EVENING_REPORT]: EveningReportData;
+	// Quotation email mappings
 	[EmailType.NEW_QUOTATION_CLIENT]: QuotationData;
 	[EmailType.NEW_QUOTATION_INTERNAL]: QuotationInternalData;
 	[EmailType.NEW_QUOTATION_RESELLER]: QuotationResellerData;
@@ -718,6 +843,7 @@ export interface EmailDataMap {
 	[EmailType.QUOTATION_DELIVERED]: QuotationData;
 	[EmailType.QUOTATION_RETURNED]: QuotationData;
 	[EmailType.QUOTATION_COMPLETED]: QuotationData;
+	// License email mappings
 	[EmailType.LICENSE_CREATED]: LicenseEmailData;
 	[EmailType.LICENSE_UPDATED]: LicenseEmailData;
 	[EmailType.LICENSE_LIMIT_REACHED]: LicenseLimitData;
@@ -726,26 +852,32 @@ export interface EmailDataMap {
 	[EmailType.LICENSE_ACTIVATED]: LicenseEmailData;
 	[EmailType.LICENSE_TRANSFERRED_FROM]: LicenseTransferEmailData;
 	[EmailType.LICENSE_TRANSFERRED_TO]: LicenseTransferEmailData;
+	// Task email mappings
 	[EmailType.NEW_TASK]: TaskEmailData;
 	[EmailType.TASK_UPDATED]: TaskEmailData;
 	[EmailType.TASK_COMPLETED]: TaskCompletedEmailData;
 	[EmailType.TASK_REMINDER_ASSIGNEE]: TaskReminderData;
 	[EmailType.TASK_REMINDER_CREATOR]: TaskReminderData;
 	[EmailType.TASK_OVERDUE_MISSED]: TaskOverdueMissedData;
+	// New user email mappings
 	[EmailType.NEW_USER_ADMIN_NOTIFICATION]: NewUserAdminNotificationData;
 	[EmailType.NEW_USER_WELCOME]: NewUserWelcomeData;
+	// Lead email mappings
 	[EmailType.LEAD_CONVERTED_CLIENT]: LeadConvertedClientData;
 	[EmailType.LEAD_CONVERTED_CREATOR]: LeadConvertedCreatorData;
 	[EmailType.LEAD_REMINDER]: LeadReminderData;
 	[EmailType.LEAD_ASSIGNED_TO_USER]: LeadAssignedToUserData;
+	// Task flag email mappings
 	[EmailType.TASK_FLAG_CREATED]: TaskFlagEmailData;
 	[EmailType.TASK_FLAG_UPDATED]: TaskFlagEmailData;
 	[EmailType.TASK_FLAG_RESOLVED]: TaskFlagEmailData;
 	[EmailType.TASK_FEEDBACK_ADDED]: TaskFeedbackEmailData;
 	[EmailType.ORDER_RECEIVED_CLIENT]: OrderReceivedClientData;
+	// Warning email mappings
 	[EmailType.WARNING_ISSUED]: WarningIssuedEmailData;
 	[EmailType.WARNING_UPDATED]: WarningUpdatedEmailData;
 	[EmailType.WARNING_EXPIRED]: WarningExpiredEmailData;
+	// Leave email mappings
 	[EmailType.LEAVE_APPLICATION_CONFIRMATION]: LeaveApplicationConfirmationData;
 	[EmailType.LEAVE_NEW_APPLICATION_ADMIN]: LeaveNewApplicationAdminData;
 	[EmailType.LEAVE_STATUS_UPDATE_USER]: LeaveStatusUpdateUserData;
@@ -765,6 +897,19 @@ export interface EmailDataMap {
 	[EmailType.LOGIN_NOTIFICATION]: LoginNotificationEmailData;
 	[EmailType.CLIENT_LOGIN_NOTIFICATION]: LoginNotificationEmailData;
 	[EmailType.EMAIL_VERIFIED]: EmailVerifiedEmailData;
+	// Claims email mappings
+	[EmailType.CLAIM_CREATED]: ClaimEmailData;
+	[EmailType.CLAIM_STATUS_UPDATE]: ClaimStatusUpdateEmailData;
+	[EmailType.CLAIM_APPROVED]: ClaimStatusUpdateEmailData;
+	[EmailType.CLAIM_REJECTED]: ClaimStatusUpdateEmailData;
+	[EmailType.CLAIM_PAID]: ClaimStatusUpdateEmailData;
+	// Additional lead email mappings
+	[EmailType.LEAD_CREATED]: LeadCreatedEmailData;
+	[EmailType.LEAD_STATUS_UPDATE]: LeadStatusUpdateEmailData;
+	// Journal email mappings
+	[EmailType.JOURNAL_CREATED]: JournalEmailData;
+	[EmailType.JOURNAL_UPDATED]: JournalUpdatedEmailData;
+	[EmailType.JOURNAL_DELETED]: JournalDeletedEmailData;
 }
 
 export type EmailTemplateData<T extends EmailType> = T extends keyof EmailDataMap ? EmailDataMap[T] : never;

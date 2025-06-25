@@ -1,0 +1,89 @@
+{{#base headerTitle="Claim Review Update" headerSubtitle="Your claim requires attention or has been declined"}}
+
+<div class="greeting">
+    Hello {{name}},
+</div>
+
+<div class="message">
+    <p>We have completed the review of your claim and need to inform you of our decision regarding your submission.</p>
+</div>
+
+<!-- Claim Details -->
+<div class="warning-notice">
+    <h3>📋 Claim Review Results</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Claim ID</span>
+            <span class="detail-value">#{{claimId}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Requested Amount</span>
+            <span class="detail-value" style="font-weight: 700; color: #dc2626; font-size: 18px;">{{amount}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Category</span>
+            <span class="detail-value">{{category}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Status</span>
+            <span class="detail-value" style="color: #dc2626; font-weight: 700; text-transform: uppercase;">{{status}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Review Date</span>
+            <span class="detail-value">{{processedAt}}</span>
+        </div>
+        {{#if processedBy}}
+        <div class="detail-item">
+            <span class="detail-label">Reviewed By</span>
+            <span class="detail-value">{{processedBy}}</span>
+        </div>
+        {{/if}}
+    </div>
+</div>
+
+{{#if rejectionReason}}
+<div style="background: rgba(239, 68, 68, 0.1); border: 2px solid #dc2626; border-radius: 12px; padding: 20px; margin: 20px 0;">
+    <h4 style="color: #dc2626; margin-bottom: 16px;">❌ Reason for Decision</h4>
+    <p style="color: #7f1d1d; font-size: 15px; line-height: 1.6; margin: 0;">
+        {{rejectionReason}}
+    </p>
+</div>
+{{/if}}
+
+<!-- Next Steps -->
+<div class="info-card">
+    <h4 style="color: #7c2d92;">🔄 Next Steps Available</h4>
+    <ul style="margin-left: 20px; color: #4b5563; line-height: 1.8;">
+        <li style="margin-bottom: 8px;"><strong>Review the feedback:</strong> Understand the specific reasons for the decision</li>
+        <li style="margin-bottom: 8px;"><strong>Gather additional documentation:</strong> If missing information was the issue</li>
+        <li style="margin-bottom: 8px;"><strong>Submit a new claim:</strong> With corrected information or additional supporting documents</li>
+        <li style="margin-bottom: 8px;"><strong>Contact finance team:</strong> If you need clarification or wish to discuss the decision</li>
+    </ul>
+</div>
+
+<!-- Support Information -->
+<div class="info-card">
+    <h4 style="color: #059669;">💬 Need Assistance?</h4>
+    <p style="color: #4b5563; line-height: 1.6; margin-bottom: 16px;">
+        Our finance team is here to help you understand this decision and guide you through any next steps.
+    </p>
+    <ul style="margin-left: 20px; color: #4b5563; line-height: 1.8;">
+        <li style="margin-bottom: 8px;">Schedule a meeting to discuss the decision</li>
+        <li style="margin-bottom: 8px;">Get guidance on documentation requirements</li>
+        <li style="margin-bottom: 8px;">Understand company claim policies better</li>
+    </ul>
+</div>
+
+<!-- CTA Section -->
+<div class="cta-section">
+    <a href="{{dashboardLink}}/claims/{{claimId}}" class="cta-button">View Full Details</a>
+</div>
+
+<!-- Footer Message -->
+<div class="message">
+    <p style="color: #6b7280; font-size: 14px; margin-top: 20px;">
+        We appreciate your understanding and are committed to helping you with any future claims. Please don't hesitate to reach out if you have questions about this decision.
+    </p>
+</div>
+
+{{/base}} 

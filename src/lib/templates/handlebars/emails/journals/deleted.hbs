@@ -1,0 +1,62 @@
+{{#base headerTitle="Journal Entry Deleted" headerSubtitle="A journal entry has been removed"}}
+
+<div class="greeting">
+    Hello {{name}},
+</div>
+
+<div class="message">
+    <p>The journal entry "{{title}}" has been deleted from your {{organization.name}} workspace.</p>
+</div>
+
+<!-- Journal Details -->
+<div class="warning-notice">
+    <h3>🗑️ Deleted Journal Entry</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Entry ID</span>
+            <span class="detail-value">#{{journalId}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Title</span>
+            <span class="detail-value" style="font-weight: 700; color: #dc2626;">{{title}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Deleted By</span>
+            <span class="detail-value">{{deletedBy.name}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Deletion Date</span>
+            <span class="detail-value">{{deletedAt}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Original Status</span>
+            <span class="detail-value">{{status}}</span>
+        </div>
+    </div>
+</div>
+
+{{#if deletionReason}}
+<div style="background: rgba(239, 68, 68, 0.1); border: 2px solid #dc2626; border-radius: 12px; padding: 20px; margin: 20px 0;">
+    <h4 style="color: #dc2626; margin-bottom: 16px;">📝 Deletion Reason</h4>
+    <p style="color: #7f1d1d; font-size: 15px; line-height: 1.6; margin: 0;">
+        {{deletionReason}}
+    </p>
+</div>
+{{/if}}
+
+<!-- Information -->
+<div class="info-card">
+    <h4 style="color: #7c2d92;">ℹ️ Important Information</h4>
+    <ul style="margin-left: 20px; color: #4b5563; line-height: 1.8;">
+        <li style="margin-bottom: 8px;">This journal entry has been permanently removed from the system</li>
+        <li style="margin-bottom: 8px;">If this deletion was in error, please contact your administrator immediately</li>
+        <li style="margin-bottom: 8px;">This action may not be reversible depending on system policies</li>
+    </ul>
+</div>
+
+<!-- CTA Section -->
+<div class="cta-section">
+    <a href="{{dashboardLink}}/journals" class="cta-button">View All Journals</a>
+</div>
+
+{{/base}} 

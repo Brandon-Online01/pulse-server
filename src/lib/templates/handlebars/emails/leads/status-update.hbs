@@ -1,0 +1,65 @@
+{{#base headerTitle="Lead Status Update" headerSubtitle="A lead status has been updated in your pipeline"}}
+
+<div class="greeting">
+    Hello {{name}},
+</div>
+
+<div class="message">
+    <p>The status of lead "{{leadName}}" has been updated. Please review the changes below.</p>
+</div>
+
+<!-- Status Change -->
+<div class="info-card">
+    <h3>📊 Status Update</h3>
+    <div style="background: #f9fafb; padding: 20px; border-radius: 12px; border-left: 4px solid #7c2d92; margin: 16px 0;">
+        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
+            <span style="color: #6b7280; font-weight: 600;">Previous:</span>
+            <span style="color: #dc2626; font-weight: 700; text-transform: uppercase;">{{previousStatus}}</span>
+            <span style="color: #7c2d92; font-size: 20px;">→</span>
+            <span style="color: #22c55e; font-weight: 700; text-transform: uppercase;">{{newStatus}}</span>
+        </div>
+    </div>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Lead ID</span>
+            <span class="detail-value">#{{leadId}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Lead Name</span>
+            <span class="detail-value" style="font-weight: 700; color: #7c2d92;">{{leadName}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Updated By</span>
+            <span class="detail-value">{{updatedBy.name}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Updated Date</span>
+            <span class="detail-value">{{updatedAt}}</span>
+        </div>
+    </div>
+</div>
+
+{{#if statusReason}}
+<div class="info-card">
+    <h4 style="color: #4b5563;">💬 Update Reason</h4>
+    <p style="background: #f9fafb; padding: 16px; border-radius: 8px; border-left: 4px solid #7c2d92; margin-top: 12px;">
+        {{statusReason}}
+    </p>
+</div>
+{{/if}}
+
+{{#if nextSteps}}
+<div class="info-card">
+    <h4 style="color: #7c2d92;">⏭️ Next Steps</h4>
+    <p style="background: #f0f9ff; padding: 16px; border-radius: 8px; border-left: 4px solid #0ea5e9; margin-top: 12px;">
+        {{nextSteps}}
+    </p>
+</div>
+{{/if}}
+
+<!-- CTA Section -->
+<div class="cta-section">
+    <a href="{{dashboardLink}}/leads/{{leadId}}" class="cta-button">View Lead Details</a>
+</div>
+
+{{/base}} 

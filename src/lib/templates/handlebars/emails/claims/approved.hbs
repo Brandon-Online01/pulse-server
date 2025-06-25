@@ -1,0 +1,86 @@
+{{#base headerTitle="Claim Approved! 🎉" headerSubtitle="Great news! Your claim has been approved for payment"}}
+
+<div class="greeting">
+    Congratulations {{name}}! 🎊
+</div>
+
+<div class="message">
+    <p>We're pleased to inform you that your claim has been <strong style="color: #22c55e;">approved</strong> and will be processed for payment according to our standard payment schedule.</p>
+</div>
+
+<!-- Claim Details -->
+<div class="success-notice">
+    <h3>✅ Approved Claim Details</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Claim ID</span>
+            <span class="detail-value">#{{claimId}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Approved Amount</span>
+            <span class="detail-value" style="font-weight: 700; color: #22c55e; font-size: 20px;">{{amount}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Category</span>
+            <span class="detail-value">{{category}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Status</span>
+            <span class="detail-value" style="color: #22c55e; font-weight: 700; text-transform: uppercase;">{{status}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Approved Date</span>
+            <span class="detail-value">{{processedAt}}</span>
+        </div>
+        {{#if processedBy}}
+        <div class="detail-item">
+            <span class="detail-label">Approved By</span>
+            <span class="detail-value">{{processedBy}}</span>
+        </div>
+        {{/if}}
+    </div>
+</div>
+
+{{#if approvalNotes}}
+<div class="info-card" style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-left-color: #22c55e;">
+    <h4 style="color: #166534;">📝 Approval Notes</h4>
+    <p style="background: rgba(34, 197, 94, 0.1); padding: 16px; border-radius: 8px; border-left: 4px solid #22c55e; margin-top: 12px;">
+        {{approvalNotes}}
+    </p>
+</div>
+{{/if}}
+
+<!-- Payment Information -->
+<div class="info-card">
+    <h4 style="color: #7c2d92;">💰 Payment Information</h4>
+    <ul style="margin-left: 20px; color: #4b5563; line-height: 1.8;">
+        <li style="margin-bottom: 8px;">Payment will be processed within the next 3-5 business days</li>
+        <li style="margin-bottom: 8px;">You will receive a payment confirmation email once processed</li>
+        <li style="margin-bottom: 8px;">Payment will be made to your registered bank account on file</li>
+        <li style="margin-bottom: 8px;">A detailed payment receipt will be provided for your records</li>
+    </ul>
+</div>
+
+<!-- Important Notes -->
+<div class="info-card">
+    <h4 style="color: #059669;">📋 Important Notes</h4>
+    <ul style="margin-left: 20px; color: #4b5563; line-height: 1.8;">
+        <li style="margin-bottom: 8px;">Keep this email for your financial records</li>
+        <li style="margin-bottom: 8px;">Contact finance if you don't receive payment within the expected timeframe</li>
+        <li style="margin-bottom: 8px;">Ensure your banking details are up to date in the system</li>
+    </ul>
+</div>
+
+<!-- CTA Section -->
+<div class="cta-section">
+    <a href="{{dashboardLink}}/claims/{{claimId}}" class="cta-button" style="background: #22c55e;">View Claim Status</a>
+</div>
+
+<!-- Footer Message -->
+<div class="message">
+    <p style="color: #6b7280; font-size: 14px; margin-top: 20px;">
+        Thank you for your patience during the review process. If you have any questions about your payment, please don't hesitate to contact our finance team.
+    </p>
+</div>
+
+{{/base}} 

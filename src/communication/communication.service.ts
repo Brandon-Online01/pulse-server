@@ -101,6 +101,13 @@ import {
 	AssetAdminNotificationEmailData,
 	LoginNotificationEmailData,
 	EmailVerifiedEmailData,
+	ClaimEmailData,
+	ClaimStatusUpdateEmailData,
+	LeadCreatedEmailData,
+	LeadStatusUpdateEmailData,
+	JournalEmailData,
+	JournalUpdatedEmailData,
+	JournalDeletedEmailData,
 } from '../lib/types/email-templates.types';
 import {
 	TaskFlagCreated,
@@ -119,6 +126,16 @@ import {
 	LoginNotification,
 	ClientLoginNotification,
 	EmailVerified,
+	ClaimCreated,
+	ClaimStatusUpdate,
+	ClaimApproved,
+	ClaimRejected,
+	ClaimPaid,
+	LeadCreated,
+	LeadStatusUpdate,
+	JournalCreated,
+	JournalUpdated,
+	JournalDeleted,
 } from '../lib/templates/emails';
 
 @Injectable()
@@ -549,6 +566,56 @@ export class CommunicationService {
 				return {
 					subject: 'Email Successfully Verified',
 					body: EmailVerified(data as EmailVerifiedEmailData),
+				};
+			case EmailType.CLAIM_CREATED:
+				return {
+					subject: 'New Claim Submitted',
+					body: ClaimCreated(data as ClaimEmailData),
+				};
+			case EmailType.CLAIM_STATUS_UPDATE:
+				return {
+					subject: 'Claim Status Update',
+					body: ClaimStatusUpdate(data as ClaimStatusUpdateEmailData),
+				};
+			case EmailType.CLAIM_APPROVED:
+				return {
+					subject: 'Claim Approved',
+					body: ClaimApproved(data as ClaimStatusUpdateEmailData),
+				};
+			case EmailType.CLAIM_REJECTED:
+				return {
+					subject: 'Claim Rejected',
+					body: ClaimRejected(data as ClaimStatusUpdateEmailData),
+				};
+			case EmailType.CLAIM_PAID:
+				return {
+					subject: 'Claim Payment Processed',
+					body: ClaimPaid(data as ClaimStatusUpdateEmailData),
+				};
+			case EmailType.LEAD_CREATED:
+				return {
+					subject: 'New Lead Created',
+					body: LeadCreated(data as LeadCreatedEmailData),
+				};
+			case EmailType.LEAD_STATUS_UPDATE:
+				return {
+					subject: 'Lead Status Update',
+					body: LeadStatusUpdate(data as LeadStatusUpdateEmailData),
+				};
+			case EmailType.JOURNAL_CREATED:
+				return {
+					subject: 'New Journal Entry Created',
+					body: JournalCreated(data as JournalEmailData),
+				};
+			case EmailType.JOURNAL_UPDATED:
+				return {
+					subject: 'Journal Entry Updated',
+					body: JournalUpdated(data as JournalUpdatedEmailData),
+				};
+			case EmailType.JOURNAL_DELETED:
+				return {
+					subject: 'Journal Entry Deleted',
+					body: JournalDeleted(data as JournalDeletedEmailData),
 				};
 			default:
 				throw new NotFoundException(`Unknown email template type: ${type}`);

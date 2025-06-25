@@ -47,6 +47,13 @@ import {
 	AssetAdminNotificationEmailData,
 	LoginNotificationEmailData,
 	EmailVerifiedEmailData,
+	ClaimEmailData,
+	ClaimStatusUpdateEmailData,
+	LeadCreatedEmailData,
+	LeadStatusUpdateEmailData,
+	JournalEmailData,
+	JournalUpdatedEmailData,
+	JournalDeletedEmailData,
 } from '../types/email-templates.types';
 
 class EmailTemplateService {
@@ -533,6 +540,49 @@ class EmailTemplateService {
 		return this.renderTemplate('auth/email-verified.hbs', data);
 	}
 
+	// Claims Templates
+	claimCreated(data: ClaimEmailData): string {
+		return this.renderTemplate('claims/created.hbs', data);
+	}
+
+	claimStatusUpdate(data: ClaimStatusUpdateEmailData): string {
+		return this.renderTemplate('claims/status-update.hbs', data);
+	}
+
+	claimApproved(data: ClaimStatusUpdateEmailData): string {
+		return this.renderTemplate('claims/approved.hbs', data);
+	}
+
+	claimRejected(data: ClaimStatusUpdateEmailData): string {
+		return this.renderTemplate('claims/rejected.hbs', data);
+	}
+
+	claimPaid(data: ClaimStatusUpdateEmailData): string {
+		return this.renderTemplate('claims/paid.hbs', data);
+	}
+
+	// Lead Templates
+	leadCreated(data: LeadCreatedEmailData): string {
+		return this.renderTemplate('leads/created.hbs', data);
+	}
+
+	leadStatusUpdate(data: LeadStatusUpdateEmailData): string {
+		return this.renderTemplate('leads/status-update.hbs', data);
+	}
+
+	// Journal Templates
+	journalCreated(data: JournalEmailData): string {
+		return this.renderTemplate('journals/created.hbs', data);
+	}
+
+	journalUpdated(data: JournalUpdatedEmailData): string {
+		return this.renderTemplate('journals/updated.hbs', data);
+	}
+
+	journalDeleted(data: JournalDeletedEmailData): string {
+		return this.renderTemplate('journals/deleted.hbs', data);
+	}
+
 	/**
 	 * Clear the compiled template cache and reinitialize Handlebars
 	 * Useful for development or when templates are updated
@@ -599,6 +649,19 @@ class EmailTemplateService {
 			'leave/deleted-notification.hbs',
 			'attendance/morning-report.hbs',
 			'attendance/evening-report.hbs',
+			// Claims templates
+			'claims/created.hbs',
+			'claims/status-update.hbs',
+			'claims/approved.hbs',
+			'claims/rejected.hbs',
+			'claims/paid.hbs',
+			// Additional lead templates
+			'leads/created.hbs',
+			'leads/status-update.hbs',
+			// Journal templates
+			'journals/created.hbs',
+			'journals/updated.hbs',
+			'journals/deleted.hbs',
 		];
 
 		templates.forEach((template) => {

@@ -1,0 +1,99 @@
+{{#base headerTitle="New Lead Created" headerSubtitle="A new sales lead has been added to your pipeline"}}
+
+<div class="greeting">
+    Hello {{name}}! 🎯
+</div>
+
+<div class="message">
+    <p>A new lead has been created in your {{organization.name}} sales pipeline and requires attention.</p>
+</div>
+
+<!-- Lead Details -->
+<div class="info-card">
+    <h3>🎯 Lead Information</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Lead ID</span>
+            <span class="detail-value">#{{leadId}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Lead Name</span>
+            <span class="detail-value" style="font-weight: 700; color: #7c2d92; font-size: 16px;">{{leadName}}</span>
+        </div>
+        {{#if leadCompany}}
+        <div class="detail-item">
+            <span class="detail-label">Company</span>
+            <span class="detail-value">{{leadCompany}}</span>
+        </div>
+        {{/if}}
+        {{#if leadEmail}}
+        <div class="detail-item">
+            <span class="detail-label">Email</span>
+            <span class="detail-value">{{leadEmail}}</span>
+        </div>
+        {{/if}}
+        {{#if leadPhone}}
+        <div class="detail-item">
+            <span class="detail-label">Phone</span>
+            <span class="detail-value">{{leadPhone}}</span>
+        </div>
+        {{/if}}
+        <div class="detail-item">
+            <span class="detail-label">Priority</span>
+            <span class="detail-value" style="color: {{#eq priority 'high'}}#dc2626{{else if (eq priority 'medium')}}#f59e0b{{else}}#22c55e{{/eq}}; font-weight: 600; text-transform: uppercase;">{{priority}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Temperature</span>
+            <span class="detail-value" style="color: {{#eq temperature 'hot'}}#dc2626{{else if (eq temperature 'warm')}}#f59e0b{{else}}#22c55e{{/eq}}; font-weight: 600; text-transform: uppercase;">{{temperature}}</span>
+        </div>
+        {{#if score}}
+        <div class="detail-item">
+            <span class="detail-label">Lead Score</span>
+            <span class="detail-value" style="font-weight: 700; color: #7c2d92;">{{score}}/100</span>
+        </div>
+        {{/if}}
+    </div>
+</div>
+
+<!-- Assignment Info -->
+<div class="info-card">
+    <h4 style="color: #7c2d92;">👥 Assignment Details</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Created By</span>
+            <span class="detail-value">{{createdBy.name}}</span>
+        </div>
+        {{#if assignees}}
+        <div class="detail-item">
+            <span class="detail-label">Assigned To</span>
+            <span class="detail-value">
+                {{#each assignees}}
+                    {{name}}{{#unless @last}}, {{/unless}}
+                {{/each}}
+            </span>
+        </div>
+        {{/if}}
+        {{#if branch.name}}
+        <div class="detail-item">
+            <span class="detail-label">Branch</span>
+            <span class="detail-value">{{branch.name}}</span>
+        </div>
+        {{/if}}
+    </div>
+</div>
+
+{{#if notes}}
+<div class="info-card">
+    <h4 style="color: #4b5563;">📝 Lead Notes</h4>
+    <p style="background: #f9fafb; padding: 16px; border-radius: 8px; border-left: 4px solid #7c2d92; margin-top: 12px; line-height: 1.6;">
+        {{notes}}
+    </p>
+</div>
+{{/if}}
+
+<!-- CTA Section -->
+<div class="cta-section">
+    <a href="{{dashboardLink}}/leads/{{leadId}}" class="cta-button">View Lead Details</a>
+</div>
+
+{{/base}} 
