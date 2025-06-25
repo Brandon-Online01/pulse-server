@@ -2129,4 +2129,392 @@ export class UserService {
 			// Don't throw error as this shouldn't fail the main operation
 		}
 	}
+
+	/**
+	 * Send target achievement notification email
+	 * @param userId - User ID who achieved the target
+	 * @param targetType - Type of target achieved (Sales, Leads, etc.)
+	 * @param achievementData - Achievement details
+	 */
+	async sendTargetAchievementEmail(
+		userId: number,
+		targetType: string,
+		achievementData: {
+			achievementPercentage: number;
+			currentValue: number;
+			targetValue: number;
+			achievementDate: string;
+			periodStartDate: string;
+			periodEndDate: string;
+			motivationalMessage?: string;
+		},
+	): Promise<void> {
+		try {
+			const user = await this.userRepository.findOne({
+				where: { uid: userId, isDeleted: false },
+				relations: ['organisation', 'branch'],
+			});
+
+			if (!user) {
+				this.logger.error(`User ${userId} not found for target achievement email`);
+				return;
+			}
+
+			const emailData = {
+				name: `${user.name} ${user.surname}`.trim(),
+				userName: `${user.name} ${user.surname}`.trim(),
+				userEmail: user.email,
+				targetType,
+				achievementPercentage: achievementData.achievementPercentage,
+				currentValue: achievementData.currentValue,
+				targetValue: achievementData.targetValue,
+				achievementDate: achievementData.achievementDate,
+				organizationName: user.organisation?.name || 'Organization',
+				branchName: user.branch?.name,
+				periodStartDate: achievementData.periodStartDate,
+				periodEndDate: achievementData.periodEndDate,
+				dashboardUrl: `${this.configService.get('FRONTEND_URL')}/dashboard`,
+				motivationalMessage: achievementData.motivationalMessage,
+			};
+
+			this.eventEmitter.emit('email.send', {
+				to: user.email,
+				type: EmailType.USER_TARGET_ACHIEVEMENT,
+				data: emailData,
+			});
+
+			this.logger.log(`Target achievement email sent to user ${userId} for ${targetType} target`);
+		} catch (error) {
+			this.logger.error(`Error sending target achievement email to user ${userId}:`, error.message);
+		}
+	}
+
+	/**
+	 * Send target milestone notification email
+	 * @param userId - User ID who reached the milestone
+	 * @param targetType - Type of target
+	 * @param milestoneData - Milestone details
+	 */
+	async sendTargetMilestoneEmail(
+		userId: number,
+		targetType: string,
+		milestoneData: {
+			milestonePercentage: number;
+			currentValue: number;
+			targetValue: number;
+			remainingValue: number;
+			milestoneName: string;
+			periodStartDate: string;
+			periodEndDate: string;
+			daysRemaining: number;
+			encouragementMessage?: string;
+		},
+	): Promise<void> {
+		try {
+			const user = await this.userRepository.findOne({
+				where: { uid: userId, isDeleted: false },
+				relations: ['organisation', 'branch'],
+			});
+
+			if (!user) {
+				this.logger.error(`User ${userId} not found for target milestone email`);
+				return;
+			}
+
+			const emailData = {
+				name: `${user.name} ${user.surname}`.trim(),
+				userName: `${user.name} ${user.surname}`.trim(),
+				userEmail: user.email,
+				targetType,
+				milestonePercentage: milestoneData.milestonePercentage,
+				currentValue: milestoneData.currentValue,
+				targetValue: milestoneData.targetValue,
+				remainingValue: milestoneData.remainingValue,
+				milestoneName: milestoneData.milestoneName,
+				organizationName: user.organisation?.name || 'Organization',
+				branchName: user.branch?.name,
+				periodStartDate: milestoneData.periodStartDate,
+				periodEndDate: milestoneData.periodEndDate,
+				daysRemaining: milestoneData.daysRemaining,
+				dashboardUrl: `${this.configService.get('FRONTEND_URL')}/dashboard`,
+				encouragementMessage: milestoneData.encouragementMessage,
+			};
+
+			this.eventEmitter.emit('email.send', {
+				to: user.email,
+				type: EmailType.USER_TARGET_MILESTONE,
+				data: emailData,
+			});
+
+			this.logger.log(`Target milestone email sent to user ${userId} for ${targetType} milestone`);
+		} catch (error) {
+			this.logger.error(`Error sending target milestone email to user ${userId}:`, error.message);
+		}
+	}
+
+	/**
+	 * Send target deadline reminder email
+	 * @param userId - User ID to remind
+	 * @param reminderData - Reminder details
+	 */
+	async sendTargetDeadlineReminderEmail(
+		userId: number,
+		reminderData: {
+			targets: Array<{
+				type: string;
+				currentValue: number;
+				targetValue: number;
+				progressPercentage: number;
+				gapValue: number;
+			}>;
+			periodEndDate: string;
+			daysRemaining: number;
+			urgencyLevel: 'low' | 'medium' | 'high';
+			recommendedActions: string[];
+		},
+	): Promise<void> {
+		try {
+			const user = await this.userRepository.findOne({
+				where: { uid: userId, isDeleted: false },
+				relations: ['organisation', 'branch'],
+			});
+
+			if (!user) {
+				this.logger.error(`User ${userId} not found for target deadline reminder email`);
+				return;
+			}
+
+			const emailData = {
+				name: `${user.name} ${user.surname}`.trim(),
+				userName: `${user.name} ${user.surname}`.trim(),
+				userEmail: user.email,
+				targets: reminderData.targets,
+				organizationName: user.organisation?.name || 'Organization',
+				branchName: user.branch?.name,
+				periodEndDate: reminderData.periodEndDate,
+				daysRemaining: reminderData.daysRemaining,
+				dashboardUrl: `${this.configService.get('FRONTEND_URL')}/dashboard`,
+				urgencyLevel: reminderData.urgencyLevel,
+				recommendedActions: reminderData.recommendedActions,
+			};
+
+			this.eventEmitter.emit('email.send', {
+				to: user.email,
+				type: EmailType.USER_TARGET_DEADLINE_REMINDER,
+				data: emailData,
+			});
+
+			this.logger.log(`Target deadline reminder email sent to user ${userId} with urgency: ${reminderData.urgencyLevel}`);
+		} catch (error) {
+			this.logger.error(`Error sending target deadline reminder email to user ${userId}:`, error.message);
+		}
+	}
+
+	/**
+	 * Send performance alert email
+	 * @param userId - User ID with performance issues
+	 * @param alertData - Performance alert details
+	 */
+	async sendTargetPerformanceAlertEmail(
+		userId: number,
+		alertData: {
+			alertType: 'underperforming' | 'at_risk' | 'improvement_needed';
+			targets: Array<{
+				type: string;
+				currentValue: number;
+				targetValue: number;
+				progressPercentage: number;
+				expectedProgress: number;
+				performanceGap: number;
+			}>;
+			periodStartDate: string;
+			periodEndDate: string;
+			daysElapsed: number;
+			daysRemaining: number;
+			managerName?: string;
+			managerEmail?: string;
+			improvementSuggestions: string[];
+			supportResources: Array<{
+				title: string;
+				url?: string;
+				description: string;
+			}>;
+		},
+	): Promise<void> {
+		try {
+			const user = await this.userRepository.findOne({
+				where: { uid: userId, isDeleted: false },
+				relations: ['organisation', 'branch'],
+			});
+
+			if (!user) {
+				this.logger.error(`User ${userId} not found for performance alert email`);
+				return;
+			}
+
+			const emailData = {
+				name: `${user.name} ${user.surname}`.trim(),
+				userName: `${user.name} ${user.surname}`.trim(),
+				userEmail: user.email,
+				alertType: alertData.alertType,
+				targets: alertData.targets,
+				organizationName: user.organisation?.name || 'Organization',
+				branchName: user.branch?.name,
+				periodStartDate: alertData.periodStartDate,
+				periodEndDate: alertData.periodEndDate,
+				daysElapsed: alertData.daysElapsed,
+				daysRemaining: alertData.daysRemaining,
+				managerName: alertData.managerName,
+				managerEmail: alertData.managerEmail,
+				improvementSuggestions: alertData.improvementSuggestions,
+				supportResources: alertData.supportResources,
+				dashboardUrl: `${this.configService.get('FRONTEND_URL')}/dashboard`,
+			};
+
+			this.eventEmitter.emit('email.send', {
+				to: user.email,
+				type: EmailType.USER_TARGET_PERFORMANCE_ALERT,
+				data: emailData,
+			});
+
+			this.logger.log(`Performance alert email sent to user ${userId} with alert type: ${alertData.alertType}`);
+		} catch (error) {
+			this.logger.error(`Error sending performance alert email to user ${userId}:`, error.message);
+		}
+	}
+
+	/**
+	 * Send ERP update confirmation email
+	 * @param userId - User ID whose targets were updated
+	 * @param updateData - Update confirmation details
+	 */
+	async sendTargetERPUpdateConfirmationEmail(
+		userId: number,
+		updateData: {
+			updateSource: string;
+			transactionId: string;
+			updateDate: string;
+			updatedTargets: Array<{
+				type: string;
+				previousValue: number;
+				newValue: number;
+				updateMode: 'increment' | 'replace';
+			}>;
+			updatedBy?: string;
+			supportEmail: string;
+		},
+	): Promise<void> {
+		try {
+			const user = await this.userRepository.findOne({
+				where: { uid: userId, isDeleted: false },
+				relations: ['organisation', 'branch'],
+			});
+
+			if (!user) {
+				this.logger.error(`User ${userId} not found for ERP update confirmation email`);
+				return;
+			}
+
+			const emailData = {
+				name: `${user.name} ${user.surname}`.trim(),
+				userName: `${user.name} ${user.surname}`.trim(),
+				userEmail: user.email,
+				updateSource: updateData.updateSource,
+				transactionId: updateData.transactionId,
+				updateDate: updateData.updateDate,
+				updatedTargets: updateData.updatedTargets,
+				organizationName: user.organisation?.name || 'Organization',
+				branchName: user.branch?.name,
+				updatedBy: updateData.updatedBy,
+				dashboardUrl: `${this.configService.get('FRONTEND_URL')}/dashboard`,
+				supportEmail: updateData.supportEmail,
+			};
+
+			this.eventEmitter.emit('email.send', {
+				to: user.email,
+				type: EmailType.USER_TARGET_ERP_UPDATE_CONFIRMATION,
+				data: emailData,
+			});
+
+			this.logger.log(`ERP update confirmation email sent to user ${userId} for transaction: ${updateData.transactionId}`);
+		} catch (error) {
+			this.logger.error(`Error sending ERP update confirmation email to user ${userId}:`, error.message);
+		}
+	}
+
+	/**
+	 * Send period summary email
+	 * @param userId - User ID for the summary
+	 * @param summaryData - Period summary details
+	 */
+	async sendTargetPeriodSummaryEmail(
+		userId: number,
+		summaryData: {
+			periodType: 'weekly' | 'monthly' | 'quarterly' | 'yearly';
+			periodStartDate: string;
+			periodEndDate: string;
+			overallPerformance: {
+				achievedTargets: number;
+				totalTargets: number;
+				achievementRate: number;
+				grade: string;
+			};
+			targetsSummary: Array<{
+				type: string;
+				achieved: boolean;
+				currentValue: number;
+				targetValue: number;
+				progressPercentage: number;
+				trend: 'improving' | 'declining' | 'stable';
+			}>;
+			achievements: string[];
+			improvementAreas: string[];
+			nextPeriodRecommendations: string[];
+			managerName?: string;
+			celebrateSuccess: boolean;
+			recognitionMessage?: string;
+		},
+	): Promise<void> {
+		try {
+			const user = await this.userRepository.findOne({
+				where: { uid: userId, isDeleted: false },
+				relations: ['organisation', 'branch'],
+			});
+
+			if (!user) {
+				this.logger.error(`User ${userId} not found for period summary email`);
+				return;
+			}
+
+			const emailData = {
+				name: `${user.name} ${user.surname}`.trim(),
+				userName: `${user.name} ${user.surname}`.trim(),
+				userEmail: user.email,
+				periodType: summaryData.periodType,
+				periodStartDate: summaryData.periodStartDate,
+				periodEndDate: summaryData.periodEndDate,
+				overallPerformance: summaryData.overallPerformance,
+				targetsSummary: summaryData.targetsSummary,
+				achievements: summaryData.achievements,
+				improvementAreas: summaryData.improvementAreas,
+				nextPeriodRecommendations: summaryData.nextPeriodRecommendations,
+				organizationName: user.organisation?.name || 'Organization',
+				branchName: user.branch?.name,
+				managerName: summaryData.managerName,
+				dashboardUrl: `${this.configService.get('FRONTEND_URL')}/dashboard`,
+				celebrateSuccess: summaryData.celebrateSuccess,
+				recognitionMessage: summaryData.recognitionMessage,
+			};
+
+			this.eventEmitter.emit('email.send', {
+				to: user.email,
+				type: EmailType.USER_TARGET_PERIOD_SUMMARY,
+				data: emailData,
+			});
+
+			this.logger.log(`Period summary email sent to user ${userId} for ${summaryData.periodType} period`);
+		} catch (error) {
+			this.logger.error(`Error sending period summary email to user ${userId}:`, error.message);
+		}
+	}
 }

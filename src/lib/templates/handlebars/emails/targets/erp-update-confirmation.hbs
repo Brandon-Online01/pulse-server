@@ -1,0 +1,164 @@
+{{#base headerTitle="✅ Target Update Confirmed" headerSubtitle="Your target data has been updated from {{updateSource}}"}}
+
+<div class="greeting">
+    Hello {{userName}}! ✅
+</div>
+
+<div class="message">
+    <p><strong>Update Confirmed!</strong> We've successfully processed target data updates for your account at {{organizationName}}. This automated notification confirms that your target progress has been synchronized with our system.</p>
+</div>
+
+<div class="success-notice">
+    <p>🔄 <strong>System Update:</strong> Target data synchronized from {{updateSource}} on {{formatDate updateDate}}</p>
+</div>
+
+<div class="info-card">
+    <h3>📊 Update Details</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Transaction ID</span>
+            <span class="detail-value" style="font-family: monospace; background: #f3f4f6; padding: 2px 6px; border-radius: 4px;">{{transactionId}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Update Source</span>
+            <span class="detail-value">{{updateSource}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Process Date</span>
+            <span class="detail-value">{{formatDate updateDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Organization</span>
+            <span class="detail-value">{{organizationName}}</span>
+        </div>
+        {{#if branchName}}
+        <div class="detail-item">
+            <span class="detail-label">Branch</span>
+            <span class="detail-value">{{branchName}}</span>
+        </div>
+        {{/if}}
+        {{#if updatedBy}}
+        <div class="detail-item">
+            <span class="detail-label">Updated By</span>
+            <span class="detail-value">{{updatedBy}}</span>
+        </div>
+        {{/if}}
+    </div>
+</div>
+
+<div class="info-card">
+    <h4>📈 Updated Targets Summary</h4>
+    {{#each updatedTargets}}
+    <div style="margin-bottom: 16px; padding: 16px; background: {{#if (eq updateMode 'increment')}}#dcfce7{{else}}#dbeafe{{/if}}; border-radius: 8px; border-left: 4px solid {{#if (eq updateMode 'increment')}}#22c55e{{else}}#3b82f6{{/if}};">
+        <div class="detail-grid">
+            <div class="detail-item">
+                <span class="detail-label">Target Type</span>
+                <span class="detail-value" style="font-weight: 600;">{{type}}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Update Mode</span>
+                <span class="detail-value" style="text-transform: capitalize; color: {{#if (eq updateMode 'increment')}}#15803d{{else}}#1e40af{{/if}};">
+                    {{#if (eq updateMode 'increment')}}➕ Incremental{{else}}🔄 Replace{{/if}}
+                </span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Previous Value</span>
+                <span class="detail-value">{{#if (eq type "Sales")}}ZAR {{formatNumber previousValue}}{{else}}{{previousValue}}{{/if}}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">New Value</span>
+                <span class="detail-value" style="font-weight: 600; color: {{#if (eq updateMode 'increment')}}#15803d{{else}}#1e40af{{/if}};">
+                    {{#if (eq type "Sales")}}ZAR {{formatNumber newValue}}{{else}}{{newValue}}{{/if}}
+                </span>
+            </div>
+            {{#if (eq updateMode 'increment')}}
+            <div class="detail-item">
+                <span class="detail-label">Increase</span>
+                <span class="detail-value" style="font-weight: 600; color: #15803d;">
+                    +{{#if (eq type "Sales")}}ZAR {{formatNumber (subtract newValue previousValue)}}{{else}}{{subtract newValue previousValue}}{{/if}}
+                </span>
+            </div>
+            {{/if}}
+        </div>
+    </div>
+    {{/each}}
+</div>
+
+<div class="cta-section">
+    <a href="{{dashboardUrl}}" class="cta-button">View Updated Dashboard</a>
+</div>
+
+<div class="info-card">
+    <h4>🔒 Data Security & Accuracy</h4>
+    <ul class="feature-list">
+        <li>🛡️ All updates are processed through secure, encrypted channels</li>
+        <li>📝 Complete audit trail maintained for all target modifications</li>
+        <li>✅ Data integrity checks performed during synchronization</li>
+        <li>🔍 Automatic validation ensures accuracy of imported values</li>
+        <li>📊 Real-time dashboard reflects the most current information</li>
+    </ul>
+</div>
+
+<div class="info-card">
+    <h4>📋 What This Update Means</h4>
+    <ol class="numbered-list">
+        <li><strong>Current Progress:</strong> Your dashboard now reflects the latest activity data</li>
+        <li><strong>Target Tracking:</strong> Progress calculations are updated with new values</li>
+        <li><strong>Performance Metrics:</strong> All performance indicators have been recalculated</li>
+        <li><strong>Reporting:</strong> Future reports will include this updated information</li>
+        <li><strong>Notifications:</strong> Milestone and reminder emails will use current data</li>
+    </ol>
+</div>
+
+<div class="info-card">
+    <h4>🚨 Discrepancy Reporting</h4>
+    <p>If you notice any discrepancies between the updated values and your expected data, please report it immediately:</p>
+    
+    <div style="background: #fef3c7; padding: 16px; border-radius: 8px; border-left: 4px solid #f59e0b; margin: 16px 0;">
+        <h5 style="color: #92400e; margin-bottom: 8px;">Report Issues:</h5>
+        <ul style="color: #92400e; margin: 0;">
+            <li>Email: <a href="mailto:{{supportEmail}}" style="color: #92400e;">{{supportEmail}}</a></li>
+            <li>Reference Transaction ID: <code style="background: #fbbf24; padding: 2px 4px; border-radius: 3px;">{{transactionId}}</code></li>
+            <li>Include: Expected vs. Actual values for verification</li>
+        </ul>
+    </div>
+</div>
+
+<div class="info-card">
+    <h4>🔄 Automatic Synchronization</h4>
+    <p>This update was part of our automated data synchronization process designed to keep your target tracking accurate and up-to-date.</p>
+    
+    <div class="detail-grid" style="margin-top: 16px;">
+        <div class="detail-item">
+            <span class="detail-label">Sync Frequency</span>
+            <span class="detail-value">Real-time / Scheduled intervals</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Data Source</span>
+            <span class="detail-value">{{updateSource}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Next Update</span>
+            <span class="detail-value">Automatic as new data becomes available</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Verification</span>
+            <span class="detail-value">Continuous monitoring</span>
+        </div>
+    </div>
+</div>
+
+<div class="message">
+    <p>Your target data is now current and reflects the latest activity from {{updateSource}}. You can view the updated information in your dashboard and continue tracking your progress with confidence.</p>
+    
+    <p>If you have any questions about this update or need assistance interpreting the new data, please don't hesitate to reach out to our support team.</p>
+</div>
+
+<div class="contact-info">
+    <p>Dashboard: <a href="{{dashboardUrl}}">{{dashboardUrl}}</a></p>
+    <p>Support: <a href="mailto:{{supportEmail}}">{{supportEmail}}</a></p>
+    <p>Transaction ID: <code>{{transactionId}}</code></p>
+    <p>Stay updated,<br>The {{organizationName}} Team 🔄</p>
+</div>
+
+{{/base}} 

@@ -998,6 +998,139 @@ export interface JournalDeletedEmailData extends JournalEmailData {
 	deletionReason?: string;
 }
 
+// User Target related email data
+export interface UserTargetAchievementEmailData extends BaseEmailData {
+	userName: string;
+	userEmail: string;
+	targetType: string;
+	achievementPercentage: number;
+	currentValue: number;
+	targetValue: number;
+	achievementDate: string;
+	organizationName: string;
+	branchName?: string;
+	periodStartDate: string;
+	periodEndDate: string;
+	dashboardUrl: string;
+	motivationalMessage?: string;
+}
+
+export interface UserTargetMilestoneEmailData extends BaseEmailData {
+	userName: string;
+	userEmail: string;
+	targetType: string;
+	milestonePercentage: number;
+	currentValue: number;
+	targetValue: number;
+	remainingValue: number;
+	milestoneName: string;
+	organizationName: string;
+	branchName?: string;
+	periodStartDate: string;
+	periodEndDate: string;
+	daysRemaining: number;
+	dashboardUrl: string;
+	encouragementMessage?: string;
+}
+
+export interface UserTargetDeadlineReminderEmailData extends BaseEmailData {
+	userName: string;
+	userEmail: string;
+	targets: Array<{
+		type: string;
+		currentValue: number;
+		targetValue: number;
+		progressPercentage: number;
+		gapValue: number;
+	}>;
+	organizationName: string;
+	branchName?: string;
+	periodEndDate: string;
+	daysRemaining: number;
+	dashboardUrl: string;
+	urgencyLevel: 'low' | 'medium' | 'high';
+	recommendedActions: string[];
+}
+
+export interface UserTargetPerformanceAlertEmailData extends BaseEmailData {
+	userName: string;
+	userEmail: string;
+	alertType: 'underperforming' | 'at_risk' | 'improvement_needed';
+	targets: Array<{
+		type: string;
+		currentValue: number;
+		targetValue: number;
+		progressPercentage: number;
+		expectedProgress: number;
+		performanceGap: number;
+	}>;
+	organizationName: string;
+	branchName?: string;
+	periodStartDate: string;
+	periodEndDate: string;
+	daysElapsed: number;
+	daysRemaining: number;
+	managerName?: string;
+	managerEmail?: string;
+	improvementSuggestions: string[];
+	supportResources: Array<{
+		title: string;
+		url?: string;
+		description: string;
+	}>;
+	dashboardUrl: string;
+}
+
+export interface UserTargetERPUpdateConfirmationEmailData extends BaseEmailData {
+	userName: string;
+	userEmail: string;
+	updateSource: string;
+	transactionId: string;
+	updateDate: string;
+	updatedTargets: Array<{
+		type: string;
+		previousValue: number;
+		newValue: number;
+		updateMode: 'increment' | 'replace';
+	}>;
+	organizationName: string;
+	branchName?: string;
+	updatedBy?: string;
+	dashboardUrl: string;
+	supportEmail: string;
+}
+
+export interface UserTargetPeriodSummaryEmailData extends BaseEmailData {
+	userName: string;
+	userEmail: string;
+	periodType: 'weekly' | 'monthly' | 'quarterly' | 'yearly';
+	periodStartDate: string;
+	periodEndDate: string;
+	overallPerformance: {
+		achievedTargets: number;
+		totalTargets: number;
+		achievementRate: number;
+		grade: string;
+	};
+	targetsSummary: Array<{
+		type: string;
+		achieved: boolean;
+		currentValue: number;
+		targetValue: number;
+		progressPercentage: number;
+		trend: 'improving' | 'declining' | 'stable';
+	}>;
+	achievements: string[];
+	improvementAreas: string[];
+	nextPeriodRecommendations: string[];
+	organizationName: string;
+	branchName?: string;
+	managerName?: string;
+	dashboardUrl: string;
+	celebrateSuccess: boolean;
+	recognitionMessage?: string;
+}
+
 export interface EmailDataMap {
 	[EmailType.SIGNUP]: SignupEmailData;
 	[EmailType.VERIFICATION]: VerificationEmailData;
@@ -1094,6 +1227,13 @@ export interface EmailDataMap {
 	[EmailType.JOURNAL_CREATED]: JournalEmailData;
 	[EmailType.JOURNAL_UPDATED]: JournalUpdatedEmailData;
 	[EmailType.JOURNAL_DELETED]: JournalDeletedEmailData;
+	// User Target related email mappings
+	[EmailType.USER_TARGET_ACHIEVEMENT]: UserTargetAchievementEmailData;
+	[EmailType.USER_TARGET_MILESTONE]: UserTargetMilestoneEmailData;
+	[EmailType.USER_TARGET_DEADLINE_REMINDER]: UserTargetDeadlineReminderEmailData;
+	[EmailType.USER_TARGET_PERFORMANCE_ALERT]: UserTargetPerformanceAlertEmailData;
+	[EmailType.USER_TARGET_ERP_UPDATE_CONFIRMATION]: UserTargetERPUpdateConfirmationEmailData;
+	[EmailType.USER_TARGET_PERIOD_SUMMARY]: UserTargetPeriodSummaryEmailData;
 }
 
 export type EmailTemplateData<T extends EmailType> = T extends keyof EmailDataMap ? EmailDataMap[T] : never;

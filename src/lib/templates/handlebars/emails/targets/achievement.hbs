@@ -1,0 +1,109 @@
+{{#base headerTitle="🎉 Target Achieved!" headerSubtitle="Congratulations on reaching your {{targetType}} target"}}
+
+<div class="greeting">
+    Hello {{userName}}! 🎉
+</div>
+
+<div class="message">
+    <p><strong>Fantastic news!</strong> You've successfully achieved your {{targetType}} target at {{organizationName}}! This is a significant milestone that demonstrates your dedication and hard work.</p>
+</div>
+
+<div class="success-notice">
+    <p>🎯 <strong>Target Achieved:</strong> You've reached {{achievementPercentage}}% of your {{targetType}} target!</p>
+</div>
+
+<div class="info-card">
+    <h3>🏆 Achievement Details</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Target Type</span>
+            <span class="detail-value">{{targetType}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Achievement</span>
+            <span class="detail-value">{{achievementPercentage}}%</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Current Value</span>
+            <span class="detail-value">{{#if (eq targetType "Sales")}}ZAR {{formatNumber currentValue}}{{else}}{{currentValue}}{{/if}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Target Value</span>
+            <span class="detail-value">{{#if (eq targetType "Sales")}}ZAR {{formatNumber targetValue}}{{else}}{{targetValue}}{{/if}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Achievement Date</span>
+            <span class="detail-value">{{formatDate achievementDate}}</span>
+        </div>
+        {{#if branchName}}
+        <div class="detail-item">
+            <span class="detail-label">Branch</span>
+            <span class="detail-value">{{branchName}}</span>
+        </div>
+        {{/if}}
+    </div>
+</div>
+
+<div class="info-card">
+    <h4>📊 Performance Period</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Period Start</span>
+            <span class="detail-value">{{formatDate periodStartDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Period End</span>
+            <span class="detail-value">{{formatDate periodEndDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Organization</span>
+            <span class="detail-value">{{organizationName}}</span>
+        </div>
+    </div>
+</div>
+
+{{#if motivationalMessage}}
+<div class="info-card">
+    <h4>💪 Special Recognition</h4>
+    <p style="font-style: italic; color: #4f46e5;">{{motivationalMessage}}</p>
+</div>
+{{/if}}
+
+<div class="cta-section">
+    <a href="{{dashboardUrl}}" class="cta-button">View Your Dashboard</a>
+</div>
+
+<div class="info-card">
+    <h4>🌟 What This Achievement Means</h4>
+    <ul class="feature-list">
+        <li>🎯 You've demonstrated exceptional performance and commitment</li>
+        <li>📈 Your contribution directly impacts team and organizational success</li>
+        <li>🏆 This achievement showcases your professional growth and capabilities</li>
+        <li>💼 Your success story inspires others and builds team morale</li>
+        <li>🚀 You're positioned for continued success and new opportunities</li>
+    </ul>
+</div>
+
+<div class="info-card">
+    <h4>🎁 Recognition & Next Steps</h4>
+    <ol class="numbered-list">
+        <li><strong>Celebrate:</strong> Take a moment to appreciate your hard work and success</li>
+        <li><strong>Share:</strong> Your achievement will be recognized in team communications</li>
+        <li><strong>Continue:</strong> Maintain this momentum for the remainder of the period</li>
+        <li><strong>Inspire:</strong> Support your teammates in achieving their targets</li>
+        <li><strong>Plan:</strong> Set new goals and challenges for continued growth</li>
+    </ol>
+</div>
+
+<div class="message">
+    <p>Your achievement is a testament to your professionalism and dedication. Keep up the excellent work, and remember that your success contributes to the entire team's achievement.</p>
+    
+    <p>We're proud to have you as part of our team and look forward to celebrating more of your successes!</p>
+</div>
+
+<div class="contact-info">
+    <p>Dashboard: <a href="{{dashboardUrl}}">{{dashboardUrl}}</a></p>
+    <p>Congratulations again,<br>The {{organizationName}} Team 🎉</p>
+</div>
+
+{{/base}} 

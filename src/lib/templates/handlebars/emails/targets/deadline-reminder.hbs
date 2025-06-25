@@ -1,0 +1,137 @@
+{{#base headerTitle="⏰ Target Deadline Approaching" headerSubtitle="{{daysRemaining}} days remaining to achieve your targets"}}
+
+<div class="greeting">
+    Hello {{userName}}! ⏰
+</div>
+
+<div class="message">
+    <p><strong>Time check!</strong> Your target period at {{organizationName}} is approaching its deadline. With {{daysRemaining}} days remaining, now is the perfect time to review your progress and make any necessary adjustments.</p>
+</div>
+
+<div class="{{#if (eq urgencyLevel 'high')}}warning-notice{{else if (eq urgencyLevel 'medium')}}info-notice{{else}}info-card{{/if}}">
+    <p>📅 <strong>{{#if (lte daysRemaining 3)}}Urgent:{{else if (lte daysRemaining 7)}}Important:{{else}}Reminder:{{/if}}</strong> Target period ends on {{formatDate periodEndDate}} ({{daysRemaining}} days)</p>
+</div>
+
+<div class="info-card">
+    <h3>📊 Target Progress Summary</h3>
+    {{#each targets}}
+    <div style="margin-bottom: 20px; padding: 16px; background: {{#if (gte progressPercentage 80)}}#dcfce7{{else if (gte progressPercentage 60)}}#fef3c7{{else}}#fee2e2{{/if}}; border-radius: 8px; border-left: 4px solid {{#if (gte progressPercentage 80)}}#22c55e{{else if (gte progressPercentage 60)}}#f59e0b{{else}}#ef4444{{/if}};">
+        <div class="detail-grid">
+            <div class="detail-item">
+                <span class="detail-label">{{type}} Target</span>
+                <span class="detail-value" style="color: {{#if (gte progressPercentage 80)}}#15803d{{else if (gte progressPercentage 60)}}#92400e{{else}}#dc2626{{/if}};">{{progressPercentage}}%</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Current</span>
+                <span class="detail-value">{{#if (eq type "Sales")}}ZAR {{formatNumber currentValue}}{{else}}{{currentValue}}{{/if}}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Target</span>
+                <span class="detail-value">{{#if (eq type "Sales")}}ZAR {{formatNumber targetValue}}{{else}}{{targetValue}}{{/if}}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Gap</span>
+                <span class="detail-value" style="font-weight: 600; color: {{#if (gte progressPercentage 80)}}#15803d{{else if (gte progressPercentage 60)}}#92400e{{else}}#dc2626{{/if}};">{{#if (eq type "Sales")}}ZAR {{formatNumber gapValue}}{{else}}{{gapValue}}{{/if}}</span>
+            </div>
+        </div>
+        <div style="background: #e5e7eb; height: 8px; border-radius: 4px; margin-top: 12px; overflow: hidden;">
+            <div style="background: {{#if (gte progressPercentage 80)}}#22c55e{{else if (gte progressPercentage 60)}}#f59e0b{{else}}#ef4444{{/if}}; height: 100%; width: {{progressPercentage}}%; border-radius: 4px; transition: width 0.3s ease;"></div>
+        </div>
+    </div>
+    {{/each}}
+</div>
+
+<div class="info-card">
+    <h4>📅 Timeline Details</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Target Period End</span>
+            <span class="detail-value">{{formatDate periodEndDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Days Remaining</span>
+            <span class="detail-value" style="font-weight: 700; color: {{#if (gte daysRemaining 7)}}#22c55e{{else if (gte daysRemaining 3)}}#f59e0b{{else}}#ef4444{{/if}};">{{daysRemaining}} days</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Urgency Level</span>
+            <span class="detail-value" style="text-transform: capitalize; font-weight: 600; color: {{#if (eq urgencyLevel 'high')}}#dc2626{{else if (eq urgencyLevel 'medium')}}#d97706{{else}}#059669{{/if}};">{{urgencyLevel}}</span>
+        </div>
+        {{#if branchName}}
+        <div class="detail-item">
+            <span class="detail-label">Branch</span>
+            <span class="detail-value">{{branchName}}</span>
+        </div>
+        {{/if}}
+    </div>
+</div>
+
+<div class="cta-section">
+    <a href="{{dashboardUrl}}" class="cta-button">Review Your Targets</a>
+</div>
+
+<div class="info-card">
+    <h4>🎯 Recommended Actions</h4>
+    <ul class="feature-list">
+        {{#each recommendedActions}}
+        <li>{{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+
+<div class="info-card">
+    <h4>⚡ Acceleration Strategies</h4>
+    <ol class="numbered-list">
+        {{#if (eq urgencyLevel 'high')}}
+        <li><strong>Immediate Action:</strong> Focus on high-impact activities for quick wins</li>
+        <li><strong>Prioritize:</strong> Concentrate on targets with the largest gaps first</li>
+        <li><strong>Support:</strong> Reach out to your manager or team for assistance</li>
+        <li><strong>Extended Hours:</strong> Consider dedicating extra time to critical activities</li>
+        <li><strong>Resources:</strong> Utilize all available tools and resources</li>
+        {{else if (eq urgencyLevel 'medium')}}
+        <li><strong>Strategic Focus:</strong> Allocate more time to underperforming areas</li>
+        <li><strong>Daily Planning:</strong> Set specific daily goals for remaining days</li>
+        <li><strong>Team Collaboration:</strong> Work with colleagues for mutual support</li>
+        <li><strong>Process Optimization:</strong> Identify and eliminate inefficiencies</li>
+        <li><strong>Momentum Building:</strong> Capitalize on current progress patterns</li>
+        {{else}}
+        <li><strong>Steady Progress:</strong> Maintain your current pace and consistency</li>
+        <li><strong>Quality Focus:</strong> Ensure quality while working toward targets</li>
+        <li><strong>Preparation:</strong> Plan for the final sprint if needed</li>
+        <li><strong>Monitor:</strong> Keep track of daily progress closely</li>
+        <li><strong>Support Others:</strong> Help team members who may be struggling</li>
+        {{/if}}
+    </ol>
+</div>
+
+{{#if (eq urgencyLevel 'high')}}
+<div class="warning-notice">
+    <h4 style="color: #92400e; margin-bottom: 16px;">🚨 Critical Action Required</h4>
+    <p style="color: #92400e;">With only {{daysRemaining}} days remaining, immediate action is needed to achieve your targets. Consider reaching out to your manager for additional support and resources.</p>
+</div>
+{{/if}}
+
+<div class="info-card">
+    <h4>💪 Motivation & Support</h4>
+    <p>Remember that every effort counts, and targets are designed to challenge and help you grow. Whether you're ahead or behind, the key is to finish strong and learn from the experience.</p>
+    
+    <ul class="feature-list">
+        <li>🏃‍♂️ Every day is an opportunity to make progress</li>
+        <li>🤝 Your team is here to support your success</li>
+        <li>📈 Focus on improvement, not just the final numbers</li>
+        <li>🎯 Consistency often matters more than perfection</li>
+        <li>🌟 Your effort and dedication are valued regardless of the outcome</li>
+    </ul>
+</div>
+
+<div class="message">
+    <p>Use this remaining time wisely, and remember that achieving targets is a journey of growth and learning. We believe in your ability to finish strong!</p>
+    
+    <p>If you need any support or resources to help you reach your targets, don't hesitate to reach out to your manager or team.</p>
+</div>
+
+<div class="contact-info">
+    <p>Dashboard: <a href="{{dashboardUrl}}">{{dashboardUrl}}</a></p>
+    <p>Make it count,<br>The {{organizationName}} Team ⏰</p>
+</div>
+
+{{/base}} 

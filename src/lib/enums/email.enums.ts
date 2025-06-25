@@ -101,4 +101,11 @@ export enum EmailType {
 	JOURNAL_CREATED = 'journal_created',
 	JOURNAL_UPDATED = 'journal_updated',
 	JOURNAL_DELETED = 'journal_deleted',
+	// User target related emails
+	USER_TARGET_ACHIEVEMENT = 'user_target_achievement',
+	USER_TARGET_MILESTONE = 'user_target_milestone',
+	USER_TARGET_DEADLINE_REMINDER = 'user_target_deadline_reminder',
+	USER_TARGET_PERFORMANCE_ALERT = 'user_target_performance_alert',
+	USER_TARGET_ERP_UPDATE_CONFIRMATION = 'user_target_erp_update_confirmation',
+	USER_TARGET_PERIOD_SUMMARY = 'user_target_period_summary',
 }

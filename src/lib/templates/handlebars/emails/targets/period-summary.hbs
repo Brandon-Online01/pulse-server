@@ -1,0 +1,120 @@
+{{#base headerTitle="📊 Performance Summary" headerSubtitle="Your target achievements for {{formatDate periodStartDate}} - {{formatDate periodEndDate}}"}}
+
+<div class="greeting">
+    Hello {{userName}}! 📊
+</div>
+
+<div class="message">
+    <p><strong>Performance Review Complete!</strong> Here's your comprehensive {{periodType}} performance summary for {{organizationName}}. This report highlights your achievements, progress, and areas for continued growth.</p>
+</div>
+
+{{#if celebrateSuccess}}
+<div class="success-notice">
+    <p>🎉 <strong>Outstanding Performance!</strong> You've achieved an excellent {{overallPerformance.achievementRate}}% target achievement rate ({{overallPerformance.grade}} grade)!</p>
+</div>
+{{else}}
+<div class="info-notice">
+    <p>📈 <strong>Performance Summary:</strong> {{overallPerformance.achievedTargets}} of {{overallPerformance.totalTargets}} targets achieved ({{overallPerformance.achievementRate}}% - {{overallPerformance.grade}} grade)</p>
+</div>
+{{/if}}
+
+<div class="info-card">
+    <h3>🏆 Overall Performance</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Performance Grade</span>
+            <span class="detail-value">{{overallPerformance.grade}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Achievement Rate</span>
+            <span class="detail-value">{{overallPerformance.achievementRate}}%</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Targets Achieved</span>
+            <span class="detail-value">{{overallPerformance.achievedTargets}} / {{overallPerformance.totalTargets}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Period Type</span>
+            <span class="detail-value">{{periodType}}</span>
+        </div>
+    </div>
+</div>
+
+<div class="info-card">
+    <h4>📊 Target Performance Breakdown</h4>
+    {{#each targetsSummary}}
+    <div style="margin-bottom: 16px; padding: 16px; background: {{#if achieved}}#dcfce7{{else}}#fee2e2{{/if}}; border-radius: 8px;">
+        <div class="detail-grid">
+            <div class="detail-item">
+                <span class="detail-label">{{type}} Target</span>
+                <span class="detail-value">{{#if achieved}}✅ Achieved{{else}}❌ Not Achieved{{/if}}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Progress</span>
+                <span class="detail-value">{{progressPercentage}}%</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Current</span>
+                <span class="detail-value">{{currentValue}}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Target</span>
+                <span class="detail-value">{{targetValue}}</span>
+            </div>
+        </div>
+    </div>
+    {{/each}}
+</div>
+
+{{#if achievements.length}}
+<div class="info-card">
+    <h4>🌟 Key Achievements</h4>
+    <ul class="feature-list">
+        {{#each achievements}}
+        <li>{{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+{{/if}}
+
+{{#if improvementAreas.length}}
+<div class="info-card">
+    <h4>🎯 Areas for Improvement</h4>
+    <ul class="feature-list">
+        {{#each improvementAreas}}
+        <li>{{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+{{/if}}
+
+<div class="cta-section">
+    <a href="{{dashboardUrl}}" class="cta-button">View Detailed Analytics</a>
+</div>
+
+<div class="info-card">
+    <h4>📋 Next Period Recommendations</h4>
+    <ol class="numbered-list">
+        {{#each nextPeriodRecommendations}}
+        <li>{{this}}</li>
+        {{/each}}
+    </ol>
+</div>
+
+{{#if recognitionMessage}}
+<div class="info-card">
+    <h4>🏆 Recognition</h4>
+    <p style="font-style: italic;">{{recognitionMessage}}</p>
+</div>
+{{/if}}
+
+<div class="message">
+    <p>This {{periodType}} summary provides a comprehensive view of your target performance. Use these insights to drive continued success in the next period.</p>
+</div>
+
+<div class="contact-info">
+    <p>Dashboard: <a href="{{dashboardUrl}}">{{dashboardUrl}}</a></p>
+    <p>{{#if celebrateSuccess}}Keep up the outstanding work{{else}}Onward and upward{{/if}},<br>The {{organizationName}} Team 📊</p>
+</div>
+
+{{/base}} 

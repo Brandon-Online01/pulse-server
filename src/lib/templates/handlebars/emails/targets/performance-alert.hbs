@@ -1,0 +1,176 @@
+{{#base headerTitle="📊 Performance Alert" headerSubtitle="Let's work together to get back on track with your targets"}}
+
+<div class="greeting">
+    Hello {{userName}}! 📊
+</div>
+
+<div class="message">
+    <p><strong>We're here to help!</strong> Our tracking shows that your target progress at {{organizationName}} could benefit from some focused attention. Don't worry - this is a normal part of the performance journey, and we're committed to supporting your success.</p>
+</div>
+
+<div class="{{#if (eq alertType 'underperforming')}}warning-notice{{else}}info-notice{{/if}}">
+    <p>📈 <strong>Performance Review:</strong> {{#if (eq alertType 'underperforming')}}Your current progress is below expected levels{{else if (eq alertType 'at_risk')}}You're at risk of missing your targets{{else}}Some targets need additional attention{{/if}}</p>
+</div>
+
+<div class="info-card">
+    <h3>📊 Current Performance Analysis</h3>
+    {{#each targets}}
+    <div style="margin-bottom: 20px; padding: 16px; background: {{#if (gte progressPercentage expectedProgress)}}#dcfce7{{else if (gte progressPercentage 50)}}#fef3c7{{else}}#fee2e2{{/if}}; border-radius: 8px; border-left: 4px solid {{#if (gte progressPercentage expectedProgress)}}#22c55e{{else if (gte progressPercentage 50)}}#f59e0b{{else}}#ef4444{{/if}};">
+        <div class="detail-grid">
+            <div class="detail-item">
+                <span class="detail-label">{{type}} Progress</span>
+                <span class="detail-value" style="color: {{#if (gte progressPercentage expectedProgress)}}#15803d{{else if (gte progressPercentage 50)}}#92400e{{else}}#dc2626{{/if}};">{{progressPercentage}}%</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Expected Progress</span>
+                <span class="detail-value">{{expectedProgress}}%</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Current Value</span>
+                <span class="detail-value">{{#if (eq type "Sales")}}ZAR {{formatNumber currentValue}}{{else}}{{currentValue}}{{/if}}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Target Value</span>
+                <span class="detail-value">{{#if (eq type "Sales")}}ZAR {{formatNumber targetValue}}{{else}}{{targetValue}}{{/if}}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Performance Gap</span>
+                <span class="detail-value" style="font-weight: 600; color: {{#if (gte progressPercentage expectedProgress)}}#15803d{{else}}#dc2626{{/if}};">{{#if (eq type "Sales")}}ZAR {{formatNumber performanceGap}}{{else}}{{performanceGap}}{{/if}}</span>
+            </div>
+        </div>
+        <div style="background: #e5e7eb; height: 12px; border-radius: 6px; margin-top: 12px; overflow: hidden; position: relative;">
+            <div style="background: {{#if (gte progressPercentage expectedProgress)}}#22c55e{{else if (gte progressPercentage 50)}}#f59e0b{{else}}#ef4444{{/if}}; height: 100%; width: {{progressPercentage}}%; border-radius: 6px; transition: width 0.3s ease;"></div>
+            <div style="position: absolute; top: 0; left: {{expectedProgress}}%; width: 2px; height: 100%; background: #374151; opacity: 0.7;"></div>
+            <div style="position: absolute; top: -20px; left: {{expectedProgress}}%; transform: translateX(-50%); font-size: 10px; color: #374151; font-weight: 600;">Expected</div>
+        </div>
+    </div>
+    {{/each}}
+</div>
+
+<div class="info-card">
+    <h4>📅 Timeline Context</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Period Start</span>
+            <span class="detail-value">{{formatDate periodStartDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Period End</span>
+            <span class="detail-value">{{formatDate periodEndDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Days Elapsed</span>
+            <span class="detail-value">{{daysElapsed}} days</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Days Remaining</span>
+            <span class="detail-value" style="font-weight: 600; color: {{#if (gte daysRemaining 14)}}#22c55e{{else if (gte daysRemaining 7)}}#f59e0b{{else}}#ef4444{{/if}};">{{daysRemaining}} days</span>
+        </div>
+        {{#if branchName}}
+        <div class="detail-item">
+            <span class="detail-label">Branch</span>
+            <span class="detail-value">{{branchName}}</span>
+        </div>
+        {{/if}}
+    </div>
+</div>
+
+{{#if managerName}}
+<div class="info-card" style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border-left-color: #3b82f6;">
+    <h4 style="color: #1e40af;">👥 Manager Support Available</h4>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Your Manager</span>
+            <span class="detail-value">{{managerName}}</span>
+        </div>
+        {{#if managerEmail}}
+        <div class="detail-item">
+            <span class="detail-label">Contact</span>
+            <span class="detail-value"><a href="mailto:{{managerEmail}}">{{managerEmail}}</a></span>
+        </div>
+        {{/if}}
+    </div>
+    <p style="color: #1e40af; margin-top: 12px;">Your manager is available to discuss strategies, provide resources, and support your success journey.</p>
+</div>
+{{/if}}
+
+<div class="cta-section">
+    <a href="{{dashboardUrl}}" class="cta-button">Review Performance Dashboard</a>
+</div>
+
+<div class="info-card">
+    <h4>💡 Improvement Suggestions</h4>
+    <ul class="feature-list">
+        {{#each improvementSuggestions}}
+        <li>{{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+
+{{#if supportResources}}
+<div class="info-card">
+    <h4>📚 Support Resources</h4>
+    <div class="feature-list" style="list-style: none; padding: 0;">
+        {{#each supportResources}}
+        <li style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; {{#if @last}}border-bottom: none;{{/if}}">
+            <div style="font-weight: 600; color: #1f2937; margin-bottom: 4px;">
+                {{#if url}}<a href="{{url}}" style="color: #3b82f6; text-decoration: none;">{{title}}</a>{{else}}{{title}}{{/if}}
+            </div>
+            <div style="color: #6b7280; font-size: 14px;">{{description}}</div>
+        </li>
+        {{/each}}
+    </div>
+</div>
+{{/if}}
+
+<div class="info-card">
+    <h4>🚀 Action Plan for Recovery</h4>
+    <ol class="numbered-list">
+        {{#if (eq alertType 'underperforming')}}
+        <li><strong>Immediate Assessment:</strong> Review what factors may have contributed to current performance</li>
+        <li><strong>Refocus Strategy:</strong> Identify the most impactful activities and prioritize them</li>
+        <li><strong>Daily Goals:</strong> Break down remaining targets into achievable daily objectives</li>
+        <li><strong>Seek Support:</strong> Connect with your manager or team for guidance and resources</li>
+        <li><strong>Monitor Progress:</strong> Track performance daily and adjust strategies as needed</li>
+        {{else if (eq alertType 'at_risk')}}
+        <li><strong>Strategic Review:</strong> Analyze current approach and identify optimization opportunities</li>
+        <li><strong>Accelerate Activities:</strong> Increase focus on high-impact target-driving activities</li>
+        <li><strong>Resource Utilization:</strong> Ensure you're leveraging all available tools and support</li>
+        <li><strong>Collaboration:</strong> Work with colleagues to share best practices and strategies</li>
+        <li><strong>Progress Tracking:</strong> Implement more frequent progress monitoring</li>
+        {{else}}
+        <li><strong>Targeted Focus:</strong> Concentrate efforts on specific underperforming target areas</li>
+        <li><strong>Process Improvement:</strong> Identify and address any workflow inefficiencies</li>
+        <li><strong>Skill Development:</strong> Access training resources to enhance relevant capabilities</li>
+        <li><strong>Peer Learning:</strong> Connect with high-performing colleagues for insights</li>
+        <li><strong>Consistent Effort:</strong> Maintain steady, focused work toward improvement</li>
+        {{/if}}
+    </ol>
+</div>
+
+<div class="info-card">
+    <h4>🌟 Remember: Growth Mindset</h4>
+    <p>Performance challenges are opportunities for growth and learning. Every successful professional faces periods that require adjustment and renewed focus.</p>
+    
+    <ul class="feature-list">
+        <li>🎯 Targets are designed to challenge and develop your capabilities</li>
+        <li>📈 Temporary setbacks are part of the journey to long-term success</li>
+        <li>🤝 Your team is invested in your success and ready to support you</li>
+        <li>💪 This is an opportunity to demonstrate resilience and adaptability</li>
+        <li>🏆 Overcoming challenges often leads to stronger future performance</li>
+    </ul>
+</div>
+
+<div class="message">
+    <p>Remember, we're all on the same team here. The goal isn't perfection - it's progress, learning, and continuous improvement. Use this as an opportunity to reassess, refocus, and come back stronger.</p>
+    
+    <p>{{#if managerName}}Don't hesitate to reach out to {{managerName}} or{{else}}Please reach out to{{/if}} your support network. We're here to help you succeed!</p>
+</div>
+
+<div class="contact-info">
+    <p>Dashboard: <a href="{{dashboardUrl}}">{{dashboardUrl}}</a></p>
+    {{#if managerEmail}}<p>Manager: <a href="mailto:{{managerEmail}}">{{managerEmail}}</a></p>{{/if}}
+    <p>You've got this,<br>The {{organizationName}} Team 💪</p>
+</div>
+
+{{/base}} 
