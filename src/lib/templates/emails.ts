@@ -37,6 +37,13 @@ import {
 	MorningReportData,
 	EveningReportData,
 	UserReInvitationData,
+	AssetEmailData,
+	AssetTransferredEmailData,
+	AssetUpdatedEmailData,
+	AssetInsuranceExpiryWarningEmailData,
+	AssetAdminNotificationEmailData,
+	LoginNotificationEmailData,
+	EmailVerifiedEmailData,
 } from '../types/email-templates.types';
 
 // Auth Templates
@@ -249,4 +256,50 @@ export const AttendanceMorningReport = (data: MorningReportData): string => {
 
 export const AttendanceEveningReport = (data: EveningReportData): string => {
 	return emailTemplateService.attendanceEveningReport(data);
+};
+
+// Asset Templates
+export const AssetAssigned = (data: AssetEmailData): string => {
+	return emailTemplateService.assetAssigned(data);
+};
+
+export const AssetTransferred = (data: AssetTransferredEmailData): string => {
+	return emailTemplateService.assetTransferred(data);
+};
+
+export const AssetUpdated = (data: AssetUpdatedEmailData): string => {
+	return emailTemplateService.assetUpdated(data);
+};
+
+export const AssetRemoved = (data: AssetEmailData): string => {
+	return emailTemplateService.assetRemoved(data);
+};
+
+export const AssetRestored = (data: AssetEmailData): string => {
+	return emailTemplateService.assetRestored(data);
+};
+
+export const AssetInsuranceExpiryWarning = (data: AssetInsuranceExpiryWarningEmailData): string => {
+	return emailTemplateService.assetInsuranceExpiryWarning(data);
+};
+
+export const AssetCreatedAdmin = (data: AssetAdminNotificationEmailData): string => {
+	return emailTemplateService.assetCreatedAdmin(data);
+};
+
+export const AssetDeletedAdmin = (data: AssetAdminNotificationEmailData): string => {
+	return emailTemplateService.assetDeletedAdmin(data);
+};
+
+// Additional Auth Templates
+export const LoginNotification = (data: LoginNotificationEmailData): string => {
+	return emailTemplateService.loginNotification(data);
+};
+
+export const ClientLoginNotification = (data: LoginNotificationEmailData): string => {
+	return emailTemplateService.clientLoginNotification(data);
+};
+
+export const EmailVerified = (data: EmailVerifiedEmailData): string => {
+	return emailTemplateService.emailVerified(data);
 };

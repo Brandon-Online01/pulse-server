@@ -35,7 +35,7 @@ export class ClientAuthService {
 		return String(typeof organisation === 'object' ? organisation.uid : organisation);
 	}
 
-	async clientSignIn(signInInput: ClientSignInInput) {
+	async clientSignIn(signInInput: ClientSignInInput, requestData?: any) {
 		try {
 			const { email, password } = signInInput;
 
@@ -68,6 +68,30 @@ export class ClientAuthService {
 			clientAuth.lastLogin = new Date();
 			await this.clientAuthRepository.save(clientAuth);
 
+			// Send client login notification email
+			try {
+				this.eventEmitter.emit('send.email', EmailType.CLIENT_LOGIN_NOTIFICATION, [clientAuth.email], {
+					name: clientAuth.client?.name || clientAuth.email.split('@')[0],
+					loginTime: new Date().toLocaleString(),
+					ipAddress: requestData?.ipAddress || 'Unknown',
+					location: requestData?.location || 'Unknown',
+					country: requestData?.country || 'Unknown',
+					deviceType: requestData?.deviceType || 'Unknown',
+					browser: requestData?.browser || 'Unknown',
+					operatingSystem: requestData?.operatingSystem || 'Unknown',
+					userAgent: requestData?.userAgent || 'Unknown',
+					suspicious: false, // You can implement logic to detect suspicious logins
+					securityTips: [
+						'Always log out from shared devices',
+						'Use strong, unique passwords',
+						'Contact support if you notice suspicious activity',
+					],
+				});
+			} catch (error) {
+				// Don't fail login if email fails
+				console.error('Failed to send client login notification email:', error);
+			}
+
 			// Check organization license if client belongs to an organization
 			if (clientAuth.client?.organisation) {
 				const organisationRef = this.getOrganisationRef(clientAuth.client.organisation);
@@ -92,16 +116,16 @@ export class ClientAuthService {
 
 				const platform = this.platformService.getPrimaryPlatform(activeLicense?.features || {});
 				const payload = {
-				uid: clientAuth.uid,
-				role: AccessLevel.CLIENT,
-				organisationRef,
-				platform,
-				licenseId: String(activeLicense?.uid),
-				licensePlan: activeLicense?.plan,
-				// Override with quotations-only permissions
-				features: clientPermissions,
-				branch: clientAuth.client?.branch?.uid ? { uid: clientAuth.client.branch.uid } : null,
-			};
+					uid: clientAuth.uid,
+					role: AccessLevel.CLIENT,
+					organisationRef,
+					platform,
+					licenseId: String(activeLicense?.uid),
+					licensePlan: activeLicense?.plan,
+					// Override with quotations-only permissions
+					features: clientPermissions,
+					branch: clientAuth.client?.branch?.uid ? { uid: clientAuth.client.branch.uid } : null,
+				};
 
 				const accessToken = await this.jwtService.signAsync(payload, {
 					expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '8h',
@@ -351,15 +375,15 @@ export class ClientAuthService {
 
 				const platform = this.platformService.getPrimaryPlatform(activeLicense?.features || {});
 				const newPayload = {
-				uid: clientAuth.uid,
-				role: AccessLevel.CLIENT,
-				organisationRef,
-				platform,
-				licenseId: String(activeLicense?.uid),
-				licensePlan: activeLicense?.plan,
-				features: clientPermissions,
-				branch: clientAuth.client?.branch?.uid ? { uid: clientAuth.client.branch.uid } : null,
-			};
+					uid: clientAuth.uid,
+					role: AccessLevel.CLIENT,
+					organisationRef,
+					platform,
+					licenseId: String(activeLicense?.uid),
+					licensePlan: activeLicense?.plan,
+					features: clientPermissions,
+					branch: clientAuth.client?.branch?.uid ? { uid: clientAuth.client.branch.uid } : null,
+				};
 
 				const accessToken = await this.jwtService.signAsync(newPayload, {
 					expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '8h',
@@ -419,7 +443,7 @@ export class ClientAuthService {
 					uid: clientAuth.client.uid,
 					email: clientAuth.email,
 					// Add other client properties as needed
-					features: clientPermissions
+					features: clientPermissions,
 				},
 				message: 'Tokens refreshed successfully',
 			};

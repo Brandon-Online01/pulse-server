@@ -94,6 +94,13 @@ import {
 	LeaveApplicationConfirmationData,
 	LeaveNewApplicationAdminData,
 	LeaveDeletedNotificationData,
+	AssetEmailData,
+	AssetTransferredEmailData,
+	AssetUpdatedEmailData,
+	AssetInsuranceExpiryWarningEmailData,
+	AssetAdminNotificationEmailData,
+	LoginNotificationEmailData,
+	EmailVerifiedEmailData,
 } from '../lib/types/email-templates.types';
 import {
 	TaskFlagCreated,
@@ -101,6 +108,17 @@ import {
 	TaskFlagResolved,
 	TaskFeedbackAdded,
 	OrderReceivedClient,
+	AssetAssigned,
+	AssetTransferred,
+	AssetUpdated,
+	AssetRemoved,
+	AssetRestored,
+	AssetInsuranceExpiryWarning,
+	AssetCreatedAdmin,
+	AssetDeletedAdmin,
+	LoginNotification,
+	ClientLoginNotification,
+	EmailVerified,
 } from '../lib/templates/emails';
 
 @Injectable()
@@ -476,6 +494,61 @@ export class CommunicationService {
 				return {
 					subject: 'Leave Application Deleted',
 					body: LeaveDeletedNotification(data as LeaveDeletedNotificationData),
+				};
+			case EmailType.ASSET_ASSIGNED:
+				return {
+					subject: 'Asset Assigned to You',
+					body: AssetAssigned(data as AssetEmailData),
+				};
+			case EmailType.ASSET_TRANSFERRED:
+				return {
+					subject: 'Asset Transfer Notification',
+					body: AssetTransferred(data as AssetTransferredEmailData),
+				};
+			case EmailType.ASSET_UPDATED:
+				return {
+					subject: 'Asset Information Updated',
+					body: AssetUpdated(data as AssetUpdatedEmailData),
+				};
+			case EmailType.ASSET_REMOVED:
+				return {
+					subject: 'Asset Removed from Your Account',
+					body: AssetRemoved(data as AssetEmailData),
+				};
+			case EmailType.ASSET_RESTORED:
+				return {
+					subject: 'Asset Restored to Your Account',
+					body: AssetRestored(data as AssetEmailData),
+				};
+			case EmailType.ASSET_INSURANCE_EXPIRY_WARNING:
+				return {
+					subject: 'Asset Insurance Expiry Warning',
+					body: AssetInsuranceExpiryWarning(data as AssetInsuranceExpiryWarningEmailData),
+				};
+			case EmailType.ASSET_CREATED_ADMIN:
+				return {
+					subject: 'New Asset Created - Admin Notification',
+					body: AssetCreatedAdmin(data as AssetAdminNotificationEmailData),
+				};
+			case EmailType.ASSET_DELETED_ADMIN:
+				return {
+					subject: 'Asset Deleted - Admin Notification',
+					body: AssetDeletedAdmin(data as AssetAdminNotificationEmailData),
+				};
+			case EmailType.LOGIN_NOTIFICATION:
+				return {
+					subject: 'Security Alert: New Login to Your Account',
+					body: LoginNotification(data as LoginNotificationEmailData),
+				};
+			case EmailType.CLIENT_LOGIN_NOTIFICATION:
+				return {
+					subject: 'Security Alert: New Login to Your Client Portal',
+					body: ClientLoginNotification(data as LoginNotificationEmailData),
+				};
+			case EmailType.EMAIL_VERIFIED:
+				return {
+					subject: 'Email Successfully Verified',
+					body: EmailVerified(data as EmailVerifiedEmailData),
 				};
 			default:
 				throw new NotFoundException(`Unknown email template type: ${type}`);

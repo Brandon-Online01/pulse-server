@@ -1,0 +1,134 @@
+{{#base headerTitle="Asset Transfer Notification" headerSubtitle="Asset ownership has been transferred to you"}}
+
+<div class="greeting">
+    Hello {{name}}! 🔄
+</div>
+
+<div class="message">
+    <p>An asset has been transferred to your account. This notification confirms the change in asset ownership and your new responsibilities.</p>
+</div>
+
+<!-- Asset Details -->
+<div class="info-card">
+    <h3>🏷️ Asset Information</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Asset ID</span>
+            <span class="detail-value" style="font-weight: 700; color: #7c2d92;">{{assetId}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Brand</span>
+            <span class="detail-value">{{brand}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Model</span>
+            <span class="detail-value">{{modelNumber}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Serial Number</span>
+            <span class="detail-value" style="font-family: monospace; background: #f3f4f6; padding: 2px 6px; border-radius: 4px;">{{serialNumber}}</span>
+        </div>
+    </div>
+</div>
+
+<!-- Transfer Details -->
+<div class="info-card" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left-color: #f59e0b;">
+    <h3 style="color: #92400e;">📋 Transfer Details</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Transfer Date</span>
+            <span class="detail-value">{{formatDate transferDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Transferred By</span>
+            <span class="detail-value">{{transferredBy.name}}</span>
+        </div>
+        {{#if previousOwner}}
+        <div class="detail-item">
+            <span class="detail-label">Previous Owner</span>
+            <span class="detail-value">{{previousOwner.name}}</span>
+        </div>
+        {{/if}}
+        {{#if transferReason}}
+        <div class="detail-item">
+            <span class="detail-label">Transfer Reason</span>
+            <span class="detail-value">{{transferReason}}</span>
+        </div>
+        {{/if}}
+    </div>
+</div>
+
+<!-- Insurance Information -->
+{{#if hasInsurance}}
+<div class="success-notice">
+    <h4 style="color: #15803d; margin-bottom: 12px;">🛡️ Insurance Coverage</h4>
+    <div style="display: grid; gap: 8px;">
+        <div><strong>Provider:</strong> {{insuranceProvider}}</div>
+        <div><strong>Expires:</strong> {{formatDate insuranceExpiryDate}}</div>
+        <div style="color: #15803d; font-weight: 600;">✅ Insurance coverage transfers with the asset</div>
+    </div>
+</div>
+{{else}}
+<div class="warning-notice">
+    <h4 style="color: #d97706; margin-bottom: 12px;">⚠️ No Insurance Coverage</h4>
+    <p>This asset is not currently covered by insurance. Please contact your IT department if insurance coverage is required.</p>
+</div>
+{{/if}}
+
+<!-- New Responsibilities -->
+<div class="info-card">
+    <h4 style="color: #7c2d92; margin-bottom: 16px;">📋 Your New Responsibilities</h4>
+    <ul style="margin-left: 20px; color: #4b5563; line-height: 1.8; font-size: 15px;">
+        <li>Verify the physical condition of the asset</li>
+        <li>Maintain the asset in good working condition</li>
+        <li>Report any existing or new damage immediately</li>
+        <li>Update any necessary documentation or access permissions</li>
+        <li>Follow all organizational asset management policies</li>
+        {{#if hasInsurance}}
+        <li>Report any loss or theft within 24 hours</li>
+        {{/if}}
+    </ul>
+</div>
+
+<!-- Branch Information -->
+{{#if branch}}
+<div class="info-card" style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-left-color: #22c55e;">
+    <h4 style="color: #166534;">🏢 Branch Assignment</h4>
+    <p style="margin-top: 12px; font-size: 15px; line-height: 1.6;">
+        This asset is assigned to the <strong>{{branch.name}}</strong> branch.
+    </p>
+</div>
+{{/if}}
+
+<!-- Next Steps -->
+<div class="warning-notice">
+    <p style="font-size: 16px; font-weight: 700; color: #d97706;">📝 Required Actions</p>
+    <ul style="margin-left: 20px; margin-top: 16px; line-height: 1.8; font-size: 15px;">
+        <li>Confirm receipt and physical inspection of the asset</li>
+        <li>Test all functionality and report any issues</li>
+        <li>Update any software or configuration as needed</li>
+        <li>Sign and return asset transfer acknowledgment forms</li>
+        <li>Contact the previous owner for any handover notes</li>
+    </ul>
+</div>
+
+<!-- CTA Section -->
+<div class="cta-section">
+    <a href="{{dashboardLink}}" class="cta-button">View Asset Details</a>
+</div>
+
+<!-- Contact Information -->
+<div class="message">
+    <p style="font-size: 14px; color: #6b7280; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+        <strong>Questions About This Transfer?</strong><br>
+        If you have any questions about this asset transfer or need clarification on your responsibilities, please contact:<br>
+        • Transfer Administrator: {{transferredBy.name}} ({{transferredBy.email}})<br>
+        {{#if previousOwner}}
+        • Previous Owner: {{previousOwner.name}} ({{previousOwner.email}})<br>
+        {{/if}}
+        • IT Asset Management Department<br><br>
+        <strong>Organization:</strong> {{organization.name}}
+    </p>
+</div>
+
+{{/base}} 

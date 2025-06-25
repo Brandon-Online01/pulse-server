@@ -596,6 +596,102 @@ export interface LeaveDeletedNotificationData extends BaseEmailData {
 	adequateCoverage?: boolean;
 }
 
+// Asset related email data types
+export interface AssetEmailData extends BaseEmailData {
+	assetId: number;
+	brand: string;
+	serialNumber: string;
+	modelNumber: string;
+	purchaseDate: string;
+	hasInsurance: boolean;
+	insuranceProvider?: string;
+	insuranceExpiryDate?: string;
+	owner: {
+		name: string;
+		email: string;
+		uid: number;
+	};
+	branch?: {
+		name: string;
+		uid: number;
+	};
+	organization: {
+		name: string;
+		uid: number;
+	};
+	dashboardLink: string;
+}
+
+export interface AssetTransferredEmailData extends AssetEmailData {
+	previousOwner?: {
+		name: string;
+		email: string;
+		uid: number;
+	};
+	transferredBy: {
+		name: string;
+		email: string;
+	};
+	transferDate: string;
+	transferReason?: string;
+}
+
+export interface AssetUpdatedEmailData extends AssetEmailData {
+	updatedFields: string[];
+	updatedBy: {
+		name: string;
+		email: string;
+	};
+	updateDate: string;
+	updateReason?: string;
+}
+
+export interface AssetInsuranceExpiryWarningEmailData extends AssetEmailData {
+	daysUntilExpiry: number;
+	warningType: 'critical' | 'warning' | 'notice'; // 1, 7, 30 days
+	renewalInstructions?: string;
+	contactInfo?: {
+		name: string;
+		email: string;
+		phone?: string;
+	};
+}
+
+export interface AssetAdminNotificationEmailData extends BaseEmailData {
+	adminName: string;
+	action: 'created' | 'deleted' | 'transferred' | 'updated';
+	asset: {
+		id: number;
+		brand: string;
+		serialNumber: string;
+		modelNumber: string;
+	};
+	actionBy: {
+		name: string;
+		email: string;
+	};
+	actionDate: string;
+	actionDetails?: string;
+	dashboardLink: string;
+}
+
+// Additional auth email data types
+export interface LoginNotificationEmailData extends BaseEmailData {
+	loginTime: string;
+	ipAddress?: string;
+	location?: string;
+	device?: string;
+	browser?: string;
+	suspicious?: boolean;
+	securityTips?: string[];
+}
+
+export interface EmailVerifiedEmailData extends BaseEmailData {
+	verificationDate: string;
+	nextSteps?: string[];
+	loginUrl: string;
+}
+
 export interface EmailDataMap {
 	[EmailType.SIGNUP]: SignupEmailData;
 	[EmailType.VERIFICATION]: VerificationEmailData;
@@ -656,6 +752,19 @@ export interface EmailDataMap {
 	[EmailType.LEAVE_STATUS_UPDATE_ADMIN]: LeaveStatusUpdateAdminData;
 	[EmailType.LEAVE_DELETED_NOTIFICATION]: LeaveDeletedNotificationData;
 	[EmailType.USER_RE_INVITATION]: UserReInvitationData;
+	// Asset related email mappings
+	[EmailType.ASSET_ASSIGNED]: AssetEmailData;
+	[EmailType.ASSET_TRANSFERRED]: AssetTransferredEmailData;
+	[EmailType.ASSET_UPDATED]: AssetUpdatedEmailData;
+	[EmailType.ASSET_REMOVED]: AssetEmailData;
+	[EmailType.ASSET_RESTORED]: AssetEmailData;
+	[EmailType.ASSET_INSURANCE_EXPIRY_WARNING]: AssetInsuranceExpiryWarningEmailData;
+	[EmailType.ASSET_CREATED_ADMIN]: AssetAdminNotificationEmailData;
+	[EmailType.ASSET_DELETED_ADMIN]: AssetAdminNotificationEmailData;
+	// Additional auth email mappings
+	[EmailType.LOGIN_NOTIFICATION]: LoginNotificationEmailData;
+	[EmailType.CLIENT_LOGIN_NOTIFICATION]: LoginNotificationEmailData;
+	[EmailType.EMAIL_VERIFIED]: EmailVerifiedEmailData;
 }
 
 export type EmailTemplateData<T extends EmailType> = T extends keyof EmailDataMap ? EmailDataMap[T] : never;

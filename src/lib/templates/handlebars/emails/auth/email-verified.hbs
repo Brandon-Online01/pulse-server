@@ -1,0 +1,79 @@
+{{#base headerTitle="Email Successfully Verified" headerSubtitle="Your account is now fully activated"}}
+
+<div class="greeting">
+    Congratulations {{name}}! 🎉
+</div>
+
+<div class="message">
+    <p>Your email address has been successfully verified! Your account is now fully activated and you can access all features of our platform.</p>
+</div>
+
+<!-- Verification Success -->
+<div class="success-notice">
+    <h3 style="color: #15803d; margin-bottom: 16px;">✅ Email Verification Complete</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Verified On</span>
+            <span class="detail-value" style="font-weight: 700; color: #15803d;">{{formatDate verificationDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Account Status</span>
+            <span class="detail-value" style="font-weight: 700; color: #15803d;">Fully Activated</span>
+        </div>
+    </div>
+</div>
+
+<!-- Next Steps -->
+{{#if nextSteps}}
+<div class="info-card">
+    <h4 style="color: #7c2d92; margin-bottom: 16px;">🚀 What's Next?</h4>
+    <ul style="margin-left: 20px; color: #4b5563; line-height: 1.8; font-size: 15px;">
+        {{#each nextSteps}}
+        <li>{{this}}</li>
+        {{/each}}
+    </ul>
+</div>
+{{else}}
+<div class="info-card">
+    <h4 style="color: #7c2d92; margin-bottom: 16px;">🚀 Get Started</h4>
+    <ul style="margin-left: 20px; color: #4b5563; line-height: 1.8; font-size: 15px;">
+        <li>Complete your profile setup</li>
+        <li>Explore the dashboard and available features</li>
+        <li>Customize your account preferences</li>
+        <li>Connect with your team members</li>
+        <li>Start using the platform to boost your productivity</li>
+    </ul>
+</div>
+{{/if}}
+
+<!-- Security Reminder -->
+<div class="info-card" style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-left-color: #22c55e;">
+    <h4 style="color: #166534; margin-bottom: 16px;">🔒 Account Security</h4>
+    <p style="font-size: 15px; line-height: 1.6; color: #166534;">
+        Your account is now secure and verified. We recommend enabling two-factor authentication for additional security and keeping your login credentials safe.
+    </p>
+</div>
+
+<!-- CTA Section -->
+<div class="cta-section">
+    <a href="{{loginUrl}}" class="cta-button">Access Your Account</a>
+</div>
+
+<!-- Welcome Message -->
+<div class="success-notice">
+    <h4 style="color: #15803d; margin-bottom: 16px;">🌟 Welcome to Our Platform!</h4>
+    <p style="font-size: 15px; line-height: 1.6;">
+        We're excited to have you on board! Our platform is designed to help you achieve your goals efficiently and effectively. If you have any questions or need assistance getting started, our support team is here to help.
+    </p>
+</div>
+
+<!-- Footer -->
+<div class="message">
+    <p style="font-size: 14px; color: #6b7280; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+        <strong>Need Help?</strong><br>
+        If you have any questions about your account or need assistance with getting started, please don't hesitate to contact our support team. We're here to help you succeed!<br><br>
+        <strong>Verification Date:</strong> {{formatDate verificationDate}}
+    </p>
+</div>
+
+{{/base}} 

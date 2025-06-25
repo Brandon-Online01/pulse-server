@@ -1,0 +1,157 @@
+{{#base headerTitle="Asset Insurance Expiry Warning" headerSubtitle="Action required: Insurance coverage expiring soon"}}
+
+<div class="greeting">
+    Hello {{name}}! ⚠️
+</div>
+
+<div class="message">
+    <p>This is an important notification regarding the insurance coverage for an asset assigned to you. The insurance policy is {{#if (eq warningType 'critical')}}expiring very soon{{else if (eq warningType 'warning')}}expiring soon{{else}}approaching its expiry date{{/if}} and requires your immediate attention.</p>
+</div>
+
+<!-- Warning Level -->
+{{#if (eq warningType 'critical')}}
+<div style="background: rgba(153, 27, 27, 0.1); border: 2px solid #991b1b; border-radius: 12px; padding: 20px; margin: 20px 0;">
+    <h4 style="color: #991b1b; margin-bottom: 16px; display: flex; align-items: center;">🚨 CRITICAL: Insurance Expires in {{daysUntilExpiry}} Day{{#unless (eq daysUntilExpiry 1)}}s{{/unless}}</h4>
+    <p style="color: #7f1d1d; font-size: 16px; font-weight: 600; margin-bottom: 0;">Immediate action required to avoid coverage gap!</p>
+</div>
+{{else if (eq warningType 'warning')}}
+<div class="warning-notice">
+    <h4 style="color: #d97706; margin-bottom: 16px;">⚠️ WARNING: Insurance Expires in {{daysUntilExpiry}} Days</h4>
+    <p style="font-size: 16px; margin-bottom: 0;">Please arrange renewal soon to avoid coverage interruption.</p>
+</div>
+{{else}}
+<div class="info-card" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left-color: #f59e0b;">
+    <h4 style="color: #92400e; margin-bottom: 16px;">🔔 NOTICE: Insurance Expires in {{daysUntilExpiry}} Days</h4>
+    <p style="font-size: 15px; margin-bottom: 0;">Time to start the renewal process.</p>
+</div>
+{{/if}}
+
+<!-- Asset Details -->
+<div class="info-card">
+    <h3>🏷️ Asset Information</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Asset ID</span>
+            <span class="detail-value" style="font-weight: 700; color: #7c2d92;">{{assetId}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Brand</span>
+            <span class="detail-value">{{brand}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Model</span>
+            <span class="detail-value">{{modelNumber}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Serial Number</span>
+            <span class="detail-value" style="font-family: monospace; background: #f3f4f6; padding: 2px 6px; border-radius: 4px;">{{serialNumber}}</span>
+        </div>
+    </div>
+</div>
+
+<!-- Insurance Details -->
+<div class="info-card" style="background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%); border-left-color: #ef4444;">
+    <h3 style="color: #991b1b;">🛡️ Insurance Information</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Insurance Provider</span>
+            <span class="detail-value">{{insuranceProvider}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Expiry Date</span>
+            <span class="detail-value" style="font-weight: 700; color: #ef4444;">{{formatDate insuranceExpiryDate}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Days Remaining</span>
+            <span class="detail-value" style="font-weight: 700; color: {{#if (eq warningType 'critical')}}#991b1b{{else if (eq warningType 'warning')}}#d97706{{else}}#f59e0b{{/if}};">{{daysUntilExpiry}} days</span>
+        </div>
+    </div>
+</div>
+
+<!-- Renewal Instructions -->
+{{#if renewalInstructions}}
+<div class="success-notice">
+    <h4 style="color: #15803d; margin-bottom: 16px;">📋 Renewal Instructions</h4>
+    <div style="font-size: 15px; line-height: 1.6;">
+        {{renewalInstructions}}
+    </div>
+</div>
+{{/if}}
+
+<!-- Contact Information for Renewal -->
+{{#if contactInfo}}
+<div class="info-card" style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-left-color: #22c55e;">
+    <h4 style="color: #166534;">📞 Renewal Contact</h4>
+    <div style="margin-top: 12px; font-size: 15px;">
+        <div><strong>Contact Person:</strong> {{contactInfo.name}}</div>
+        <div><strong>Email:</strong> {{contactInfo.email}}</div>
+        {{#if contactInfo.phone}}
+        <div><strong>Phone:</strong> {{contactInfo.phone}}</div>
+        {{/if}}
+    </div>
+</div>
+{{/if}}
+
+<!-- Action Required -->
+{{#if (eq warningType 'critical')}}
+<div style="background: rgba(153, 27, 27, 0.1); border: 2px solid #991b1b; border-radius: 12px; padding: 20px; margin: 20px 0;">
+    <p style="font-size: 16px; font-weight: 700; color: #991b1b;">🚨 IMMEDIATE ACTIONS REQUIRED</p>
+    <ul style="margin-left: 20px; margin-top: 16px; line-height: 1.8; font-size: 15px; color: #7f1d1d;">
+        <li>Contact the insurance provider immediately</li>
+        <li>Begin renewal process today</li>
+        <li>Notify your manager and IT department</li>
+        <li>Arrange temporary coverage if needed</li>
+        <li>Do not use the asset for high-risk activities</li>
+    </ul>
+</div>
+{{else}}
+<div class="warning-notice">
+    <p style="font-size: 16px; font-weight: 700; color: #d97706;">📝 Required Actions</p>
+    <ul style="margin-left: 20px; margin-top: 16px; line-height: 1.8; font-size: 15px;">
+        <li>Contact the insurance provider to initiate renewal</li>
+        <li>Review current coverage terms and limits</li>
+        <li>Gather necessary documentation for renewal</li>
+        <li>Notify your supervisor of the upcoming expiry</li>
+        <li>Schedule renewal to avoid coverage gaps</li>
+    </ul>
+</div>
+{{/if}}
+
+<!-- Branch Information -->
+{{#if branch}}
+<div class="info-card">
+    <h4 style="color: #7c2d92;">🏢 Branch Information</h4>
+    <p style="margin-top: 12px; font-size: 15px; line-height: 1.6;">
+        This asset is assigned to the <strong>{{branch.name}}</strong> branch. Please coordinate with your branch administrator for renewal processes.
+    </p>
+</div>
+{{/if}}
+
+<!-- Important Notes -->
+<div class="info-card">
+    <h4 style="color: #7c2d92; margin-bottom: 16px;">📌 Important Notes</h4>
+    <ul style="margin-left: 20px; color: #4b5563; line-height: 1.8; font-size: 15px;">
+        <li>Insurance lapses can result in significant financial liability</li>
+        <li>Asset replacement costs may not be covered without active insurance</li>
+        <li>Report any damage or issues before the policy expires</li>
+        <li>Keep receipts and documentation for claims purposes</li>
+        <li>Ensure continuous coverage to avoid compliance issues</li>
+    </ul>
+</div>
+
+<!-- CTA Section -->
+<div class="cta-section">
+    <a href="{{dashboardLink}}" class="cta-button">View Asset & Insurance Details</a>
+</div>
+
+<!-- Footer -->
+<div class="message">
+    <p style="font-size: 14px; color: #6b7280; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+        <strong>This is an automated reminder:</strong><br>
+        Insurance expiry notifications are sent automatically based on the expiry dates in our asset management system. Please ensure all information is accurate and contact IT if you notice any discrepancies.<br><br>
+        <strong>Organization:</strong> {{organization.name}}<br>
+        <strong>Asset Owner:</strong> {{owner.name}} ({{owner.email}})
+    </p>
+</div>
+
+{{/base}} 

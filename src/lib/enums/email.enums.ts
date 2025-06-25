@@ -73,4 +73,17 @@ export enum EmailType {
     LEAVE_DELETED_NOTIFICATION = 'leave_deleted_notification',
     // User re-invitation emails
     USER_RE_INVITATION = 'user_re_invitation',
+    // Asset related emails
+    ASSET_ASSIGNED = 'asset_assigned',
+    ASSET_TRANSFERRED = 'asset_transferred',
+    ASSET_UPDATED = 'asset_updated',
+    ASSET_REMOVED = 'asset_removed',
+    ASSET_RESTORED = 'asset_restored',
+    ASSET_INSURANCE_EXPIRY_WARNING = 'asset_insurance_expiry_warning',
+    ASSET_CREATED_ADMIN = 'asset_created_admin',
+    ASSET_DELETED_ADMIN = 'asset_deleted_admin',
+    // Additional auth emails
+    LOGIN_NOTIFICATION = 'login_notification',
+    CLIENT_LOGIN_NOTIFICATION = 'client_login_notification',
+    EMAIL_VERIFIED = 'email_verified',
 } 

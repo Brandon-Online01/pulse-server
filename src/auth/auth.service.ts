@@ -45,7 +45,7 @@ export class AuthService {
 		return crypto.randomBytes(32).toString('hex');
 	}
 
-	async signIn(signInInput: SignInInput): Promise<SignInResponse> {
+	async signIn(signInInput: SignInInput, requestData?: any): Promise<SignInResponse> {
 		try {
 			const { username, password } = signInInput;
 
@@ -133,14 +133,38 @@ export class AuthService {
 					},
 				};
 
-				await this.rewardsService.awardXP(gainedXP);
+							await this.rewardsService.awardXP(gainedXP);
 
-				return {
-					profileData,
-					accessToken,
-					refreshToken,
-					message: `Welcome ${profileData.name}!`,
-				};
+			// Send login notification email
+			try {
+				this.eventEmitter.emit('send.email', EmailType.LOGIN_NOTIFICATION, [authProfile.user.email], {
+					name: profileData.name,
+					loginTime: new Date().toLocaleString(),
+					ipAddress: requestData?.ipAddress || 'Unknown',
+					location: requestData?.location || 'Unknown',
+					country: requestData?.country || 'Unknown',
+					deviceType: requestData?.deviceType || 'Unknown',
+					browser: requestData?.browser || 'Unknown',
+					operatingSystem: requestData?.operatingSystem || 'Unknown',
+					userAgent: requestData?.userAgent || 'Unknown',
+					suspicious: false, // You can implement logic to detect suspicious logins
+					securityTips: [
+						'Always log out from shared devices',
+						'Use strong, unique passwords',
+						'Enable two-factor authentication when available',
+					],
+				});
+			} catch (error) {
+				// Don't fail login if email fails
+				console.error('Failed to send login notification email:', error);
+			}
+
+			return {
+				profileData,
+				accessToken,
+				refreshToken,
+				message: `Welcome ${profileData.name}!`,
+			};
 			}
 
 			// For users without organization (like system admins)
@@ -229,7 +253,7 @@ export class AuthService {
 		}
 	}
 
-	async verifyEmail(verifyEmailInput: VerifyEmailInput) {
+	async verifyEmail(verifyEmailInput: VerifyEmailInput, requestData?: any) {
 		try {
 			const { token } = verifyEmailInput;
 			const pendingSignup = await this.pendingSignupService.findByToken(token);
@@ -247,12 +271,32 @@ export class AuthService {
 				throw new BadRequestException('Email already verified. Please proceed to set your password.');
 			}
 
-			await this.pendingSignupService.markAsVerified(pendingSignup.uid);
+					await this.pendingSignupService.markAsVerified(pendingSignup.uid);
 
-			return {
-				message: 'Email verified successfully. You can now set your password.',
-				email: pendingSignup.email,
-			};
+		// Send email verification success notification
+		try {
+			this.eventEmitter.emit('send.email', EmailType.EMAIL_VERIFIED, [pendingSignup.email], {
+				name: pendingSignup.email.split('@')[0],
+				verificationDate: new Date().toISOString(),
+				ipAddress: requestData?.ipAddress || 'Unknown',
+				location: requestData?.location || 'Unknown',
+				deviceType: requestData?.deviceType || 'Unknown',
+				browser: requestData?.browser || 'Unknown',
+				nextSteps: [
+					'Set up your account password',
+					'Complete your profile information',
+					'Explore the platform features',
+				],
+				loginUrl: `${process.env.WEBSITE_DOMAIN}/sign-in` || '/sign-in',
+			});
+		} catch (error) {
+			console.error('Failed to send email verification success notification:', error);
+		}
+
+		return {
+			message: 'Email verified successfully. You can now set your password.',
+			email: pendingSignup.email,
+		};
 		} catch (error) {
 			throw new HttpException(
 				error.message || 'Email verification failed',

@@ -1,0 +1,103 @@
+{{#base headerTitle="Asset Assigned to You" headerSubtitle="New asset has been assigned to your account"}}
+
+<div class="greeting">
+    Hello {{name}}! 📦
+</div>
+
+<div class="message">
+    <p>A new asset has been assigned to your account. Please review the details below and ensure you have received the physical asset.</p>
+</div>
+
+<!-- Asset Details -->
+<div class="info-card">
+    <h3>🏷️ Asset Information</h3>
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Asset ID</span>
+            <span class="detail-value" style="font-weight: 700; color: #7c2d92;">{{assetId}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Brand</span>
+            <span class="detail-value">{{brand}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Model</span>
+            <span class="detail-value">{{modelNumber}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Serial Number</span>
+            <span class="detail-value" style="font-family: monospace; background: #f3f4f6; padding: 2px 6px; border-radius: 4px;">{{serialNumber}}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Purchase Date</span>
+            <span class="detail-value">{{formatDate purchaseDate}}</span>
+        </div>
+    </div>
+</div>
+
+<!-- Insurance Information -->
+{{#if hasInsurance}}
+<div class="success-notice">
+    <h4 style="color: #15803d; margin-bottom: 12px;">🛡️ Insurance Coverage</h4>
+    <div style="display: grid; gap: 8px;">
+        <div><strong>Provider:</strong> {{insuranceProvider}}</div>
+        <div><strong>Expires:</strong> {{formatDate insuranceExpiryDate}}</div>
+    </div>
+</div>
+{{else}}
+<div class="warning-notice">
+    <h4 style="color: #d97706; margin-bottom: 12px;">⚠️ No Insurance Coverage</h4>
+    <p>This asset is not currently covered by insurance. Please contact your IT department if insurance coverage is required.</p>
+</div>
+{{/if}}
+
+<!-- Responsibilities -->
+<div class="info-card">
+    <h4 style="color: #7c2d92; margin-bottom: 16px;">📋 Your Responsibilities</h4>
+    <ul style="margin-left: 20px; color: #4b5563; line-height: 1.8; font-size: 15px;">
+        <li>Keep the asset in good working condition</li>
+        <li>Report any damage or issues immediately</li>
+        <li>Return the asset when leaving the organization or upon request</li>
+        <li>Use the asset only for authorized business purposes</li>
+        {{#if hasInsurance}}
+        <li>Report any loss or theft within 24 hours</li>
+        {{/if}}
+    </ul>
+</div>
+
+<!-- Branch Information -->
+{{#if branch}}
+<div class="info-card" style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-left-color: #22c55e;">
+    <h4 style="color: #166534;">🏢 Branch Assignment</h4>
+    <p style="margin-top: 12px; font-size: 15px; line-height: 1.6;">
+        This asset is assigned to the <strong>{{branch.name}}</strong> branch.
+    </p>
+</div>
+{{/if}}
+
+<!-- Next Steps -->
+<div class="success-notice">
+    <p style="font-size: 16px; font-weight: 700; color: #15803d;">📝 Next Steps</p>
+    <ul style="margin-left: 20px; margin-top: 16px; line-height: 1.8; font-size: 15px;">
+        <li>Confirm receipt of the physical asset</li>
+        <li>Test all functionality and report any issues</li>
+        <li>Set up any required software or configurations</li>
+        <li>Sign and return any asset acknowledgment forms</li>
+    </ul>
+</div>
+
+<!-- CTA Section -->
+<div class="cta-section">
+    <a href="{{dashboardLink}}" class="cta-button">View Asset Details</a>
+</div>
+
+<!-- Contact Information -->
+<div class="message">
+    <p style="font-size: 14px; color: #6b7280; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+        <strong>Questions or Issues?</strong><br>
+        If you have any questions about this asset assignment or need technical support, please contact your IT department or asset manager.<br><br>
+        <strong>Organization:</strong> {{organization.name}}
+    </p>
+</div>
+
+{{/base}} 

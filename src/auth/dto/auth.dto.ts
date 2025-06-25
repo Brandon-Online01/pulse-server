@@ -17,6 +17,42 @@ export class SignInInput {
     description: 'The password of the user',
   })
   password: string;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({
+    example: '192.168.1.1',
+    description: 'The IP address of the user',
+    required: false,
+  })
+  ipAddress?: string;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({
+    example: 'Cape Town, South Africa',
+    description: 'The location of the user',
+    required: false,
+  })
+  location?: string;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({
+    example: 'iPhone 12',
+    description: 'The device used for login',
+    required: false,
+  })
+  device?: string;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({
+    example: 'Chrome 91.0',
+    description: 'The browser used for login',
+    required: false,
+  })
+  browser?: string;
 }
 
 export class SignUpInput {

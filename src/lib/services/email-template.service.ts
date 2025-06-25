@@ -40,6 +40,13 @@ import {
 	MorningReportData,
 	EveningReportData,
 	UserReInvitationData,
+	AssetEmailData,
+	AssetTransferredEmailData,
+	AssetUpdatedEmailData,
+	AssetInsuranceExpiryWarningEmailData,
+	AssetAdminNotificationEmailData,
+	LoginNotificationEmailData,
+	EmailVerifiedEmailData,
 } from '../types/email-templates.types';
 
 class EmailTemplateService {
@@ -478,6 +485,52 @@ class EmailTemplateService {
 
 	attendanceEveningReport(data: EveningReportData): string {
 		return this.renderTemplate('attendance/evening-report.hbs', data);
+	}
+
+	// Asset related email templates
+	assetAssigned(data: AssetEmailData): string {
+		return this.renderTemplate('assets/asset-assigned.hbs', data);
+	}
+
+	assetTransferred(data: AssetTransferredEmailData): string {
+		return this.renderTemplate('assets/asset-transferred.hbs', data);
+	}
+
+	assetUpdated(data: AssetUpdatedEmailData): string {
+		return this.renderTemplate('assets/asset-updated.hbs', data);
+	}
+
+	assetRemoved(data: AssetEmailData): string {
+		return this.renderTemplate('assets/asset-removed.hbs', data);
+	}
+
+	assetRestored(data: AssetEmailData): string {
+		return this.renderTemplate('assets/asset-restored.hbs', data);
+	}
+
+	assetInsuranceExpiryWarning(data: AssetInsuranceExpiryWarningEmailData): string {
+		return this.renderTemplate('assets/insurance-expiry-warning.hbs', data);
+	}
+
+	assetCreatedAdmin(data: AssetAdminNotificationEmailData): string {
+		return this.renderTemplate('assets/asset-created-admin.hbs', data);
+	}
+
+	assetDeletedAdmin(data: AssetAdminNotificationEmailData): string {
+		return this.renderTemplate('assets/asset-deleted-admin.hbs', data);
+	}
+
+	// Additional auth email templates
+	loginNotification(data: LoginNotificationEmailData): string {
+		return this.renderTemplate('auth/login-notification.hbs', data);
+	}
+
+	clientLoginNotification(data: LoginNotificationEmailData): string {
+		return this.renderTemplate('client/login-notification.hbs', data);
+	}
+
+	emailVerified(data: EmailVerifiedEmailData): string {
+		return this.renderTemplate('auth/email-verified.hbs', data);
 	}
 
 	/**
