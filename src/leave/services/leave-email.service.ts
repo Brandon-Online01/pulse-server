@@ -6,6 +6,7 @@ import { User } from '../../user/entities/user.entity';
 import { Leave } from '../entities/leave.entity';
 import { AccessLevel } from '../../lib/enums/user.enums';
 import { LeaveStatus } from '../../lib/enums/leave.enums';
+import { EmailType } from '../../lib/enums/email.enums';
 import {
 	LeaveApplicationConfirmationData,
 	LeaveNewApplicationAdminData,
@@ -88,13 +89,8 @@ export class LeaveEmailService {
 				createdAt: leave.createdAt.toISOString(),
 			};
 
-			const htmlContent = this.emailTemplateService.leaveApplicationConfirmation(emailData);
-
 			// Emit email event
-			this.eventEmitter.emit('send.email', 'LEAVE_APPLICATION_CONFIRMATION', [applicant.email], {
-				subject: `Leave Application Confirmation - Reference #${leave.uid}`,
-				html: htmlContent,
-			});
+			this.eventEmitter.emit('send.email', EmailType.LEAVE_APPLICATION_CONFIRMATION, [applicant.email], emailData);
 		} catch (error) {
 			console.error('Error sending leave application confirmation email:', error);
 		}
@@ -145,13 +141,8 @@ export class LeaveEmailService {
 					createdAt: leave.createdAt.toISOString(),
 				};
 
-				const htmlContent = this.emailTemplateService.leaveNewApplicationAdmin(emailData);
-
 				// Emit email event
-				this.eventEmitter.emit('send.email', 'LEAVE_NEW_APPLICATION_ADMIN', [admin.email], {
-					subject: `New Leave Application - ${applicant.name || applicant.email} (#${leave.uid})`,
-					html: htmlContent,
-				});
+				this.eventEmitter.emit('send.email', EmailType.LEAVE_NEW_APPLICATION_ADMIN, [admin.email], emailData);
 			}
 		} catch (error) {
 			console.error('Error sending new leave application admin notification:', error);
@@ -194,22 +185,8 @@ export class LeaveEmailService {
 				createdAt: leave.createdAt.toISOString(),
 			};
 
-			const htmlContent = this.emailTemplateService.leaveStatusUpdateUser(emailData);
-
-			let subject = `Leave Application Update - Reference #${leave.uid}`;
-			if (leave.status === LeaveStatus.APPROVED) {
-				subject = `Leave Application Approved - Reference #${leave.uid}`;
-			} else if (leave.status === LeaveStatus.REJECTED) {
-				subject = `Leave Application Declined - Reference #${leave.uid}`;
-			} else if (leave.status.includes('CANCELLED')) {
-				subject = `Leave Application Cancelled - Reference #${leave.uid}`;
-			}
-
 			// Emit email event
-			this.eventEmitter.emit('send.email', 'LEAVE_STATUS_UPDATE_USER', [applicant.email], {
-				subject,
-				html: htmlContent,
-			});
+			this.eventEmitter.emit('send.email', EmailType.LEAVE_STATUS_UPDATE_USER, [applicant.email], emailData);
 		} catch (error) {
 			console.error('Error sending leave status update to user:', error);
 		}
@@ -275,22 +252,8 @@ export class LeaveEmailService {
 					upcomingLeaves: [], // TODO: Implement actual upcoming leaves query
 				};
 
-				const htmlContent = this.emailTemplateService.leaveStatusUpdateAdmin(emailData);
-
-				let subject = `Leave Status Update - ${applicant.name || applicant.email} (#${leave.uid})`;
-				if (leave.status === LeaveStatus.APPROVED) {
-					subject = `Leave Approved - ${applicant.name || applicant.email} (#${leave.uid})`;
-				} else if (leave.status === LeaveStatus.REJECTED) {
-					subject = `Leave Declined - ${applicant.name || applicant.email} (#${leave.uid})`;
-				} else if (leave.status.includes('CANCELLED')) {
-					subject = `Leave Cancelled - ${applicant.name || applicant.email} (#${leave.uid})`;
-				}
-
 				// Emit email event
-				this.eventEmitter.emit('send.email', 'LEAVE_STATUS_UPDATE_ADMIN', [admin.email], {
-					subject,
-					html: htmlContent,
-				});
+				this.eventEmitter.emit('send.email', EmailType.LEAVE_STATUS_UPDATE_ADMIN, [admin.email], emailData);
 			}
 		} catch (error) {
 			console.error('Error sending leave status update to admins:', error);
@@ -332,13 +295,8 @@ export class LeaveEmailService {
 				createdAt: leave.createdAt.toISOString(),
 			};
 
-			const applicantHtmlContent = this.emailTemplateService.leaveDeletedNotification(applicantEmailData);
-
 			// Emit email event for applicant
-			this.eventEmitter.emit('send.email', 'LEAVE_DELETED_NOTIFICATION', [applicant.email], {
-				subject: `Leave Application Deleted - Reference #${leave.uid}`,
-				html: applicantHtmlContent,
-			});
+			this.eventEmitter.emit('send.email', EmailType.LEAVE_DELETED_NOTIFICATION, [applicant.email], applicantEmailData);
 
 			// Send to admins
 			for (const admin of admins) {
@@ -363,13 +321,8 @@ export class LeaveEmailService {
 					adequateCoverage: true, // TODO: Implement actual logic
 				};
 
-				const adminHtmlContent = this.emailTemplateService.leaveDeletedNotification(adminEmailData);
-
 				// Emit email event for admin
-				this.eventEmitter.emit('send.email', 'LEAVE_DELETED_NOTIFICATION', [admin.email], {
-					subject: `Leave Application Deleted - ${applicant.name || applicant.email} (#${leave.uid})`,
-					html: adminHtmlContent,
-				});
+				this.eventEmitter.emit('send.email', EmailType.LEAVE_DELETED_NOTIFICATION, [admin.email], adminEmailData);
 			}
 		} catch (error) {
 			console.error('Error sending leave deletion notification:', error);

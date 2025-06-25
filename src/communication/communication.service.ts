@@ -52,6 +52,8 @@ import { LeadConvertedClient, LeadConvertedCreator, LeadReminder, LeadAssignedTo
 import { ClientPasswordReset, ClientPasswordChanged } from '../lib/templates/emails';
 // Warning templates
 import { WarningIssued, WarningUpdated, WarningExpired } from '../lib/templates/emails';
+// Leave templates
+import { LeaveStatusUpdateUser, LeaveStatusUpdateAdmin, LeaveApplicationConfirmation, LeaveNewApplicationAdmin, LeaveDeletedNotification } from '../lib/templates/emails';
 // Email data types
 import {
 	DailyReportData,
@@ -87,6 +89,11 @@ import {
 	WarningExpiredEmailData,
 	MorningReportData,
 	EveningReportData,
+	LeaveStatusUpdateUserData,
+	LeaveStatusUpdateAdminData,
+	LeaveApplicationConfirmationData,
+	LeaveNewApplicationAdminData,
+	LeaveDeletedNotificationData,
 } from '../lib/types/email-templates.types';
 import {
 	TaskFlagCreated,
@@ -444,6 +451,31 @@ export class CommunicationService {
 				return {
 					subject: 'Daily Attendance Evening Report',
 					body: AttendanceEveningReport(data as EveningReportData),
+				};
+			case EmailType.LEAVE_STATUS_UPDATE_USER:
+				return {
+					subject: 'Leave Status Update',
+					body: LeaveStatusUpdateUser(data as LeaveStatusUpdateUserData),
+				};
+			case EmailType.LEAVE_STATUS_UPDATE_ADMIN:
+				return {
+					subject: 'Leave Status Update - Admin Notification',
+					body: LeaveStatusUpdateAdmin(data as LeaveStatusUpdateAdminData),
+				};
+			case EmailType.LEAVE_APPLICATION_CONFIRMATION:
+				return {
+					subject: 'Leave Application Confirmation',
+					body: LeaveApplicationConfirmation(data as LeaveApplicationConfirmationData),
+				};
+			case EmailType.LEAVE_NEW_APPLICATION_ADMIN:
+				return {
+					subject: 'New Leave Application - Admin Notification',
+					body: LeaveNewApplicationAdmin(data as LeaveNewApplicationAdminData),
+				};
+			case EmailType.LEAVE_DELETED_NOTIFICATION:
+				return {
+					subject: 'Leave Application Deleted',
+					body: LeaveDeletedNotification(data as LeaveDeletedNotificationData),
 				};
 			default:
 				throw new NotFoundException(`Unknown email template type: ${type}`);

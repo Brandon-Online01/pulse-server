@@ -192,3 +192,9 @@ Handlebars.registerHelper('percentage', function(value: number, total: number) {
     if (!total || total === 0) return 0;
     return Math.round((Number(value) / Number(total)) * 100);
 });
+
+// String contains helper
+Handlebars.registerHelper('contains', function(str: string, searchStr: string) {
+    if (!str || !searchStr) return false;
+    return str.toString().includes(searchStr.toString());
+});
