@@ -418,12 +418,26 @@ export interface LicenseTransferEmailData extends BaseEmailData {
 export interface TaskEmailData extends BaseEmailData {
 	taskId: string;
 	title: string;
+	taskTitle?: string;
 	description: string;
+	taskDescription?: string;
 	deadline?: string;
+	dueDate?: string;
 	priority: string;
 	taskType: string;
 	status: string;
 	assignedBy: string;
+	assigneeName?: string;
+	appName?: string;
+	projectName?: string;
+	estimatedTime?: string;
+	taskUrl?: string;
+	projectManager?: string;
+	supportEmail?: string;
+	updatedBy?: string;
+	updateDate?: string;
+	currentStatus?: string;
+	changes?: Array<{field: string, oldValue: string, newValue: string}>;
 	subtasks?: Array<{
 		title: string;
 		status: string;
@@ -437,16 +451,22 @@ export interface TaskEmailData extends BaseEmailData {
 		name: string;
 		url: string;
 	}>;
+	dependencies?: string[];
+	successCriteria?: string[];
 }
 
 export interface TaskCompletedEmailData extends TaskEmailData {
 	completionDate: string;
-	completedBy?: string;
+	completedBy: string;
 	feedbackLink: string;
-	jobCards?: Array<{
+	jobCards: Array<{
 		name: string;
 		url: string;
 	}>;
+	timeTaken?: string;
+	completionStatus?: string;
+	completionNotes?: string;
+	deliverables?: string[];
 }
 
 export interface TaskReminderData extends BaseEmailData {
